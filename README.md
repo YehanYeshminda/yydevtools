@@ -41,22 +41,18 @@ npm run build
 
 The optimized output is written to `dist/yydevtools/browser`.
 
-## Deployment (Cloudflare Pages)
+## Deployment (Cloudflare Workers static assets)
 
-The app is a static single-page application, deployed to Cloudflare Pages.
+The app is a static single-page application, deployed to Cloudflare Workers as
+static assets. Configuration lives in [`wrangler.jsonc`](wrangler.jsonc), which
+serves `dist/yydevtools/browser` and uses `single-page-application` not-found
+handling so deep links (e.g. `/tools/pdf-merge`) resolve to `index.html`.
 
-- **Build command:** `npm run build`
-- **Build output directory:** `dist/yydevtools/browser`
-
-A [`public/_redirects`](public/_redirects) file provides the SPA fallback so that
-deep links (e.g. `/tools/pdf-merge`) resolve to `index.html`. It is copied to the
-build output automatically.
-
-To deploy manually with the Wrangler CLI:
+Deploy with the Wrangler CLI:
 
 ```bash
 npm run build
-npx wrangler pages deploy dist/yydevtools/browser --project-name=yydevtools
+npx wrangler deploy
 ```
 
 ## Tech stack
