@@ -70,7 +70,7 @@ export const TOOLS: Tool[] = [
     description: 'Decode and inspect JWT headers, payloads and claims.',
     icon: 'key',
     category: 'Developer',
-    ready: false,
+    ready: true,
   },
   {
     slug: 'base64-converter',

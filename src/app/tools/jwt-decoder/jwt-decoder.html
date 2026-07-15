@@ -1,0 +1,134 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">JWT Decoder</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>key</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">JWT Decoder</h1>
+    <p class="head__sub">
+      Decode and inspect JWT headers, payloads and claims. Everything runs in your browser.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="jwt-input">JSON Web Token</label>
+    <textarea
+      id="jwt-input"
+      class="field__input"
+      rows="5"
+      spellcheck="false"
+      [value]="token()"
+      (input)="onInput($event)"
+      placeholder="Paste a token (header.payload.signature)…"
+    ></textarea>
+  </div>
+
+  <div class="actions">
+    <button matButton (click)="loadSample()">
+      <mat-icon>science</mat-icon>
+      Load sample
+    </button>
+    <button matButton (click)="clear()" [disabled]="!token()">
+      <mat-icon>clear</mat-icon>
+      Clear
+    </button>
+  </div>
+
+  @if (segments(); as seg) {
+    <p class="token" aria-label="Colour-coded token">
+      <span class="token__seg token__seg--header">{{ seg.header }}</span>
+      <span class="token__dot">.</span>
+      <span class="token__seg token__seg--payload">{{ seg.payload }}</span>
+      <span class="token__dot">.</span>
+      <span class="token__seg token__seg--signature">{{ seg.signature }}</span>
+    </p>
+  }
+
+  @switch (result().kind) {
+    @case ('error') {
+      <p class="status status--err" role="alert">
+        <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+        {{ $any(result()).message }}
+      </p>
+    }
+    @case ('ok') {
+      @let decoded = $any(result());
+
+      @if (decoded.expired) {
+        <p class="status status--err" role="status">
+          <mat-icon class="status__icon" aria-hidden="true">schedule</mat-icon>
+          This token has expired.
+        </p>
+      } @else {
+        <p class="status status--ok" role="status">
+          <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+          Token decoded.
+        </p>
+      }
+
+      @if (decoded.claims.length) {
+        <section class="claims" aria-label="Claims">
+          <h2 class="section__title">Claims</h2>
+          <dl class="claims__list">
+            @for (claim of decoded.claims; track claim.key) {
+              <div class="claim" [class.claim--warn]="claim.state === 'warn'">
+                <dt class="claim__key">
+                  {{ claim.label }} <code>{{ claim.key }}</code>
+                </dt>
+                <dd class="claim__val">
+                  {{ claim.value }}
+                  @if (claim.detail) {
+                    <span class="claim__detail">— {{ claim.detail }}</span>
+                  }
+                </dd>
+              </div>
+            }
+          </dl>
+        </section>
+      }
+
+      <section class="segment segment--header" aria-label="Header">
+        <div class="segment__bar">
+          <h2 class="section__title">Header</h2>
+          <button matButton (click)="copy(decoded.header, 'Header')">
+            <mat-icon>content_copy</mat-icon>
+            Copy
+          </button>
+        </div>
+        <pre class="segment__body"><code>{{ decoded.header }}</code></pre>
+      </section>
+
+      <section class="segment segment--payload" aria-label="Payload">
+        <div class="segment__bar">
+          <h2 class="section__title">Payload</h2>
+          <button matButton (click)="copy(decoded.payload, 'Payload')">
+            <mat-icon>content_copy</mat-icon>
+            Copy
+          </button>
+        </div>
+        <pre class="segment__body"><code>{{ decoded.payload }}</code></pre>
+      </section>
+
+      <section class="segment segment--signature" aria-label="Signature">
+        <h2 class="section__title">Signature</h2>
+        <pre class="segment__body segment__body--sig"><code>{{ decoded.signature }}</code></pre>
+        <p class="segment__note">
+          <mat-icon class="segment__note-icon" aria-hidden="true">info</mat-icon>
+          The signature is shown as-is. Verifying it needs the signing secret or public key, so it
+          is not checked here.
+        </p>
+      </section>
+    }
+  }
+</div>

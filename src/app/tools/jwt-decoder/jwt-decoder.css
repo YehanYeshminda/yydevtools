@@ -1,0 +1,310 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 1000px;
+  margin-inline: auto;
+  padding: 1.5rem clamp(1rem, 4vw, 2rem) 4rem;
+  box-sizing: border-box;
+
+  --seg-header: #c0392b;
+  --seg-payload: #6c3fb5;
+  --seg-signature: #0e7490;
+}
+
+:host-context([data-theme='dark']) {
+  --seg-header: #ef9a9a;
+  --seg-payload: #c3a6ef;
+  --seg-signature: #67c7dd;
+}
+
+.crumbs {
+  margin-bottom: 1rem;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumb a {
+  color: var(--mat-sys-primary);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb__sep {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.breadcrumb__sep mat-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.breadcrumb [aria-current='page'] {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.head__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 14px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  flex: none;
+}
+
+.head__title {
+  margin: 0;
+  font: var(--mat-sys-headline-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.head__sub {
+  margin: 0.25rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Input ----------------------------------------------------------------- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field__label {
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface);
+}
+
+.field__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 10px;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+  word-break: break-all;
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--mat-sys-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mat-sys-primary) 22%, transparent);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Colour-coded token preview ------------------------------------------- */
+.token {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: var(--mat-sys-surface-container-low);
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.token__dot {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.token__seg--header {
+  color: var(--seg-header);
+}
+
+.token__seg--payload {
+  color: var(--seg-payload);
+}
+
+.token__seg--signature {
+  color: var(--seg-signature);
+}
+
+/* Status ---------------------------------------------------------------- */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+}
+
+.status__icon {
+  font-size: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.status--ok {
+  color: var(--mat-sys-primary);
+}
+
+.status--err {
+  color: var(--mat-sys-error);
+}
+
+/* Claims ---------------------------------------------------------------- */
+.section__title {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.claims__list {
+  margin: 0.75rem 0 0;
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.claim {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) 1fr;
+  gap: 1rem;
+  padding: 0.6rem 0.9rem;
+}
+
+.claim + .claim {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.claim--warn {
+  background: var(--mat-sys-error-container);
+}
+
+.claim__key {
+  margin: 0;
+  color: var(--mat-sys-on-surface);
+}
+
+.claim__key code {
+  font-size: 0.8em;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.claim__val {
+  margin: 0;
+  color: var(--mat-sys-on-surface);
+  word-break: break-word;
+}
+
+.claim--warn .claim__key,
+.claim--warn .claim__key code,
+.claim--warn .claim__val {
+  color: var(--mat-sys-on-error-container);
+}
+
+.claim__detail {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.claim--warn .claim__detail {
+  color: var(--mat-sys-on-error-container);
+}
+
+/* Decoded segments ------------------------------------------------------ */
+.segment {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-left: 4px solid var(--seg-color, var(--mat-sys-outline));
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+}
+
+.segment--header {
+  --seg-color: var(--seg-header);
+}
+
+.segment--payload {
+  --seg-color: var(--seg-payload);
+}
+
+.segment--signature {
+  --seg-color: var(--seg-signature);
+}
+
+.segment__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.segment__body {
+  margin: 0.6rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  background: var(--mat-sys-surface-container-high);
+  overflow-x: auto;
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface);
+}
+
+.segment__body--sig {
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.segment__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.segment__note-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  margin-top: 0.1rem;
+}

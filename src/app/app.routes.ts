@@ -23,5 +23,10 @@ export const routes: Routes = [
       import('./tools/markdown-editor/markdown-editor').then((m) => m.MarkdownEditorTool),
     title: 'Markdown Editor — yydevtools',
   },
+  {
+    path: 'tools/jwt-decoder',
+    loadComponent: () => import('./tools/jwt-decoder/jwt-decoder').then((m) => m.JwtDecoderTool),
+    title: 'JWT Decoder — yydevtools',
+  },
   { path: '**', redirectTo: '' },
 ];
