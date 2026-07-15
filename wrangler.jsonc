@@ -1,0 +1,11 @@
+{
+  // Cloudflare Workers static-assets deployment for the yydevtools SPA.
+  // `npm run build` produces the assets; `wrangler deploy` uploads them.
+  "name": "yydevtools",
+  "compatibility_date": "2025-11-01",
+  "assets": {
+    "directory": "./dist/yydevtools/browser",
+    // Serve index.html for unmatched client-side routes (e.g. /tools/pdf-merge).
+    "not_found_handling": "single-page-application"
+  }
+}
