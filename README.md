@@ -1,59 +1,67 @@
-# Yydevtools
+# yydevtools
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.2.
+A collection of fast, privacy-friendly developer utilities that run entirely in
+your browser. No uploads, no accounts — your data never leaves your device.
 
-## Development server
+Built with Angular 21 (standalone, zoneless, signals) and Angular Material.
 
-To start a local development server, run:
+## Tools
+
+| Tool | Description |
+| --- | --- |
+| **JSON Formatter** | Format, validate and minify JSON. |
+| **JWT Decoder** | Decode and inspect JWT headers, payloads and claims. |
+| **Base64 Converter** | Encode/decode text or files to and from Base64, with live image/PDF preview when decoding. |
+| **Image Compressor** | Shrink PNG and JPEG images to JPEG or WebP. |
+| **Markdown Editor** | Write Markdown with a live, side-by-side preview. |
+| **PDF Merge** | Combine several PDFs into a single document, with a reorderable queue. |
+
+Everything is processed client-side — file tools use the `FileReader`, Canvas and
+`pdf-lib` APIs directly in the browser.
+
+## Development
+
+Install dependencies and start the dev server:
 
 ```bash
-ng serve
+npm install
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
+Then open `http://localhost:4200/`. The app reloads automatically as you edit
+source files.
 
 ## Building
 
-To build the project run:
+Create a production build:
 
 ```bash
-ng build
+npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+The optimized output is written to `dist/yydevtools/browser`.
 
-## Running unit tests
+## Deployment (Cloudflare Pages)
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+The app is a static single-page application, deployed to Cloudflare Pages.
+
+- **Build command:** `npm run build`
+- **Build output directory:** `dist/yydevtools/browser`
+
+A [`public/_redirects`](public/_redirects) file provides the SPA fallback so that
+deep links (e.g. `/tools/pdf-merge`) resolve to `index.html`. It is copied to the
+build output automatically.
+
+To deploy manually with the Wrangler CLI:
 
 ```bash
-ng test
+npm run build
+npx wrangler pages deploy dist/yydevtools/browser --project-name=yydevtools
 ```
 
-## Running end-to-end tests
+## Tech stack
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [Angular 21](https://angular.dev/) — standalone components, zoneless change
+  detection, signals and native control flow
+- [Angular Material](https://material.angular.dev/)
+- [pdf-lib](https://pdf-lib.js.org/) for client-side PDF manipulation
