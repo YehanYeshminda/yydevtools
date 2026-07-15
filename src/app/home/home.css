@@ -1,0 +1,123 @@
+:host {
+  display: block;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+/* Hero ------------------------------------------------------------------ */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding-block: 1.5rem 2.5rem;
+}
+
+.hero__eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-primary);
+}
+
+.hero__title {
+  margin: 0;
+  font: var(--mat-sys-display-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.hero__subtitle {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-large);
+}
+
+.hero__search {
+  width: min(30rem, 100%);
+  margin-top: 1rem;
+}
+
+.hero__filters {
+  margin-top: 0.25rem;
+}
+
+/* Grid ------------------------------------------------------------------ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr));
+  gap: 1.25rem;
+}
+
+.tool {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.tool__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem 1rem 0;
+}
+
+.tool__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 12px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.tool__badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font: var(--mat-sys-label-small);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.tool__body {
+  flex: 1 1 auto;
+  padding-top: 0.75rem;
+}
+
+.tool__name {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.tool__cat {
+  margin: 0.15rem 0 0.5rem;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-primary);
+}
+
+.tool__desc {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Empty state ----------------------------------------------------------- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 4rem 1rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.empty__icon {
+  width: 3rem;
+  height: 3rem;
+  font-size: 3rem;
+}

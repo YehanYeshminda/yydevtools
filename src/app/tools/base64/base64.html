@@ -1,0 +1,141 @@
+<nav class="crumbs">
+  <a matButton routerLink="/">
+    <mat-icon>arrow_back</mat-icon>
+    All tools
+  </a>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>swap_horiz</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">Base64 Converter</h1>
+    <p class="head__sub">Encode and decode text or files to and from Base64. Everything runs in your browser.</p>
+  </div>
+</header>
+
+<mat-tab-group>
+  <!-- ------------------------------------------------------------- Text -->
+  <mat-tab label="Text">
+    <div class="panel">
+      <mat-button-toggle-group
+        class="modes"
+        aria-label="Conversion mode"
+        [value]="mode()"
+        (change)="setMode($event.value)"
+      >
+        <mat-button-toggle value="encode">Encode</mat-button-toggle>
+        <mat-button-toggle value="decode">Decode</mat-button-toggle>
+      </mat-button-toggle-group>
+
+      <mat-form-field appearance="outline" class="field">
+        <mat-label>{{ mode() === 'encode' ? 'Text to encode' : 'Base64 to decode' }}</mat-label>
+        <textarea
+          matInput
+          rows="6"
+          [value]="input()"
+          (input)="onInput($event)"
+          placeholder="Type or paste here…"
+        ></textarea>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field">
+        <mat-label>Result</mat-label>
+        <textarea matInput rows="6" readonly [value]="result().value"></textarea>
+      </mat-form-field>
+      @if (result().error) {
+        <p class="err" role="alert">{{ result().error }}</p>
+      }
+
+      <div class="actions">
+        <button matButton="filled" [disabled]="!result().value" (click)="copy(result().value)">
+          <mat-icon>content_copy</mat-icon>
+          Copy result
+        </button>
+        <button matButton (click)="swap()" [disabled]="!result().value">
+          <mat-icon>swap_vert</mat-icon>
+          Use as input
+        </button>
+        <button matButton (click)="clearText()" [disabled]="!input()">
+          <mat-icon>clear</mat-icon>
+          Clear
+        </button>
+      </div>
+    </div>
+  </mat-tab>
+
+  <!-- ------------------------------------------------------------- File -->
+  <mat-tab label="File">
+    <div class="panel">
+      <section class="block">
+        <h2 class="block__title">Encode a file</h2>
+        <p class="block__hint">Pick any file to get its Base64 representation.</p>
+
+        <div class="actions">
+          <button matButton="filled" (click)="fileInput.click()">
+            <mat-icon>upload_file</mat-icon>
+            Choose file
+          </button>
+          @if (fileName()) {
+            <span class="filename">{{ fileName() }}</span>
+          }
+        </div>
+        <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
+
+        @if (fileBase64()) {
+          <mat-checkbox
+            class="opt"
+            [checked]="withDataUri()"
+            (change)="toggleDataUri($event.checked)"
+          >
+            Include data URI prefix
+          </mat-checkbox>
+
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Base64 output</mat-label>
+            <textarea matInput rows="6" readonly [value]="encodedFileOutput()"></textarea>
+          </mat-form-field>
+
+          <div class="actions">
+            <button matButton="filled" (click)="copy(encodedFileOutput())">
+              <mat-icon>content_copy</mat-icon>
+              Copy
+            </button>
+          </div>
+        }
+      </section>
+
+      <section class="block">
+        <h2 class="block__title">Decode to a file</h2>
+        <p class="block__hint">Paste Base64 (a data URI is detected automatically) and download the result.</p>
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Base64 input</mat-label>
+          <textarea
+            matInput
+            rows="6"
+            [value]="decodeInput()"
+            (input)="onDecodeInput($event)"
+            placeholder="Paste Base64 here…"
+          ></textarea>
+        </mat-form-field>
+        @if (decodeError()) {
+          <p class="err" role="alert">{{ decodeError() }}</p>
+        }
+
+        <mat-form-field appearance="outline" class="field field--narrow">
+          <mat-label>Download file name</mat-label>
+          <input matInput [value]="decodeFileName()" (input)="onDecodeFileName($event)" />
+        </mat-form-field>
+
+        <div class="actions">
+          <button matButton="filled" (click)="downloadDecoded()" [disabled]="!decodeInput()">
+            <mat-icon>download</mat-icon>
+            Download file
+          </button>
+        </div>
+      </section>
+    </div>
+  </mat-tab>
+</mat-tab-group>

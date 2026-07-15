@@ -1,0 +1,63 @@
+<section class="hero">
+  <p class="hero__eyebrow">yy dev tools</p>
+  <h1 class="hero__title">Free tools that just work</h1>
+  <p class="hero__subtitle">
+    A growing collection of fast, no-signup AI and developer utilities. Pick a tool and go.
+  </p>
+
+  <mat-form-field appearance="outline" class="hero__search" subscriptSizing="dynamic">
+    <mat-label>Search tools</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input
+      matInput
+      type="search"
+      placeholder="e.g. JSON, regex, email"
+      [value]="query()"
+      (input)="onQueryInput($event)"
+    />
+  </mat-form-field>
+
+  <mat-chip-listbox
+    class="hero__filters"
+    aria-label="Filter tools by category"
+    (change)="selectCategory($event.value)"
+  >
+    @for (cat of categories; track cat) {
+      <mat-chip-option [selected]="category() === cat" [value]="cat">{{ cat }}</mat-chip-option>
+    }
+  </mat-chip-listbox>
+</section>
+
+@if (hasResults()) {
+  <section class="grid" aria-label="Available tools">
+    @for (tool of tools(); track tool.slug) {
+      <mat-card class="tool" appearance="outlined">
+        <div class="tool__top">
+          <div class="tool__icon" aria-hidden="true">
+            <mat-icon>{{ tool.icon }}</mat-icon>
+          </div>
+          @if (!tool.ready) {
+            <span class="tool__badge">Soon</span>
+          }
+        </div>
+        <mat-card-content class="tool__body">
+          <h3 class="tool__name">{{ tool.name }}</h3>
+          <p class="tool__cat">{{ tool.category }}</p>
+          <p class="tool__desc">{{ tool.description }}</p>
+        </mat-card-content>
+        <mat-card-actions align="end">
+          @if (tool.ready) {
+            <a matButton="filled" [routerLink]="['/tools', tool.slug]">Open</a>
+          } @else {
+            <button matButton="filled" disabled>Coming soon</button>
+          }
+        </mat-card-actions>
+      </mat-card>
+    }
+  </section>
+} @else {
+  <div class="empty">
+    <mat-icon class="empty__icon" aria-hidden="true">search_off</mat-icon>
+    <p class="empty__text">No tools match your search.</p>
+  </div>
+}

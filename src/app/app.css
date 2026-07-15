@@ -1,0 +1,54 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface);
+}
+
+.appbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--mat-sys-on-surface);
+  text-decoration: none;
+}
+
+.appbar__brand mat-icon {
+  color: var(--mat-sys-primary);
+}
+
+.appbar__name {
+  font: var(--mat-sys-title-medium);
+  font-weight: 400;
+}
+
+.appbar__spacer {
+  flex: 1 1 auto;
+}
+
+.content {
+  flex: 1 1 auto;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.footer__dot {
+  opacity: 0.6;
+}

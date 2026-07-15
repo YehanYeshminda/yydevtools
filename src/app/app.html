@@ -1,0 +1,21 @@
+<mat-toolbar class="appbar">
+  <a class="appbar__brand" href="/" aria-label="yy dev tools home">
+    <mat-icon>bolt</mat-icon>
+    <span class="appbar__name">yy<strong>devtools</strong></span>
+  </a>
+  <span class="appbar__spacer"></span>
+  <a matButton href="https://github.com" target="_blank" rel="noopener">
+    <mat-icon>code</mat-icon>
+    GitHub
+  </a>
+</mat-toolbar>
+
+<main class="content">
+  <router-outlet />
+</main>
+
+<footer class="footer">
+  <span>© {{ year }} yydevtools</span>
+  <span class="footer__dot" aria-hidden="true">·</span>
+  <span>Free utilities, no sign-up.</span>
+</footer>
