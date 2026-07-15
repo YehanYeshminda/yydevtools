@@ -2,9 +2,6 @@ html {
   font-size: 14px;
 }
 
-/* Editorial design tokens — shared across the app shell and home page.
-   Light is the default; the dark override is toggled via data-theme on <html>
-   (set before first paint by the inline script in index.html). */
 :root {
   color-scheme: light;
 
@@ -47,10 +44,4 @@ html {
   --on-accent: #08161d;
 
   --btn-soon-bg: #232428;
-}
-
-.snack-error {
-  --mdc-snackbar-container-color: var(--mat-sys-error-container);
-  --mdc-snackbar-supporting-text-color: var(--mat-sys-on-error-container);
-  --mat-snack-bar-button-color: var(--mat-sys-on-error-container);
 }

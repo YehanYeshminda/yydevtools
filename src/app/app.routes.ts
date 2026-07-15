@@ -4,7 +4,12 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./home/home').then((m) => m.Home),
-    title: 'yydevtools — Free AI & developer utilities',
+    title: 'yydevtools — Free developer utilities',
+  },
+  {
+    path: 'about',
+    loadComponent: () => import('./about/about').then((m) => m.About),
+    title: 'About — yydevtools',
   },
   {
     path: 'tools/base64-converter',
@@ -27,6 +32,12 @@ export const routes: Routes = [
     path: 'tools/jwt-decoder',
     loadComponent: () => import('./tools/jwt-decoder/jwt-decoder').then((m) => m.JwtDecoderTool),
     title: 'JWT Decoder — yydevtools',
+  },
+  {
+    path: 'tools/image-compressor',
+    loadComponent: () =>
+      import('./tools/image-compressor/image-compressor').then((m) => m.ImageCompressorTool),
+    title: 'Image Compressor — yydevtools',
   },
   { path: '**', redirectTo: '' },
 ];

@@ -1,4 +1,4 @@
-export type ToolCategory = 'AI' | 'Developer' | 'Converter' | 'Document';
+export type ToolCategory = 'Developer' | 'Converter' | 'Document';
 
 export interface Tool {
   /** Stable slug used for routing, e.g. /tools/json-formatter */

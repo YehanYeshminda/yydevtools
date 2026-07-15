@@ -1,0 +1,139 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">Image Compressor</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>compress</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">Image Compressor</h1>
+    <p class="head__sub">
+      Shrink JPEG and PNG images to JPEG or WebP. Everything runs in your browser — your
+      images never leave your device.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  @if (source(); as src) {
+    <div class="workspace">
+      <!-- Controls ---------------------------------------------------- -->
+      <div class="controls">
+        <div class="control">
+          <span class="control__label" id="format-label">Output format</span>
+          <mat-button-toggle-group
+            aria-labelledby="format-label"
+            [value]="format()"
+            (change)="setFormat($event.value)"
+          >
+            <mat-button-toggle value="image/jpeg">JPEG</mat-button-toggle>
+            <mat-button-toggle value="image/webp">WebP</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+
+        <div class="control">
+          <label class="control__label" for="quality-slider">
+            Quality — {{ qualityPercent() }}%
+          </label>
+          <mat-slider id="quality-track" min="0.1" max="1" step="0.05" class="quality">
+            <input
+              matSliderThumb
+              id="quality-slider"
+              [value]="quality()"
+              (valueChange)="onQualityChange($event)"
+              aria-label="Compression quality"
+            />
+          </mat-slider>
+        </div>
+
+        <mat-form-field appearance="outline" class="control__field">
+          <mat-label>Resize (longest edge)</mat-label>
+          <mat-select [value]="maxDimension()" (valueChange)="onMaxDimensionChange($event)">
+            @for (preset of sizePresets; track preset.value) {
+              <mat-option [value]="preset.value">{{ preset.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="actions">
+          <button matButton="filled" (click)="download()" [disabled]="!output() || processing()">
+            <mat-icon>download</mat-icon>
+            Download
+          </button>
+          <button matButton (click)="reset()">
+            <mat-icon>refresh</mat-icon>
+            Choose another
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview + stats --------------------------------------------- -->
+      <div class="preview">
+        <div class="preview__frame">
+          <img
+            class="preview__img"
+            [src]="output()?.url || src.previewUrl"
+            [alt]="'Preview of ' + src.name"
+          />
+          @if (processing()) {
+            <div class="preview__busy" role="status" aria-label="Compressing">
+              <mat-spinner diameter="36" />
+            </div>
+          }
+        </div>
+
+        <dl class="stats">
+          <div class="stat">
+            <dt>Original</dt>
+            <dd>
+              {{ formatBytes(src.size) }}
+              <span class="stat__dim">{{ src.width }} × {{ src.height }}</span>
+            </dd>
+          </div>
+          @if (output(); as out) {
+            <div class="stat">
+              <dt>Compressed</dt>
+              <dd>
+                {{ formatBytes(out.size) }}
+                <span class="stat__dim">{{ out.width }} × {{ out.height }}</span>
+              </dd>
+            </div>
+            <div class="stat stat--result">
+              <dt>Change</dt>
+              <dd>
+                @if (savedPercent() < 0) {
+                  <span class="saved saved--good">{{ -savedPercent() }}% smaller</span>
+                } @else if (savedPercent() > 0) {
+                  <span class="saved saved--bad">{{ savedPercent() }}% larger</span>
+                } @else {
+                  <span class="saved">No change</span>
+                }
+              </dd>
+            </div>
+          }
+        </dl>
+      </div>
+    </div>
+  } @else {
+    <!-- Drop zone --------------------------------------------------- -->
+    <label
+      class="dropzone"
+      [class.dropzone--over]="dragOver()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave()"
+      (drop)="onDrop($event)"
+    >
+      <input type="file" accept="image/*" class="dropzone__input" (change)="onFileSelected($event)" />
+      <mat-icon class="dropzone__icon" aria-hidden="true">add_photo_alternate</mat-icon>
+      <span class="dropzone__title">Drop an image here, or click to choose</span>
+      <span class="dropzone__hint">JPEG, PNG, WebP and other images — up to 25 MB</span>
+    </label>
+  }
+</div>
