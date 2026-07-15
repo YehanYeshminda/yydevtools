@@ -94,7 +94,7 @@ export const TOOLS: Tool[] = [
     description: 'Write Markdown with a live, side-by-side preview.',
     icon: 'edit_note',
     category: 'Document',
-    ready: false,
+    ready: true,
   },
   {
     slug: 'pdf-merge',

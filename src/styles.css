@@ -2,8 +2,12 @@ html {
   font-size: 14px;
 }
 
-/* Editorial design tokens — shared across the app shell and home page. */
+/* Editorial design tokens — shared across the app shell and home page.
+   Light is the default; the dark override is toggled via data-theme on <html>
+   (set before first paint by the inline script in index.html). */
 :root {
+  color-scheme: light;
+
   --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
 
   --ink: #201d1a;
@@ -19,6 +23,30 @@ html {
   --accent: #2f6f8f;
   --accent-strong: #275c77;
   --accent-tint: #e7eef2;
+  --on-accent: #ffffff;
+
+  --btn-soon-bg: #edece9;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ink: #e8e6e3;
+  --ink-soft: #a7a19a;
+  --ink-faint: #8a847b;
+
+  --paper: #101012;
+  --card: #191a1d;
+  --card-open: #14202a;
+  --line: #2a2b2f;
+  --line-strong: #3a3b40;
+
+  --accent: #57a6cd;
+  --accent-strong: #74b7d9;
+  --accent-tint: #16303d;
+  --on-accent: #08161d;
+
+  --btn-soon-bg: #232428;
 }
 
 .snack-error {

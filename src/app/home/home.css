@@ -94,7 +94,7 @@
 .chip--active:hover {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .chip:focus-visible {
@@ -214,7 +214,7 @@
 }
 
 .btn--soon {
-  background: #edece9;
+  background: var(--btn-soon-bg);
   color: var(--ink-faint);
   border-color: var(--line);
   cursor: not-allowed;
@@ -222,7 +222,7 @@
 
 .btn--open {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   text-decoration: none;
   transition: background 0.15s ease;
 }

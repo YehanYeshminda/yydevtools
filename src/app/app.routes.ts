@@ -17,5 +17,11 @@ export const routes: Routes = [
       import('./tools/json-formatter/json-formatter').then((m) => m.JsonFormatterTool),
     title: 'JSON Formatter — yydevtools',
   },
+  {
+    path: 'tools/markdown-editor',
+    loadComponent: () =>
+      import('./tools/markdown-editor/markdown-editor').then((m) => m.MarkdownEditorTool),
+    title: 'Markdown Editor — yydevtools',
+  },
   { path: '**', redirectTo: '' },
 ];

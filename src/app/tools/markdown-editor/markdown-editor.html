@@ -1,0 +1,64 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">Markdown Editor</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>edit_note</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">Markdown Editor</h1>
+    <p class="head__sub">
+      Write Markdown with a live, side-by-side preview. Everything runs in your browser.
+    </p>
+  </div>
+</header>
+
+<div class="editor">
+  <section class="pane" aria-label="Markdown source">
+    <div class="pane__bar">
+      <span class="pane__label">Markdown</span>
+      <span class="pane__stats">{{ wordCount() }} words · {{ charCount() }} chars</span>
+    </div>
+    <textarea
+      class="pane__input"
+      aria-label="Markdown source"
+      spellcheck="false"
+      [value]="source()"
+      (input)="onInput($event)"
+      placeholder="Write Markdown here…"
+    ></textarea>
+  </section>
+
+  <section class="pane" aria-label="Preview">
+    <div class="pane__bar">
+      <span class="pane__label">Preview</span>
+    </div>
+    <div class="pane__preview markdown-body" [innerHTML]="html()"></div>
+  </section>
+</div>
+
+<div class="actions">
+  <button matButton="filled" (click)="copyHtml()" [disabled]="!source()">
+    <mat-icon>content_copy</mat-icon>
+    Copy HTML
+  </button>
+  <button matButton (click)="copyMarkdown()" [disabled]="!source()">
+    <mat-icon>content_copy</mat-icon>
+    Copy Markdown
+  </button>
+  <button matButton (click)="download()" [disabled]="!source()">
+    <mat-icon>download</mat-icon>
+    Download .md
+  </button>
+  <button matButton (click)="clear()" [disabled]="!source()">
+    <mat-icon>clear</mat-icon>
+    Clear
+  </button>
+</div>

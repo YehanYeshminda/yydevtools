@@ -23,7 +23,7 @@ export class Home {
   protected readonly tools = computed(() => {
     const q = this.query().trim().toLowerCase();
     const cat = this.category();
-    return TOOLS.filter((tool) => {
+    const matches = TOOLS.filter((tool) => {
       const matchesCategory = cat === 'All' || tool.category === cat;
       const matchesQuery =
         q === '' ||
@@ -31,6 +31,9 @@ export class Home {
         tool.description.toLowerCase().includes(q);
       return matchesCategory && matchesQuery;
     });
+    // Surface the ready-to-use tools first; sort is stable, so tools keep their
+    // catalog order within the "available" and "coming soon" groups.
+    return matches.sort((a, b) => Number(b.ready) - Number(a.ready));
   });
 
   protected readonly shownCount = computed(() => this.tools().length);

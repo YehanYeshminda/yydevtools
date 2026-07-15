@@ -19,11 +19,9 @@ html {
 }
 
 body {
-  // The editorial redesign uses a light, paper-like surface.
-  color-scheme: light;
-
   // Warm paper background and serif type come from the shared tokens defined
-  // in styles.css; Material components still theme themselves via --mat-sys-*.
+  // in styles.css; the active color scheme (light/dark) is set on :root there
+  // and inherits here, so Material components theme themselves via --mat-sys-*.
   background-color: var(--paper);
   color: var(--ink);
   font-family: var(--font-serif);
