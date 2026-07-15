@@ -4,49 +4,89 @@
   min-height: 100vh;
 }
 
+/* Shared inner width so the header, content and footer align. */
+.appbar__inner,
+.content,
+.footer__inner {
+  width: 100%;
+  max-width: 1040px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2rem);
+  box-sizing: border-box;
+}
+
+/* Header ---------------------------------------------------------------- */
 .appbar {
   position: sticky;
   top: 0;
   z-index: 10;
-  gap: 0.5rem;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
-  background: var(--mat-sys-surface);
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
 }
 
-.appbar__brand {
-  display: inline-flex;
+.appbar__inner {
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
-  color: var(--mat-sys-on-surface);
+  justify-content: space-between;
+  gap: 1rem;
+  height: 3.5rem;
+}
+
+.brand {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+  color: var(--ink);
   text-decoration: none;
 }
 
-.appbar__brand mat-icon {
-  color: var(--mat-sys-primary);
+.brand__accent {
+  color: var(--accent);
 }
 
-.appbar__name {
-  font: var(--mat-sys-title-medium);
-  font-weight: 400;
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
-.appbar__spacer {
-  flex: 1 1 auto;
+.nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  text-decoration: none;
 }
 
+.nav__link:hover {
+  color: var(--ink);
+}
+
+.nav__github {
+  display: block;
+}
+
+/* Content --------------------------------------------------------------- */
 .content {
   flex: 1 1 auto;
 }
 
+/* Footer ---------------------------------------------------------------- */
 .footer {
+  border-top: 1px solid var(--line);
+  margin-top: 2rem;
+}
+
+.footer__inner {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 0.5rem;
-  padding: 1.5rem 1rem;
-  border-top: 1px solid var(--mat-sys-outline-variant);
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-body-small);
+  padding-block: 1.5rem;
+  color: var(--ink-faint);
+  font-size: 0.85rem;
 }
 
 .footer__dot {

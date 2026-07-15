@@ -2,6 +2,25 @@ html {
   font-size: 14px;
 }
 
+/* Editorial design tokens — shared across the app shell and home page. */
+:root {
+  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+
+  --ink: #201d1a;
+  --ink-soft: #57534e;
+  --ink-faint: #8c857d;
+
+  --paper: #f4f3f0;
+  --card: #faf9f7;
+  --card-open: #ffffff;
+  --line: #e2ded7;
+  --line-strong: #d3cec6;
+
+  --accent: #2f6f8f;
+  --accent-strong: #275c77;
+  --accent-tint: #e7eef2;
+}
+
 .snack-error {
   --mdc-snackbar-container-color: var(--mat-sys-error-container);
   --mdc-snackbar-supporting-text-color: var(--mat-sys-on-error-container);

@@ -1,10 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { RouterLink } from '@angular/router';
 
 import { ToolCategory } from '../tools/tool.model';
@@ -14,21 +8,14 @@ type CategoryFilter = ToolCategory | 'All';
 
 @Component({
   selector: 'app-home',
-  imports: [
-    RouterLink,
-    MatButtonModule,
-    MatCardModule,
-    MatChipsModule,
-    MatFormFieldModule,
-    MatIconModule,
-    MatInputModule,
-  ],
+  imports: [RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Home {
   protected readonly categories: readonly CategoryFilter[] = ['All', ...TOOL_CATEGORIES];
+  protected readonly totalCount = TOOLS.length;
 
   protected readonly query = signal('');
   protected readonly category = signal<CategoryFilter>('All');
@@ -46,15 +33,14 @@ export class Home {
     });
   });
 
-  protected readonly hasResults = computed(() => this.tools().length > 0);
+  protected readonly shownCount = computed(() => this.tools().length);
+  protected readonly hasResults = computed(() => this.shownCount() > 0);
 
   protected onQueryInput(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value);
   }
 
-  protected selectCategory(category: CategoryFilter | undefined): void {
-    // The chip listbox emits `undefined` when the active chip is toggled off;
-    // fall back to showing every tool in that case.
-    this.category.set(category ?? 'All');
+  protected selectCategory(category: CategoryFilter): void {
+    this.category.set(category);
   }
 }

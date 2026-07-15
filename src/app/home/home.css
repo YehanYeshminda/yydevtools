@@ -1,109 +1,239 @@
 :host {
   display: block;
-  max-width: 1120px;
-  margin-inline: auto;
-  padding: 2.5rem 1.25rem 4rem;
+  padding-block: 2.5rem 1rem;
 }
 
 /* Hero ------------------------------------------------------------------ */
 .hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.75rem;
-  padding-block: 1.5rem 2.5rem;
-}
-
-.hero__eyebrow {
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font: var(--mat-sys-label-large);
-  color: var(--mat-sys-primary);
+  margin-bottom: 2rem;
 }
 
 .hero__title {
   margin: 0;
-  font: var(--mat-sys-display-small);
-  color: var(--mat-sys-on-surface);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(2.4rem, 6vw, 3.25rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 
-.hero__subtitle {
-  margin: 0;
+.hero__sub {
+  margin: 1rem 0 0;
   max-width: 34rem;
-  color: var(--mat-sys-on-surface-variant);
-  font: var(--mat-sys-body-large);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
 }
 
-.hero__search {
-  width: min(30rem, 100%);
-  margin-top: 1rem;
+/* Search ---------------------------------------------------------------- */
+.search {
+  position: relative;
+  margin-bottom: 1rem;
 }
 
-.hero__filters {
-  margin-top: 0.25rem;
+.search__icon {
+  position: absolute;
+  top: 50%;
+  left: 0.85rem;
+  transform: translateY(-50%);
+  font-size: 1.25rem;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+.search__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.8rem 1rem 0.8rem 2.6rem;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--card-open);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search__input::placeholder {
+  color: var(--ink-faint);
+}
+
+.search__input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint);
+}
+
+/* Filters --------------------------------------------------------------- */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.chip {
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  background: var(--card-open);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.chip--active,
+.chip--active:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Count ----------------------------------------------------------------- */
+.count {
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
 }
 
 /* Grid ------------------------------------------------------------------ */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem;
 }
 
-.tool {
-  height: 100%;
+.card {
   display: flex;
   flex-direction: column;
+  padding: 1.25rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
 }
 
-.tool__top {
+.card--ready {
+  background: var(--card-open);
+  border-color: var(--accent);
+  box-shadow: 0 1px 3px rgba(47, 111, 143, 0.08);
+}
+
+.card__top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 1rem 1rem 0;
+  margin-bottom: 1rem;
 }
 
-.tool__icon {
+.card__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 12px;
-  background: var(--mat-sys-primary-container);
-  color: var(--mat-sys-on-primary-container);
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.4rem;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
 }
 
-.tool__badge {
-  padding: 0.15rem 0.55rem;
+.card--ready .card__icon {
+  color: var(--accent);
+  background: var(--accent-tint);
+  border-color: var(--accent-tint);
+}
+
+.badge {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.badge--open {
+  color: var(--accent);
+  background: var(--accent-tint);
+  padding: 0.1rem 0.5rem;
   border-radius: 999px;
-  font: var(--mat-sys-label-small);
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
+  font-weight: 600;
 }
 
-.tool__body {
+.card__name {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--ink);
+}
+
+.card__cat {
+  margin: 0.35rem 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.card__desc {
+  margin: 0.6rem 0 1.25rem;
   flex: 1 1 auto;
-  padding-top: 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
 }
 
-.tool__name {
-  margin: 0;
-  font: var(--mat-sys-title-medium);
-  color: var(--mat-sys-on-surface);
+/* Card buttons ---------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 1rem;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid transparent;
 }
 
-.tool__cat {
-  margin: 0.15rem 0 0.5rem;
-  font: var(--mat-sys-label-medium);
-  color: var(--mat-sys-primary);
+.btn--soon {
+  background: #edece9;
+  color: var(--ink-faint);
+  border-color: var(--line);
+  cursor: not-allowed;
 }
 
-.tool__desc {
-  margin: 0;
-  color: var(--mat-sys-on-surface-variant);
+.btn--open {
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.btn--open:hover {
+  background: var(--accent-strong);
+}
+
+.btn--open:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* Empty state ----------------------------------------------------------- */
@@ -113,11 +243,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 4rem 1rem;
-  color: var(--mat-sys-on-surface-variant);
+  color: var(--ink-faint);
 }
 
 .empty__icon {
-  width: 3rem;
-  height: 3rem;
   font-size: 3rem;
 }

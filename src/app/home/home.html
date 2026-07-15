@@ -1,62 +1,67 @@
 <section class="hero">
-  <h1 class="hero__title">Free tools that just work</h1>
-  <p class="hero__subtitle">
-    A growing collection of fast, no-signup AI and developer utilities. Pick a tool and go.
+  <h1 class="hero__title">Sharp tools.<br />No sign-up.</h1>
+  <p class="hero__sub">
+    A standing collection of fast AI and developer utilities. Pick one off the desk
+    and go — nothing to install, no account, no wait.
   </p>
-
-  <mat-form-field appearance="outline" class="hero__search" subscriptSizing="dynamic">
-    <mat-label>Search tools</mat-label>
-    <mat-icon matPrefix>search</mat-icon>
-    <input
-      matInput
-      type="search"
-      placeholder="e.g. JSON, regex, email"
-      [value]="query()"
-      (input)="onQueryInput($event)"
-    />
-  </mat-form-field>
-
-  <mat-chip-listbox
-    class="hero__filters"
-    aria-label="Filter tools by category"
-    (change)="selectCategory($event.value)"
-  >
-    @for (cat of categories; track cat) {
-      <mat-chip-option [selected]="category() === cat" [value]="cat">{{ cat }}</mat-chip-option>
-    }
-  </mat-chip-listbox>
 </section>
+
+<div class="search">
+  <span class="material-icons-outlined search__icon" aria-hidden="true">search</span>
+  <input
+    class="search__input"
+    type="search"
+    aria-label="Search tools"
+    placeholder="Search tools, e.g. JSON, prompt, regex"
+    [value]="query()"
+    (input)="onQueryInput($event)"
+  />
+</div>
+
+<div class="filters" role="group" aria-label="Filter tools by category">
+  @for (cat of categories; track cat) {
+    <button
+      type="button"
+      class="chip"
+      [class.chip--active]="category() === cat"
+      [attr.aria-pressed]="category() === cat"
+      (click)="selectCategory(cat)"
+    >
+      {{ cat }}
+    </button>
+  }
+</div>
+
+<p class="count">Showing {{ shownCount() }} of {{ totalCount }} tools</p>
 
 @if (hasResults()) {
   <section class="grid" aria-label="Available tools">
     @for (tool of tools(); track tool.slug) {
-      <mat-card class="tool" appearance="outlined">
-        <div class="tool__top">
-          <div class="tool__icon" aria-hidden="true">
-            <mat-icon>{{ tool.icon }}</mat-icon>
-          </div>
-          @if (!tool.ready) {
-            <span class="tool__badge">Soon</span>
-          }
+      <article class="card" [class.card--ready]="tool.ready">
+        <div class="card__top">
+          <span class="card__icon material-icons-outlined" aria-hidden="true">{{ tool.icon }}</span>
+          <span class="badge" [class.badge--open]="tool.ready">
+            {{ tool.ready ? 'Open' : 'Soon' }}
+          </span>
         </div>
-        <mat-card-content class="tool__body">
-          <h3 class="tool__name">{{ tool.name }}</h3>
-          <p class="tool__cat">{{ tool.category }}</p>
-          <p class="tool__desc">{{ tool.description }}</p>
-        </mat-card-content>
-        <mat-card-actions align="end">
-          @if (tool.ready) {
-            <a matButton="filled" [routerLink]="['/tools', tool.slug]">Open</a>
-          } @else {
-            <button matButton="filled" disabled>Coming soon</button>
-          }
-        </mat-card-actions>
-      </mat-card>
+
+        <h3 class="card__name">{{ tool.name }}</h3>
+        <p class="card__cat">{{ tool.category }}</p>
+        <p class="card__desc">{{ tool.description }}</p>
+
+        @if (tool.ready) {
+          <a class="btn btn--open" [routerLink]="['/tools', tool.slug]">
+            Open tool <span aria-hidden="true">→</span>
+          </a>
+        } @else {
+          <button class="btn btn--soon" type="button" disabled>Coming soon</button>
+        }
+      </article>
     }
   </section>
 } @else {
   <div class="empty">
-    <mat-icon class="empty__icon" aria-hidden="true">search_off</mat-icon>
-    <p class="empty__text">No tools match your search.</p>
+    <span class="material-icons-outlined empty__icon" aria-hidden="true">search_off</span>
+    <p>No tools match your search.</p>
   </div>
 }
