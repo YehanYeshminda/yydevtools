@@ -3,9 +3,13 @@
   // `npm run build` produces the assets; `wrangler deploy` uploads them.
   "name": "yydevtools",
   "compatibility_date": "2025-11-01",
+  // Keep the *.workers.dev URL alive alongside the custom domain.
+  "workers_dev": true,
   "assets": {
     "directory": "./dist/yydevtools/browser",
     // Serve index.html for unmatched client-side routes (e.g. /tools/pdf-merge).
     "not_found_handling": "single-page-application"
-  }
+  },
+  // Custom domain — wrangler creates the DNS record if yydev.net is on this account.
+  "routes": [{ "pattern": "tools.yydev.net", "custom_domain": true }]
 }
