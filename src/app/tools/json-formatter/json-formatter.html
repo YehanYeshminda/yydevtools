@@ -1,0 +1,96 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">JSON Formatter</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>data_object</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">JSON Formatter</h1>
+    <p class="head__sub">
+      Format, validate and minify JSON. Everything runs in your browser.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="options">
+    <mat-button-toggle-group
+      class="modes"
+      aria-label="Indent size"
+      [value]="indent()"
+      (change)="setIndent($event.value)"
+    >
+      <mat-button-toggle value="2">2 spaces</mat-button-toggle>
+      <mat-button-toggle value="4">4 spaces</mat-button-toggle>
+      <mat-button-toggle value="tab">Tab</mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <mat-checkbox [checked]="sortKeys()" (change)="toggleSortKeys($event.checked)">
+      Sort keys
+    </mat-checkbox>
+  </div>
+
+  <mat-form-field appearance="outline" class="field">
+    <mat-label>JSON input</mat-label>
+    <textarea
+      matInput
+      rows="10"
+      [value]="input()"
+      (input)="onInput($event)"
+      placeholder="Paste JSON here…"
+      spellcheck="false"
+    ></textarea>
+  </mat-form-field>
+
+  @switch (validity()) {
+    @case ('valid') {
+      <p class="status status--ok" role="status">
+        <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+        Valid JSON
+      </p>
+    }
+    @case ('invalid') {
+      <p class="status status--err" role="status">
+        <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+        Invalid JSON — click Format for details.
+      </p>
+    }
+  }
+
+  <div class="actions">
+    <button matButton="filled" (click)="format()" [disabled]="!input()">
+      <mat-icon>format_indent_increase</mat-icon>
+      Format
+    </button>
+    <button matButton (click)="minify()" [disabled]="!input()">
+      <mat-icon>compress</mat-icon>
+      Minify
+    </button>
+    <button matButton (click)="clear()" [disabled]="!input()">
+      <mat-icon>clear</mat-icon>
+      Clear
+    </button>
+  </div>
+
+  @if (output()) {
+    <mat-form-field appearance="outline" class="field">
+      <mat-label>Result</mat-label>
+      <textarea matInput rows="10" readonly [value]="output()" spellcheck="false"></textarea>
+    </mat-form-field>
+
+    <div class="actions">
+      <button matButton="filled" (click)="copy()">
+        <mat-icon>content_copy</mat-icon>
+        Copy result
+      </button>
+    </div>
+  }
+</div>

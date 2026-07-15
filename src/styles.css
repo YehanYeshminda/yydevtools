@@ -1,1 +1,9 @@
-/* You can add global styles to this file, and also import other style files */
+html {
+  font-size: 14px;
+}
+
+.snack-error {
+  --mdc-snackbar-container-color: var(--mat-sys-error-container);
+  --mdc-snackbar-supporting-text-color: var(--mat-sys-on-error-container);
+  --mat-snack-bar-button-color: var(--mat-sys-on-error-container);
+}

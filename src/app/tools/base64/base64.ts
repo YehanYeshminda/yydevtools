@@ -1,13 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatDialog } from '@angular/material/dialog';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { RouterLink } from '@angular/router';
+
+import { CLIENT_ENCODE_MAX_BYTES, SERVER_ENCODE_MAX_BYTES } from '../../core/api-config';
+import { Base64Api } from './base64-api';
+import { EncodeChoice, EncodeChoiceDialog } from './encode-choice-dialog';
 
 type TextMode = 'encode' | 'decode';
 
@@ -26,6 +32,7 @@ interface TextResult {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatProgressSpinnerModule,
     MatTabsModule,
   ],
   templateUrl: './base64.html',
@@ -34,6 +41,29 @@ interface TextResult {
 })
 export class Base64Tool {
   private readonly snackBar = inject(MatSnackBar);
+  private readonly base64Api = inject(Base64Api);
+  private readonly dialog = inject(MatDialog);
+
+  private lastTextError = '';
+
+  constructor() {
+    // Surface live text-tab errors as a snackbar, but only when the error first
+    // appears — not repeatedly on every keystroke while the input stays invalid.
+    effect(() => {
+      const error = this.result().error;
+      if (error && error !== this.lastTextError) {
+        this.showError(error);
+      }
+      this.lastTextError = error;
+    });
+  }
+
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Dismiss', {
+      duration: 5000,
+      panelClass: 'snack-error',
+    });
+  }
 
   // --- Text tab ---------------------------------------------------------
   protected readonly mode = signal<TextMode>('encode');
@@ -87,29 +117,96 @@ export class Base64Tool {
   protected readonly fileBase64 = signal('');
   protected readonly fileMime = signal('');
   protected readonly withDataUri = signal(false);
+  protected readonly fileLoading = signal(false);
+  protected readonly encodedOnServer = signal(false);
 
   protected readonly encodedFileOutput = computed(() => {
     const base64 = this.fileBase64();
     if (base64 === '') {
       return '';
     }
-    return this.withDataUri() ? `data:${this.fileMime() || 'application/octet-stream'};base64,${base64}` : base64;
+    return this.withDataUri()
+      ? `data:${this.fileMime() || 'application/octet-stream'};base64,${base64}`
+      : base64;
   });
 
   protected onFileSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Reset the input so picking the same file again still fires (change).
+    input.value = '';
     if (!file) {
       return;
     }
+    if (file.size > SERVER_ENCODE_MAX_BYTES) {
+      this.showError(`That file is too large. The maximum size is ${formatBytes(SERVER_ENCODE_MAX_BYTES)}.`);
+      return;
+    }
+
+    // Small files stay in the browser. Larger ones let the user choose: server
+    // processing (faster, off-device) or keep it in the browser.
+    if (file.size <= CLIENT_ENCODE_MAX_BYTES) {
+      this.startEncode(file, 'browser');
+      return;
+    }
+
+    this.dialog
+      .open(EncodeChoiceDialog, {
+        width: '28rem',
+        data: {
+          fileName: file.name,
+          sizeLabel: formatBytes(file.size),
+          thresholdLabel: formatBytes(CLIENT_ENCODE_MAX_BYTES),
+        },
+      })
+      .afterClosed()
+      .subscribe((choice: EncodeChoice | undefined) => {
+        if (choice) {
+          this.startEncode(file, choice);
+        }
+      });
+  }
+
+  private startEncode(file: File, where: EncodeChoice): void {
     this.fileName.set(file.name);
     this.fileMime.set(file.type);
+    this.fileBase64.set('');
+    if (where === 'server') {
+      this.encodeOnServer(file);
+    } else {
+      this.encodeInBrowser(file);
+    }
+  }
+
+  private encodeInBrowser(file: File): void {
+    this.encodedOnServer.set(false);
     const reader = new FileReader();
     reader.onload = () => {
       const dataUri = reader.result as string;
       // strip the "data:<mime>;base64," prefix to keep just the payload.
       this.fileBase64.set(dataUri.slice(dataUri.indexOf(',') + 1));
     };
+    reader.onerror = () => this.showError('Could not read that file.');
     reader.readAsDataURL(file);
+  }
+
+  private encodeOnServer(file: File): void {
+    // Large files are offloaded to the shared backend instead of being held in the browser.
+    this.encodedOnServer.set(true);
+    this.fileLoading.set(true);
+    this.base64Api.encodeFile(file).subscribe({
+      next: (result) => {
+        this.fileBase64.set(result.base64);
+        if (result.mime) {
+          this.fileMime.set(result.mime);
+        }
+        this.fileLoading.set(false);
+      },
+      error: () => {
+        this.showError('Could not reach the server to process this file. Make sure the API is running.');
+        this.fileLoading.set(false);
+      },
+    });
   }
 
   protected toggleDataUri(checked: boolean): void {
@@ -119,11 +216,9 @@ export class Base64Tool {
   // --- File tab: decode -------------------------------------------------
   protected readonly decodeInput = signal('');
   protected readonly decodeFileName = signal('decoded.bin');
-  protected readonly decodeError = signal('');
 
   protected onDecodeInput(event: Event): void {
     this.decodeInput.set((event.target as HTMLTextAreaElement).value);
-    this.decodeError.set('');
   }
 
   protected onDecodeFileName(event: Event): void {
@@ -151,12 +246,27 @@ export class Base64Tool {
       anchor.click();
       URL.revokeObjectURL(url);
     } catch {
-      this.decodeError.set('That input is not valid Base64.');
+      this.showError('That input is not valid Base64.');
     }
   }
 }
 
 // --- Pure helpers (UTF-8 safe) ------------------------------------------
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  const units = ['KB', 'MB', 'GB'];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  const rounded = value >= 10 || Number.isInteger(value) ? Math.round(value) : Math.round(value * 10) / 10;
+  return `${rounded} ${units[unit]}`;
+}
+
 function encodeBase64(text: string): string {
   const bytes = new TextEncoder().encode(text);
   let binary = '';

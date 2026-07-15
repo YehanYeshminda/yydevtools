@@ -11,5 +11,11 @@ export const routes: Routes = [
     loadComponent: () => import('./tools/base64/base64').then((m) => m.Base64Tool),
     title: 'Base64 Converter — yydevtools',
   },
+  {
+    path: 'tools/json-formatter',
+    loadComponent: () =>
+      import('./tools/json-formatter/json-formatter').then((m) => m.JsonFormatterTool),
+    title: 'JSON Formatter — yydevtools',
+  },
   { path: '**', redirectTo: '' },
 ];

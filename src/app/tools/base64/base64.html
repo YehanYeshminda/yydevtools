@@ -1,8 +1,11 @@
-<nav class="crumbs">
-  <a matButton routerLink="/">
-    <mat-icon>arrow_back</mat-icon>
-    All tools
-  </a>
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">Base64 Converter</li>
+  </ol>
 </nav>
 
 <header class="head">
@@ -11,12 +14,13 @@
   </div>
   <div>
     <h1 class="head__title">Base64 Converter</h1>
-    <p class="head__sub">Encode and decode text or files to and from Base64. Everything runs in your browser.</p>
+    <p class="head__sub">
+      Encode and decode text or files to and from Base64. Everything runs in your browser.
+    </p>
   </div>
 </header>
 
 <mat-tab-group>
-  <!-- ------------------------------------------------------------- Text -->
   <mat-tab label="Text">
     <div class="panel">
       <mat-button-toggle-group
@@ -44,9 +48,6 @@
         <mat-label>Result</mat-label>
         <textarea matInput rows="6" readonly [value]="result().value"></textarea>
       </mat-form-field>
-      @if (result().error) {
-        <p class="err" role="alert">{{ result().error }}</p>
-      }
 
       <div class="actions">
         <button matButton="filled" [disabled]="!result().value" (click)="copy(result().value)">
@@ -73,17 +74,28 @@
         <p class="block__hint">Pick any file to get its Base64 representation.</p>
 
         <div class="actions">
-          <button matButton="filled" (click)="fileInput.click()">
+          <button matButton="filled" (click)="fileInput.click()" [disabled]="fileLoading()">
             <mat-icon>upload_file</mat-icon>
             Choose file
           </button>
-          @if (fileName()) {
+          @if (fileLoading()) {
+            <span class="loading" role="status">
+              <mat-spinner diameter="18" strokeWidth="2" aria-hidden="true" />
+              <span>Encoding {{ fileName() }} on the server…</span>
+            </span>
+          } @else if (fileName()) {
             <span class="filename">{{ fileName() }}</span>
           }
         </div>
         <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
 
         @if (fileBase64()) {
+          @if (encodedOnServer()) {
+            <p class="hint">
+              <mat-icon class="hint__icon" aria-hidden="true">cloud_done</mat-icon>
+              Encoded on the server (file over 2&nbsp;MB).
+            </p>
+          }
           <mat-checkbox
             class="opt"
             [checked]="withDataUri()"
@@ -108,7 +120,9 @@
 
       <section class="block">
         <h2 class="block__title">Decode to a file</h2>
-        <p class="block__hint">Paste Base64 (a data URI is detected automatically) and download the result.</p>
+        <p class="block__hint">
+          Paste Base64 (a data URI is detected automatically) and download the result.
+        </p>
 
         <mat-form-field appearance="outline" class="field">
           <mat-label>Base64 input</mat-label>
@@ -120,9 +134,6 @@
             placeholder="Paste Base64 here…"
           ></textarea>
         </mat-form-field>
-        @if (decodeError()) {
-          <p class="err" role="alert">{{ decodeError() }}</p>
-        }
 
         <mat-form-field appearance="outline" class="field field--narrow">
           <mat-label>Download file name</mat-label>

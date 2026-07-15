@@ -62,7 +62,7 @@ export const TOOLS: Tool[] = [
     description: 'Format, validate and minify JSON in your browser.',
     icon: 'data_object',
     category: 'Developer',
-    ready: false,
+    ready: true,
   },
   {
     slug: 'jwt-decoder',
