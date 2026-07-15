@@ -1,0 +1,129 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">PDF Merge</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>picture_as_pdf</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">PDF Merge</h1>
+    <p class="head__sub">
+      Combine several PDF files into one. Everything runs in your browser — your files
+      never leave your device.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <!-- Drop zone ----------------------------------------------------- -->
+  <label
+    class="dropzone"
+    [class.dropzone--over]="dragOver()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave()"
+    (drop)="onDrop($event)"
+  >
+    <input
+      type="file"
+      accept="application/pdf,.pdf"
+      multiple
+      class="dropzone__input"
+      (change)="onFileSelected($event)"
+    />
+    <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+    <span class="dropzone__title">
+      @if (files().length) {
+        Drop more PDFs here, or click to add
+      } @else {
+        Drop PDF files here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">Add two or more PDFs — up to 100 MB each</span>
+  </label>
+
+  <!-- Queue --------------------------------------------------------- -->
+  @if (files(); as items) {
+    @if (items.length) {
+      <ol class="queue" aria-label="PDFs to merge, in order">
+        @for (file of items; track file.id) {
+          <li class="item">
+            <span class="item__index" aria-hidden="true">{{ $index + 1 }}</span>
+            <mat-icon class="item__icon" aria-hidden="true">description</mat-icon>
+            <div class="item__body">
+              <span class="item__name" [title]="file.name">{{ file.name }}</span>
+              <span class="item__meta">
+                {{ file.pageCount }} {{ file.pageCount === 1 ? 'page' : 'pages' }} ·
+                {{ formatBytes(file.size) }}
+              </span>
+            </div>
+            <div class="item__actions">
+              <button
+                type="button"
+                matIconButton
+                (click)="moveUp($index)"
+                [disabled]="$first"
+                [attr.aria-label]="'Move ' + file.name + ' up'"
+              >
+                <mat-icon>arrow_upward</mat-icon>
+              </button>
+              <button
+                type="button"
+                matIconButton
+                (click)="moveDown($index)"
+                [disabled]="$last"
+                [attr.aria-label]="'Move ' + file.name + ' down'"
+              >
+                <mat-icon>arrow_downward</mat-icon>
+              </button>
+              <button
+                type="button"
+                matIconButton
+                (click)="remove(file.id)"
+                [attr.aria-label]="'Remove ' + file.name"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </li>
+        }
+      </ol>
+
+      <div class="summary">
+        <span>
+          {{ items.length }} {{ items.length === 1 ? 'file' : 'files' }} ·
+          {{ totalPages() }} {{ totalPages() === 1 ? 'page' : 'pages' }} ·
+          {{ formatBytes(totalSize()) }}
+        </span>
+      </div>
+
+      @if (items.length < 2) {
+        <p class="hint-line" role="status">Add at least one more PDF to merge.</p>
+      }
+
+      <div class="actions">
+        @if (merging()) {
+          <button matButton="filled" disabled>
+            <mat-spinner diameter="18" />
+            Merging…
+          </button>
+        } @else {
+          <button matButton="filled" (click)="merge()" [disabled]="items.length < 2">
+            <mat-icon>merge</mat-icon>
+            Merge &amp; download
+          </button>
+        }
+        <button matButton (click)="clearAll()" [disabled]="merging()">
+          <mat-icon>delete_sweep</mat-icon>
+          Clear all
+        </button>
+      </div>
+    }
+  }
+</div>

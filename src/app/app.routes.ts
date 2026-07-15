@@ -39,5 +39,10 @@ export const routes: Routes = [
       import('./tools/image-compressor/image-compressor').then((m) => m.ImageCompressorTool),
     title: 'Image Compressor — yydevtools',
   },
+  {
+    path: 'tools/pdf-merge',
+    loadComponent: () => import('./tools/pdf-merge/pdf-merge').then((m) => m.PdfMergeTool),
+    title: 'PDF Merge — yydevtools',
+  },
   { path: '**', redirectTo: '' },
 ];

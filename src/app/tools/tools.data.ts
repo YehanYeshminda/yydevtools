@@ -54,6 +54,6 @@ export const TOOLS: Tool[] = [
     description: 'Combine several PDF files into a single document.',
     icon: 'picture_as_pdf',
     category: 'Document',
-    ready: false,
+    ready: true,
   },
 ];

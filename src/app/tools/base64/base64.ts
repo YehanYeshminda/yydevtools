@@ -1,19 +1,22 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatDialog } from '@angular/material/dialog';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
-
-import { CLIENT_ENCODE_MAX_BYTES, SERVER_ENCODE_MAX_BYTES } from '../../core/api-config';
-import { Base64Api } from './base64-api';
-import { EncodeChoice, EncodeChoiceDialog } from './encode-choice-dialog';
 
 type TextMode = 'encode' | 'decode';
 
@@ -21,6 +24,19 @@ interface TextResult {
   value: string;
   error: string;
 }
+
+/** A live preview of decoded Base64, when the bytes are a recognisable image or PDF. */
+interface DecodePreview {
+  kind: 'image' | 'pdf' | 'other';
+  /** Object URL of the decoded blob — used for the image preview and for downloading. */
+  url: string;
+  /** Same URL, trusted for an <iframe> — only set for PDFs. */
+  frameUrl: SafeResourceUrl | null;
+  mime: string;
+}
+
+/** Largest file we will encode in the browser. Everything is processed on-device. */
+const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
 
 @Component({
   selector: 'app-base64',
@@ -32,17 +48,15 @@ interface TextResult {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatProgressSpinnerModule,
     MatTabsModule,
   ],
   templateUrl: './base64.html',
   styleUrl: './base64.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Base64Tool {
+export class Base64Tool implements OnDestroy {
   private readonly snackBar = inject(MatSnackBar);
-  private readonly base64Api = inject(Base64Api);
-  private readonly dialog = inject(MatDialog);
+  private readonly sanitizer = inject(DomSanitizer);
 
   private lastTextError = '';
 
@@ -56,6 +70,18 @@ export class Base64Tool {
       }
       this.lastTextError = error;
     });
+
+    // Rebuild the decode preview as the Base64 input changes. A short debounce
+    // keeps typing/pasting smooth instead of decoding on every keystroke.
+    effect((onCleanup) => {
+      const raw = this.decodeInput();
+      const handle = setTimeout(() => this.buildDecodePreview(raw), 250);
+      onCleanup(() => clearTimeout(handle));
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.releaseDecodePreview();
   }
 
   private showError(message: string): void {
@@ -117,8 +143,6 @@ export class Base64Tool {
   protected readonly fileBase64 = signal('');
   protected readonly fileMime = signal('');
   protected readonly withDataUri = signal(false);
-  protected readonly fileLoading = signal(false);
-  protected readonly encodedOnServer = signal(false);
 
   protected readonly encodedFileOutput = computed(() => {
     const base64 = this.fileBase64();
@@ -138,48 +162,18 @@ export class Base64Tool {
     if (!file) {
       return;
     }
-    if (file.size > SERVER_ENCODE_MAX_BYTES) {
-      this.showError(`That file is too large. The maximum size is ${formatBytes(SERVER_ENCODE_MAX_BYTES)}.`);
+    if (file.size > MAX_FILE_BYTES) {
+      this.showError(`That file is too large. The maximum size is ${formatBytes(MAX_FILE_BYTES)}.`);
       return;
     }
 
-    // Small files stay in the browser. Larger ones let the user choose: server
-    // processing (faster, off-device) or keep it in the browser.
-    if (file.size <= CLIENT_ENCODE_MAX_BYTES) {
-      this.startEncode(file, 'browser');
-      return;
-    }
-
-    this.dialog
-      .open(EncodeChoiceDialog, {
-        width: '28rem',
-        data: {
-          fileName: file.name,
-          sizeLabel: formatBytes(file.size),
-          thresholdLabel: formatBytes(CLIENT_ENCODE_MAX_BYTES),
-        },
-      })
-      .afterClosed()
-      .subscribe((choice: EncodeChoice | undefined) => {
-        if (choice) {
-          this.startEncode(file, choice);
-        }
-      });
-  }
-
-  private startEncode(file: File, where: EncodeChoice): void {
     this.fileName.set(file.name);
     this.fileMime.set(file.type);
     this.fileBase64.set('');
-    if (where === 'server') {
-      this.encodeOnServer(file);
-    } else {
-      this.encodeInBrowser(file);
-    }
+    this.encodeInBrowser(file);
   }
 
   private encodeInBrowser(file: File): void {
-    this.encodedOnServer.set(false);
     const reader = new FileReader();
     reader.onload = () => {
       const dataUri = reader.result as string;
@@ -190,25 +184,6 @@ export class Base64Tool {
     reader.readAsDataURL(file);
   }
 
-  private encodeOnServer(file: File): void {
-    // Large files are offloaded to the shared backend instead of being held in the browser.
-    this.encodedOnServer.set(true);
-    this.fileLoading.set(true);
-    this.base64Api.encodeFile(file).subscribe({
-      next: (result) => {
-        this.fileBase64.set(result.base64);
-        if (result.mime) {
-          this.fileMime.set(result.mime);
-        }
-        this.fileLoading.set(false);
-      },
-      error: () => {
-        this.showError('Could not reach the server to process this file. Make sure the API is running.');
-        this.fileLoading.set(false);
-      },
-    });
-  }
-
   protected toggleDataUri(checked: boolean): void {
     this.withDataUri.set(checked);
   }
@@ -216,6 +191,7 @@ export class Base64Tool {
   // --- File tab: decode -------------------------------------------------
   protected readonly decodeInput = signal('');
   protected readonly decodeFileName = signal('decoded.bin');
+  protected readonly decodePreview = signal<DecodePreview | null>(null);
 
   protected onDecodeInput(event: Event): void {
     this.decodeInput.set((event.target as HTMLTextAreaElement).value);
@@ -225,29 +201,60 @@ export class Base64Tool {
     this.decodeFileName.set((event.target as HTMLInputElement).value);
   }
 
+  /** Decode the current input into a blob and preview it if it's an image or PDF. */
+  private buildDecodePreview(raw: string): void {
+    this.releaseDecodePreview();
+
+    const parsed = parseBase64Input(raw);
+    if (!parsed) {
+      // Silent while typing — a hard error is only raised when Download is clicked.
+      this.decodePreview.set(null);
+      return;
+    }
+
+    const kind = previewKind(parsed.mime);
+    const url = URL.createObjectURL(new Blob([parsed.bytes], { type: parsed.mime }));
+    this.decodePreview.set({
+      kind,
+      url,
+      frameUrl: kind === 'pdf' ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null,
+      mime: parsed.mime,
+    });
+    this.suggestDecodeFileName(parsed.mime);
+  }
+
+  /** Suggest an extension for the detected type, but never clobber a custom name. */
+  private suggestDecodeFileName(mime: string): void {
+    const current = this.decodeFileName().trim();
+    if (current === '' || /^decoded\.[a-z0-9]+$/i.test(current)) {
+      this.decodeFileName.set(`decoded.${extForMime(mime)}`);
+    }
+  }
+
+  private releaseDecodePreview(): void {
+    const preview = this.decodePreview();
+    if (preview) {
+      URL.revokeObjectURL(preview.url);
+    }
+  }
+
   protected downloadDecoded(): void {
-    let raw = this.decodeInput().trim();
+    const raw = this.decodeInput().trim();
     if (raw === '') {
       return;
     }
-    let mime = 'application/octet-stream';
-    const dataUriMatch = raw.match(/^data:(.*?);base64,(.*)$/s);
-    if (dataUriMatch) {
-      mime = dataUriMatch[1] || mime;
-      raw = dataUriMatch[2];
-    }
-    try {
-      const bytes = base64ToBytes(raw);
-      const blob = new Blob([bytes], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = this.decodeFileName().trim() || 'decoded.bin';
-      anchor.click();
-      URL.revokeObjectURL(url);
-    } catch {
+    const parsed = parseBase64Input(raw);
+    if (!parsed) {
       this.showError('That input is not valid Base64.');
+      return;
     }
+    const blob = new Blob([parsed.bytes], { type: parsed.mime });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = this.decodeFileName().trim() || 'decoded.bin';
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 }
 
@@ -287,4 +294,84 @@ function base64ToBytes(base64: string): Uint8Array<ArrayBuffer> {
     bytes[i] = binary.charCodeAt(i);
   }
   return bytes;
+}
+
+/**
+ * Decode a Base64 string (optionally a `data:` URI) into bytes plus a MIME type.
+ * When there's no data-URI prefix, the type is sniffed from the leading bytes.
+ * Returns null if the input is empty or not valid Base64.
+ */
+function parseBase64Input(input: string): { bytes: Uint8Array<ArrayBuffer>; mime: string } | null {
+  const raw = input.trim();
+  if (raw === '') {
+    return null;
+  }
+  let data = raw;
+  let mime = '';
+  const dataUriMatch = raw.match(/^data:(.*?);base64,(.*)$/s);
+  if (dataUriMatch) {
+    mime = dataUriMatch[1] || '';
+    data = dataUriMatch[2];
+  }
+  let bytes: Uint8Array<ArrayBuffer>;
+  try {
+    bytes = base64ToBytes(data);
+  } catch {
+    return null;
+  }
+  return { bytes, mime: mime || sniffMime(bytes) };
+}
+
+/** Guess a MIME type from a file's magic bytes. Falls back to a generic binary type. */
+function sniffMime(bytes: Uint8Array): string {
+  const b = bytes;
+  if (b.length >= 4 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) {
+    return 'application/pdf'; // %PDF
+  }
+  if (b.length >= 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) {
+    return 'image/png';
+  }
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) {
+    return 'image/jpeg';
+  }
+  if (b.length >= 4 && b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38) {
+    return 'image/gif'; // GIF8
+  }
+  if (
+    b.length >= 12 &&
+    b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && // RIFF
+    b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50 // WEBP
+  ) {
+    return 'image/webp';
+  }
+  return 'application/octet-stream';
+}
+
+function previewKind(mime: string): DecodePreview['kind'] {
+  if (mime.startsWith('image/')) {
+    return 'image';
+  }
+  if (mime === 'application/pdf') {
+    return 'pdf';
+  }
+  return 'other';
+}
+
+function extForMime(mime: string): string {
+  switch (mime) {
+    case 'application/pdf':
+      return 'pdf';
+    case 'image/png':
+      return 'png';
+    case 'image/jpeg':
+      return 'jpg';
+    case 'image/gif':
+      return 'gif';
+    case 'image/webp':
+      return 'webp';
+    case 'image/svg+xml':
+      return 'svg';
+    default:
+      return 'bin';
+  }
 }

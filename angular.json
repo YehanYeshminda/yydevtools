@@ -52,7 +52,8 @@
             "styles": [
               "src/material-theme.scss",
               "src/styles.css"
-            ]
+            ],
+            "allowedCommonJsDependencies": ["pako"]
           },
           "configurations": {
             "production": {
