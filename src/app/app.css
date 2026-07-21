@@ -92,26 +92,9 @@
   font-size: 15px;
 }
 
-/* Pushes the assurance pill and theme toggle to the far end. */
-.assurance {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-  padding: 5px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--on-var);
-  border: 1px solid var(--outline);
-  border-radius: 999px;
-}
-
-.assurance__icon {
-  font-size: 15px;
-  color: var(--success);
-}
-
+/* Sits at the far end of the bar. */
 .theme-toggle {
+  margin-left: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -135,16 +118,7 @@
   font-size: 20px;
 }
 
-/* Below the assurance pill's breakpoint the toggle carries the far edge. */
 @media (max-width: 640px) {
-  .assurance {
-    display: none;
-  }
-
-  .theme-toggle {
-    margin-left: auto;
-  }
-
   .nav {
     margin-left: 0;
   }
