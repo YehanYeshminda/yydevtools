@@ -1,0 +1,150 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">UUID Generator</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>fingerprint</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">UUID Generator</h1>
+    <p class="head__sub">
+      Generate random v4 or time-ordered v7 UUIDs in bulk, using your browser's cryptographic
+      random source.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <!-- Version --------------------------------------------------------- -->
+  <div class="tabs" role="tablist" aria-label="UUID version">
+    <button
+      type="button"
+      class="tab"
+      [class.tab--active]="version() === 'v4'"
+      role="tab"
+      [attr.aria-selected]="version() === 'v4'"
+      (click)="selectVersion('v4')"
+    >
+      Version 4
+    </button>
+    <button
+      type="button"
+      class="tab"
+      [class.tab--active]="version() === 'v7'"
+      role="tab"
+      [attr.aria-selected]="version() === 'v7'"
+      (click)="selectVersion('v7')"
+    >
+      Version 7
+    </button>
+  </div>
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    @if (version() === 'v4') {
+      Version 4 is 122 bits of randomness — the usual choice when you just need a unique
+      identifier.
+    } @else {
+      Version 7 puts a millisecond timestamp in the leading bits, so UUIDs sort chronologically.
+      That keeps database index inserts sequential, at the cost of leaking creation time.
+    }
+  </p>
+
+  <!-- Options --------------------------------------------------------- -->
+  <div class="opts">
+    <div class="field opts__count">
+      <label class="field__label" for="uuid-count">How many</label>
+      <input
+        id="uuid-count"
+        class="field__input"
+        type="number"
+        min="1"
+        [max]="maxCount"
+        [value]="count()"
+        (input)="onCountInput($event)"
+      />
+    </div>
+
+    <div class="chips" role="group" aria-label="Formatting options">
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="hyphens()"
+        [attr.aria-pressed]="hyphens()"
+        (click)="toggleHyphens()"
+      >
+        <mat-icon aria-hidden="true">remove</mat-icon>
+        Hyphens
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="uppercase()"
+        [attr.aria-pressed]="uppercase()"
+        (click)="toggleUppercase()"
+      >
+        <mat-icon aria-hidden="true">text_fields</mat-icon>
+        Uppercase
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="braces()"
+        [attr.aria-pressed]="braces()"
+        (click)="toggleBraces()"
+      >
+        <mat-icon aria-hidden="true">data_object</mat-icon>
+        Braces
+      </button>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button matButton="filled" (click)="generate()">
+      <mat-icon>autorenew</mat-icon>
+      Generate
+    </button>
+    <button matButton (click)="copyAll()" [disabled]="!uuids().length">
+      <mat-icon>content_copy</mat-icon>
+      Copy all
+    </button>
+    <button matButton (click)="download()" [disabled]="!uuids().length">
+      <mat-icon>download</mat-icon>
+      Download .txt
+    </button>
+  </div>
+
+  <!-- Results --------------------------------------------------------- -->
+  @if (uuids(); as list) {
+    @if (list.length) {
+      <section aria-label="Generated UUIDs">
+        <h2 class="section__title">
+          {{ list.length }} {{ list.length === 1 ? 'UUID' : 'UUIDs' }}
+        </h2>
+        <ol class="rows">
+          @for (uuid of list; track $index) {
+            <li class="row">
+              <span class="row__label" aria-hidden="true">{{ $index + 1 }}</span>
+              <p class="row__value">{{ uuid }}</p>
+              <button
+                type="button"
+                matIconButton
+                (click)="copyOne(uuid)"
+                [attr.aria-label]="'Copy UUID ' + ($index + 1)"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </li>
+          }
+        </ol>
+      </section>
+    }
+  }
+</div>

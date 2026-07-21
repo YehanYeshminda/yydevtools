@@ -116,7 +116,7 @@
         } @else {
           <button matButton="filled" (click)="merge()" [disabled]="items.length < 2">
             <mat-icon>merge</mat-icon>
-            Merge &amp; download
+            Merge
           </button>
         }
         <button matButton (click)="clearAll()" [disabled]="merging()">
@@ -125,5 +125,22 @@
         </button>
       </div>
     }
+  }
+
+  <!-- Result -------------------------------------------------------- -->
+  @if (result(); as merged) {
+    <section>
+      <h2 class="section__title">Merged result</h2>
+      <p class="hint-line" role="status">
+        Check the page order below, then save the file.
+      </p>
+      <app-pdf-preview [bytes]="merged" fileName="merged.pdf" height="30rem" />
+      <div class="actions">
+        <button matButton="filled" (click)="download()">
+          <mat-icon>download</mat-icon>
+          Download merged.pdf
+        </button>
+      </div>
+    </section>
   }
 </div>

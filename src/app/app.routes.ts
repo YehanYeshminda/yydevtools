@@ -44,5 +44,57 @@ export const routes: Routes = [
     loadComponent: () => import('./tools/pdf-merge/pdf-merge').then((m) => m.PdfMergeTool),
     title: 'PDF Merge — yydevtools',
   },
+  {
+    path: 'tools/pdf-convert',
+    loadComponent: () => import('./tools/pdf-convert/pdf-convert').then((m) => m.PdfConvertTool),
+    title: 'PDF Convert — yydevtools',
+  },
+  {
+    path: 'tools/pdf-ocr',
+    loadComponent: () => import('./tools/pdf-ocr/pdf-ocr').then((m) => m.PdfOcrTool),
+    title: 'PDF OCR — yydevtools',
+  },
+  {
+    path: 'tools/pdf-compress',
+    loadComponent: () =>
+      import('./tools/pdf-compress/pdf-compress').then((m) => m.PdfCompressTool),
+    title: 'PDF Compress — yydevtools',
+  },
+  {
+    path: 'tools/pdf-viewer',
+    loadComponent: () => import('./tools/pdf-viewer/pdf-viewer').then((m) => m.PdfViewerTool),
+    title: 'PDF Viewer — yydevtools',
+  },
+  {
+    path: 'tools/pdf-split',
+    loadComponent: () => import('./tools/pdf-split/pdf-split').then((m) => m.PdfSplitTool),
+    title: 'PDF Split — yydevtools',
+  },
+  {
+    path: 'tools/hash-generator',
+    loadComponent: () =>
+      import('./tools/hash-generator/hash-generator').then((m) => m.HashGeneratorTool),
+    title: 'Hash Generator — yydevtools',
+  },
+  {
+    path: 'tools/uuid-generator',
+    loadComponent: () =>
+      import('./tools/uuid-generator/uuid-generator').then((m) => m.UuidGeneratorTool),
+    title: 'UUID Generator — yydevtools',
+  },
+  {
+    path: 'tools/timestamp-converter',
+    loadComponent: () =>
+      import('./tools/timestamp-converter/timestamp-converter').then(
+        (m) => m.TimestampConverterTool,
+      ),
+    title: 'Timestamp Converter — yydevtools',
+  },
+  {
+    path: 'tools/color-converter',
+    loadComponent: () =>
+      import('./tools/color-converter/color-converter').then((m) => m.ColorConverterTool),
+    title: 'Color Converter — yydevtools',
+  },
   { path: '**', redirectTo: '' },
 ];

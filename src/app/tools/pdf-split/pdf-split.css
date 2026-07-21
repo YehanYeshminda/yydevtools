@@ -1,0 +1,17 @@
+.summary {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+.field__hint code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 5px;
+  background: var(--mat-sys-surface-container-high);
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.85em;
+}
+
+.actions mat-spinner {
+  margin-right: 0.5rem;
+}

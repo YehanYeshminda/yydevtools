@@ -1,0 +1,125 @@
+/* Inputs ---------------------------------------------------------------- */
+.pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.pair__col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.picker {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.picker__swatch {
+  flex: none;
+  width: 3.25rem;
+  padding: 0.2rem;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 10px;
+  background: var(--mat-sys-surface);
+  cursor: pointer;
+}
+
+.picker__swatch:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+/* Contrast -------------------------------------------------------------- */
+.contrast {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.contrast__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 1.5rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 14px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.contrast__sample {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.contrast__sample--lg {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.contrast__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.contrast__ratio {
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface);
+}
+
+.contrast__caption {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Pass / fail list ------------------------------------------------------ */
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 10px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-body-medium);
+}
+
+.check--pass {
+  background: color-mix(in srgb, var(--mat-sys-primary) 15%, transparent);
+  color: var(--mat-sys-on-surface);
+}
+
+.check__icon {
+  font-size: 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: none;
+}
+
+.check__verdict {
+  margin-inline-start: auto;
+  font: var(--mat-sys-label-medium);
+}
+
+.rows {
+  margin-top: 0.75rem;
+}

@@ -1,0 +1,179 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">Color Converter</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>palette</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">Color Converter</h1>
+    <p class="head__sub">
+      Convert between HEX, RGB and HSL, and check whether a pairing meets WCAG contrast minimums.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <!-- Inputs ---------------------------------------------------------- -->
+  <div class="pair">
+    <div class="pair__col">
+      <div class="field">
+        <label class="field__label" for="fg-text">Foreground</label>
+        <div class="picker">
+          <input
+            class="picker__swatch"
+            type="color"
+            [value]="foregroundSwatch()"
+            (input)="onForegroundInput($event)"
+            aria-label="Pick a foreground colour"
+          />
+          <input
+            id="fg-text"
+            class="field__input"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            [value]="foreground()"
+            (input)="onForegroundInput($event)"
+            placeholder="#2f6f8f, rgb(47 111 143), hsl(200 50% 37%)"
+          />
+        </div>
+      </div>
+      @if (!foregroundView().rgb) {
+        <p class="status status--err" role="alert">
+          <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+          Not a HEX, RGB or HSL colour.
+        </p>
+      }
+    </div>
+
+    <div class="pair__col">
+      <div class="field">
+        <label class="field__label" for="bg-text">Background</label>
+        <div class="picker">
+          <input
+            class="picker__swatch"
+            type="color"
+            [value]="backgroundSwatch()"
+            (input)="onBackgroundInput($event)"
+            aria-label="Pick a background colour"
+          />
+          <input
+            id="bg-text"
+            class="field__input"
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            [value]="background()"
+            (input)="onBackgroundInput($event)"
+            placeholder="#ffffff, rgb(255 255 255)"
+          />
+        </div>
+      </div>
+      @if (!backgroundView().rgb) {
+        <p class="status status--err" role="alert">
+          <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+          Not a HEX, RGB or HSL colour.
+        </p>
+      }
+    </div>
+  </div>
+
+  <div class="actions">
+    <button matButton (click)="swap()">
+      <mat-icon>swap_horiz</mat-icon>
+      Swap colours
+    </button>
+  </div>
+
+  <!-- Contrast -------------------------------------------------------- -->
+  <section class="contrast" aria-label="Contrast">
+    <div
+      class="contrast__preview"
+      [style.background]="backgroundSwatch()"
+      [style.color]="foregroundSwatch()"
+    >
+      <p class="contrast__sample contrast__sample--lg">Large text — 24px</p>
+      <p class="contrast__sample">Normal body text at 16px, the size most copy actually uses.</p>
+    </div>
+
+    <div class="contrast__meta">
+      <span class="contrast__ratio">{{ ratioLabel() }}</span>
+      <span class="contrast__caption">contrast ratio</span>
+
+      <ul class="checks">
+        @for (check of checks(); track check.key) {
+          <li class="check" [class.check--pass]="check.passes">
+            <mat-icon class="check__icon" aria-hidden="true">
+              {{ check.passes ? 'check_circle' : 'cancel' }}
+            </mat-icon>
+            <span>{{ check.label }}</span>
+            <span class="check__verdict">{{ check.passes ? 'Pass' : 'Fail' }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- Conversions ----------------------------------------------------- -->
+  @if (foregroundView().formats; as formats) {
+    @if (formats.length) {
+      <section aria-label="Foreground formats">
+        <h2 class="section__title">Foreground formats</h2>
+        <ul class="rows">
+          @for (format of formats; track format.key) {
+            <li class="row">
+              <span class="row__label">{{ format.label }}</span>
+              <p class="row__value">{{ format.value }}</p>
+              <button
+                type="button"
+                matIconButton
+                (click)="copy(format.value, format.label)"
+                [attr.aria-label]="'Copy foreground ' + format.label"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+
+  @if (backgroundView().formats; as formats) {
+    @if (formats.length) {
+      <section aria-label="Background formats">
+        <h2 class="section__title">Background formats</h2>
+        <ul class="rows">
+          @for (format of formats; track format.key) {
+            <li class="row">
+              <span class="row__label">{{ format.label }}</span>
+              <p class="row__value">{{ format.value }}</p>
+              <button
+                type="button"
+                matIconButton
+                (click)="copy(format.value, format.label)"
+                [attr.aria-label]="'Copy background ' + format.label"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    Large text means 18.66px bold or 24px regular and up. Alpha is ignored when computing contrast
+    — WCAG ratios are defined for opaque colours.
+  </p>
+</div>

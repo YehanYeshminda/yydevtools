@@ -1,0 +1,154 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">PDF Compress</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>compress</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">PDF Compress</h1>
+    <p class="head__sub">
+      Shrink a PDF by downsampling the images inside it — a real reduction, not just a re-save.
+      This needs a hosted service — your file is sent to Adobe to be processed.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  @if (unavailable()) {
+    <p class="status status--err" role="alert">
+      <mat-icon class="status__icon" aria-hidden="true">cloud_off</mat-icon>
+      <a routerLink="/tools/pdf-merge">Merge</a>, <a routerLink="/tools/pdf-split">split</a> and
+      <a routerLink="/tools/pdf-viewer">viewing</a> all still work entirely in your browser.
+    </p>
+  }
+
+  @if (quota(); as allowance) {
+    @if (allowance.configured) {
+      <p class="quota" role="status">
+        <mat-icon class="quota__icon" aria-hidden="true">data_usage</mat-icon>
+        {{ allowance.remaining }} of {{ allowance.limit }} operations left this month.
+      </p>
+    }
+  }
+
+  <label
+    class="dropzone"
+    [class.dropzone--over]="dragOver()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave()"
+    (drop)="onDrop($event)"
+  >
+    <input
+      type="file"
+      accept="application/pdf,.pdf"
+      class="dropzone__input"
+      (change)="onFileSelected($event)"
+    />
+    <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+    <span class="dropzone__title">
+      @if (hasFile()) {
+        Drop another PDF here, or click to replace
+      } @else {
+        Drop a PDF here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">One file at a time — up to 20 MB</span>
+  </label>
+
+  @if (hasFile()) {
+    <p class="status status--ok" role="status">
+      <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+      {{ fileName() }} · {{ pageCount() }} {{ pageCount() === 1 ? 'page' : 'pages' }} ·
+      {{ formatBytes(fileSize()) }}
+    </p>
+
+    <div class="field">
+      <span class="field__label" id="level-label">Compression</span>
+      <div class="chips" role="group" aria-labelledby="level-label">
+        @for (option of levels; track option.value) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="level() === option.value"
+            [attr.aria-pressed]="level() === option.value"
+            (click)="selectLevel(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      <span class="field__hint">{{ levelHint() }}</span>
+    </div>
+
+    <div class="actions">
+      @if (working()) {
+        <button matButton="filled" disabled>
+          <mat-spinner diameter="18" />
+          Compressing…
+        </button>
+      } @else {
+        <button matButton="filled" (click)="compress()" [disabled]="!canRun()">
+          <mat-icon>compress</mat-icon>
+          Compress
+        </button>
+      }
+      <button matButton (click)="clear()" [disabled]="working()">
+        <mat-icon>delete_sweep</mat-icon>
+        Clear
+      </button>
+    </div>
+
+    @if (hasResult()) {
+      <section class="result" role="status">
+        <h2 class="section__title">Result</h2>
+
+        <div class="compare">
+          <div class="compare__side">
+            <span class="compare__label">Before</span>
+            <span class="compare__size">{{ formatBytes(fileSize()) }}</span>
+          </div>
+          <mat-icon class="compare__arrow" aria-hidden="true">arrow_forward</mat-icon>
+          <div class="compare__side">
+            <span class="compare__label">After</span>
+            <span class="compare__size compare__size--after">{{ formatBytes(resultSize()) }}</span>
+          </div>
+        </div>
+
+        @if (savedPercent() > 0) {
+          <p class="verdict verdict--good">
+            <mat-icon class="status__icon" aria-hidden="true">trending_down</mat-icon>
+            {{ formatBytes(savedBytes()) }} smaller — a {{ savedPercent() }}% saving.
+          </p>
+        } @else {
+          <p class="verdict">
+            <mat-icon class="status__icon" aria-hidden="true">info</mat-icon>
+            This PDF was already well optimised, so there was nothing worth removing. Keep your
+            original.
+          </p>
+        }
+
+        <div class="actions">
+          <button matButton="filled" (click)="save()">
+            <mat-icon>download</mat-icon>
+            Download compressed PDF
+          </button>
+        </div>
+      </section>
+    }
+  }
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    This tool uploads your file. It is sent over HTTPS to Adobe PDF Services, processed, and
+    returned — Adobe deletes the document afterwards. Savings come from the images inside the PDF,
+    so a text-only document will barely shrink.
+  </p>
+</div>

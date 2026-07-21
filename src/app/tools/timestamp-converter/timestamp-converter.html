@@ -1,0 +1,105 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">Timestamp Converter</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>schedule</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">Timestamp Converter</h1>
+    <p class="head__sub">
+      Convert between Unix timestamps and human-readable dates, in both directions.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <!-- Live clock ------------------------------------------------------ -->
+  <section class="clock" aria-label="Current time">
+    <div class="clock__cell">
+      <span class="clock__label">Unix now</span>
+      <span class="clock__value">{{ nowSeconds() }}</span>
+    </div>
+    <div class="clock__cell">
+      <span class="clock__label">UTC now</span>
+      <span class="clock__value clock__value--sm">{{ nowIso() }}</span>
+    </div>
+    <button matButton (click)="copy(nowSeconds() + '', 'Current timestamp')">
+      <mat-icon>content_copy</mat-icon>
+      Copy
+    </button>
+  </section>
+
+  <div class="field">
+    <label class="field__label" for="ts-input">Timestamp or date</label>
+    <input
+      id="ts-input"
+      class="field__input"
+      type="text"
+      spellcheck="false"
+      autocomplete="off"
+      [value]="input()"
+      (input)="onInput($event)"
+      placeholder="1700000000, 1700000000000, or 2026-07-21T14:30:00Z"
+    />
+    <span class="field__hint">
+      Ten-digit numbers are read as seconds, thirteen-digit as milliseconds. Local times are shown
+      in {{ timeZone() }}.
+    </span>
+  </div>
+
+  <div class="actions">
+    <button matButton (click)="useNow()">
+      <mat-icon>bolt</mat-icon>
+      Use now
+    </button>
+    <button matButton (click)="clear()" [disabled]="!input()">
+      <mat-icon>clear</mat-icon>
+      Clear
+    </button>
+  </div>
+
+  @switch (result().kind) {
+    @case ('error') {
+      <p class="status status--err" role="alert">
+        <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+        {{ $any(result()).message }}
+      </p>
+    }
+    @case ('ok') {
+      @let parsed = $any(result());
+
+      <p class="status status--ok" role="status">
+        <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+        {{ parsed.interpretation }}
+      </p>
+
+      <section aria-label="Converted formats">
+        <h2 class="section__title">Formats</h2>
+        <ul class="rows">
+          @for (row of parsed.rows; track row.key) {
+            <li class="row">
+              <span class="row__label">{{ row.label }}</span>
+              <p class="row__value">{{ row.value }}</p>
+              <button
+                type="button"
+                matIconButton
+                (click)="copy(row.value, row.label)"
+                [attr.aria-label]="'Copy ' + row.label"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</div>

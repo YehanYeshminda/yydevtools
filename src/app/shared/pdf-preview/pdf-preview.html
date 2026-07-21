@@ -1,0 +1,25 @@
+<div class="preview">
+  <div class="preview__stage" [style.height]="height()">
+    <div class="preview__host" #host [id]="containerId"></div>
+
+    @if (state() === 'loading') {
+      <div class="preview__overlay" role="status">
+        <mat-spinner diameter="28" />
+        <span>Loading preview…</span>
+      </div>
+    }
+
+    @if (state() === 'error') {
+      <div class="preview__overlay" role="alert">
+        <mat-icon aria-hidden="true">visibility_off</mat-icon>
+        <span>The preview could not be loaded. Your PDF is still fine — this only affects the on-page viewer.</span>
+        <button matButton (click)="retry()">
+          <mat-icon>refresh</mat-icon>
+          Try again
+        </button>
+      </div>
+    }
+  </div>
+
+  <p class="preview__credit">Rendered in your browser with the Adobe PDF Embed API.</p>
+</div>

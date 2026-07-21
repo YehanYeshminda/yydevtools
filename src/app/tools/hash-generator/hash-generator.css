@@ -1,0 +1,10 @@
+/* Digest rows are long hex strings — give the label a narrower gutter and let
+   the value wrap freely. */
+.row__label {
+  width: 5.5rem;
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+}
+
+.rows {
+  margin-top: 0.75rem;
+}

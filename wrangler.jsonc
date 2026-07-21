@@ -1,15 +1,38 @@
 {
-  // Cloudflare Workers static-assets deployment for the yydevtools SPA.
+  // Cloudflare Worker for the yydevtools SPA.
   // `npm run build` produces the assets; `wrangler deploy` uploads them.
+  //
+  // The Worker serves the static site for every path except /api/*, which is
+  // handled by worker/index.ts. Only the PDF operations that cannot run in the
+  // browser (convert, OCR, compress) go through the API — merge, split and
+  // viewing stay entirely client-side.
   "name": "yydevtools",
+  "main": "worker/index.ts",
   "compatibility_date": "2025-11-01",
   // Keep the *.workers.dev URL alive alongside the custom domain.
   "workers_dev": true,
   "assets": {
     "directory": "./dist/yydevtools/browser",
+    // Bound so the Worker can serve the SPA for non-API routes.
+    "binding": "ASSETS",
     // Serve index.html for unmatched client-side routes (e.g. /tools/pdf-merge).
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
   },
   // Custom domain — wrangler creates the DNS record if yydev.net is on this account.
-  "routes": [{ "pattern": "tools.yydev.net", "custom_domain": true }]
+  "routes": [{ "pattern": "tools.yydev.net", "custom_domain": true }],
+  "vars": {
+    // Public client ID for Adobe PDF Services. The matching client SECRET is
+    // never stored here — set it with:
+    //   npx wrangler secret put ADOBE_PDF_CLIENT_SECRET
+    "ADOBE_PDF_CLIENT_ID": "a1b6cbd8cf104825a6827f2580fe2649",
+    "ADOBE_MONTHLY_LIMIT": "500",
+  },
+  "kv_namespaces": [
+    {
+      // Monthly transaction counter, created with:
+      //   npx wrangler kv namespace create PDF_QUOTA
+      "binding": "PDF_QUOTA",
+      "id": "298960ad74a84f128ce11abcf3f1b8cc",
+    },
+  ],
 }

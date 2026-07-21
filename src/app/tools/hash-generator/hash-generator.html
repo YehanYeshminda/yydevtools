@@ -1,0 +1,128 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">Hash Generator</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>tag</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">Hash Generator</h1>
+    <p class="head__sub">
+      Compute SHA-1, SHA-256, SHA-384 and SHA-512 digests of text or a file. Everything runs in
+      your browser — nothing is uploaded.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <!-- Source picker --------------------------------------------------- -->
+  <div class="tabs" role="tablist" aria-label="Input source">
+    <button
+      type="button"
+      class="tab"
+      [class.tab--active]="source() === 'text'"
+      role="tab"
+      [attr.aria-selected]="source() === 'text'"
+      (click)="selectSource('text')"
+    >
+      <mat-icon aria-hidden="true">notes</mat-icon>
+      Text
+    </button>
+    <button
+      type="button"
+      class="tab"
+      [class.tab--active]="source() === 'file'"
+      role="tab"
+      [attr.aria-selected]="source() === 'file'"
+      (click)="selectSource('file')"
+    >
+      <mat-icon aria-hidden="true">draft</mat-icon>
+      File
+    </button>
+  </div>
+
+  @if (source() === 'text') {
+    <div class="field">
+      <label class="field__label" for="hash-input">Text to hash</label>
+      <textarea
+        id="hash-input"
+        class="field__input"
+        rows="6"
+        spellcheck="false"
+        [value]="text()"
+        (input)="onTextInput($event)"
+        placeholder="Type or paste anything…"
+      ></textarea>
+      <span class="field__hint">Hashed as UTF-8 bytes.</span>
+    </div>
+  } @else {
+    <label class="dropzone">
+      <input type="file" class="dropzone__input" (change)="onFileSelected($event)" />
+      <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+      <span class="dropzone__title">Choose a file to hash</span>
+      <span class="dropzone__hint">Any file type, up to 250 MB</span>
+    </label>
+
+    @if (fileName()) {
+      <p class="status status--ok" role="status">
+        <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+        {{ fileName() }} · {{ formatBytes(fileSize()) }}
+      </p>
+    }
+  }
+
+  <div class="actions">
+    <button matButton (click)="toggleCase()">
+      <mat-icon>text_fields</mat-icon>
+      {{ uppercase() ? 'Lowercase output' : 'Uppercase output' }}
+    </button>
+    <button matButton (click)="clear()" [disabled]="!digests().length && !text()">
+      <mat-icon>clear</mat-icon>
+      Clear
+    </button>
+    @if (hashing()) {
+      <span class="working" role="status">
+        <mat-spinner diameter="18" />
+        Hashing…
+      </span>
+    }
+  </div>
+
+  <!-- Digests --------------------------------------------------------- -->
+  @if (digests(); as results) {
+    @if (results.length) {
+      <section aria-label="Digests">
+        <h2 class="section__title">Digests</h2>
+        <ul class="rows">
+          @for (digest of results; track digest.algorithm) {
+            <li class="row">
+              <span class="row__label">{{ digest.algorithm }}</span>
+              <p class="row__value">{{ present(digest.hex) }}</p>
+              <button
+                type="button"
+                matIconButton
+                (click)="copy(digest.hex, digest.algorithm)"
+                [attr.aria-label]="'Copy ' + digest.algorithm + ' digest'"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    MD5 is deliberately absent — browsers do not ship it, and it is unsafe for anything security
+    related. SHA-1 is included for checksum compatibility only; prefer SHA-256 or stronger.
+  </p>
+</div>

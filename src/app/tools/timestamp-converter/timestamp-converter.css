@@ -1,0 +1,47 @@
+/* Live clock ------------------------------------------------------------ */
+.clock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 14px;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.clock__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.clock__label {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.clock__value {
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface);
+  overflow-wrap: anywhere;
+}
+
+.clock__value--sm {
+  font-size: 1rem;
+}
+
+.clock button {
+  margin-inline-start: auto;
+}
+
+.row__label {
+  width: 8.5rem;
+}
+
+.rows {
+  margin-top: 0.75rem;
+}

@@ -1,0 +1,117 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">PDF OCR</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>document_scanner</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">PDF OCR</h1>
+    <p class="head__sub">
+      Make a scanned PDF searchable. Text recognition runs over the page images and adds an
+      invisible text layer, so you can select and search the words. This needs a hosted service —
+      your file is sent to Adobe to be processed.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  @if (unavailable()) {
+    <p class="status status--err" role="alert">
+      <mat-icon class="status__icon" aria-hidden="true">cloud_off</mat-icon>
+      <a routerLink="/tools/pdf-merge">Merge</a>, <a routerLink="/tools/pdf-split">split</a> and
+      <a routerLink="/tools/pdf-viewer">viewing</a> all still work entirely in your browser.
+    </p>
+  }
+
+  @if (quota(); as allowance) {
+    @if (allowance.configured) {
+      <p class="quota" role="status">
+        <mat-icon class="quota__icon" aria-hidden="true">data_usage</mat-icon>
+        {{ allowance.remaining }} of {{ allowance.limit }} operations left this month.
+      </p>
+    }
+  }
+
+  <label
+    class="dropzone"
+    [class.dropzone--over]="dragOver()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave()"
+    (drop)="onDrop($event)"
+  >
+    <input
+      type="file"
+      accept="application/pdf,.pdf"
+      class="dropzone__input"
+      (change)="onFileSelected($event)"
+    />
+    <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+    <span class="dropzone__title">
+      @if (hasFile()) {
+        Drop another PDF here, or click to replace
+      } @else {
+        Drop a scanned PDF here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">One file at a time — up to 20 MB</span>
+  </label>
+
+  @if (hasFile()) {
+    <p class="status status--ok" role="status">
+      <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+      {{ fileName() }} · {{ pageCount() }} {{ pageCount() === 1 ? 'page' : 'pages' }} ·
+      {{ formatBytes(fileSize()) }}
+    </p>
+
+    <div class="field">
+      <label class="field__label" for="ocr-language">Document language</label>
+      <select
+        id="ocr-language"
+        class="select"
+        [value]="language()"
+        (change)="onLanguageChange($event)"
+      >
+        @for (option of languages; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+      <span class="field__hint">
+        Recognition is much more accurate when this matches the text on the page.
+      </span>
+    </div>
+
+    <div class="actions">
+      @if (working()) {
+        <button matButton="filled" disabled>
+          <mat-spinner diameter="18" />
+          Recognising…
+        </button>
+      } @else {
+        <button matButton="filled" (click)="recognise()" [disabled]="!canRun()">
+          <mat-icon>document_scanner</mat-icon>
+          Run OCR &amp; download
+        </button>
+      }
+      <button matButton (click)="clear()" [disabled]="working()">
+        <mat-icon>delete_sweep</mat-icon>
+        Clear
+      </button>
+    </div>
+  }
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    This tool uploads your file. It is sent over HTTPS to Adobe PDF Services, processed, and
+    returned — Adobe deletes the document afterwards. A PDF that already has real text does not
+    need OCR; open it in the <a routerLink="/tools/pdf-viewer">viewer</a> and try selecting a word
+    to check.
+  </p>
+</div>

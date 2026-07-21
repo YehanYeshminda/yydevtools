@@ -114,86 +114,99 @@
 /* Grid ------------------------------------------------------------------ */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.25rem;
+  align-items: start;
 }
 
 .card {
   display: flex;
   flex-direction: column;
-  padding: 1.25rem;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  min-height: 17rem;
+  padding: 1.5rem;
+  background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.76));
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 24px 55px rgba(15, 23, 42, 0.12);
+  border-color: rgba(15, 23, 42, 0.12);
 }
 
 .card--ready {
   background: var(--card-open);
-  border-color: var(--accent);
-  box-shadow: 0 1px 3px rgba(47, 111, 143, 0.08);
+  border-color: rgba(38, 132, 255, 0.15);
 }
 
 .card__top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 1rem;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1.2rem;
 }
 
 .card__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  font-size: 1.4rem;
-  color: var(--ink-soft);
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.5rem;
+  color: var(--ink);
+  background: rgba(38, 132, 255, 0.12);
+  border-radius: 14px;
 }
 
 .card--ready .card__icon {
   color: var(--accent);
-  background: var(--accent-tint);
-  border-color: var(--accent-tint);
+  background: rgba(38, 132, 255, 0.18);
 }
 
 .badge {
-  font-size: 0.78rem;
-  color: var(--ink-faint);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  background: rgba(15, 23, 42, 0.05);
+  justify-self: end;
 }
 
 .badge--open {
   color: var(--accent);
-  background: var(--accent-tint);
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  font-weight: 600;
+  background: rgba(38, 132, 255, 0.12);
 }
 
 .card__name {
   margin: 0;
   font-family: var(--font-serif);
   font-weight: 700;
-  font-size: 1.15rem;
+  font-size: 1.25rem;
+  line-height: 1.1;
   color: var(--ink);
 }
 
 .card__cat {
-  margin: 0.35rem 0 0;
+  margin: 0.5rem 0 0;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.68rem;
-  font-weight: 600;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  font-weight: 700;
   color: var(--accent);
 }
 
 .card__desc {
-  margin: 0.6rem 0 1.25rem;
+  margin: 0.8rem 0 1.5rem;
   flex: 1 1 auto;
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.7;
   color: var(--ink-soft);
 }
 
@@ -202,21 +215,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   width: 100%;
   box-sizing: border-box;
-  padding: 0.6rem 1rem;
+  padding: 0.85rem 1rem;
   font-family: var(--font-serif);
-  font-size: 0.95rem;
-  font-weight: 600;
-  border-radius: 8px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  border-radius: 999px;
   border: 1px solid transparent;
 }
 
 .btn--soon {
-  background: var(--btn-soon-bg);
+  background: rgba(15, 23, 42, 0.05);
   color: var(--ink-faint);
-  border-color: var(--line);
+  border-color: rgba(15, 23, 42, 0.08);
   cursor: not-allowed;
 }
 
@@ -224,16 +237,32 @@
   background: var(--accent);
   color: var(--on-accent);
   text-decoration: none;
-  transition: background 0.15s ease;
+  transition: transform 0.2s ease, background 0.2s ease;
 }
 
 .btn--open:hover {
   background: var(--accent-strong);
+  transform: translateY(-1px);
 }
 
 .btn--open:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 1.25rem;
+  }
+
+  .card__top {
+    grid-template-columns: 1fr;
+    align-items: center;
+  }
+
+  .badge {
+    justify-self: start;
+  }
 }
 
 /* Empty state ----------------------------------------------------------- */

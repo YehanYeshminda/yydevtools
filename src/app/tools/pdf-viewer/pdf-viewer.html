@@ -1,0 +1,72 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">PDF Viewer</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>picture_as_pdf</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">PDF Viewer</h1>
+    <p class="head__sub">
+      Open a PDF and read it right here — with page thumbnails, search and zoom. Your file is
+      rendered locally in the browser and is never uploaded.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <label
+    class="dropzone"
+    [class.dropzone--over]="dragOver()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave()"
+    (drop)="onDrop($event)"
+  >
+    <input
+      type="file"
+      accept="application/pdf,.pdf"
+      class="dropzone__input"
+      (change)="onFileSelected($event)"
+    />
+    <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+    <span class="dropzone__title">
+      @if (hasFile()) {
+        Drop another PDF here, or click to replace
+      } @else {
+        Drop a PDF here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">One file at a time — up to 100 MB</span>
+  </label>
+
+  @if (bytes(); as loaded) {
+    <p class="status status--ok" role="status">
+      <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+      {{ fileName() }} · {{ pageCount() }} {{ pageCount() === 1 ? 'page' : 'pages' }} ·
+      {{ formatBytes(fileSize()) }}
+    </p>
+
+    <app-pdf-preview
+      [bytes]="loaded"
+      [fileName]="fileName()"
+      embedMode="FULL_WINDOW"
+      [showDownload]="true"
+      [showPrint]="true"
+      height="42rem"
+    />
+
+    <div class="actions">
+      <button matButton (click)="clear()">
+        <mat-icon>delete_sweep</mat-icon>
+        Close file
+      </button>
+    </div>
+  }
+</div>

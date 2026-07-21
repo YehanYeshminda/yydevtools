@@ -238,3 +238,16 @@
 .actions mat-spinner {
   margin-right: 0.5rem;
 }
+
+/* Merged-result section -------------------------------------------------- */
+.section__title {
+  margin: 0;
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.panel section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}

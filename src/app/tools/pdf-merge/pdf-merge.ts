@@ -5,6 +5,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import { PDFDocument } from 'pdf-lib';
+import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 
 /** A PDF queued for merging. The bytes are kept so we can merge without re-reading. */
 interface PdfItem {
@@ -20,7 +21,7 @@ const MAX_INPUT_BYTES = 100 * 1024 * 1024;
 
 @Component({
   selector: 'app-pdf-merge',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [RouterLink, MatButtonModule, MatIconModule, MatProgressSpinnerModule, PdfPreview],
   templateUrl: './pdf-merge.html',
   styleUrl: './pdf-merge.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,6 +33,8 @@ export class PdfMergeTool {
   protected readonly files = signal<PdfItem[]>([]);
   protected readonly merging = signal(false);
   protected readonly dragOver = signal(false);
+  /** The merged document, held for preview until the user downloads it. */
+  protected readonly result = signal<Uint8Array | null>(null);
 
   protected readonly totalPages = computed(() =>
     this.files().reduce((sum, file) => sum + file.pageCount, 0),
@@ -103,6 +106,7 @@ export class PdfMergeTool {
 
     if (added.length > 0) {
       this.files.update((current) => [...current, ...added]);
+      this.result.set(null);
     }
   }
 
@@ -112,6 +116,7 @@ export class PdfMergeTool {
       return;
     }
     this.files.update((current) => swap(current, index, index - 1));
+    this.result.set(null);
   }
 
   protected moveDown(index: number): void {
@@ -121,14 +126,17 @@ export class PdfMergeTool {
       }
       return swap(current, index, index + 1);
     });
+    this.result.set(null);
   }
 
   protected remove(id: number): void {
     this.files.update((current) => current.filter((file) => file.id !== id));
+    this.result.set(null);
   }
 
   protected clearAll(): void {
     this.files.set([]);
+    this.result.set(null);
   }
 
   // --- Merge ------------------------------------------------------------
@@ -139,6 +147,7 @@ export class PdfMergeTool {
     }
 
     this.merging.set(true);
+    this.result.set(null);
     try {
       const merged = await PDFDocument.create();
       for (const item of items) {
@@ -148,12 +157,20 @@ export class PdfMergeTool {
           merged.addPage(page);
         }
       }
-      const bytes = await merged.save();
-      this.downloadBytes(bytes);
+      // Show the result rather than downloading straight away, so the page
+      // order can be checked in the preview before saving anything.
+      this.result.set(await merged.save());
     } catch {
       this.showError('Could not merge these PDFs. One of them may be corrupt or protected.');
     } finally {
       this.merging.set(false);
+    }
+  }
+
+  protected download(): void {
+    const bytes = this.result();
+    if (bytes) {
+      this.downloadBytes(bytes);
     }
   }
 

@@ -45,3 +45,7 @@ Thumbs.db
 
 # Assistant / editor tooling config — not part of the project
 .claude/
+
+# Cloudflare Worker local dev secrets — never commit
+.dev.vars
+.wrangler/
