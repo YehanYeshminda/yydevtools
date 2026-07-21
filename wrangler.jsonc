@@ -6,6 +6,10 @@
   // handled by worker/index.ts. Only the PDF operations that cannot run in the
   // browser (convert, OCR, compress) go through the API — merge, split and
   // viewing stay entirely client-side.
+  //
+  // The build prerenders every route to its own HTML file, so there is no SPA
+  // fallback: unmatched paths fall through to the Worker, which answers with
+  // the prerendered /404 page and a real 404 status.
   "name": "yydevtools",
   "main": "worker/index.ts",
   "compatibility_date": "2025-11-01",
@@ -13,10 +17,17 @@
   "workers_dev": true,
   "assets": {
     "directory": "./dist/yydevtools/browser",
-    // Bound so the Worker can serve the SPA for non-API routes.
+    // Bound so the Worker can serve the prerendered pages for non-API routes.
     "binding": "ASSETS",
-    // Serve index.html for unmatched client-side routes (e.g. /tools/pdf-merge).
-    "not_found_handling": "single-page-application",
+    // Let misses reach the Worker so it can answer with a real 404 status.
+    "not_found_handling": "none",
+    // Serve /tools/pdf-merge directly instead of 307-ing to the trailing-slash
+    // form. The default (auto-trailing-slash) put a redirect hop in front of
+    // every canonical URL and every link in the sitemap.
+    "html_handling": "drop-trailing-slash",
+    // Send every request through the Worker, including ones that match an
+    // asset, so the 404 handling above actually runs.
+    "run_worker_first": true,
   },
   // Custom domain — wrangler creates the DNS record if yydev.net is on this account.
   "routes": [{ "pattern": "tools.yydev.net", "custom_domain": true }],

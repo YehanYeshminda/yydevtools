@@ -13,18 +13,21 @@ html {
       primary: mat.$azure-palette,
       tertiary: mat.$blue-palette,
     ),
-    typography: Roboto,
+    typography: (
+      plain-family: Inter,
+      brand-family: Inter,
+    ),
     density: 0,
   ));
 }
 
 body {
-  // Warm paper background and serif type come from the shared tokens defined
-  // in styles.css; the active color scheme (light/dark) is set on :root there
-  // and inherits here, so Material components theme themselves via --mat-sys-*.
-  background-color: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-serif);
+  // Palette and type come from the design tokens in styles.css; the active
+  // color scheme (light/dark) is set on :root there and inherits here, so
+  // Material components theme themselves via the remapped --mat-sys-* tokens.
+  background-color: var(--bg);
+  color: var(--on);
+  font-family: var(--font);
   font-size: 1rem;
   line-height: 1.5;
 

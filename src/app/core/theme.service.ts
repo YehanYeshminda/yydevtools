@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { DOCUMENT, Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 export type Theme = 'light' | 'dark';
 
@@ -9,12 +10,17 @@ const STORAGE_KEY = 'theme';
  * attribute on <html> (initially set by the inline script in index.html) and
  * with localStorage so the choice survives reloads.
  *
- * This is a browser-only single-page app, so it reads the DOM globals directly
- * rather than injecting DOCUMENT.
+ * Pages are prerendered, so this injects DOCUMENT rather than reaching for the
+ * global and guards the browser-only APIs. During prerendering there is no
+ * stored preference, so the static HTML is built as light; the inline script
+ * then sets the real attribute before Angular boots, and this service reads it
+ * back on construction. Only text content differs in that window, which
+ * hydration tolerates.
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  private readonly root = document.documentElement;
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly root = inject(DOCUMENT).documentElement;
 
   readonly theme = signal<Theme>(this.readInitial());
 
@@ -36,6 +42,9 @@ export class ThemeService {
     const current = this.root.getAttribute('data-theme');
     if (current === 'dark' || current === 'light') {
       return current;
+    }
+    if (!this.isBrowser) {
+      return 'light';
     }
     // Fallback if the inline bootstrap script did not run.
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

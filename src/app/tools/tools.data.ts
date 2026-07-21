@@ -17,6 +17,14 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'json-to-types',
+    name: 'JSON to Types',
+    description: 'Turn JSON into TypeScript interfaces or C# classes.',
+    icon: 'code',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'jwt-decoder',
     name: 'JWT Decoder',
     description: 'Decode and inspect JWT headers, payloads and claims.',

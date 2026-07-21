@@ -9,10 +9,9 @@
 .content,
 .footer__inner {
   width: 100%;
-  max-width: 1040px;
+  max-width: 1240px;
   margin-inline: auto;
-  padding-inline: clamp(1rem, 4vw, 2rem);
-  box-sizing: border-box;
+  padding-inline: clamp(16px, 4vw, 28px);
 }
 
 /* Header ---------------------------------------------------------------- */
@@ -20,82 +19,139 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--paper);
-  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  border-bottom: 1px solid var(--outline);
 }
 
 .appbar__inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  height: 3.5rem;
+  gap: 12px;
+  height: 60px;
 }
 
 .brand {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: 1.15rem;
-  letter-spacing: -0.01em;
-  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 9px;
   text-decoration: none;
+  color: var(--on);
+  border-radius: 8px;
 }
 
-.brand__accent {
-  color: var(--accent);
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 18px;
+  color: var(--on-primary);
+  background: var(--primary);
+  border-radius: 8px;
+}
+
+.brand__name {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .nav {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 4px;
+  margin-left: 8px;
 }
 
 .nav__link {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-family: var(--font-serif);
-  font-size: 0.95rem;
-  color: var(--ink-soft);
+  gap: 5px;
+  padding: 7px 11px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--on-var);
   text-decoration: none;
+  border-radius: 8px;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
 .nav__link:hover {
-  color: var(--ink);
+  color: var(--on);
+  background: var(--surface-2);
 }
 
-.nav__github {
-  display: block;
+.nav__link--active {
+  font-weight: 600;
+  color: var(--on);
+  background: var(--surface-2);
+}
+
+.nav__ext {
+  font-size: 15px;
+}
+
+/* Pushes the assurance pill and theme toggle to the far end. */
+.assurance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--on-var);
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+}
+
+.assurance__icon {
+  font-size: 15px;
+  color: var(--success);
 }
 
 .theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
+  width: 38px;
+  height: 38px;
   padding: 0;
-  color: var(--ink-soft);
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  color: var(--on-var);
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 9px;
   cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
 .theme-toggle:hover {
-  color: var(--ink);
-  border-color: var(--line-strong);
-}
-
-.theme-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  color: var(--on);
+  background: var(--surface-2);
 }
 
 .theme-toggle .material-icons-outlined {
-  font-size: 1.25rem;
+  font-size: 20px;
+}
+
+/* Below the assurance pill's breakpoint the toggle carries the far edge. */
+@media (max-width: 640px) {
+  .assurance {
+    display: none;
+  }
+
+  .theme-toggle {
+    margin-left: auto;
+  }
+
+  .nav {
+    margin-left: 0;
+  }
+
+  .nav__link {
+    padding: 7px 8px;
+  }
 }
 
 /* Content --------------------------------------------------------------- */
@@ -105,19 +161,53 @@
 
 /* Footer ---------------------------------------------------------------- */
 .footer {
-  border-top: 1px solid var(--line);
-  margin-top: 2rem;
+  margin-top: 32px;
+  border-top: 1px solid var(--outline);
+  background: var(--surface);
 }
 
 .footer__inner {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  padding-block: 1.5rem;
-  color: var(--ink-faint);
-  font-size: 0.85rem;
+  gap: 8px;
+  padding-block: 22px;
+  font-size: 13px;
+  color: var(--on-var);
 }
 
 .footer__dot {
   opacity: 0.6;
+}
+
+.footer__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.footer__link {
+  color: var(--on-var);
+  text-decoration: none;
+}
+
+.footer__link:hover {
+  color: var(--on);
+  text-decoration: underline;
+}
+
+/* "Cookie settings" reopens the banner, so it is a button styled as a link. */
+.footer__button {
+  padding: 0;
+  font: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 560px) {
+  .footer__nav {
+    width: 100%;
+    margin-left: 0;
+  }
 }

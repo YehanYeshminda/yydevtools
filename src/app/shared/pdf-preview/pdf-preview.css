@@ -1,4 +1,4 @@
-.preview {
+﻿.preview {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -7,9 +7,9 @@
 .preview__stage {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--outline-2);
   border-radius: 10px;
-  background: var(--card);
+  background: var(--surface-1);
 }
 
 .preview__host {
@@ -26,8 +26,8 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: var(--card);
-  color: var(--ink-soft);
+  background: var(--surface-1);
+  color: var(--on-var);
   text-align: center;
 }
 
@@ -37,6 +37,6 @@
 
 .preview__credit {
   margin: 0;
-  color: var(--ink-faint);
+  color: var(--on-var);
   font-size: 0.8rem;
 }

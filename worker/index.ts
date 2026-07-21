@@ -219,7 +219,19 @@ export default {
     if (path.startsWith('/api/')) {
       return handleApi(request, env, path);
     }
-    // Everything else is the SPA.
-    return env.ASSETS.fetch(request);
+    // Every route is prerendered to its own HTML file, so a miss is a genuine
+    // miss. Serve the prerendered 404 page, but with a 404 status — returning
+    // the homepage with 200 (the old SPA fallback) made every bad URL a soft
+    // 404 in Search Console and is a common AdSense rejection reason.
+    const response = await env.ASSETS.fetch(request);
+    if (response.status !== 404) {
+      return response;
+    }
+
+    const notFound = await env.ASSETS.fetch(new URL('/404', request.url));
+    return new Response(notFound.body, {
+      status: 404,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
   },
 };

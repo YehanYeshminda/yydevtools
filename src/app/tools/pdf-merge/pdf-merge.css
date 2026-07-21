@@ -1,4 +1,4 @@
-:host {
+﻿:host {
   display: block;
   width: 100%;
   max-width: 1000px;
@@ -97,18 +97,18 @@
   gap: 0.5rem;
   padding: 2.5rem 1.5rem;
   text-align: center;
-  border: 2px dashed var(--line-strong);
+  border: 2px dashed var(--outline);
   border-radius: 16px;
-  background: var(--card);
-  color: var(--ink-soft);
+  background: var(--surface-1);
+  color: var(--on-var);
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .dropzone:hover,
 .dropzone--over {
-  border-color: var(--accent);
-  background: var(--accent-tint);
+  border-color: var(--primary);
+  background: var(--primary-hover);
 }
 
 .dropzone__input {
@@ -127,23 +127,23 @@
   font-size: 2.5rem;
   width: 2.5rem;
   height: 2.5rem;
-  color: var(--accent);
+  color: var(--primary);
 }
 
 .dropzone__title {
-  font-family: var(--font-serif);
+  font-family: var(--font);
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--on);
 }
 
 .dropzone__hint {
   font-size: 0.9rem;
-  color: var(--ink-faint);
+  color: var(--on-var);
 }
 
 .dropzone:focus-within {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -162,9 +162,9 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 0.75rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--outline-2);
   border-radius: 12px;
-  background: var(--card);
+  background: var(--surface-1);
 }
 
 .item__index {
@@ -175,16 +175,16 @@
   height: 1.6rem;
   flex: none;
   border-radius: 50%;
-  background: var(--accent-tint);
-  color: var(--accent-strong);
-  font-family: var(--font-serif);
+  background: var(--primary-hover);
+  color: var(--primary-strong);
+  font-family: var(--font);
   font-size: 0.85rem;
   font-weight: 600;
 }
 
 .item__icon {
   flex: none;
-  color: var(--ink-faint);
+  color: var(--on-var);
 }
 
 .item__body {
@@ -199,12 +199,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 500;
-  color: var(--ink);
+  color: var(--on);
 }
 
 .item__meta {
   font-size: 0.85rem;
-  color: var(--ink-faint);
+  color: var(--on-var);
 }
 
 .item__actions {
@@ -216,13 +216,13 @@
 
 /* Summary + hints ------------------------------------------------------- */
 .summary {
-  color: var(--ink-soft);
+  color: var(--on-var);
   font-size: 0.9rem;
 }
 
 .hint-line {
   margin: 0;
-  color: var(--ink-faint);
+  color: var(--on-var);
   font-size: 0.9rem;
 }
 

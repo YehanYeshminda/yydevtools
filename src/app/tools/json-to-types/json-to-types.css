@@ -1,0 +1,27 @@
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Keep the name field from stretching across the whole row. */
+.options__name {
+  width: 14rem;
+}
+
+/* The generated code reads as code, not prose. */
+.field textarea {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.note code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  padding: 0.1em 0.35em;
+  background: var(--surface-2);
+  border-radius: 4px;
+}

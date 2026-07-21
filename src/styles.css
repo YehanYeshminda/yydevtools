@@ -1,47 +1,150 @@
+/* The tool pages size everything in rem against this 14px root — leave it be.
+   The restyled shell and home directory are specified in px, as the design is. */
 html {
   font-size: 14px;
 }
 
+/**
+ * Design tokens.
+ *
+ * Two layers:
+ *   1. the tokens below (--surface, --on-var, --primary, …) — use these;
+ *   2. the Material system tokens (--mat-sys-*), remapped onto layer 1 further
+ *      down so Material components sit inside the same palette.
+ */
 :root {
   color-scheme: light;
 
-  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-1: #fbfcfe;
+  --surface-2: #eef1f6;
+  --surface-3: #e6eaf1;
 
-  --ink: #201d1a;
-  --ink-soft: #57534e;
-  --ink-faint: #8c857d;
+  --on: #171a20;
+  --on-var: #5a6474;
+  --outline: #dce1e9;
+  --outline-2: #e9edf3;
 
-  --paper: #f4f3f0;
-  --card: #faf9f7;
-  --card-open: #ffffff;
-  --line: #e2ded7;
-  --line-strong: #d3cec6;
+  --primary: #2f68f5;
+  --on-primary: #ffffff;
+  --primary-c: #e3ebfe;
+  --on-primary-c: #0b2a83;
+  --primary-hover: #eef3ff;
+  --primary-strong: #1f4fd0;
 
-  --accent: #2f6f8f;
-  --accent-strong: #275c77;
-  --accent-tint: #e7eef2;
-  --on-accent: #ffffff;
+  /* One accent per tool category, used by the home directory sections. */
+  --cat-dev: #2358d8;
+  --cat-dev-bg: #e8effe;
+  --cat-conv: #0b7590;
+  --cat-conv-bg: #def2f7;
+  --cat-doc: #5f45d6;
+  --cat-doc-bg: #ece7fd;
 
-  --btn-soon-bg: #edece9;
+  --error: #d92d20;
+  --error-bg: #fdecea;
+  --success: #12805c;
+  --star: #b45309;
+  --star-bg: #fdf0d5;
+
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+
+  --r-card: 12px;
+  --r-field: 10px;
+  --r-btn: 10px;
+
+  --shadow-card: 0 1px 2px rgba(18, 26, 44, 0.05);
+  --shadow-card-hover: 0 6px 20px -8px rgba(18, 26, 44, 0.22);
+  --shadow-menu: 0 10px 28px -8px rgba(18, 26, 44, 0.22), 0 3px 8px -3px rgba(18, 26, 44, 0.14);
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --ink: #e8e6e3;
-  --ink-soft: #a7a19a;
-  --ink-faint: #8a847b;
+  --bg: #0d1015;
+  --surface: #151922;
+  --surface-1: #1a1f29;
+  --surface-2: #1f2531;
+  --surface-3: #28303d;
 
-  --paper: #101012;
-  --card: #191a1d;
-  --card-open: #14202a;
-  --line: #2a2b2f;
-  --line-strong: #3a3b40;
+  --on: #e7eaf1;
+  --on-var: #98a2b3;
+  --outline: #2b323f;
+  --outline-2: #232a35;
 
-  --accent: #57a6cd;
-  --accent-strong: #74b7d9;
-  --accent-tint: #16303d;
-  --on-accent: #08161d;
+  --primary: #7aa2ff;
+  --on-primary: #04153f;
+  --primary-c: #1c2d5f;
+  --on-primary-c: #d8e2ff;
+  --primary-hover: #1a2233;
+  --primary-strong: #9ab8ff;
 
-  --btn-soon-bg: #232428;
+  --cat-dev: #7aa2ff;
+  --cat-dev-bg: #18233d;
+  --cat-conv: #48c2db;
+  --cat-conv-bg: #12313a;
+  --cat-doc: #a690ff;
+  --cat-doc-bg: #251f46;
+
+  --error: #ff6f62;
+  --error-bg: #3a1d1c;
+  --success: #3fce9f;
+  --star: #f5b83d;
+  --star-bg: #33280f;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --shadow-menu: 0 12px 34px -8px rgba(0, 0, 0, 0.6), 0 3px 10px -3px rgba(0, 0, 0, 0.5);
+}
+
+/* Material system tokens ------------------------------------------------ */
+/* mat.theme() emits these on `html`; `:root` wins on specificity, so the
+   Material components follow the palette above in both schemes. */
+:root {
+  --mat-sys-primary: var(--primary);
+  --mat-sys-on-primary: var(--on-primary);
+  --mat-sys-primary-container: var(--primary-c);
+  --mat-sys-on-primary-container: var(--on-primary-c);
+  --mat-sys-secondary-container: var(--surface-2);
+  --mat-sys-on-secondary-container: var(--on);
+  --mat-sys-tertiary: var(--cat-doc);
+  --mat-sys-on-tertiary: var(--on-primary);
+
+  --mat-sys-background: var(--bg);
+  --mat-sys-on-background: var(--on);
+  --mat-sys-surface: var(--surface);
+  --mat-sys-on-surface: var(--on);
+  --mat-sys-on-surface-variant: var(--on-var);
+  --mat-sys-surface-variant: var(--surface-2);
+  --mat-sys-surface-container-lowest: var(--surface);
+  --mat-sys-surface-container-low: var(--surface-1);
+  --mat-sys-surface-container: var(--surface-2);
+  --mat-sys-surface-container-high: var(--surface-3);
+  --mat-sys-surface-container-highest: var(--surface-3);
+
+  --mat-sys-outline: var(--outline);
+  --mat-sys-outline-variant: var(--outline-2);
+
+  --mat-sys-error: var(--error);
+  --mat-sys-on-error: var(--on-primary);
+  --mat-sys-error-container: var(--error-bg);
+  --mat-sys-on-error-container: var(--error);
+}
+
+/* Base ------------------------------------------------------------------ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: var(--primary-c);
+  color: var(--on-primary-c);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }

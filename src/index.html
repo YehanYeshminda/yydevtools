@@ -2,9 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Yydevtools</title>
+  <title>yydevtools — Free developer utilities</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Per-route description, canonical, robots and social tags are written by
+       SeoService and baked in at prerender time. This is only the fallback. -->
+  <meta name="description" content="Free developer and PDF tools that run in your browser — JSON, JWT, Base64, hashing, image compression and PDF editing. No account, no upload, no install.">
+  <meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1015" media="(prefers-color-scheme: dark)">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <script>
     // Set the theme before first paint to avoid a flash of the wrong colours.
@@ -19,9 +24,31 @@
       }
     })();
   </script>
+  <script>
+    // Google Consent Mode v2 defaults. These must be in place BEFORE any ad
+    // script loads, so they live here rather than in the Angular bundle;
+    // ConsentService sends the matching 'update' once a choice is made.
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push(['consent', 'default', {
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      analytics_storage: 'denied',
+      wait_for_update: 500
+    }]);
+  </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "yydevtools",
+      "url": "https://tools.yydev.net",
+      "description": "Free developer and PDF tools that run in your browser."
+    }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
 </head>
