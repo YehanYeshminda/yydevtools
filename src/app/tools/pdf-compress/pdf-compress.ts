@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { HostedPdfTool } from '../../core/hosted-pdf-tool';
+import { Spinner } from '../../shared/spinner/spinner';
 
 type Level = 'LOW' | 'MEDIUM' | 'HIGH';
 
@@ -14,9 +14,9 @@ interface LevelOption {
 }
 
 /**
- * Adobe's levels describe how *much* is thrown away, so HIGH is the smallest
- * file and the softest images. The labels lead with the outcome, since that is
- * what people are choosing between.
+ * The levels describe how *much* is thrown away, so HIGH is the smallest file
+ * and the softest images. The labels lead with the outcome, since that is what
+ * people are choosing between.
  */
 const LEVELS: LevelOption[] = [
   { value: 'LOW', label: 'Best quality', hint: 'Barely touches image detail. Smallest saving.' },
@@ -26,7 +26,7 @@ const LEVELS: LevelOption[] = [
 
 @Component({
   selector: 'app-pdf-compress',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [RouterLink, MatButtonModule, MatIconModule, Spinner],
   templateUrl: './pdf-compress.html',
   styleUrls: ['../tool-shell.css', './pdf-compress.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

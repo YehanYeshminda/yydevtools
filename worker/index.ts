@@ -1,53 +1,65 @@
 /**
  * yydevtools Worker.
  *
- * Serves the built Angular SPA from static assets and exposes a small
- * `/api/pdf/*` surface for the operations that cannot run in the browser
- * (conversion, OCR, real compression). Everything else — merge, split,
- * viewing — stays client-side and never touches this Worker.
+ * Serves the built Angular SPA from static assets and exposes a small API for
+ * the operations that cannot run in the browser. Each one forwards to a
+ * self-hosted service on Fly.io — Ghostscript (compress), ocrmypdf (OCR) and
+ * LibreOffice (convert to Word/RTF). All are free per call, so nothing here is
+ * metered. Merge, split, viewing and image compression stay entirely
+ * client-side and never touch this Worker.
  */
 
-import { AdobeError, runOperation, type AdobeCredentials } from './adobe';
-import { readQuota, recordUsage } from './quota';
+import { ServiceError, serviceEndpoint, forwardToService } from './services';
+import { allowRequest } from './rate-limit';
+
+/** Workers Rate Limiting binding (see the `ratelimits` block in wrangler.jsonc). */
+interface RateLimiter {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
+}
 
 export interface Env {
   ASSETS: Fetcher;
-  PDF_QUOTA: KVNamespace;
-  /** Public client ID (a plain var). */
-  ADOBE_PDF_CLIENT_ID?: string;
-  /** Set with `wrangler secret put ADOBE_PDF_CLIENT_SECRET` — never a var. */
-  ADOBE_PDF_CLIENT_SECRET?: string;
-  /** Overrides the default monthly transaction budget. */
-  ADOBE_MONTHLY_LIMIT?: string;
+
+  // Base URLs of the Fly services (plain vars).
+  PDF_COMPRESS_URL?: string;
+  PDF_OCR_URL?: string;
+  PDF_CONVERT_URL?: string;
+
+  // Shared secrets, each set with `wrangler secret put <NAME>` — never vars.
+  PDF_COMPRESS_SECRET?: string;
+  PDF_OCR_SECRET?: string;
+  PDF_CONVERT_SECRET?: string;
+
+  /** Coarse per-location rate limiter for the API operations (Cloudflare binding). */
+  API_RATE_LIMITER?: RateLimiter;
+
+  // Upstash Redis REST — the exact, global per-IP rate limiter. URL is a plain
+  // var; the token is a secret (`wrangler secret put UPSTASH_REDIS_REST_TOKEN`).
+  UPSTASH_REDIS_REST_URL?: string;
+  UPSTASH_REDIS_REST_TOKEN?: string;
 }
 
-/**
- * Deliberately below Adobe's 500/month free tier. The margin absorbs both the
- * KV increment race and any job Adobe bills that we fail to record.
- */
-const DEFAULT_MONTHLY_LIMIT = 460;
-
-/** Adobe's own limits are higher, but Workers should not stream huge bodies. */
+/** Keep the Worker from streaming huge bodies; the services cap a little higher. */
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 
 type ErrorCode =
-  | 'QUOTA_EXCEEDED'
   | 'NOT_CONFIGURED'
   | 'UPSTREAM_UNAVAILABLE'
   | 'UPSTREAM_REJECTED'
   | 'TIMEOUT'
   | 'TOO_LARGE'
   | 'INVALID_INPUT'
+  | 'RATE_LIMITED'
   | 'NOT_FOUND';
 
 const STATUS: Record<ErrorCode, number> = {
-  QUOTA_EXCEEDED: 429,
   NOT_CONFIGURED: 503,
   UPSTREAM_UNAVAILABLE: 502,
   UPSTREAM_REJECTED: 502,
   TIMEOUT: 504,
   TOO_LARGE: 413,
   INVALID_INPUT: 400,
+  RATE_LIMITED: 429,
   NOT_FOUND: 404,
 };
 
@@ -55,19 +67,38 @@ function fail(code: ErrorCode, message: string): Response {
   return Response.json({ error: { code, message } }, { status: STATUS[code] });
 }
 
-/** Export targets we accept, mapped to the MIME type of the result. */
-const EXPORT_FORMATS: Record<string, string> = {
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  rtf: 'application/rtf',
+/** Ghostscript presets, mapped from the tool's LOW/MEDIUM/HIGH levels. */
+const COMPRESS_PRESETS: Record<string, string> = {
+  LOW: 'printer', // ~300 dpi, barely touches image detail
+  MEDIUM: 'ebook', // ~150 dpi, a good default
+  HIGH: 'screen', // ~72 dpi, smallest file
 };
 
-const COMPRESSION_LEVELS = new Set(['LOW', 'MEDIUM', 'HIGH']);
+/** PDF→Office targets we accept. xlsx/pptx are dropped: LibreOffice does them badly. */
+const EXPORT_FORMATS = new Set(['docx', 'rtf']);
+
+/** Tool locale codes → Tesseract language codes the OCR service ships packs for. */
+const OCR_LANGS: Record<string, string> = {
+  'en-US': 'eng',
+  'en-GB': 'eng',
+  'de-DE': 'deu',
+  'fr-FR': 'fra',
+  'es-ES': 'spa',
+  'it-IT': 'ita',
+  'pt-BR': 'por',
+  'nl-NL': 'nld',
+  'sv-SE': 'swe',
+  'pl-PL': 'pol',
+  'tr-TR': 'tur',
+  'ru-RU': 'rus',
+  'ja-JP': 'jpn',
+  'ko-KR': 'kor',
+  'zh-CN': 'chi_sim',
+};
 
 /**
- * The API only exists to serve our own pages, and it spends a metered budget,
- * so reject cross-origin callers rather than letting anyone drain the quota.
+ * The API only exists to serve our own pages, so reject cross-origin callers
+ * rather than letting anyone else use the services.
  */
 function sameOrigin(request: Request): boolean {
   const origin = request.headers.get('Origin');
@@ -86,54 +117,42 @@ function sameOrigin(request: Request): boolean {
   }
 }
 
-function credentials(env: Env): AdobeCredentials | null {
-  const clientId = env.ADOBE_PDF_CLIENT_ID ?? '';
-  const clientSecret = env.ADOBE_PDF_CLIENT_SECRET ?? '';
-  return clientId && clientSecret ? { clientId, clientSecret } : null;
-}
-
-function monthlyLimit(env: Env): number {
-  const parsed = Number(env.ADOBE_MONTHLY_LIMIT);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_MONTHLY_LIMIT;
-}
-
 async function readBody(request: Request): Promise<ArrayBuffer | Response> {
   const declared = Number(request.headers.get('Content-Length'));
   if (Number.isFinite(declared) && declared > MAX_UPLOAD_BYTES) {
-    return fail('TOO_LARGE', `That file is larger than the ${MAX_UPLOAD_BYTES / 1024 / 1024} MB limit for this tool.`);
+    return fail(
+      'TOO_LARGE',
+      `That file is larger than the ${MAX_UPLOAD_BYTES / 1024 / 1024} MB limit for this tool.`,
+    );
   }
 
   const bytes = await request.arrayBuffer();
   if (bytes.byteLength === 0) {
-    return fail('INVALID_INPUT', 'No document was sent.');
+    return fail('INVALID_INPUT', 'No file was sent.');
   }
   // Content-Length can be absent or wrong; the real size is authoritative.
   if (bytes.byteLength > MAX_UPLOAD_BYTES) {
-    return fail('TOO_LARGE', `That file is larger than the ${MAX_UPLOAD_BYTES / 1024 / 1024} MB limit for this tool.`);
+    return fail(
+      'TOO_LARGE',
+      `That file is larger than the ${MAX_UPLOAD_BYTES / 1024 / 1024} MB limit for this tool.`,
+    );
   }
   return bytes;
 }
 
-/** Runs an operation with the quota guard and error translation around it. */
-async function metered(
-  env: Env,
+/**
+ * Reads the body and forwards it to a Fly service, translating failures into
+ * the shared error contract. `endpoint` is null when the service is not wired
+ * up on this deployment.
+ */
+async function proxy(
   request: Request,
-  operation: string,
-  params: Record<string, unknown>,
-  resultType: string,
+  endpoint: ReturnType<typeof serviceEndpoint>,
+  pathname: string,
+  query: Record<string, string>,
 ): Promise<Response> {
-  const creds = credentials(env);
-  if (!creds) {
+  if (!endpoint) {
     return fail('NOT_CONFIGURED', 'This tool is not configured on the server right now.');
-  }
-
-  const now = Date.now();
-  const quota = await readQuota(env.PDF_QUOTA, monthlyLimit(env), now);
-  if (quota.remaining <= 0) {
-    return fail(
-      'QUOTA_EXCEEDED',
-      'This month’s allowance for the hosted converter is used up. It resets at the start of next month.',
-    );
   }
 
   const body = await readBody(request);
@@ -142,27 +161,13 @@ async function metered(
   }
 
   try {
-    const result = await runOperation(creds, {
-      operation,
-      params,
-      input: body,
-      inputMediaType: 'application/pdf',
-    });
-
-    // Only bill the user's budget once Adobe has actually delivered something.
-    await recordUsage(env.PDF_QUOTA, now);
-
-    return new Response(result, {
-      headers: {
-        'Content-Type': resultType,
-        'X-Quota-Remaining': String(Math.max(0, quota.remaining - 1)),
-      },
-    });
+    const result = await forwardToService(endpoint, pathname, query, body);
+    return new Response(result.body, { headers: { 'Content-Type': result.contentType } });
   } catch (error) {
-    if (error instanceof AdobeError) {
+    if (error instanceof ServiceError) {
       return fail(error.code, error.message);
     }
-    return fail('UPSTREAM_UNAVAILABLE', 'The conversion service could not be reached.');
+    return fail('UPSTREAM_UNAVAILABLE', 'The service could not be reached.');
   }
 }
 
@@ -171,44 +176,71 @@ async function handleApi(request: Request, env: Env, path: string): Promise<Resp
     return fail('INVALID_INPUT', 'Cross-origin requests are not accepted.');
   }
 
-  if (path === '/api/pdf/usage' && request.method === 'GET') {
-    const quota = await readQuota(env.PDF_QUOTA, monthlyLimit(env), Date.now());
-    return Response.json({ ...quota, configured: credentials(env) !== null });
-  }
-
   if (request.method !== 'POST') {
     return fail('NOT_FOUND', 'Unknown endpoint.');
   }
 
-  const url = new URL(request.url);
+  // Rate-limit the operations by client IP so nobody can hammer the Fly
+  // services. The Worker holds the only real IP (CF-Connecting-IP); the services
+  // just see the Worker. Two layers, cheapest first: the Cloudflare binding is a
+  // free, per-location coarse guard that absorbs bursts without a Redis
+  // round-trip, then Upstash Redis enforces an exact 20/minute ceiling shared
+  // across every Cloudflare location. Either one saying no rejects the request;
+  // both are skipped only when unconfigured rather than failing the request.
+  const clientIp = request.headers.get('CF-Connecting-IP') ?? 'anonymous';
 
-  if (path === '/api/pdf/export') {
-    const format = (url.searchParams.get('format') ?? 'docx').toLowerCase();
-    const resultType = EXPORT_FORMATS[format];
-    if (!resultType) {
-      return fail('INVALID_INPUT', `"${format}" is not a supported export format.`);
+  if (env.API_RATE_LIMITER) {
+    const { success } = await env.API_RATE_LIMITER.limit({ key: clientIp });
+    if (!success) {
+      return fail(
+        'RATE_LIMITED',
+        'You are making requests too quickly. Please wait a minute and try again.',
+      );
     }
-    return metered(env, request, 'operation/exportpdf', { targetFormat: format }, resultType);
   }
 
-  if (path === '/api/pdf/ocr') {
-    const language = url.searchParams.get('lang') ?? 'en-US';
-    return metered(env, request, 'operation/ocr', { ocrLang: language }, 'application/pdf');
+  if (!(await allowRequest(env, clientIp))) {
+    return fail(
+      'RATE_LIMITED',
+      'You are making requests too quickly. Please wait a minute and try again.',
+    );
   }
+
+  const url = new URL(request.url);
 
   if (path === '/api/pdf/compress') {
     const level = (url.searchParams.get('level') ?? 'MEDIUM').toUpperCase();
-    if (!COMPRESSION_LEVELS.has(level)) {
+    const preset = COMPRESS_PRESETS[level];
+    if (!preset) {
       return fail('INVALID_INPUT', `"${level}" is not a supported compression level.`);
     }
-    return metered(
-      env,
-      request,
-      'operation/compresspdf',
-      { compressionLevel: level },
-      'application/pdf',
-    );
+    const endpoint = serviceEndpoint(env.PDF_COMPRESS_URL, env.PDF_COMPRESS_SECRET);
+    return proxy(request, endpoint, '/compress', { preset });
   }
+
+  if (path === '/api/pdf/ocr') {
+    const locale = url.searchParams.get('lang') ?? 'en-US';
+    const lang = OCR_LANGS[locale];
+    if (!lang) {
+      return fail('INVALID_INPUT', `"${locale}" is not a supported OCR language.`);
+    }
+    const endpoint = serviceEndpoint(env.PDF_OCR_URL, env.PDF_OCR_SECRET);
+    return proxy(request, endpoint, '/ocr', { lang });
+  }
+
+  if (path === '/api/pdf/export') {
+    const format = (url.searchParams.get('format') ?? 'docx').toLowerCase();
+    if (!EXPORT_FORMATS.has(format)) {
+      return fail('INVALID_INPUT', `"${format}" is not a supported export format.`);
+    }
+    const endpoint = serviceEndpoint(env.PDF_CONVERT_URL, env.PDF_CONVERT_SECRET);
+    return proxy(request, endpoint, '/convert', { format });
+  }
+
+  // There is deliberately no /api/image/compress. Image compression moved into
+  // the browser (mozjpeg and libwebp as WebAssembly), so the route would be an
+  // open proxy into an image decoder that nothing calls — attack surface with no
+  // user behind it.
 
   return fail('NOT_FOUND', 'Unknown endpoint.');
 }

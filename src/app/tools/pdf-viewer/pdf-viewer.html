@@ -49,18 +49,10 @@
   @if (bytes(); as loaded) {
     <p class="status status--ok" role="status">
       <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
-      {{ fileName() }} · {{ pageCount() }} {{ pageCount() === 1 ? 'page' : 'pages' }} ·
-      {{ formatBytes(fileSize()) }}
+      {{ fileSummary() }}
     </p>
 
-    <app-pdf-preview
-      [bytes]="loaded"
-      [fileName]="fileName()"
-      embedMode="FULL_WINDOW"
-      [showDownload]="true"
-      [showPrint]="true"
-      height="42rem"
-    />
+    <app-pdf-preview [bytes]="loaded" [fileName]="fileName()" height="42rem" />
 
     <div class="actions">
       <button matButton (click)="clear()">

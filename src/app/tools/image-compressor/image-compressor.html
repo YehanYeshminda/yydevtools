@@ -15,8 +15,8 @@
   <div>
     <h1 class="head__title">Image Compressor</h1>
     <p class="head__sub">
-      Shrink JPEG and PNG images to JPEG or WebP. Everything runs in your browser — your
-      images never leave your device.
+      Shrink JPEG and PNG images to JPEG or WebP with mozjpeg compression. Everything runs on your
+      own device — your image is never uploaded.
     </p>
   </div>
 </header>
@@ -72,6 +72,14 @@
             Choose another
           </button>
         </div>
+
+        @if (usingFallbackCodec()) {
+          <p class="note" role="status">
+            <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+            The mozjpeg encoder could not be loaded, so your browser's built-in one is being used.
+            The image is still compressed locally, just a little less tightly.
+          </p>
+        }
       </div>
 
       <!-- Preview + stats --------------------------------------------- -->
@@ -84,7 +92,7 @@
           />
           @if (processing()) {
             <div class="preview__busy" role="status" aria-label="Compressing">
-              <mat-spinner diameter="36" />
+              <app-spinner [size]="36" />
             </div>
           }
         </div>
@@ -130,10 +138,15 @@
       (dragleave)="onDragLeave()"
       (drop)="onDrop($event)"
     >
-      <input type="file" accept="image/*" class="dropzone__input" (change)="onFileSelected($event)" />
+      <input
+        type="file"
+        accept="image/*"
+        class="dropzone__input"
+        (change)="onFileSelected($event)"
+      />
       <mat-icon class="dropzone__icon" aria-hidden="true">add_photo_alternate</mat-icon>
       <span class="dropzone__title">Drop an image here, or click to choose</span>
-      <span class="dropzone__hint">JPEG, PNG, WebP and other images — up to 25 MB</span>
+      <span class="dropzone__hint">JPEG, PNG, WebP and other images — up to 20 MB</span>
     </label>
   }
 </div>

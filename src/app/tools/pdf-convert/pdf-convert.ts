@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { HostedPdfTool } from '../../core/hosted-pdf-tool';
 import { ExportFormat } from '../../core/pdf-services.client';
+import { Spinner } from '../../shared/spinner/spinner';
 
 interface FormatOption {
   value: ExportFormat;
@@ -14,14 +14,12 @@ interface FormatOption {
 
 const FORMATS: FormatOption[] = [
   { value: 'docx', label: 'Word', extension: 'docx' },
-  { value: 'xlsx', label: 'Excel', extension: 'xlsx' },
-  { value: 'pptx', label: 'PowerPoint', extension: 'pptx' },
   { value: 'rtf', label: 'Rich text', extension: 'rtf' },
 ];
 
 @Component({
   selector: 'app-pdf-convert',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [RouterLink, MatButtonModule, MatIconModule, Spinner],
   templateUrl: './pdf-convert.html',
   styleUrls: ['../tool-shell.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

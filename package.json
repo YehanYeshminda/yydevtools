@@ -34,11 +34,24 @@
     "@angular/platform-server": "^21.1.0",
     "@angular/router": "^21.1.0",
     "@angular/ssr": "^21.2.19",
+    "@cantoo/pdf-lib": "^2.7.4",
+    "@jsquash/jpeg": "^1.6.0",
+    "@jsquash/webp": "^1.5.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
+    "comlink": "^4.4.2",
     "express": "^5.1.0",
     "marked": "^18.0.6",
-    "pdf-lib": "^1.17.1",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "wasm-feature-detect": "^1.8.0"
+  },
+  "comments": {
+    "overrides": "GHSA-frvp-7c67-39w9 reaches us through @angular/cli's optional MCP server. npm's suggested fix downgrades the CLI, which is worse; these pin the two packages forward instead. Drop them once @angular/cli ships a dependency tree that resolves cleanly on its own."
+  },
+  "overrides": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@hono/node-server": "^2.0.5"
   },
   "devDependencies": {
     "@angular/build": "^21.1.2",
@@ -47,7 +60,9 @@
     "@cloudflare/workers-types": "^5.20260721.1",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
+    "jsdom": "^29.1.1",
     "typescript": "~5.9.2",
+    "vitest": "^4.1.10",
     "wrangler": "^4.112.0"
   }
 }

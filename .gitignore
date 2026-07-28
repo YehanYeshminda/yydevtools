@@ -6,10 +6,11 @@
 /out-tsc
 /bazel-out
 
-# Node
-/node_modules
-npm-debug.log
-yarn-error.log
+# Node — unanchored so services/*/node_modules is covered too
+node_modules/
+npm-debug.log*
+yarn-error.log*
+*.log
 
 # IDEs and editors
 .idea/
@@ -46,6 +47,15 @@ Thumbs.db
 # Assistant / editor tooling config — not part of the project
 .claude/
 
-# Cloudflare Worker local dev secrets — never commit
+# Secrets — never commit
 .dev.vars
+.dev.vars.*
+.env
+.env.*
+!.env.example
+
+# Cloudflare Worker local state
 .wrangler/
+
+# Fly.io local state for services/*
+.fly/

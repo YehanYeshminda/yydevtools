@@ -91,7 +91,7 @@ export const TOOLS: Tool[] = [
   {
     slug: 'pdf-convert',
     name: 'PDF Convert',
-    description: 'Turn a PDF into an editable Word, Excel, PowerPoint or rich-text file.',
+    description: 'Turn a PDF into an editable Word or rich-text file.',
     icon: 'sync_alt',
     category: 'Document',
     ready: true,

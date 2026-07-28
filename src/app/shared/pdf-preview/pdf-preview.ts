@@ -1,130 +1,72 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   effect,
   inject,
   input,
+  OnDestroy,
   signal,
-  viewChild,
 } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import {
-  ADOBE_CLIENT_ID,
-  AdobeEmbedMode,
-  AdobeViewerService,
-} from '../../core/adobe-viewer.service';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
-type State = 'idle' | 'loading' | 'ready' | 'error';
-
-/** Adobe addresses its container by id, so each instance needs its own. */
-let instanceCount = 0;
+/** Path to the vendored pdf.js viewer (see public/pdfjs, from the pdf.js release). */
+const VIEWER_PATH = '/pdfjs/web/viewer.html';
 
 /**
- * Renders a PDF held in memory using the Adobe PDF Embed API.
+ * Renders a PDF held in memory using the bundled pdf.js viewer.
  *
- * The bytes are handed straight to the viewer as an ArrayBuffer — nothing is
- * uploaded, and the document is rendered locally in the page.
+ * The bytes are wrapped in a same-origin blob URL and handed to the viewer in an
+ * iframe — nothing is uploaded, and the document is rendered locally in the
+ * page. The viewer brings its own toolbar, search, thumbnails and zoom.
  */
 @Component({
   selector: 'app-pdf-preview',
-  imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [],
   templateUrl: './pdf-preview.html',
   styleUrl: './pdf-preview.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PdfPreview {
-  private readonly viewer = inject(AdobeViewerService);
+export class PdfPreview implements OnDestroy {
+  private readonly sanitizer = inject(DomSanitizer);
 
   /** The document to show. A new array reference re-renders the viewer. */
   readonly bytes = input.required<Uint8Array>();
+  /** Kept for the call sites; the viewer derives its own labels from the file. */
   readonly fileName = input('document.pdf');
-  readonly embedMode = input<AdobeEmbedMode>('SIZED_CONTAINER');
-  readonly showDownload = input(false);
-  readonly showPrint = input(false);
-  /** Container height. `FULL_WINDOW` needs a tall box to be usable. */
+  /** Container height. */
   readonly height = input('34rem');
 
-  protected readonly containerId = `adobe-pdf-preview-${++instanceCount}`;
-  protected readonly state = signal<State>('idle');
+  protected readonly src = signal<SafeResourceUrl | null>(null);
 
-  private readonly host = viewChild<ElementRef<HTMLDivElement>>('host');
-  private requestId = 0;
+  /** The current blob URL, held so it can be revoked when it is replaced. */
+  private blobUrl: string | null = null;
 
   constructor() {
     effect(() => {
-      const host = this.host();
       const bytes = this.bytes();
-      const name = this.fileName();
-      const mode = this.embedMode();
-      const download = this.showDownload();
-      const print = this.showPrint();
-      if (host) {
-        void this.render(host.nativeElement, bytes, name, mode, download, print);
+      // createObjectURL only exists in the browser; these tool pages prerender
+      // without a file, so this effect never needs to run on the server.
+      if (typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
+        return;
       }
+      this.revoke();
+      // Copy into a fresh buffer — the caller's array may be a view over shared
+      // memory that outlives this preview.
+      const blob = new Blob([bytes.slice()], { type: 'application/pdf' });
+      this.blobUrl = URL.createObjectURL(blob);
+      const url = `${VIEWER_PATH}?file=${encodeURIComponent(this.blobUrl)}`;
+      this.src.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
     });
   }
 
-  protected retry(): void {
-    const host = this.host();
-    if (host) {
-      void this.render(
-        host.nativeElement,
-        this.bytes(),
-        this.fileName(),
-        this.embedMode(),
-        this.showDownload(),
-        this.showPrint(),
-      );
-    }
+  ngOnDestroy(): void {
+    this.revoke();
   }
 
-  private async render(
-    host: HTMLDivElement,
-    bytes: Uint8Array,
-    fileName: string,
-    embedMode: AdobeEmbedMode,
-    showDownloadPDF: boolean,
-    showPrintPDF: boolean,
-  ): Promise<void> {
-    // A viewer that resolves late must not paint over a newer document.
-    const token = ++this.requestId;
-    this.state.set('loading');
-
-    try {
-      const View = await this.viewer.load();
-      if (token !== this.requestId) {
-        return;
-      }
-
-      // Adobe appends its own iframe; clear the previous one before re-rendering.
-      host.replaceChildren();
-
-      const view = new View({ clientId: ADOBE_CLIENT_ID, divId: this.containerId });
-      await view.previewFile(
-        {
-          // Copy into a fresh buffer — the viewer holds on to it, and the
-          // caller's array may be a view over shared memory.
-          content: { promise: Promise.resolve(bytes.slice().buffer) },
-          metaData: { fileName },
-        },
-        {
-          embedMode,
-          showDownloadPDF,
-          showPrintPDF,
-          showAnnotationTools: false,
-        },
-      );
-
-      if (token === this.requestId) {
-        this.state.set('ready');
-      }
-    } catch {
-      if (token === this.requestId) {
-        this.state.set('error');
-      }
+  private revoke(): void {
+    if (this.blobUrl) {
+      URL.revokeObjectURL(this.blobUrl);
+      this.blobUrl = null;
     }
   }
 }

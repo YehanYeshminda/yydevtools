@@ -102,7 +102,9 @@
   background: var(--surface-1);
   color: var(--on-var);
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .dropzone:hover,
@@ -220,7 +222,11 @@
     linear-gradient(45deg, transparent 75%, var(--outline-2) 75%),
     linear-gradient(-45deg, transparent 75%, var(--outline-2) 75%);
   background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-position:
+    0 0,
+    0 10px,
+    10px -10px,
+    -10px 0;
 }
 
 .preview__img {
@@ -238,6 +244,7 @@
   justify-content: center;
   border-radius: 12px;
   background: color-mix(in srgb, var(--surface-1) 70%, transparent);
+  color: var(--primary);
 }
 
 /* Stats ----------------------------------------------------------------- */
@@ -296,4 +303,23 @@
 
 .saved--bad {
   color: var(--mat-sys-error);
+}
+
+/* Shown only when the WebAssembly codecs could not be loaded. */
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.note__icon {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  font-size: 1.15rem;
+  margin-top: 0.1rem;
 }

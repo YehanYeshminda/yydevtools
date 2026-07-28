@@ -15,8 +15,8 @@
   <div>
     <h1 class="head__title">PDF Convert</h1>
     <p class="head__sub">
-      Turn a PDF into an editable Word, Excel, PowerPoint or rich-text file. Unlike the other PDF
-      tools here, this one needs a hosted service — your file is sent to Adobe to be converted.
+      Turn a PDF into an editable Word or rich-text file. Unlike the local PDF tools here, this one
+      needs a hosted service — your file is uploaded to be converted, then deleted.
     </p>
   </div>
 </header>
@@ -28,15 +28,6 @@
       <a routerLink="/tools/pdf-merge">Merge</a>, <a routerLink="/tools/pdf-split">split</a> and
       <a routerLink="/tools/pdf-viewer">viewing</a> all still work entirely in your browser.
     </p>
-  }
-
-  @if (quota(); as allowance) {
-    @if (allowance.configured) {
-      <p class="quota" role="status">
-        <mat-icon class="quota__icon" aria-hidden="true">data_usage</mat-icon>
-        {{ allowance.remaining }} of {{ allowance.limit }} conversions left this month.
-      </p>
-    }
   }
 
   <label
@@ -66,8 +57,7 @@
   @if (hasFile()) {
     <p class="status status--ok" role="status">
       <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
-      {{ fileName() }} · {{ pageCount() }} {{ pageCount() === 1 ? 'page' : 'pages' }} ·
-      {{ formatBytes(fileSize()) }}
+      {{ fileSummary() }}
     </p>
 
     <div class="field">
@@ -90,7 +80,7 @@
     <div class="actions">
       @if (working()) {
         <button matButton="filled" disabled>
-          <mat-spinner diameter="18" />
+          <app-spinner />
           Converting…
         </button>
       } @else {
@@ -108,8 +98,8 @@
 
   <p class="note">
     <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
-    This is the only tool on the site that uploads your file. It is sent over HTTPS to Adobe PDF
-    Services, converted, and returned — Adobe deletes the document after processing. If that is not
+    This tool uploads your file. It is sent over HTTPS to our own conversion service, converted, and
+    returned — the file is deleted right after processing and never stored. If that is not
     acceptable for your file, use the local tools instead.
   </p>
 </div>

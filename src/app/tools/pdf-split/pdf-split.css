@@ -12,6 +12,6 @@
   font-size: 0.85em;
 }
 
-.actions mat-spinner {
+.actions app-spinner {
   margin-right: 0.5rem;
 }

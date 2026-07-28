@@ -3,9 +3,9 @@
   // `npm run build` produces the assets; `wrangler deploy` uploads them.
   //
   // The Worker serves the static site for every path except /api/*, which is
-  // handled by worker/index.ts. Only the PDF operations that cannot run in the
-  // browser (convert, OCR, compress) go through the API — merge, split and
-  // viewing stay entirely client-side.
+  // handled by worker/index.ts. The operations that cannot run in the browser
+  // (convert, OCR, compress) are proxied to self-hosted Fly services — merge,
+  // split, viewing and image compression stay entirely client-side.
   //
   // The build prerenders every route to its own HTML file, so there is no SPA
   // fallback: unmatched paths fall through to the Worker, which answers with
@@ -32,18 +32,28 @@
   // Custom domain — wrangler creates the DNS record if yydev.net is on this account.
   "routes": [{ "pattern": "tools.yydev.net", "custom_domain": true }],
   "vars": {
-    // Public client ID for Adobe PDF Services. The matching client SECRET is
-    // never stored here — set it with:
-    //   npx wrangler secret put ADOBE_PDF_CLIENT_SECRET
-    "ADOBE_PDF_CLIENT_ID": "a1b6cbd8cf104825a6827f2580fe2649",
-    "ADOBE_MONTHLY_LIMIT": "500",
+    // Base URLs of the self-hosted Fly services. Each has a matching secret that
+    // is NOT stored here — set them with:
+    //   npx wrangler secret put PDF_COMPRESS_SECRET
+    //   npx wrangler secret put PDF_OCR_SECRET
+    //   npx wrangler secret put PDF_CONVERT_SECRET
+    "PDF_COMPRESS_URL": "https://yydevtools-pdf-compress.fly.dev",
+    "PDF_OCR_URL": "https://yydevtools-pdf-ocr.fly.dev",
+    "PDF_CONVERT_URL": "https://yydevtools-pdf-convert.fly.dev",
+    // Upstash Redis for global rate limiting. The URL is safe to keep here; the
+    // token is a secret — set it with:
+    //   npx wrangler secret put UPSTASH_REDIS_REST_TOKEN
+    "UPSTASH_REDIS_REST_URL": "https://moral-kid-122505.upstash.io",
   },
-  "kv_namespaces": [
+  // Per-IP rate limit for the /api/* operations, so nobody can hammer the
+  // (metered-compute) Fly services. Keyed by CF-Connecting-IP in worker/index.ts.
+  // Note: the limiter is per-Cloudflare-location and eventually consistent — an
+  // abuse guard, not an exact counter. `period` must be 10 or 60 (seconds).
+  "ratelimits": [
     {
-      // Monthly transaction counter, created with:
-      //   npx wrangler kv namespace create PDF_QUOTA
-      "binding": "PDF_QUOTA",
-      "id": "298960ad74a84f128ce11abcf3f1b8cc",
+      "name": "API_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 20, "period": 60 },
     },
   ],
 }

@@ -130,6 +130,42 @@ html {
   --mat-sys-on-error: var(--on-primary);
   --mat-sys-error-container: var(--error-bg);
   --mat-sys-on-error-container: var(--error);
+
+  /* Material fills a selected button-toggle with `secondary-container`, which
+     we map to a surface shade — so "selected" came out a hair off the panel
+     behind it and was easy to miss, especially in the light theme. Give it the
+     same solid primary fill the chips and segmented tabs use, so one selected
+     look holds across the whole site. */
+  --mat-button-toggle-selected-state-background-color: var(--primary);
+  --mat-button-toggle-selected-state-text-color: var(--on-primary);
+
+  /* The chosen row in an open dropdown. A tint rather than a solid fill — this
+     is a list being scanned, not a control being read at a glance — but a tint
+     that is actually a different colour from the panel. */
+  --mat-option-selected-state-layer-color: var(--primary-c);
+  --mat-option-selected-state-label-text-color: var(--on-primary-c);
+}
+
+/* The label is a nested element, so the weight has to be set on it directly. */
+.mat-button-toggle-checked .mat-button-toggle-label-content {
+  font-weight: 600;
+}
+
+/* When a select opens, its chosen row is both selected and keyboard-active, and
+   the active layer — a flat grey — paints straight over the selected colour
+   above.
+   The extra class in these selectors is deliberate: Material's own rule is
+   `.mat-mdc-option.mat-mdc-option-active.mdc-list-item`, an exact specificity
+   tie, and its styles are injected at runtime so they land after this file and
+   win the tie. One more class settles it regardless of order. */
+.mat-mdc-option.mdc-list-item.mdc-list-item--selected,
+.mat-mdc-option.mdc-list-item.mdc-list-item--selected.mat-mdc-option-active {
+  background: var(--primary-c);
+}
+
+.mat-mdc-option.mdc-list-item.mdc-list-item--selected .mdc-list-item__primary-text {
+  color: var(--on-primary-c);
+  font-weight: 600;
 }
 
 /* Base ------------------------------------------------------------------ */

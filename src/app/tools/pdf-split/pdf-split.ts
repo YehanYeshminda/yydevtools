@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument } from '@cantoo/pdf-lib';
+import { formatBytes } from '../../core/format';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
+import { Spinner } from '../../shared/spinner/spinner';
 
 /** How the selected pages are written out. */
 export type SplitMode = 'single' | 'perPage';
@@ -24,7 +25,7 @@ const MANY_FILES = 20;
 
 @Component({
   selector: 'app-pdf-split',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatProgressSpinnerModule, PdfPreview],
+  imports: [RouterLink, MatButtonModule, MatIconModule, Spinner, PdfPreview],
   templateUrl: './pdf-split.html',
   styleUrls: ['../tool-shell.css', './pdf-split.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -261,20 +262,4 @@ function download(bytes: Uint8Array, name: string): void {
   anchor.download = name;
   anchor.click();
   URL.revokeObjectURL(url);
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  const units = ['KB', 'MB', 'GB'];
-  let value = bytes / 1024;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  const rounded =
-    value >= 10 || Number.isInteger(value) ? Math.round(value) : Math.round(value * 10) / 10;
-  return `${rounded} ${units[unit]}`;
 }

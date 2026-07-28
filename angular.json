@@ -47,6 +47,16 @@
                                                                                                        {
                                                                                                            "glob":  "**/*",
                                                                                                            "input":  "public"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "glob":  "*.wasm",
+                                                                                                           "input":  "node_modules/@jsquash/jpeg/codec/enc",
+                                                                                                           "output":  "wasm"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "glob":  "*.wasm",
+                                                                                                           "input":  "node_modules/@jsquash/webp/codec/enc",
+                                                                                                           "output":  "wasm"
                                                                                                        }
                                                                                                    ],
                                                                                         "styles":  [
@@ -54,7 +64,10 @@
                                                                                                        "src/styles.css"
                                                                                                    ],
                                                                                         "allowedCommonJsDependencies":  [
-                                                                                                                            "pako"
+                                                                                                                            "pako",
+                                                                                                                            "color",
+                                                                                                                            "crypto-js",
+                                                                                                                            "node-html-better-parser"
                                                                                                                         ],
                                                                                         "server":  "src/main.server.ts",
                                                                                         "outputMode":  "static",
@@ -99,6 +112,14 @@
                                                                                                                }
                                                                                            },
                                                                         "defaultConfiguration":  "development"
+                                                                    },
+                                                          "test":  {
+                                                                        "builder":  "@angular/build:unit-test",
+                                                                        "options":  {
+                                                                                        "buildTarget":  "yydevtools:build:development",
+                                                                                        "tsConfig":  "tsconfig.spec.json",
+                                                                                        "runner":  "vitest"
+                                                                                    }
                                                                     }
                                                       }
                                     }

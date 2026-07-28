@@ -1,0 +1,12 @@
+{
+  "name": "image-compress",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "sharp": "^0.35.3"
+  }
+}

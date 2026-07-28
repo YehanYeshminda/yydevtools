@@ -3,7 +3,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
-import { PDFDocument } from 'pdf-lib';
+import { describeFile, formatBytes } from '../../core/format';
+import { looksLikePdf, readPageCount } from '../../core/pdf-probe';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 
 /** The document is held in memory, so reject anything unreasonable up front. */
@@ -21,11 +22,17 @@ export class PdfViewerTool {
 
   protected readonly fileName = signal('');
   protected readonly fileSize = signal(0);
-  protected readonly pageCount = signal(0);
+  /** Null when the page tree could not be read; the summary then omits it. */
+  protected readonly pageCount = signal<number | null>(null);
   protected readonly bytes = signal<Uint8Array | null>(null);
   protected readonly dragOver = signal(false);
 
   protected readonly hasFile = computed(() => this.bytes() !== null);
+
+  /** The "name · pages · size" line shown above the viewer. */
+  protected readonly fileSummary = computed(() =>
+    describeFile(this.fileName(), this.pageCount(), this.fileSize()),
+  );
 
   protected onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -65,25 +72,26 @@ export class PdfViewerTool {
       return;
     }
 
-    try {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      // Parse once so we can show a page count and catch unreadable files
-      // before handing anything to the viewer.
-      const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-      this.pageCount.set(doc.getPageCount());
-      this.fileName.set(file.name);
-      this.fileSize.set(file.size);
-      this.bytes.set(bytes);
-    } catch {
-      this.showError(`"${file.name}" could not be read. It may be corrupt or password-protected.`);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    // Only the header is checked here. pdf.js opens the document for real a
+    // moment later and reports anything worse in its own words, so parsing it
+    // twice would just be a second opinion nobody reads.
+    if (!looksLikePdf(bytes)) {
+      this.showError(`"${file.name}" is not a readable PDF.`);
+      return;
     }
+
+    this.pageCount.set(await readPageCount(bytes));
+    this.fileName.set(file.name);
+    this.fileSize.set(file.size);
+    this.bytes.set(bytes);
   }
 
   protected clear(): void {
     this.bytes.set(null);
     this.fileName.set('');
     this.fileSize.set(0);
-    this.pageCount.set(0);
+    this.pageCount.set(null);
   }
 
   protected formatBytes(bytes: number): string {
@@ -93,20 +101,4 @@ export class PdfViewerTool {
   private showError(message: string): void {
     this.snackBar.open(message, 'Dismiss', { duration: 5000, panelClass: 'snack-error' });
   }
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  const units = ['KB', 'MB', 'GB'];
-  let value = bytes / 1024;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  const rounded =
-    value >= 10 || Number.isInteger(value) ? Math.round(value) : Math.round(value * 10) / 10;
-  return `${rounded} ${units[unit]}`;
 }

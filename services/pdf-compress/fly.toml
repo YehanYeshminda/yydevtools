@@ -1,0 +1,43 @@
+# Fly.io app for the Ghostscript PDF-compression service.
+#
+# Scale-to-zero: no machine runs when there is no traffic, so the idle cost is
+# nil. The first request after an idle period pays a ~1-2s cold start.
+#
+# Deploy from this directory:
+#   fly launch --no-deploy      # first time only, to create the app
+#   fly secrets set COMPRESS_SECRET=$(openssl rand -hex 32)
+#   fly deploy
+#
+# Then give the Worker the matching secret (PDF_COMPRESS_SECRET) — see README.md.
+
+app = "yydevtools-pdf-compress"
+primary_region = "iad"
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 25
+    soft_limit = 20
+
+  # Fly starts a stopped machine on an inbound request, so a health check that
+  # would wake it is pointless; keep it light and let the wake-on-request work.
+  [[http_service.checks]]
+    method = "GET"
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  # Ghostscript's image downsampling is memory-hungry on large scans; 1 GB keeps
+  # 20 MB inputs comfortable.
+  memory = "1gb"

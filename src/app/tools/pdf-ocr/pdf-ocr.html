@@ -17,7 +17,7 @@
     <p class="head__sub">
       Make a scanned PDF searchable. Text recognition runs over the page images and adds an
       invisible text layer, so you can select and search the words. This needs a hosted service —
-      your file is sent to Adobe to be processed.
+      your file is uploaded to be processed, then deleted.
     </p>
   </div>
 </header>
@@ -29,15 +29,6 @@
       <a routerLink="/tools/pdf-merge">Merge</a>, <a routerLink="/tools/pdf-split">split</a> and
       <a routerLink="/tools/pdf-viewer">viewing</a> all still work entirely in your browser.
     </p>
-  }
-
-  @if (quota(); as allowance) {
-    @if (allowance.configured) {
-      <p class="quota" role="status">
-        <mat-icon class="quota__icon" aria-hidden="true">data_usage</mat-icon>
-        {{ allowance.remaining }} of {{ allowance.limit }} operations left this month.
-      </p>
-    }
   }
 
   <label
@@ -67,8 +58,7 @@
   @if (hasFile()) {
     <p class="status status--ok" role="status">
       <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
-      {{ fileName() }} · {{ pageCount() }} {{ pageCount() === 1 ? 'page' : 'pages' }} ·
-      {{ formatBytes(fileSize()) }}
+      {{ fileSummary() }}
     </p>
 
     <div class="field">
@@ -91,7 +81,7 @@
     <div class="actions">
       @if (working()) {
         <button matButton="filled" disabled>
-          <mat-spinner diameter="18" />
+          <app-spinner />
           Recognising…
         </button>
       } @else {
@@ -109,8 +99,8 @@
 
   <p class="note">
     <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
-    This tool uploads your file. It is sent over HTTPS to Adobe PDF Services, processed, and
-    returned — Adobe deletes the document afterwards. A PDF that already has real text does not
+    This tool uploads your file. It is sent over HTTPS to our own OCR service, processed, and
+    returned — the file is deleted right after processing and never stored. A PDF that already has real text does not
     need OCR; open it in the <a routerLink="/tools/pdf-viewer">viewer</a> and try selecting a word
     to check.
   </p>

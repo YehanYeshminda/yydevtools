@@ -11,24 +11,22 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
+import { formatBytes } from '../../core/format';
+import { Spinner } from '../../shared/spinner/spinner';
+import { ImageCodecClient } from './image-codec.client';
+import type { CodecFormat } from './image-codec.worker';
 
-/** Output formats we can re-encode to. Both are widely supported and lossy. */
-type OutputFormat = 'image/jpeg' | 'image/webp';
-
-/** The source image, decoded once and kept for repeated re-encoding. */
+/** The source image: what we need to show it and describe it. */
 interface Source {
   name: string;
-  type: string;
   size: number;
   width: number;
   height: number;
   previewUrl: string;
-  bitmap: ImageBitmap;
 }
 
 /** The most recent compression output. */
@@ -40,8 +38,17 @@ interface Output {
   height: number;
 }
 
-/** Reject anything larger than this up front — big images can exhaust device memory. */
-const MAX_INPUT_BYTES = 25 * 1024 * 1024;
+/** Decoding happens in memory, so reject anything unreasonable up front. */
+const MAX_INPUT_BYTES = 20 * 1024 * 1024;
+
+/**
+ * How long to wait after the last option change before re-encoding.
+ *
+ * Encoding is now local, so this only has to outlast the gap between two slider
+ * frames — short enough that the result feels immediate, long enough that
+ * dragging across the track does not queue up an encode per step.
+ */
+const SETTLE_MS = 120;
 
 /** Preset dimension caps offered in the "Resize" select. 0 means keep the original size. */
 const SIZE_PRESETS: ReadonlyArray<{ value: number; label: string }> = [
@@ -61,9 +68,9 @@ const SIZE_PRESETS: ReadonlyArray<{ value: number; label: string }> = [
     MatButtonToggleModule,
     MatFormFieldModule,
     MatIconModule,
-    MatProgressSpinnerModule,
     MatSelectModule,
     MatSliderModule,
+    Spinner,
   ],
   templateUrl: './image-compressor.html',
   styleUrl: './image-compressor.css',
@@ -71,6 +78,7 @@ const SIZE_PRESETS: ReadonlyArray<{ value: number; label: string }> = [
 })
 export class ImageCompressorTool implements OnDestroy {
   private readonly snackBar = inject(MatSnackBar);
+  private readonly codec = new ImageCodecClient();
 
   protected readonly sizePresets = SIZE_PRESETS;
 
@@ -79,11 +87,14 @@ export class ImageCompressorTool implements OnDestroy {
   protected readonly output = signal<Output | null>(null);
   protected readonly processing = signal(false);
 
-  protected readonly format = signal<OutputFormat>('image/jpeg');
-  /** Encoding quality as a 0–1 fraction, as `canvas.toBlob` expects. */
+  protected readonly format = signal<CodecFormat>('image/jpeg');
+  /** Encoding quality as a 0–1 fraction; the codecs take it as 1–100. */
   protected readonly quality = signal(0.8);
   /** Longest-edge cap in pixels; 0 keeps the original dimensions. */
   protected readonly maxDimension = signal(0);
+
+  /** True once an encode has come back from the browser's encoder instead. */
+  protected readonly usingFallbackCodec = signal(false);
 
   protected readonly qualityPercent = computed(() => Math.round(this.quality() * 100));
 
@@ -97,12 +108,11 @@ export class ImageCompressorTool implements OnDestroy {
     return Math.round(((out.size - src.size) / src.size) * 100);
   });
 
-  /** Guards against an older async encode overwriting a newer one. */
+  /** Guards against an older encode overwriting a newer one. */
   private encodeToken = 0;
 
   constructor() {
-    // Re-encode whenever the source or any option changes. A short debounce keeps
-    // dragging the quality slider smooth instead of encoding on every tick.
+    // Re-encode whenever the source or any option changes.
     effect((onCleanup) => {
       const src = this.source();
       if (!src) {
@@ -114,7 +124,7 @@ export class ImageCompressorTool implements OnDestroy {
 
       const handle = setTimeout(() => {
         void this.encode(src, format, quality, maxDimension);
-      }, 150);
+      }, SETTLE_MS);
       onCleanup(() => clearTimeout(handle));
     });
   }
@@ -122,6 +132,7 @@ export class ImageCompressorTool implements OnDestroy {
   ngOnDestroy(): void {
     this.releaseSource();
     this.releaseOutput();
+    this.codec.terminate();
   }
 
   // --- File selection ---------------------------------------------------
@@ -161,14 +172,17 @@ export class ImageCompressorTool implements OnDestroy {
       return;
     }
     if (file.size > MAX_INPUT_BYTES) {
-      this.showError(`That image is too large. The maximum size is ${formatBytes(MAX_INPUT_BYTES)}.`);
+      this.showError(
+        `That image is too large. The maximum size is ${formatBytes(MAX_INPUT_BYTES)}.`,
+      );
       return;
     }
 
-    let bitmap: ImageBitmap;
+    let opened: { width: number; height: number };
     try {
-      // `from-image` honours EXIF orientation so phone photos are not sideways.
-      bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      // The worker keeps the decoded bitmap, so this is the only decode of the
+      // whole session no matter how many times the options change.
+      opened = await this.codec.open(file);
     } catch {
       this.showError('Could not read that image. It may be corrupt or an unsupported format.');
       return;
@@ -178,43 +192,40 @@ export class ImageCompressorTool implements OnDestroy {
     this.releaseOutput();
     this.output.set(null);
 
-    // Default the output format to WebP for PNGs (which are often screenshots or
-    // graphics), and JPEG for everything else.
+    // Default the output format to WebP for PNGs (often screenshots or graphics),
+    // and JPEG for everything else.
     this.format.set(file.type === 'image/png' ? 'image/webp' : 'image/jpeg');
 
     this.source.set({
       name: file.name,
-      type: file.type,
       size: file.size,
-      width: bitmap.width,
-      height: bitmap.height,
+      width: opened.width,
+      height: opened.height,
       previewUrl: URL.createObjectURL(file),
-      bitmap,
     });
   }
 
   // --- Encoding ---------------------------------------------------------
   private async encode(
     src: Source,
-    format: OutputFormat,
+    format: CodecFormat,
     quality: number,
     maxDimension: number,
   ): Promise<void> {
     const token = ++this.encodeToken;
     this.processing.set(true);
     try {
-      const { blob, width, height } = await encodeImage(src.bitmap, format, quality, maxDimension);
+      const result = await this.codec.encode(format, Math.round(quality * 100), maxDimension);
       if (token !== this.encodeToken) {
         return; // superseded by a newer request
       }
-      if (!blob) {
-        this.showError('Could not compress that image.');
-        return;
-      }
-      this.setOutput(blob, width, height);
-    } catch {
+      this.usingFallbackCodec.set(result.codec === 'canvas');
+      this.setOutput(result.blob, result.width, result.height);
+    } catch (error) {
       if (token === this.encodeToken) {
-        this.showError('Could not compress that image.');
+        this.showError(
+          error instanceof Error ? error.message : 'That image could not be compressed.',
+        );
       }
     } finally {
       if (token === this.encodeToken) {
@@ -229,7 +240,7 @@ export class ImageCompressorTool implements OnDestroy {
   }
 
   // --- Option handlers --------------------------------------------------
-  protected setFormat(format: OutputFormat): void {
+  protected setFormat(format: CodecFormat): void {
     this.format.set(format);
   }
 
@@ -259,6 +270,7 @@ export class ImageCompressorTool implements OnDestroy {
     this.releaseOutput();
     this.source.set(null);
     this.output.set(null);
+    void this.codec.close();
   }
 
   // --- Helpers ----------------------------------------------------------
@@ -274,7 +286,6 @@ export class ImageCompressorTool implements OnDestroy {
     const src = this.source();
     if (src) {
       URL.revokeObjectURL(src.previewUrl);
-      src.bitmap.close();
     }
   }
 
@@ -287,59 +298,8 @@ export class ImageCompressorTool implements OnDestroy {
 }
 
 // --- Pure helpers -------------------------------------------------------
-async function encodeImage(
-  bitmap: ImageBitmap,
-  format: OutputFormat,
-  quality: number,
-  maxDimension: number,
-): Promise<{ blob: Blob | null; width: number; height: number }> {
-  let { width, height } = bitmap;
-  if (maxDimension > 0 && (width > maxDimension || height > maxDimension)) {
-    const scale = Math.min(maxDimension / width, maxDimension / height);
-    width = Math.round(width * scale);
-    height = Math.round(height * scale);
-  }
-
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return { blob: null, width, height };
-  }
-
-  // JPEG has no alpha channel, so flatten transparency onto white to avoid a
-  // black background. WebP keeps alpha, so it can be drawn as-is.
-  if (format === 'image/jpeg') {
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, width, height);
-  }
-  ctx.drawImage(bitmap, 0, 0, width, height);
-
-  const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, format, quality);
-  });
-  return { blob, width, height };
-}
-
-function outputFileName(originalName: string, format: OutputFormat): string {
+function outputFileName(originalName: string, format: CodecFormat): string {
   const ext = format === 'image/webp' ? 'webp' : 'jpg';
   const base = originalName.replace(/\.[^.]+$/, '') || 'image';
   return `${base}-compressed.${ext}`;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  const units = ['KB', 'MB', 'GB'];
-  let value = bytes / 1024;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  const rounded =
-    value >= 10 || Number.isInteger(value) ? Math.round(value) : Math.round(value * 10) / 10;
-  return `${rounded} ${units[unit]}`;
 }

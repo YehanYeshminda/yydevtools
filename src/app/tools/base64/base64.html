@@ -15,112 +15,243 @@
   <div>
     <h1 class="head__title">Base64 Converter</h1>
     <p class="head__sub">
-      Encode and decode text or files to and from Base64. Everything runs in your browser.
+      Encode and decode text or files to and from Base64. Everything runs in your browser, on a
+      background thread — big files and long strings stay responsive.
     </p>
   </div>
 </header>
 
-<mat-tab-group>
+<mat-tab-group [preserveContent]="true">
   <!-- --------------------------------------------------- Encode a file -->
   <mat-tab label="Encode file">
-    <div class="panel">
-      <section class="block">
-        <p class="block__hint">Pick any file to get its Base64 representation.</p>
+    <div class="panel panel--tab">
+      <label
+        class="dropzone"
+        [class.dropzone--over]="dragOver()"
+        (dragover)="onEncodeDragOver($event)"
+        (dragleave)="onEncodeDragLeave()"
+        (drop)="onEncodeDrop($event)"
+      >
+        <input type="file" class="dropzone__input" (change)="onFileSelected($event)" />
+        <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+        <span class="dropzone__title">
+          @if (fileName()) {
+            Drop another file here, or click to replace
+          } @else {
+            Drop a file here, or click to choose
+          }
+        </span>
+        <span class="dropzone__hint">Any file, up to {{ maxFileLabel }} — nothing is uploaded</span>
+      </label>
+
+      @if (fileName()) {
+        <p class="status status--ok" role="status">
+          <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+          {{ fileName() }} · {{ formatBytes(fileSize()) }}
+        </p>
+      }
+
+      @if (encoding()) {
+        <p class="working" role="status">
+          <app-spinner />
+          Encoding in a background thread…
+        </p>
+      }
+
+      @if (encodedLength() > 0) {
+        <mat-checkbox [checked]="withDataUri()" (change)="toggleDataUri($event.checked)">
+          Include data URI prefix
+        </mat-checkbox>
+
+        <div class="field">
+          <label class="field__label" for="b64-out">Base64 output</label>
+          <textarea
+            id="b64-out"
+            class="field__input"
+            rows="8"
+            readonly
+            spellcheck="false"
+            [value]="encodedDisplay()"
+          ></textarea>
+          <span class="field__hint">
+            {{ count(encodedTotal()) }} characters.
+            @if (encodedTruncated()) {
+              Only the first {{ count(previewChars) }} are shown — rendering the whole string
+              would freeze the page. Copy or download to get all of it.
+            }
+          </span>
+        </div>
 
         <div class="actions">
-          <button matButton="filled" (click)="fileInput.click()">
-            <mat-icon>upload_file</mat-icon>
-            Choose file
+          <button matButton="filled" (click)="copyEncoded()">
+            <mat-icon>content_copy</mat-icon>
+            Copy
           </button>
-          @if (fileName()) {
-            <span class="filename">{{ fileName() }}</span>
-          }
+          <button matButton (click)="downloadEncoded()">
+            <mat-icon>download</mat-icon>
+            Download .txt
+          </button>
+          <button matButton (click)="clearEncoded()">
+            <mat-icon>delete_sweep</mat-icon>
+            Clear
+          </button>
         </div>
-        <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
-
-        @if (fileBase64()) {
-          <mat-checkbox
-            class="opt"
-            [checked]="withDataUri()"
-            (change)="toggleDataUri($event.checked)"
-          >
-            Include data URI prefix
-          </mat-checkbox>
-
-          <mat-form-field appearance="outline" class="field">
-            <mat-label>Base64 output</mat-label>
-            <textarea matInput rows="6" readonly [value]="encodedFileOutput()"></textarea>
-          </mat-form-field>
-
-          <div class="actions">
-            <button matButton="filled" (click)="copy(encodedFileOutput())">
-              <mat-icon>content_copy</mat-icon>
-              Copy
-            </button>
-          </div>
-        }
-      </section>
+      }
     </div>
   </mat-tab>
 
   <!-- --------------------------------------------------- Decode a file -->
   <mat-tab label="Decode file">
-    <div class="panel">
-      <section class="block">
-        <p class="block__hint">
-          Paste Base64 or a data URI — images and PDFs are previewed below, and any file
-          can be downloaded.
-        </p>
+    <div class="panel panel--tab">
+      <div class="split">
+        <section class="split__pane">
+          <h2 class="section__title">Base64 input</h2>
 
-        <mat-form-field appearance="outline" class="field">
-          <mat-label>Base64 input</mat-label>
-          <textarea
-            matInput
-            rows="6"
-            [value]="decodeInput()"
-            (input)="onDecodeInput($event)"
-            placeholder="Paste Base64 here…"
-          ></textarea>
-        </mat-form-field>
+          <div class="field">
+            <label class="field__label" for="b64-in">Paste Base64 or a data URI</label>
+            <textarea
+              id="b64-in"
+              #decodeArea
+              class="field__input"
+              rows="10"
+              spellcheck="false"
+              placeholder="Paste Base64 here…"
+              [readonly]="decodeSource.locked()"
+              (input)="onDecodeInput($event)"
+              (paste)="onDecodePaste($event)"
+            ></textarea>
+            @if (decodeSource.locked()) {
+              <span class="field__hint">
+                All {{ count(decodeSource.length()) }} characters are loaded — the box shows the
+                first {{ count(previewChars) }} so the page stays responsive. Clear to edit again.
+              </span>
+            }
+          </div>
 
-        @if (decodePreview(); as preview) {
-          <div class="preview">
-            @switch (preview.kind) {
-              @case ('image') {
-                <img class="preview__img" [src]="preview.url" alt="Decoded image preview" />
-              }
+          @if (decodeSource.length() > 0) {
+            @if (decodeValid()) {
+              <p class="status status--ok" role="status">
+                <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+                {{ decodeLabel() }} · about {{ formatBytes(decodeBytes()) }} ·
+                {{ count(decodeSource.length()) }} characters
+              </p>
+            } @else {
+              <p class="status status--err" role="alert">
+                <mat-icon class="status__icon" aria-hidden="true">error_outline</mat-icon>
+                That does not look like valid Base64.
+              </p>
+            }
+          }
+
+          <div class="actions">
+            @if (rendering()) {
+              <button matButton="filled" disabled>
+                <app-spinner />
+                Rendering…
+              </button>
+            } @else {
+              <button matButton="filled" (click)="render()" [disabled]="!canRender()">
+                <mat-icon>visibility</mat-icon>
+                Render preview
+              </button>
+            }
+            <button matButton (click)="clearDecode()" [disabled]="!decodeSource.length()">
+              <mat-icon>delete_sweep</mat-icon>
+              Clear
+            </button>
+          </div>
+
+          <div class="field field--narrow">
+            <label class="field__label" for="b64-name">Download file name</label>
+            <input
+              id="b64-name"
+              class="field__input"
+              [value]="decodeFileName()"
+              (input)="onDecodeFileName($event)"
+            />
+          </div>
+
+          <div class="actions">
+            <button
+              matButton="filled"
+              (click)="downloadDecoded()"
+              [disabled]="!decodeSource.length() || rendering()"
+            >
+              <mat-icon>download</mat-icon>
+              Download file
+            </button>
+          </div>
+        </section>
+
+        <section class="split__pane" aria-live="polite">
+          <h2 class="section__title">Preview</h2>
+
+          @if (preview(); as rendered) {
+            @if (previewStale()) {
+              <p class="status status--warn" role="status">
+                <mat-icon class="status__icon" aria-hidden="true">update</mat-icon>
+                The input changed — render again to refresh this.
+              </p>
+            }
+
+            @switch (rendered.kind) {
               @case ('pdf') {
-                <iframe class="preview__pdf" [src]="preview.frameUrl" title="Decoded PDF preview">
-                </iframe>
+                <app-pdf-preview [bytes]="rendered.bytes" height="30rem" />
+              }
+              @case ('image') {
+                @if (rendered.url; as url) {
+                  <img class="shot" [src]="url" alt="Decoded image preview" />
+                }
+              }
+              @case ('text') {
+                <div class="field">
+                  <label class="field__label" for="b64-text-preview">
+                    Decoded {{ decodeLabel() }}
+                  </label>
+                  <textarea
+                    id="b64-text-preview"
+                    class="field__input field__input--tall"
+                    rows="16"
+                    readonly
+                    spellcheck="false"
+                    [value]="rendered.text"
+                  ></textarea>
+                  <span class="field__hint">
+                    {{ count(rendered.textLength) }} characters.
+                    @if (rendered.prettyPrinted) {
+                      Re-indented for reading — the download keeps the original bytes.
+                    }
+                    @if (rendered.textLength > textPreviewChars) {
+                      Only the first {{ count(textPreviewChars) }} are shown; download for the rest.
+                    }
+                  </span>
+                </div>
               }
               @default {
-                <p class="preview__note">
-                  <mat-icon class="preview__note-icon" aria-hidden="true">description</mat-icon>
-                  No preview for this file type ({{ preview.mime }}), but you can still download it.
+                <p class="preview-note">
+                  <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+                  No preview for {{ rendered.mime }}, but the file is ready to download.
                 </p>
               }
             }
-          </div>
-        }
-
-        <mat-form-field appearance="outline" class="field field--narrow">
-          <mat-label>Download file name</mat-label>
-          <input matInput [value]="decodeFileName()" (input)="onDecodeFileName($event)" />
-        </mat-form-field>
-
-        <div class="actions">
-          <button matButton="filled" (click)="downloadDecoded()" [disabled]="!decodeInput()">
-            <mat-icon>download</mat-icon>
-            Download file
-          </button>
-        </div>
-      </section>
+          } @else {
+            <div class="empty">
+              <mat-icon class="empty__icon" aria-hidden="true">visibility_off</mat-icon>
+              <p class="empty__title">Nothing rendered yet</p>
+              <p class="empty__hint">
+                Paste your Base64 and press <strong>Render preview</strong>. Rendering is never
+                automatic, so pasting a large document stays instant.
+              </p>
+            </div>
+          }
+        </section>
+      </div>
     </div>
   </mat-tab>
 
   <!-- ------------------------------------------------------------- Text -->
   <mat-tab label="Text">
-    <div class="panel">
+    <div class="panel panel--tab">
       <mat-button-toggle-group
         class="modes"
         aria-label="Conversion mode"
@@ -131,32 +262,72 @@
         <mat-button-toggle value="decode">Decode</mat-button-toggle>
       </mat-button-toggle-group>
 
-      <mat-form-field appearance="outline" class="field">
-        <mat-label>{{ mode() === 'encode' ? 'Text to encode' : 'Base64 to decode' }}</mat-label>
+      <div class="field">
+        <label class="field__label" for="b64-text">
+          {{ mode() === 'encode' ? 'Text to encode' : 'Base64 to decode' }}
+        </label>
         <textarea
-          matInput
-          rows="6"
-          [value]="input()"
-          (input)="onInput($event)"
+          id="b64-text"
+          #textArea
+          class="field__input"
+          rows="8"
+          spellcheck="false"
           placeholder="Type or paste here…"
+          [readonly]="textSource.locked()"
+          (input)="onTextInput($event)"
+          (paste)="onTextPaste($event)"
         ></textarea>
-      </mat-form-field>
+        @if (textSource.locked()) {
+          <span class="field__hint">
+            All {{ count(textSource.length()) }} characters are loaded — the box shows the first
+            {{ count(previewChars) }}. Clear to edit again.
+          </span>
+        }
+      </div>
 
-      <mat-form-field appearance="outline" class="field">
-        <mat-label>Result</mat-label>
-        <textarea matInput rows="6" readonly [value]="result().value"></textarea>
-      </mat-form-field>
+      @if (textError()) {
+        <p class="status status--err" role="alert">
+          <mat-icon class="status__icon" aria-hidden="true">error_outline</mat-icon>
+          {{ textError() }}
+        </p>
+      }
+
+      <div class="field">
+        <label class="field__label" for="b64-result">Result</label>
+        <textarea
+          id="b64-result"
+          class="field__input"
+          rows="8"
+          readonly
+          spellcheck="false"
+          [value]="textResultHead()"
+        ></textarea>
+        @if (textBusy()) {
+          <span class="field__hint">Converting…</span>
+        } @else if (textResultLength() > 0) {
+          <span class="field__hint">
+            {{ count(textResultLength()) }} characters.
+            @if (textResultTruncated()) {
+              Only the first {{ count(previewChars) }} are shown — copy or download for the rest.
+            }
+          </span>
+        }
+      </div>
 
       <div class="actions">
-        <button matButton="filled" [disabled]="!result().value" (click)="copy(result().value)">
+        <button matButton="filled" [disabled]="!textResultLength()" (click)="copyTextResult()">
           <mat-icon>content_copy</mat-icon>
           Copy result
         </button>
-        <button matButton (click)="swap()" [disabled]="!result().value">
+        <button matButton [disabled]="!textResultLength()" (click)="downloadTextResult()">
+          <mat-icon>download</mat-icon>
+          Download .txt
+        </button>
+        <button matButton (click)="swapText()" [disabled]="!textResultLength()">
           <mat-icon>swap_vert</mat-icon>
           Use as input
         </button>
-        <button matButton (click)="clearText()" [disabled]="!input()">
+        <button matButton (click)="clearText()" [disabled]="!textSource.length()">
           <mat-icon>clear</mat-icon>
           Clear
         </button>

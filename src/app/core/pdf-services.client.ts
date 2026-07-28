@@ -1,19 +1,20 @@
 import { Injectable } from '@angular/core';
 
 /**
- * Talks to the Worker's `/api/pdf/*` routes.
+ * Talks to the Worker's `/api/*` routes, which proxy to self-hosted Fly
+ * services (Ghostscript, ocrmypdf, LibreOffice).
  *
  * Only operations that genuinely cannot run in the browser go through here.
- * Merge, split and viewing stay local — they are free, unlimited and offline,
- * and spending a metered transaction on them would be strictly worse.
+ * Merge, split, viewing and image compression all stay local — they are free,
+ * unlimited and work offline.
  */
 
-/** Export targets supported by the hosted converter. */
-export type ExportFormat = 'docx' | 'xlsx' | 'pptx' | 'rtf';
+/** Export targets supported by the LibreOffice converter. */
+export type ExportFormat = 'docx' | 'rtf';
 
 /**
  * `unavailable` means the hosted service could not serve this request through
- * no fault of the user's — out of quota, not configured, upstream down. Callers
+ * no fault of the user's — not configured, upstream down, timed out. Callers
  * should fall back to a local path if they have one.
  *
  * `rejected` means the request itself was bad (wrong file, too large). Retrying
@@ -24,20 +25,10 @@ export type PdfServiceFailure =
   | { kind: 'rejected'; code: string; message: string };
 
 export type PdfServiceResult =
-  | { ok: true; bytes: Uint8Array; remaining: number | null }
-  | { ok: false; failure: PdfServiceFailure };
-
-export interface QuotaSnapshot {
-  used: number;
-  limit: number;
-  remaining: number;
-  period: string;
-  configured: boolean;
-}
+  { ok: true; bytes: Uint8Array } | { ok: false; failure: PdfServiceFailure };
 
 /** Server codes that mean "try something else", not "your input was wrong". */
 const FALLBACK_CODES = new Set([
-  'QUOTA_EXCEEDED',
   'NOT_CONFIGURED',
   'UPSTREAM_UNAVAILABLE',
   'UPSTREAM_REJECTED',
@@ -46,43 +37,33 @@ const FALLBACK_CODES = new Set([
 
 @Injectable({ providedIn: 'root' })
 export class PdfServicesClient {
-  /**
-   * Current month's allowance, or null if the API is unreachable — which is the
-   * normal case under `ng serve`, where no Worker is running.
-   */
-  async usage(): Promise<QuotaSnapshot | null> {
-    try {
-      const response = await fetch('/api/pdf/usage');
-      if (!response.ok) {
-        return null;
-      }
-      const body: unknown = await response.json();
-      return isQuota(body) ? body : null;
-    } catch {
-      return null;
-    }
-  }
-
   exportPdf(bytes: Uint8Array, format: ExportFormat): Promise<PdfServiceResult> {
-    return this.run(`/api/pdf/export?format=${format}`, bytes);
+    return this.run(`/api/pdf/export?format=${format}`, bytes, 'application/pdf');
   }
 
   ocr(bytes: Uint8Array, language = 'en-US'): Promise<PdfServiceResult> {
-    return this.run(`/api/pdf/ocr?lang=${encodeURIComponent(language)}`, bytes);
+    return this.run(`/api/pdf/ocr?lang=${encodeURIComponent(language)}`, bytes, 'application/pdf');
   }
 
-  compress(bytes: Uint8Array, level: 'LOW' | 'MEDIUM' | 'HIGH' = 'MEDIUM'): Promise<PdfServiceResult> {
-    return this.run(`/api/pdf/compress?level=${level}`, bytes);
+  compress(
+    bytes: Uint8Array,
+    level: 'LOW' | 'MEDIUM' | 'HIGH' = 'MEDIUM',
+  ): Promise<PdfServiceResult> {
+    return this.run(`/api/pdf/compress?level=${level}`, bytes, 'application/pdf');
   }
 
-  private async run(url: string, bytes: Uint8Array): Promise<PdfServiceResult> {
+  private async run(
+    url: string,
+    bytes: Uint8Array,
+    contentType: string,
+  ): Promise<PdfServiceResult> {
     let response: Response;
     try {
       response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/pdf' },
+        headers: { 'Content-Type': contentType },
         // Copy so the Blob owns a plain ArrayBuffer, not a possibly-shared view.
-        body: new Blob([bytes.slice()], { type: 'application/pdf' }),
+        body: new Blob([bytes.slice()], { type: contentType }),
       });
     } catch {
       return {
@@ -90,7 +71,7 @@ export class PdfServicesClient {
         failure: {
           kind: 'unavailable',
           code: 'NETWORK',
-          message: 'The hosted converter could not be reached.',
+          message: 'The hosted service could not be reached.',
         },
       };
     }
@@ -105,18 +86,12 @@ export class PdfServicesClient {
           failure: {
             kind: 'unavailable',
             code: 'NOT_DEPLOYED',
-            message: 'The hosted converter is not running in this environment.',
+            message: 'The hosted service is not running in this environment.',
           },
         };
       }
       const buffer = await response.arrayBuffer();
-      const header = response.headers.get('X-Quota-Remaining');
-      const remaining = header !== null && header !== '' ? Number(header) : null;
-      return {
-        ok: true,
-        bytes: new Uint8Array(buffer),
-        remaining: remaining !== null && Number.isFinite(remaining) ? remaining : null,
-      };
+      return { ok: true, bytes: new Uint8Array(buffer) };
     }
 
     return { ok: false, failure: await this.readFailure(response) };
@@ -124,7 +99,7 @@ export class PdfServicesClient {
 
   private async readFailure(response: Response): Promise<PdfServiceFailure> {
     let code = `HTTP_${response.status}`;
-    let message = 'The hosted converter could not process this file.';
+    let message = 'The hosted service could not process this file.';
 
     try {
       const body: unknown = await response.json();
@@ -141,14 +116,6 @@ export class PdfServicesClient {
     const shouldFallback = FALLBACK_CODES.has(code) || response.status >= 500;
     return { kind: shouldFallback ? 'unavailable' : 'rejected', code, message };
   }
-}
-
-function isQuota(value: unknown): value is QuotaSnapshot {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-  const record = value as Record<string, unknown>;
-  return typeof record['remaining'] === 'number' && typeof record['limit'] === 'number';
 }
 
 function isErrorBody(value: unknown): value is { error: { code: string; message: string } } {

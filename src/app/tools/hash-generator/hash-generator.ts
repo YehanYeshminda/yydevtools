@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
+import { formatBytes } from '../../core/format';
+import { Spinner } from '../../shared/spinner/spinner';
 
 /** The digests WebCrypto exposes, in ascending strength. */
 const ALGORITHMS = ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'] as const;
@@ -21,7 +22,7 @@ const MAX_FILE_BYTES = 250 * 1024 * 1024;
 
 @Component({
   selector: 'app-hash-generator',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [RouterLink, MatButtonModule, MatIconModule, Spinner],
   templateUrl: './hash-generator.html',
   styleUrls: ['../tool-shell.css', './hash-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -158,20 +159,4 @@ export class HashGeneratorTool {
 // --- Pure helpers -------------------------------------------------------
 function toHex(buffer: ArrayBuffer): string {
   return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  const units = ['KB', 'MB', 'GB'];
-  let value = bytes / 1024;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  const rounded =
-    value >= 10 || Number.isInteger(value) ? Math.round(value) : Math.round(value * 10) / 10;
-  return `${rounded} ${units[unit]}`;
 }

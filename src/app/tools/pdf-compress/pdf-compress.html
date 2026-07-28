@@ -16,7 +16,7 @@
     <h1 class="head__title">PDF Compress</h1>
     <p class="head__sub">
       Shrink a PDF by downsampling the images inside it — a real reduction, not just a re-save.
-      This needs a hosted service — your file is sent to Adobe to be processed.
+      This needs a hosted service — your file is uploaded to be processed, then deleted.
     </p>
   </div>
 </header>
@@ -28,15 +28,6 @@
       <a routerLink="/tools/pdf-merge">Merge</a>, <a routerLink="/tools/pdf-split">split</a> and
       <a routerLink="/tools/pdf-viewer">viewing</a> all still work entirely in your browser.
     </p>
-  }
-
-  @if (quota(); as allowance) {
-    @if (allowance.configured) {
-      <p class="quota" role="status">
-        <mat-icon class="quota__icon" aria-hidden="true">data_usage</mat-icon>
-        {{ allowance.remaining }} of {{ allowance.limit }} operations left this month.
-      </p>
-    }
   }
 
   <label
@@ -66,8 +57,7 @@
   @if (hasFile()) {
     <p class="status status--ok" role="status">
       <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
-      {{ fileName() }} · {{ pageCount() }} {{ pageCount() === 1 ? 'page' : 'pages' }} ·
-      {{ formatBytes(fileSize()) }}
+      {{ fileSummary() }}
     </p>
 
     <div class="field">
@@ -91,7 +81,7 @@
     <div class="actions">
       @if (working()) {
         <button matButton="filled" disabled>
-          <mat-spinner diameter="18" />
+          <app-spinner />
           Compressing…
         </button>
       } @else {
@@ -147,8 +137,8 @@
 
   <p class="note">
     <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
-    This tool uploads your file. It is sent over HTTPS to Adobe PDF Services, processed, and
-    returned — Adobe deletes the document afterwards. Savings come from the images inside the PDF,
-    so a text-only document will barely shrink.
+    This tool uploads your file. It is sent over HTTPS to our own compression service, processed, and
+    returned — the file is deleted right after processing and never stored. Savings come from the
+    images inside the PDF, so a text-only document will barely shrink.
   </p>
 </div>

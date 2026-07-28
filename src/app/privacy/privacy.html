@@ -9,7 +9,7 @@
 <article class="doc">
   <header>
     <h1 class="doc__title">Privacy Policy</h1>
-    <p class="doc__meta">Last updated: 21 July 2026</p>
+    <p class="doc__meta">Last updated: 28 July 2026</p>
     <p class="doc__lead">
       yydevtools is a free collection of developer and PDF utilities. There are no accounts,
       and most tools never send your data anywhere. This page explains exactly what happens
@@ -21,27 +21,22 @@
     <h2 id="p-local" class="section__title">Tools that run entirely in your browser</h2>
     <p class="section__text">
       The JSON Formatter, JWT Decoder, Hash Generator, UUID Generator, Color Converter,
-      Base64 Converter, Image Compressor, Timestamp Converter, Markdown Editor, PDF Merge,
-      PDF Split and PDF Viewer do all of their work on your own device. The text, files and
-      images you open with them are never uploaded, never transmitted to us, and never
-      stored on a server.
+      Base64 Converter, Timestamp Converter, Markdown Editor, PDF Merge, PDF Split and PDF
+      Viewer do all of their work on your own device. The text, files and images you open
+      with them are never uploaded, never transmitted to us, and never stored on a server.
     </p>
   </section>
 
   <section class="section" aria-labelledby="p-hosted">
     <h2 id="p-hosted" class="section__title">Tools that send your file to a service</h2>
     <p class="section__text">
-      Three tools cannot run in a browser and need server-side processing: <strong>PDF
-      Convert</strong>, <strong>PDF OCR</strong> and <strong>PDF Compress</strong>. When you
-      use one of these, the PDF you choose is sent to our server and passed to Adobe PDF
-      Services, which performs the operation and returns the result to you. We do not retain
-      a copy of the document after the request completes, and we do not read its contents.
-      Adobe’s handling of the file is governed by its own terms and privacy policy.
-    </p>
-    <p class="section__text">
-      These tools share a monthly allowance. To enforce it we keep a single running count of
-      how many operations have been performed site-wide each month. That counter is a number
-      only — it is not linked to you, your file, or your IP address.
+      Some tools cannot run in a browser and need server-side processing: <strong>PDF
+      Convert</strong>, <strong>PDF OCR</strong>, <strong>PDF Compress</strong> and the
+      <strong>Image Compressor</strong>. When you use one of these, the file you choose is
+      sent over HTTPS to our own processing service (hosted on Fly.io), which performs the
+      operation and returns the result to you. The file is deleted immediately after the
+      request completes — we do not retain a copy of it, and we do not read its contents. It
+      is not passed to any third-party document service.
     </p>
   </section>
 
@@ -87,7 +82,10 @@
     <h2 id="p-third" class="section__title">Third parties we rely on</h2>
     <ul class="list">
       <li><strong>Cloudflare</strong> — hosts and serves the site.</li>
-      <li><strong>Adobe PDF Services</strong> — performs PDF conversion, OCR and compression.</li>
+      <li>
+        <strong>Fly.io</strong> — hosts the services that perform PDF conversion, OCR,
+        compression and image compression.
+      </li>
       <li><strong>Google AdSense</strong> — will supply the advertising, once enabled.</li>
       <li><strong>Google Fonts</strong> — serves the typefaces used by the site.</li>
     </ul>

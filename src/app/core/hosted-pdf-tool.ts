@@ -1,19 +1,20 @@
 import { computed, inject, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { PDFDocument } from 'pdf-lib';
-import { PdfServiceResult, PdfServicesClient, QuotaSnapshot } from './pdf-services.client';
+import { describeFile, formatBytes } from './format';
+import { looksLikePdf, readPageCount } from './pdf-probe';
+import { PdfServiceResult, PdfServicesClient } from './pdf-services.client';
 
 /** Matches the Worker's own cap, so oversized files fail before the upload. */
 export const MAX_INPUT_BYTES = 20 * 1024 * 1024;
 
 /**
- * Shared behaviour for the tools that spend an Adobe transaction: convert, OCR
- * and compress.
+ * Shared behaviour for the tools that hand a PDF to a hosted service: convert,
+ * OCR and compress.
  *
  * They differ only in which endpoint they call and what they do with the bytes
  * that come back. Everything before and after that — picking a file, parsing it
- * locally so a bad PDF never costs quota, tracking the monthly allowance,
- * reporting failures — is identical, so it lives here.
+ * locally so a bad PDF fails fast, reporting failures — is identical, so it
+ * lives here.
  */
 export abstract class HostedPdfTool {
   protected readonly service = inject(PdfServicesClient);
@@ -21,29 +22,22 @@ export abstract class HostedPdfTool {
 
   protected readonly fileName = signal('');
   protected readonly fileSize = signal(0);
-  protected readonly pageCount = signal(0);
+  /** Null when the page tree could not be read; the summary then omits it. */
+  protected readonly pageCount = signal<number | null>(null);
   protected readonly working = signal(false);
   protected readonly dragOver = signal(false);
-  protected readonly quota = signal<QuotaSnapshot | null>(null);
   /** Non-empty when the hosted service cannot serve this tool at all. */
   protected readonly unavailable = signal('');
 
   protected bytes: Uint8Array | null = null;
 
-  protected readonly hasFile = computed(() => this.pageCount() > 0);
+  protected readonly hasFile = computed(() => this.fileName() !== '');
   protected readonly canRun = computed(() => this.hasFile() && !this.working());
 
-  constructor() {
-    void this.refreshQuota();
-  }
-
-  private async refreshQuota(): Promise<void> {
-    const snapshot = await this.service.usage();
-    this.quota.set(snapshot);
-    if (snapshot && !snapshot.configured) {
-      this.unavailable.set('The hosted service is not configured on this deployment.');
-    }
-  }
+  /** The "name · pages · size" line shown once a file is loaded. */
+  protected readonly fileSummary = computed(() =>
+    describeFile(this.fileName(), this.pageCount(), this.fileSize()),
+  );
 
   // --- File selection ---------------------------------------------------
   protected onFileSelected(event: Event): void {
@@ -84,18 +78,20 @@ export abstract class HostedPdfTool {
       return;
     }
 
-    try {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      // Parse locally first so an unreadable file never costs a transaction.
-      const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
-      this.clear();
-      this.bytes = bytes;
-      this.fileName.set(file.name);
-      this.fileSize.set(file.size);
-      this.pageCount.set(doc.getPageCount());
-    } catch {
-      this.showError(`"${file.name}" could not be read. It may be corrupt or password-protected.`);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    // Check the header locally so an obviously wrong file fails before the
+    // upload. Deeper damage is the service's to report — it opens the document
+    // properly, and duplicating that here would cost more than it is worth.
+    if (!looksLikePdf(bytes)) {
+      this.showError(`"${file.name}" is not a readable PDF.`);
+      return;
     }
+
+    this.clear();
+    this.bytes = bytes;
+    this.fileName.set(file.name);
+    this.fileSize.set(file.size);
+    this.pageCount.set(await readPageCount(bytes));
   }
 
   /** Subclasses override to also drop whatever result they were holding. */
@@ -103,7 +99,7 @@ export abstract class HostedPdfTool {
     this.bytes = null;
     this.fileName.set('');
     this.fileSize.set(0);
-    this.pageCount.set(0);
+    this.pageCount.set(null);
   }
 
   // --- Running an operation ---------------------------------------------
@@ -126,10 +122,6 @@ export abstract class HostedPdfTool {
       const result = await call(source);
 
       if (result.ok) {
-        const remaining = result.remaining;
-        if (remaining !== null) {
-          this.quota.update((current) => (current ? { ...current, remaining } : current));
-        }
         return result.bytes;
       }
 
@@ -169,20 +161,4 @@ export abstract class HostedPdfTool {
   protected showError(message: string): void {
     this.snackBar.open(message, 'Dismiss', { duration: 5000, panelClass: 'snack-error' });
   }
-}
-
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  const units = ['KB', 'MB', 'GB'];
-  let value = bytes / 1024;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  const rounded =
-    value >= 10 || Number.isInteger(value) ? Math.round(value) : Math.round(value * 10) / 10;
-  return `${rounded} ${units[unit]}`;
 }

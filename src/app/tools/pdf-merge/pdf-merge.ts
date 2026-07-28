@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument } from '@cantoo/pdf-lib';
+import { formatBytes } from '../../core/format';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
+import { Spinner } from '../../shared/spinner/spinner';
 
 /** A PDF queued for merging. The bytes are kept so we can merge without re-reading. */
 interface PdfItem {
@@ -21,7 +22,7 @@ const MAX_INPUT_BYTES = 100 * 1024 * 1024;
 
 @Component({
   selector: 'app-pdf-merge',
-  imports: [RouterLink, MatButtonModule, MatIconModule, MatProgressSpinnerModule, PdfPreview],
+  imports: [RouterLink, MatButtonModule, MatIconModule, Spinner, PdfPreview],
   templateUrl: './pdf-merge.html',
   styleUrl: './pdf-merge.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -100,7 +101,9 @@ export class PdfMergeTool {
           bytes,
         });
       } catch {
-        this.showError(`"${file.name}" could not be read. It may be corrupt or password-protected.`);
+        this.showError(
+          `"${file.name}" could not be read. It may be corrupt or password-protected.`,
+        );
       }
     }
 
@@ -201,20 +204,4 @@ function swap<T>(list: readonly T[], a: number, b: number): T[] {
   const copy = list.slice();
   [copy[a], copy[b]] = [copy[b], copy[a]];
   return copy;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  const units = ['KB', 'MB', 'GB'];
-  let value = bytes / 1024;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  const rounded =
-    value >= 10 || Number.isInteger(value) ? Math.round(value) : Math.round(value * 10) / 10;
-  return `${rounded} ${units[unit]}`;
 }
