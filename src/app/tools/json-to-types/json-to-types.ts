@@ -9,6 +9,15 @@ import { RouterLink } from '@angular/router';
 
 import { Language, generate } from './type-generator';
 
+/** Human labels for the output box, keyed by the language toggle value. */
+const LANGUAGE_LABELS: Record<Language, string> = {
+  typescript: 'TypeScript',
+  csharp: 'C#',
+  python: 'Python',
+  go: 'Go',
+  zod: 'Zod',
+};
+
 /** Either the generated source, or the parse error to show instead. */
 type Result = { ok: true; code: string } | { ok: false; message: string } | { ok: null };
 
@@ -72,6 +81,8 @@ export class JsonToTypesTool {
     const result = this.result();
     return result.ok === true ? result.code : '';
   });
+
+  protected readonly languageLabel = computed(() => LANGUAGE_LABELS[this.language()]);
 
   protected readonly error = computed(() => {
     const result = this.result();

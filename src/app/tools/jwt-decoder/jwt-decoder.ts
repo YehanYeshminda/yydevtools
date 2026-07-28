@@ -1,8 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
+
+import { VerifyResult, verifyJwt } from './jwt-verify';
+
+/** Signature-check state shown in the UI: idle until a key is entered. */
+export type VerifyState = { kind: 'idle' } | { kind: 'verifying' } | VerifyResult;
 
 const SAMPLE_TOKEN =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
@@ -43,6 +48,8 @@ export type DecodeResult =
       signature: string;
       claims: Claim[];
       expired: boolean;
+      /** The `alg` from the header, used to drive signature verification. */
+      alg: string;
     };
 
 @Component({
@@ -56,6 +63,32 @@ export class JwtDecoderTool {
   private readonly snackBar = inject(MatSnackBar);
 
   protected readonly token = signal('');
+  /** Shared secret (HS) or PEM public key (RS, PS, ES) for verification. */
+  protected readonly key = signal('');
+  protected readonly verifyState = signal<VerifyState>({ kind: 'idle' });
+
+  /** Guards against a slow verify resolving after a newer one. */
+  private verifyId = 0;
+
+  constructor() {
+    // Re-verify whenever the token, the key, or the decoded algorithm changes.
+    effect(() => {
+      const decoded = this.result();
+      const key = this.key().trim();
+      const id = ++this.verifyId;
+
+      if (decoded.kind !== 'ok' || key === '') {
+        this.verifyState.set({ kind: 'idle' });
+        return;
+      }
+      this.verifyState.set({ kind: 'verifying' });
+      void verifyJwt(this.token().trim(), decoded.alg, key).then((result) => {
+        if (id === this.verifyId) {
+          this.verifyState.set(result);
+        }
+      });
+    });
+  }
 
   /** The three raw segments, for the colour-coded token preview. */
   protected readonly segments = computed(() => {
@@ -77,12 +110,17 @@ export class JwtDecoderTool {
     this.token.set((event.target as HTMLTextAreaElement).value);
   }
 
+  protected onKeyInput(event: Event): void {
+    this.key.set((event.target as HTMLTextAreaElement).value);
+  }
+
   protected loadSample(): void {
     this.token.set(SAMPLE_TOKEN);
   }
 
   protected clear(): void {
     this.token.set('');
+    this.key.set('');
   }
 
   protected async copy(text: string, label: string): Promise<void> {
@@ -123,6 +161,8 @@ export class JwtDecoderTool {
     const claims = buildClaims(payload, nowSeconds);
     const exp = payload['exp'];
     const expired = typeof exp === 'number' && exp < nowSeconds;
+    const algValue = (header as Record<string, unknown> | null)?.['alg'];
+    const alg = typeof algValue === 'string' ? algValue : '';
 
     return {
       kind: 'ok',
@@ -131,6 +171,7 @@ export class JwtDecoderTool {
       signature: signaturePart,
       claims,
       expired,
+      alg,
     };
   }
 }

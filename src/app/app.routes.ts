@@ -62,11 +62,12 @@ export const routes: Routes = [
     path: 'tools/json-to-types',
     loadComponent: () =>
       import('./tools/json-to-types/json-to-types').then((m) => m.JsonToTypesTool),
-    title: 'JSON to TypeScript & C# — yydevtools',
+    title: 'JSON to TypeScript, C#, Python, Go & Zod — yydevtools',
     data: {
       description:
-        'Paste JSON and generate TypeScript interfaces or C# classes, with nested types, ' +
-        'optional properties and nullables inferred. Free, runs in your browser.',
+        'Paste JSON and generate TypeScript interfaces, C# classes, Python dataclasses, ' +
+        'Go structs or Zod schemas, with nested types, optional properties and nullables ' +
+        'inferred. Free, runs in your browser.',
     },
   },
   {
@@ -83,11 +84,12 @@ export const routes: Routes = [
   {
     path: 'tools/jwt-decoder',
     loadComponent: () => import('./tools/jwt-decoder/jwt-decoder').then((m) => m.JwtDecoderTool),
-    title: 'JWT Decoder — yydevtools',
+    title: 'JWT Decoder & Signature Verifier — yydevtools',
     data: {
       description:
-        'Decode a JSON Web Token and inspect its header, payload and claims. Tokens ' +
-        'are decoded in your browser and never sent anywhere. Free, no sign-up.',
+        'Decode a JSON Web Token and inspect its header, payload and claims, then verify the ' +
+        'signature with an HMAC secret or a public key (HS/RS/PS/ES). Everything runs in your ' +
+        'browser and is never sent anywhere. Free, no sign-up.',
     },
   },
   {
@@ -166,10 +168,10 @@ export const routes: Routes = [
     path: 'tools/hash-generator',
     loadComponent: () =>
       import('./tools/hash-generator/hash-generator').then((m) => m.HashGeneratorTool),
-    title: 'Hash Generator — yydevtools',
+    title: 'Hash & HMAC Generator — yydevtools',
     data: {
       description:
-        'Compute SHA-1, SHA-256, SHA-384 and SHA-512 checksums of text or a file. ' +
+        'Compute MD5, CRC32, SHA-1/256/384/512 and keyed HMAC digests of text or a file. ' +
         'Hashing happens in your browser. Free, with no sign-up.',
     },
   },

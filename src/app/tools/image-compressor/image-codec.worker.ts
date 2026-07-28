@@ -13,6 +13,7 @@
  * If the WebAssembly cannot be loaded the canvas encoder takes over. The result
  * is a slightly larger file rather than a broken tool.
  */
+import { expose, transfer } from 'comlink';
 import jpegEncode, { init as initJpeg } from '@jsquash/jpeg/encode';
 import webpEncode, { init as initWebp } from '@jsquash/webp/encode';
 import { simd } from 'wasm-feature-detect';
@@ -23,89 +24,68 @@ export type CodecFormat = 'image/jpeg' | 'image/webp';
 /** Which encoder produced a result, so the UI can say when it fell back. */
 export type Codec = 'wasm' | 'canvas';
 
-export type WorkerRequest =
-  | { id: number; kind: 'open'; file: File }
-  | { id: number; kind: 'encode'; format: CodecFormat; quality: number; maxDimension: number }
-  | { id: number; kind: 'close' };
+export interface OpenedImage {
+  width: number;
+  height: number;
+}
 
-export type WorkerResponse =
-  | { id: number; ok: true; kind: 'opened'; width: number; height: number }
-  | {
-      id: number;
-      ok: true;
-      kind: 'encoded';
-      buffer: ArrayBuffer;
-      width: number;
-      height: number;
-      codec: Codec;
-    }
-  | { id: number; ok: true; kind: 'closed' }
-  | { id: number; ok: false; error: string };
+export interface EncodedImage {
+  buffer: ArrayBuffer;
+  width: number;
+  height: number;
+  codec: Codec;
+}
 
 /** Where the build drops the codec binaries (see `assets` in angular.json). */
 const WASM_BASE = '/wasm/';
 
-interface WorkerScope {
-  addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
-  postMessage(message: WorkerResponse, transfer?: Transferable[]): void;
-}
-
-const ctx = self as unknown as WorkerScope;
-
 /** The decoded source image, held between encodes. */
 let source: ImageBitmap | null = null;
 
-ctx.addEventListener('message', (event) => {
-  void handle(event.data as WorkerRequest);
-});
+/**
+ * What this worker exposes over Comlink.
+ *
+ * The state is the point: `source` lives here for the life of the worker, so
+ * `open` is the only decode of the session however many times `encode` runs.
+ */
+const api = {
+  async open(file: File): Promise<OpenedImage> {
+    source?.close();
+    // `from-image` honours the EXIF orientation, so a phone photo is not
+    // silently rotated by the round trip through a canvas.
+    source = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    return { width: source.width, height: source.height };
+  },
 
-async function handle(request: WorkerRequest): Promise<void> {
-  try {
-    switch (request.kind) {
-      case 'open': {
-        source?.close();
-        // `from-image` honours the EXIF orientation, so a phone photo is not
-        // silently rotated by the round trip through a canvas.
-        source = await createImageBitmap(request.file, { imageOrientation: 'from-image' });
-        ctx.postMessage({
-          id: request.id,
-          ok: true,
-          kind: 'opened',
-          width: source.width,
-          height: source.height,
-        });
-        return;
-      }
-      case 'encode': {
-        if (!source) {
-          throw new Error('No image is open.');
-        }
-        const result = await encode(source, request.format, request.quality, request.maxDimension);
-        ctx.postMessage(
-          { id: request.id, ok: true, kind: 'encoded', ...result },
-          // Move the pixels rather than copying them.
-          [result.buffer],
-        );
-        return;
-      }
-      case 'close': {
-        source?.close();
-        source = null;
-        ctx.postMessage({ id: request.id, ok: true, kind: 'closed' });
-        return;
-      }
+  async encode(
+    format: CodecFormat,
+    quality: number,
+    maxDimension: number,
+  ): Promise<EncodedImage> {
+    if (!source) {
+      throw new Error('No image is open.');
     }
-  } catch (error) {
-    ctx.postMessage({ id: request.id, ok: false, error: message(error) });
-  }
-}
+    const result = await encode(source, format, quality, maxDimension);
+    // Move the pixels rather than copying them.
+    return transfer(result, [result.buffer]);
+  },
+
+  async close(): Promise<void> {
+    source?.close();
+    source = null;
+  },
+};
+
+export type ImageCodecApi = typeof api;
+
+expose(api);
 
 async function encode(
   bitmap: ImageBitmap,
   format: CodecFormat,
   quality: number,
   maxDimension: number,
-): Promise<{ buffer: ArrayBuffer; width: number; height: number; codec: Codec }> {
+): Promise<EncodedImage> {
   const { width, height } = fitInside(bitmap.width, bitmap.height, maxDimension);
 
   const canvas = new OffscreenCanvas(width, height);
@@ -199,8 +179,4 @@ function fitInside(
     };
   }
   return { width, height };
-}
-
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : 'The image could not be processed.';
 }

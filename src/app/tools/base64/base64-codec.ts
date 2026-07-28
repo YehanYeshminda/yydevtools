@@ -10,6 +10,7 @@
  *     covers everything else without ever building one giant binary string.
  *  2. Running the whole thing in a worker — see `base64.worker.ts`.
  */
+import { transfer } from 'comlink';
 
 /** Chunk sizes chosen so every slice is a whole number of Base64 groups. */
 const ENCODE_CHUNK = 3 * 32768;
@@ -309,6 +310,66 @@ export function labelForMime(mime: string): string {
       return 'Text';
     default:
       return mime.startsWith('image/') ? mime.slice(6).toUpperCase() : mime;
+  }
+}
+
+export interface DecodedBytes {
+  bytes: Uint8Array<ArrayBuffer>;
+  /** Declared by a `data:` prefix, or sniffed from the decoded bytes. */
+  mime: string;
+}
+
+/**
+ * What `base64.worker.ts` exposes over Comlink — and what the client calls
+ * directly when there is no worker to talk to.
+ *
+ * Defining it here rather than in the worker means the two paths cannot drift:
+ * the fallback is not a reimplementation, it is the same object.
+ *
+ * Failures are normalised into a plain `Error` on this side of the boundary so
+ * the message is identical whichever path ran, and so nothing exotic has to
+ * survive being structured-cloned out of the worker.
+ *
+ * Every method is async even where the work is not: it makes the local object
+ * and Comlink's proxy of it the same shape, so the client can hold either.
+ */
+export const base64Api = {
+  async encodeFile(file: File): Promise<string> {
+    try {
+      return bytesToBase64(new Uint8Array(await file.arrayBuffer()));
+    } catch (error) {
+      throw new Error(base64ErrorMessage(error));
+    }
+  },
+
+  async encodeText(text: string): Promise<string> {
+    return reported(() => encodeTextToBase64(text));
+  },
+
+  async decodeText(text: string): Promise<string> {
+    return reported(() => decodeBase64ToText(text));
+  },
+
+  async decodeBytes(text: string): Promise<DecodedBytes> {
+    return reported(() => {
+      const { mime, data } = splitDataUri(text);
+      const bytes = base64ToBytes(data);
+      // Move the decoded bytes to the caller instead of copying them. Marking a
+      // result for transfer is inert when nothing crosses a thread, so the
+      // fallback path can run the very same function.
+      return transfer({ bytes, mime: mime || sniffMime(bytes) }, [bytes.buffer]);
+    });
+  },
+};
+
+export type Base64Api = typeof base64Api;
+
+/** Run a step, turning anything it throws into a message worth showing a user. */
+function reported<T>(step: () => T): T {
+  try {
+    return step();
+  } catch (error) {
+    throw new Error(base64ErrorMessage(error));
   }
 }
 

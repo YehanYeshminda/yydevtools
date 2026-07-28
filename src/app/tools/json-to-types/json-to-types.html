@@ -15,7 +15,7 @@
   <div>
     <h1 class="head__title">JSON to Types</h1>
     <p class="head__sub">
-      Paste JSON and get TypeScript interfaces or C# classes. Everything runs in your browser.
+      Paste JSON and get TypeScript, C#, Python, Go or Zod types. Everything runs in your browser.
     </p>
   </div>
 </header>
@@ -29,6 +29,9 @@
     >
       <mat-button-toggle value="typescript">TypeScript</mat-button-toggle>
       <mat-button-toggle value="csharp">C#</mat-button-toggle>
+      <mat-button-toggle value="python">Python</mat-button-toggle>
+      <mat-button-toggle value="go">Go</mat-button-toggle>
+      <mat-button-toggle value="zod">Zod</mat-button-toggle>
     </mat-button-toggle-group>
 
     <mat-form-field appearance="outline" class="options__name">
@@ -69,7 +72,7 @@
 
   @if (code()) {
     <mat-form-field appearance="outline" class="field">
-      <mat-label>{{ language() === 'typescript' ? 'TypeScript' : 'C#' }}</mat-label>
+      <mat-label>{{ languageLabel() }}</mat-label>
       <textarea
         matInput
         [rows]="outputRows()"

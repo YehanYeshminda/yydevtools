@@ -1,19 +1,20 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import { formatBytes } from '../../core/format';
 import { Spinner } from '../../shared/spinner/spinner';
+import { HashWorkerClient, type Digest } from './hash-worker.client';
 
-/** The digests WebCrypto exposes, in ascending strength. */
-const ALGORITHMS = ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'] as const;
-type Algorithm = (typeof ALGORITHMS)[number];
-
-export interface Digest {
-  algorithm: Algorithm;
-  hex: string;
-}
+export type { Digest };
 
 type Source = 'text' | 'file';
 
@@ -27,10 +28,10 @@ const MAX_FILE_BYTES = 250 * 1024 * 1024;
   styleUrls: ['../tool-shell.css', './hash-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HashGeneratorTool {
+export class HashGeneratorTool implements OnDestroy {
   private readonly snackBar = inject(MatSnackBar);
-
-  protected readonly algorithms = ALGORITHMS;
+  /** All hashing happens off the main thread where a worker is available. */
+  private readonly hasher = new HashWorkerClient();
 
   // --- State ------------------------------------------------------------
   protected readonly source = signal<Source>('text');
@@ -40,12 +41,23 @@ export class HashGeneratorTool {
   protected readonly uppercase = signal(false);
   protected readonly hashing = signal(false);
   protected readonly digests = signal<Digest[]>([]);
+  /** When set, the tool emits keyed HMAC digests instead of plain checksums. */
+  protected readonly hmacKey = signal('');
+
+  protected readonly hmacMode = computed(() => this.hmacKey() !== '');
 
   /**
    * Increments on every new request so a slow digest that resolves late cannot
    * overwrite the results of a newer one.
    */
   private requestId = 0;
+
+  /** The last bytes hashed, kept so toggling the HMAC key re-hashes them. */
+  private lastData: Uint8Array | null = null;
+
+  ngOnDestroy(): void {
+    this.hasher.terminate();
+  }
 
   // --- Input handling ---------------------------------------------------
   protected selectSource(source: Source): void {
@@ -81,11 +93,20 @@ export class HashGeneratorTool {
     this.uppercase.update((value) => !value);
   }
 
+  protected onHmacKeyInput(event: Event): void {
+    this.hmacKey.set((event.target as HTMLInputElement).value);
+    // Re-hash the current input under the new keying without re-reading a file.
+    if (this.lastData) {
+      void this.digest(this.lastData);
+    }
+  }
+
   protected clear(): void {
     this.text.set('');
     this.fileName.set('');
     this.fileSize.set(0);
     this.digests.set([]);
+    this.lastData = null;
     this.requestId++;
   }
 
@@ -93,6 +114,7 @@ export class HashGeneratorTool {
   private async hashText(value: string): Promise<void> {
     if (value === '') {
       this.requestId++;
+      this.lastData = null;
       this.digests.set([]);
       return;
     }
@@ -107,21 +129,18 @@ export class HashGeneratorTool {
     this.fileName.set(file.name);
     this.fileSize.set(file.size);
     try {
-      await this.digest(await file.arrayBuffer());
+      await this.digest(new Uint8Array(await file.arrayBuffer()));
     } catch {
       this.showError(`"${file.name}" could not be read.`);
     }
   }
 
-  private async digest(data: BufferSource): Promise<void> {
+  private async digest(data: Uint8Array): Promise<void> {
     const id = ++this.requestId;
+    this.lastData = data;
     this.hashing.set(true);
     try {
-      const results: Digest[] = [];
-      for (const algorithm of ALGORITHMS) {
-        const buffer = await crypto.subtle.digest(algorithm, data);
-        results.push({ algorithm, hex: toHex(buffer) });
-      }
+      const results = await this.hasher.digest(data, this.hmacKey());
       if (id === this.requestId) {
         this.digests.set(results);
       }
@@ -154,9 +173,4 @@ export class HashGeneratorTool {
   private showError(message: string): void {
     this.snackBar.open(message, 'Dismiss', { duration: 5000, panelClass: 'snack-error' });
   }
-}
-
-// --- Pure helpers -------------------------------------------------------
-function toHex(buffer: ArrayBuffer): string {
-  return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }

@@ -15,8 +15,8 @@
   <div>
     <h1 class="head__title">Hash Generator</h1>
     <p class="head__sub">
-      Compute SHA-1, SHA-256, SHA-384 and SHA-512 digests of text or a file. Everything runs in
-      your browser — nothing is uploaded.
+      Compute MD5, CRC32 and SHA-1/256/384/512 digests of text or a file — or keyed HMAC digests.
+      Everything runs in your browser — nothing is uploaded.
     </p>
   </div>
 </header>
@@ -78,6 +78,24 @@
     }
   }
 
+  <!-- HMAC key (optional) --------------------------------------------- -->
+  <div class="field">
+    <label class="field__label" for="hmac-key">HMAC key <span class="field__opt">(optional)</span></label>
+    <input
+      id="hmac-key"
+      class="field__input"
+      type="text"
+      spellcheck="false"
+      autocomplete="off"
+      [value]="hmacKey()"
+      (input)="onHmacKeyInput($event)"
+      placeholder="Enter a secret to compute keyed HMAC digests…"
+    />
+    <span class="field__hint">
+      With a key, the tool emits HMAC-SHA digests instead of plain checksums.
+    </span>
+  </div>
+
   <div class="actions">
     <button matButton (click)="toggleCase()">
       <mat-icon>text_fields</mat-icon>
@@ -99,7 +117,7 @@
   @if (digests(); as results) {
     @if (results.length) {
       <section aria-label="Digests">
-        <h2 class="section__title">Digests</h2>
+        <h2 class="section__title">{{ hmacMode() ? 'HMAC digests' : 'Digests' }}</h2>
         <ul class="rows">
           @for (digest of results; track digest.algorithm) {
             <li class="row">
@@ -122,7 +140,7 @@
 
   <p class="note">
     <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
-    MD5 is deliberately absent — browsers do not ship it, and it is unsafe for anything security
-    related. SHA-1 is included for checksum compatibility only; prefer SHA-256 or stronger.
+    MD5, CRC32 and SHA-1 are provided for checksums and compatibility only — they are unsafe for
+    anything security related, so prefer SHA-256 or stronger, or a keyed HMAC.
   </p>
 </div>

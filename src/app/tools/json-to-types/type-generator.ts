@@ -1,5 +1,5 @@
 /**
- * Turns a parsed JSON value into TypeScript interfaces or C# classes.
+ * Turns a parsed JSON value into typed source for one of several languages.
  *
  * The work happens in three passes so each stays simple:
  *   1. `infer`    — describe a single value as a Shape.
@@ -8,10 +8,11 @@
  *                   they were missing from some elements.
  *   3. `collect` + emit — name every object shape, then print it.
  *
- * Kept free of Angular so the generation is testable on its own.
+ * The three passes are language-agnostic; only the final emit step differs per
+ * language. Kept free of Angular so the generation is testable on its own.
  */
 
-export type Language = 'typescript' | 'csharp';
+export type Language = 'typescript' | 'csharp' | 'python' | 'go' | 'zod';
 
 type Primitive = 'string' | 'integer' | 'number' | 'boolean';
 
@@ -233,14 +234,88 @@ export function generate(json: unknown, options: GenerateOptions): string {
 
   if (types.length === 0) {
     // No objects anywhere — describe the value as an alias instead.
-    return options.language === 'typescript'
-      ? `export type ${rootName} = ${tsType(shape, bySignature)};\n`
-      : `// The JSON is a ${csType(shape, bySignature)}, not an object — there is no class to generate.\n`;
+    return emitAlias(shape, rootName, options.language, bySignature);
   }
 
-  return options.language === 'typescript'
-    ? emitTypeScript(types, bySignature)
-    : emitCSharp(types, bySignature);
+  switch (options.language) {
+    case 'typescript':
+      return emitTypeScript(types, bySignature);
+    case 'csharp':
+      return emitCSharp(types, bySignature);
+    case 'python':
+      return emitPython(types, bySignature);
+    case 'go':
+      return emitGo(types, bySignature);
+    case 'zod':
+      return emitZod(types, bySignature);
+  }
+}
+
+/** When the JSON holds no object anywhere, there is no type to name — emit an alias. */
+function emitAlias(
+  shape: Shape,
+  rootName: string,
+  language: Language,
+  names: Map<string, string>,
+): string {
+  switch (language) {
+    case 'typescript':
+      return `export type ${rootName} = ${tsType(shape, names)};\n`;
+    case 'python':
+      return `${rootName} = ${pyType(shape, names)}\n`;
+    case 'go':
+      return `type ${rootName} = ${goType(shape, names)}\n`;
+    case 'zod':
+      return `import { z } from 'zod';\n\nexport const ${rootName}Schema = ${zodType(shape, names)};\n`;
+    case 'csharp':
+      return `// The JSON is a ${csType(shape, names)}, not an object — there is no class to generate.\n`;
+  }
+}
+
+/**
+ * Reorders collected types so every type appears after the types it references.
+ * TypeScript interfaces, C# classes and Go structs may reference a type declared
+ * later, but Python dataclasses and Zod `const` schemas cannot — they need their
+ * dependencies defined first.
+ */
+function dependenciesFirst(types: NamedType[], names: Map<string, string>): NamedType[] {
+  const byName = new Map(types.map((type) => [type.name, type]));
+  const ordered: NamedType[] = [];
+  const seen = new Set<string>();
+
+  function referencedNames(shape: Shape, into: Set<string>): void {
+    switch (shape.kind) {
+      case 'object': {
+        const name = names.get(signatureOf(shape));
+        if (name) into.add(name);
+        return;
+      }
+      case 'array':
+        return referencedNames(shape.element, into);
+      case 'nullable':
+        return referencedNames(shape.inner, into);
+      default:
+    }
+  }
+
+  function visit(type: NamedType): void {
+    if (seen.has(type.name)) return;
+    seen.add(type.name);
+    const refs = new Set<string>();
+    for (const [, field] of type.fields) {
+      referencedNames(field.shape, refs);
+    }
+    for (const ref of refs) {
+      const dep = byName.get(ref);
+      if (dep && dep !== type) visit(dep);
+    }
+    ordered.push(type);
+  }
+
+  for (const type of types) {
+    visit(type);
+  }
+  return ordered;
 }
 
 /**
@@ -374,4 +449,194 @@ function emitCSharp(types: NamedType[], names: Map<string, string>): string {
     .join('\n\n');
 
   return `using System.Collections.Generic;\nusing System.Text.Json.Serialization;\n\n${classes}\n`;
+}
+
+// --- Python (dataclasses) ---
+
+const PY_KEYWORDS = new Set([
+  'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'break', 'class',
+  'continue', 'def', 'del', 'elif', 'else', 'except', 'finally', 'for', 'from', 'global',
+  'if', 'import', 'in', 'is', 'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return',
+  'try', 'while', 'with', 'yield', 'match', 'case',
+]);
+
+function pyType(shape: Shape, names: Map<string, string>): string {
+  switch (shape.kind) {
+    case 'object':
+      return names.get(signatureOf(shape)) ?? 'dict';
+    case 'array':
+      return `List[${pyType(shape.element, names)}]`;
+    case 'nullable':
+      return `Optional[${pyType(shape.inner, names)}]`;
+    case 'primitive':
+      switch (shape.name) {
+        case 'integer':
+          return 'int';
+        case 'number':
+          return 'float';
+        case 'boolean':
+          return 'bool';
+        default:
+          return 'str';
+      }
+    case 'null':
+      return 'Optional[Any]';
+    default:
+      return 'Any';
+  }
+}
+
+/** A JSON key made into a valid Python identifier for a dataclass field. */
+function pyFieldName(key: string): string {
+  let name = key.replace(/[^A-Za-z0-9_]/g, '_');
+  if (name === '' || /^[0-9]/.test(name)) {
+    name = `field_${name}`;
+  }
+  return PY_KEYWORDS.has(name) ? `${name}_` : name;
+}
+
+function emitPython(types: NamedType[], names: Map<string, string>): string {
+  const ordered = dependenciesFirst(types, names);
+
+  const classes = ordered.map((type) => {
+    if (type.fields.size === 0) {
+      return `@dataclass\nclass ${type.name}:\n    pass`;
+    }
+    // Dataclass fields without a default must precede those with one, so the
+    // optional fields (which default to None) are emitted last.
+    const entries = [...type.fields];
+    const required = entries.filter(([, field]) => !field.optional && !isNullable(field.shape));
+    const optional = entries.filter(([, field]) => field.optional || isNullable(field.shape));
+
+    const lines = [
+      ...required.map(([key, field]) => `    ${pyFieldName(key)}: ${pyType(field.shape, names)}`),
+      ...optional.map(([key, field]) => {
+        const annotation = field.optional
+          ? `Optional[${pyType(unwrap(field.shape), names)}]`
+          : pyType(field.shape, names);
+        return `    ${pyFieldName(key)}: ${annotation} = None`;
+      }),
+    ];
+    return `@dataclass\nclass ${type.name}:\n${lines.join('\n')}`;
+  });
+
+  const body = classes.join('\n\n\n');
+  const typing = ['Any', 'List', 'Optional'].filter((name) =>
+    new RegExp(`\\b${name}\\b`).test(body),
+  );
+  const imports = [
+    'from dataclasses import dataclass',
+    ...(typing.length ? [`from typing import ${typing.join(', ')}`] : []),
+  ].join('\n');
+
+  return `${imports}\n\n\n${body}\n`;
+}
+
+function isNullable(shape: Shape): boolean {
+  return shape.kind === 'nullable' || shape.kind === 'null';
+}
+
+// --- Go (structs) ---
+
+function goType(shape: Shape, names: Map<string, string>): string {
+  switch (shape.kind) {
+    case 'object':
+      return names.get(signatureOf(shape)) ?? 'map[string]interface{}';
+    case 'array':
+      return `[]${goType(shape.element, names)}`;
+    case 'nullable':
+      return `*${goType(shape.inner, names)}`;
+    case 'primitive':
+      switch (shape.name) {
+        case 'integer':
+          return 'int64';
+        case 'number':
+          return 'float64';
+        case 'boolean':
+          return 'bool';
+        default:
+          return 'string';
+      }
+    case 'null':
+      return 'interface{}';
+    default:
+      return 'interface{}';
+  }
+}
+
+function emitGo(types: NamedType[], names: Map<string, string>): string {
+  const structs = types.map((type) => {
+    if (type.fields.size === 0) {
+      return `type ${type.name} struct {\n}`;
+    }
+    const rows = [...type.fields].map(([key, field]) => {
+      // Optional fields become pointers with omitempty so an absent key stays nil.
+      const base = goType(field.shape, names);
+      const goName = pascalCase(key);
+      const pointer = field.optional && !base.startsWith('*') && !base.startsWith('[]');
+      const goFieldType = pointer ? `*${base}` : base;
+      const tag = field.optional ? `${key},omitempty` : key;
+      return { goName, goFieldType, tag: `\`json:"${tag}"\`` };
+    });
+    // Align the columns the way `gofmt` would.
+    const nameWidth = Math.max(...rows.map((r) => r.goName.length));
+    const typeWidth = Math.max(...rows.map((r) => r.goFieldType.length));
+    const body = rows
+      .map((r) => `\t${r.goName.padEnd(nameWidth)} ${r.goFieldType.padEnd(typeWidth)} ${r.tag}`)
+      .join('\n');
+    return `type ${type.name} struct {\n${body}\n}`;
+  });
+
+  return `package main\n\n${structs.join('\n\n')}\n`;
+}
+
+// --- Zod ---
+
+function zodType(shape: Shape, names: Map<string, string>): string {
+  switch (shape.kind) {
+    case 'object':
+      return `${names.get(signatureOf(shape)) ?? 'z.record(z.string(), z.unknown())'}Schema`;
+    case 'array':
+      return `z.array(${zodType(shape.element, names)})`;
+    case 'nullable':
+      return `${zodType(shape.inner, names)}.nullable()`;
+    case 'primitive':
+      switch (shape.name) {
+        case 'integer':
+          return 'z.number().int()';
+        case 'number':
+          return 'z.number()';
+        case 'boolean':
+          return 'z.boolean()';
+        default:
+          return 'z.string()';
+      }
+    case 'null':
+      return 'z.null()';
+    default:
+      return 'z.unknown()';
+  }
+}
+
+function emitZod(types: NamedType[], names: Map<string, string>): string {
+  const ordered = dependenciesFirst(types, names);
+
+  const blocks = ordered.map((type) => {
+    if (type.fields.size === 0) {
+      return `export const ${type.name}Schema = z.object({});\n\nexport type ${type.name} = z.infer<typeof ${type.name}Schema>;`;
+    }
+    const body = [...type.fields]
+      .map(([key, field]) => {
+        const value = zodType(field.shape, names);
+        const optional = field.optional ? '.optional()' : '';
+        return `  ${tsPropertyName(key)}: ${value}${optional},`;
+      })
+      .join('\n');
+    return (
+      `export const ${type.name}Schema = z.object({\n${body}\n});\n\n` +
+      `export type ${type.name} = z.infer<typeof ${type.name}Schema>;`
+    );
+  });
+
+  return `import { z } from 'zod';\n\n${blocks.join('\n\n')}\n`;
 }

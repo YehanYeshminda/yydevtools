@@ -123,10 +123,59 @@
       <section class="segment segment--signature" aria-label="Signature">
         <h2 class="section__title">Signature</h2>
         <pre class="segment__body segment__body--sig"><code>{{ decoded.signature }}</code></pre>
+
+        <div class="verify">
+          <label class="field__label" for="jwt-key">
+            Verify signature
+            @if (decoded.alg) {
+              <code class="verify__alg">{{ decoded.alg }}</code>
+            }
+          </label>
+          <textarea
+            id="jwt-key"
+            class="field__input"
+            rows="3"
+            spellcheck="false"
+            [value]="key()"
+            (input)="onKeyInput($event)"
+            placeholder="HMAC secret for HS*, or a PEM public key for RS*/PS*/ES*…"
+          ></textarea>
+
+          @switch (verifyState().kind) {
+            @case ('verifying') {
+              <p class="status" role="status">Checking…</p>
+            }
+            @case ('valid') {
+              <p class="status status--ok" role="status">
+                <mat-icon class="status__icon" aria-hidden="true">verified</mat-icon>
+                Signature verified.
+              </p>
+            }
+            @case ('invalid') {
+              <p class="status status--err" role="status">
+                <mat-icon class="status__icon" aria-hidden="true">gpp_bad</mat-icon>
+                Signature does not match.
+              </p>
+            }
+            @case ('unsupported') {
+              <p class="status status--warn" role="status">
+                <mat-icon class="status__icon" aria-hidden="true">help</mat-icon>
+                {{ $any(verifyState()).alg || 'This algorithm' }} can’t be verified in the browser.
+              </p>
+            }
+            @case ('error') {
+              <p class="status status--err" role="status">
+                <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+                {{ $any(verifyState()).message }}
+              </p>
+            }
+          }
+        </div>
+
         <p class="segment__note">
           <mat-icon class="segment__note-icon" aria-hidden="true">info</mat-icon>
-          The signature is shown as-is. Verifying it needs the signing secret or public key, so it
-          is not checked here.
+          The secret or key is used only in your browser to check the signature — it is never sent
+          anywhere. Leave it blank to just decode.
         </p>
       </section>
     }

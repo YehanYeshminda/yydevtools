@@ -19,7 +19,7 @@ export const TOOLS: Tool[] = [
   {
     slug: 'json-to-types',
     name: 'JSON to Types',
-    description: 'Turn JSON into TypeScript interfaces or C# classes.',
+    description: 'Turn JSON into TypeScript, C#, Python, Go or Zod types.',
     icon: 'code',
     category: 'Developer',
     ready: true,
@@ -27,7 +27,7 @@ export const TOOLS: Tool[] = [
   {
     slug: 'jwt-decoder',
     name: 'JWT Decoder',
-    description: 'Decode and inspect JWT headers, payloads and claims.',
+    description: 'Decode JWT headers and claims, and verify the signature.',
     icon: 'key',
     category: 'Developer',
     ready: true,
@@ -35,7 +35,7 @@ export const TOOLS: Tool[] = [
   {
     slug: 'hash-generator',
     name: 'Hash Generator',
-    description: 'Compute SHA-1, SHA-256, SHA-384 and SHA-512 digests of text or a file.',
+    description: 'Compute MD5, CRC32, SHA and keyed HMAC digests of text or a file.',
     icon: 'tag',
     category: 'Developer',
     ready: true,

@@ -187,6 +187,27 @@
   color: var(--mat-sys-error);
 }
 
+.status--warn {
+  color: var(--mat-sys-tertiary, var(--mat-sys-on-surface-variant));
+}
+
+/* Signature verification ------------------------------------------------ */
+.verify {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.verify__alg {
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 6px;
+  background: var(--mat-sys-surface-container-high);
+  font-size: 0.8em;
+  color: var(--seg-signature);
+}
+
 /* Claims ---------------------------------------------------------------- */
 .section__title {
   margin: 0;
