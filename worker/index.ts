@@ -247,7 +247,19 @@ async function handleApi(request: Request, env: Env, path: string): Promise<Resp
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const path = new URL(request.url).pathname;
+    const url = new URL(request.url);
+
+    // The site is canonical on the apex domain; www exists only so that anyone
+    // who types it lands somewhere instead of on a DNS error. Redirect it
+    // permanently, path and query intact, before anything else runs — serving
+    // the same pages on two hostnames would split the SEO signal and give
+    // AdSense a second, uncanonical copy of every page to crawl.
+    if (url.hostname.startsWith('www.')) {
+      url.hostname = url.hostname.slice(4);
+      return Response.redirect(url.toString(), 301);
+    }
+
+    const path = url.pathname;
     if (path.startsWith('/api/')) {
       return handleApi(request, env, path);
     }

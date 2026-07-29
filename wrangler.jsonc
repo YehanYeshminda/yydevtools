@@ -29,8 +29,14 @@
     // asset, so the 404 handling above actually runs.
     "run_worker_first": true,
   },
-  // Custom domain — wrangler creates the DNS record if yydevtools.com is on this account.
-  "routes": [{ "pattern": "yydevtools.com", "custom_domain": true }],
+  // Custom domains — wrangler creates the DNS records if yydevtools.com is on
+  // this account. www is registered only so it resolves at all (it had no DNS
+  // record, so visitors who typed it got a DNS error); the Worker 301s it to
+  // the apex, which stays canonical.
+  "routes": [
+    { "pattern": "yydevtools.com", "custom_domain": true },
+    { "pattern": "www.yydevtools.com", "custom_domain": true },
+  ],
   "vars": {
     // Base URLs of the self-hosted Fly services. Each has a matching secret that
     // is NOT stored here — set them with:
