@@ -7,13 +7,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
+import { ClipboardService } from '../../core/clipboard.service';
+import { JSONPath } from 'jsonpath-plus';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 type IndentOption = '2' | '4' | 'tab';
 type Validity = 'empty' | 'valid' | 'invalid';
 
 @Component({
   selector: 'app-json-formatter',
-  imports: [
+  imports: [ToolContent, 
     RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
@@ -28,11 +32,13 @@ type Validity = 'empty' | 'valid' | 'invalid';
 })
 export class JsonFormatterTool {
   private readonly snackBar = inject(MatSnackBar);
+  private readonly clipboard = inject(ClipboardService);
 
   protected readonly input = signal('');
   protected readonly output = signal('');
   protected readonly indent = signal<IndentOption>('2');
   protected readonly sortKeys = signal(false);
+  protected readonly query = signal('');
 
   /** Live, non-intrusive validity of the current input — drives the status chip. */
   protected readonly validity = computed<Validity>(() => {
@@ -50,6 +56,10 @@ export class JsonFormatterTool {
 
   protected onInput(event: Event): void {
     this.input.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  protected onQueryInput(event: Event): void {
+    this.query.set((event.target as HTMLInputElement).value);
   }
 
   protected setIndent(value: IndentOption): void {
@@ -70,22 +80,63 @@ export class JsonFormatterTool {
     this.transform((value) => JSON.stringify(value, this.replacer()));
   }
 
-  protected async copy(): Promise<void> {
-    const text = this.output();
+  /** JSON → YAML. YAML indentation is always spaces, so a tab choice falls back to 2. */
+  protected toYaml(): void {
+    this.transform((value) =>
+      stringifyYaml(value, {
+        indent: this.indent() === 'tab' ? 2 : Number(this.indent()),
+        sortMapEntries: this.sortKeys(),
+      }).trimEnd(),
+    );
+  }
+
+  /** YAML (a superset of JSON) → pretty JSON. */
+  protected fromYaml(): void {
+    const text = this.input().trim();
     if (text === '') {
       return;
     }
-    await navigator.clipboard.writeText(text);
-    this.snackBar.open('Copied to clipboard', undefined, { duration: 2000 });
+    let parsed: unknown;
+    try {
+      parsed = parseYaml(text);
+    } catch (error) {
+      this.showError(yamlErrorMessage(error));
+      return;
+    }
+    this.output.set(JSON.stringify(parsed, this.replacer(), this.indentValue()));
+  }
+
+  /** Evaluate a JSONPath expression against the input and show the matches. */
+  protected runQuery(): void {
+    const path = this.query().trim();
+    if (path === '') {
+      this.showError('Enter a JSONPath expression first, e.g. $.store.book[*].title');
+      return;
+    }
+    this.transform((value) => {
+      const matches = JSONPath({ path, json: value as object, wrap: true });
+      return JSON.stringify(matches, this.replacer(), this.indentValue());
+    }, jsonPathErrorMessage);
+  }
+
+  protected copy(): void {
+    void this.clipboard.copy(this.output());
   }
 
   protected clear(): void {
     this.input.set('');
     this.output.set('');
+    this.query.set('');
   }
 
-  /** Parse the input and hand the value to a renderer; surface parse errors as a snackbar. */
-  private transform(render: (value: unknown) => string): void {
+  /**
+   * Parse the input as JSON and hand the value to a renderer; surface parse
+   * errors (or a renderer's own failure) as a snackbar.
+   */
+  private transform(
+    render: (value: unknown) => string,
+    onRenderError: (error: unknown) => string = () => 'Could not process that input.',
+  ): void {
     const text = this.input().trim();
     if (text === '') {
       return;
@@ -97,7 +148,11 @@ export class JsonFormatterTool {
       this.showError(parseErrorMessage(error));
       return;
     }
-    this.output.set(render(parsed));
+    try {
+      this.output.set(render(parsed));
+    } catch (error) {
+      this.showError(onRenderError(error));
+    }
   }
 
   /** Keep an already-shown result in sync when the indent or sort-keys options change. */
@@ -143,4 +198,13 @@ function parseErrorMessage(error: unknown): string {
   // V8's message already carries the position, e.g. "... in JSON at position 42 (line 3 column 5)".
   const message = error.message.replace(/^JSON\.parse:\s*/i, '');
   return message.charAt(0).toUpperCase() + message.slice(1);
+}
+
+function yamlErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'That input is not valid YAML.';
+}
+
+function jsonPathErrorMessage(error: unknown): string {
+  const detail = error instanceof Error ? error.message : String(error);
+  return `That JSONPath expression could not be evaluated: ${detail}`;
 }

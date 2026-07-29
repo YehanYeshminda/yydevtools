@@ -1,0 +1,147 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">Regex Tester</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>find_replace</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">Regex Tester</h1>
+    <p class="head__sub">
+      Test a JavaScript regular expression against your text, with live match highlighting and
+      capture groups.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <!-- Pattern --------------------------------------------------------- -->
+  <div class="field">
+    <label class="field__label" for="pattern">Regular expression</label>
+    <div class="pattern">
+      <span class="pattern__slash" aria-hidden="true">/</span>
+      <input
+        id="pattern"
+        class="field__input pattern__input"
+        type="text"
+        spellcheck="false"
+        autocomplete="off"
+        autocapitalize="off"
+        placeholder="\d{4}-\d{2}-\d{2}"
+        [value]="pattern()"
+        (input)="onPatternInput($event)"
+      />
+      <span class="pattern__slash" aria-hidden="true">/{{ flagString() }}</span>
+    </div>
+  </div>
+
+  <!-- Flags ----------------------------------------------------------- -->
+  <div class="field">
+    <span class="field__label" id="flags-label">Flags</span>
+    <div class="chips" role="group" aria-labelledby="flags-label">
+      @for (flag of flagOptions; track flag.key) {
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="isFlagOn(flag.key)"
+          [attr.aria-pressed]="isFlagOn(flag.key)"
+          [attr.title]="flag.hint"
+          (click)="toggleFlag(flag.key)"
+        >
+          <code>{{ flag.label }}</code>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (error()) {
+    <p class="status status--err" role="alert">
+      <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+      {{ error() }}
+    </p>
+  }
+
+  <!-- Subject text ---------------------------------------------------- -->
+  <div class="field">
+    <label class="field__label" for="subject">Test string</label>
+    <textarea
+      id="subject"
+      class="field__input subject"
+      spellcheck="false"
+      autocomplete="off"
+      rows="8"
+      placeholder="Paste the text to search…"
+      [value]="text()"
+      (input)="onTextInput($event)"
+    ></textarea>
+  </div>
+
+  <!-- Highlighted preview --------------------------------------------- -->
+  @if (hasPattern() && !error() && text().length) {
+    <section aria-label="Match highlighting">
+      <h2 class="section__title">
+        {{ matches().length }} {{ matches().length === 1 ? 'match' : 'matches' }}
+      </h2>
+      <p class="preview" aria-live="polite">
+        @for (segment of segments(); track $index) {
+          @if (segment.match) {
+            <mark class="preview__hit">{{ segment.text }}</mark>
+          } @else {
+            <span>{{ segment.text }}</span>
+          }
+        }
+      </p>
+      @if (truncated()) {
+        <p class="note">
+          <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+          Stopped after the first 10,000 matches.
+        </p>
+      }
+    </section>
+
+    <!-- Match detail -------------------------------------------------- -->
+    @if (matches().length) {
+      <section aria-label="Matches">
+        <h2 class="section__title">Match details</h2>
+        <ol class="matches">
+          @for (match of matches(); track $index) {
+            <li class="match">
+              <div class="match__head">
+                <span class="match__index">#{{ $index + 1 }}</span>
+                <code class="match__value">{{ match.value }}</code>
+                <span class="match__at">at {{ match.index }}</span>
+              </div>
+              @if (match.groups.length) {
+                <ul class="groups">
+                  @for (group of match.groups; track $index) {
+                    <li class="group">
+                      <span class="group__label">{{ group.label }}</span>
+                      <code class="group__value">{{
+                        group.value === undefined ? '(no match)' : group.value
+                      }}</code>
+                    </li>
+                  }
+                </ul>
+              }
+            </li>
+          }
+        </ol>
+      </section>
+    }
+  }
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    Uses your browser's JavaScript regex engine. Without the <code>g</code> flag only the first
+    match is returned, mirroring <code>String.match</code>.
+  </p>
+</div>
+
+<app-tool-content slug="regex-tester" />

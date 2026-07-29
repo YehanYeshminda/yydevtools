@@ -7,6 +7,7 @@ import { PDFDocument } from '@cantoo/pdf-lib';
 import { formatBytes } from '../../core/format';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 import { Spinner } from '../../shared/spinner/spinner';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 /** A PDF queued for merging. The bytes are kept so we can merge without re-reading. */
 interface PdfItem {
@@ -22,7 +23,7 @@ const MAX_INPUT_BYTES = 100 * 1024 * 1024;
 
 @Component({
   selector: 'app-pdf-merge',
-  imports: [RouterLink, MatButtonModule, MatIconModule, Spinner, PdfPreview],
+  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner, PdfPreview],
   templateUrl: './pdf-merge.html',
   styleUrl: './pdf-merge.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

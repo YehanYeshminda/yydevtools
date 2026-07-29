@@ -1,0 +1,8 @@
+.case-input {
+  min-height: 4.5rem;
+}
+
+/* Give the label column a little more room for names like CONSTANT_CASE. */
+.row__label {
+  width: 9rem;
+}

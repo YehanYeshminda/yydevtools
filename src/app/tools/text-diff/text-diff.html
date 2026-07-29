@@ -1,0 +1,188 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">Text Diff</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>difference</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">Text Diff</h1>
+    <p class="head__sub">
+      Compare two blocks of text line by line, in a split or unified view. Nothing leaves your
+      browser.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <!-- Inputs ---------------------------------------------------------- -->
+  <div class="pair">
+    <div class="field">
+      <label class="field__label" for="original">Original</label>
+      <textarea
+        id="original"
+        class="field__input diff-input"
+        spellcheck="false"
+        autocomplete="off"
+        rows="10"
+        placeholder="Paste the original text…"
+        [value]="original()"
+        (input)="onOriginalInput($event)"
+      ></textarea>
+    </div>
+    <div class="field">
+      <label class="field__label" for="changed">Changed</label>
+      <textarea
+        id="changed"
+        class="field__input diff-input"
+        spellcheck="false"
+        autocomplete="off"
+        rows="10"
+        placeholder="Paste the changed text…"
+        [value]="changed()"
+        (input)="onChangedInput($event)"
+      ></textarea>
+    </div>
+  </div>
+
+  <!-- Options --------------------------------------------------------- -->
+  <div class="controls">
+    <div class="tabs" role="group" aria-label="Diff view">
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="view() === 'split'"
+        [attr.aria-pressed]="view() === 'split'"
+        (click)="setView('split')"
+      >
+        <mat-icon aria-hidden="true">splitscreen</mat-icon>
+        Split
+      </button>
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="view() === 'unified'"
+        [attr.aria-pressed]="view() === 'unified'"
+        (click)="setView('unified')"
+      >
+        <mat-icon aria-hidden="true">notes</mat-icon>
+        Unified
+      </button>
+    </div>
+
+    <div class="chips">
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="ignoreCase()"
+        [attr.aria-pressed]="ignoreCase()"
+        (click)="toggleIgnoreCase()"
+      >
+        <mat-icon aria-hidden="true">{{ ignoreCase() ? 'check' : 'add' }}</mat-icon>
+        Ignore case
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="ignoreWhitespace()"
+        [attr.aria-pressed]="ignoreWhitespace()"
+        (click)="toggleIgnoreWhitespace()"
+      >
+        <mat-icon aria-hidden="true">{{ ignoreWhitespace() ? 'check' : 'add' }}</mat-icon>
+        Ignore whitespace
+      </button>
+    </div>
+
+    <div class="actions">
+      <button matButton (click)="swap()">
+        <mat-icon>swap_vert</mat-icon>
+        Swap
+      </button>
+      <button matButton (click)="clear()">
+        <mat-icon>clear</mat-icon>
+        Clear
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary --------------------------------------------------------- -->
+  @if (hasInput()) {
+    @if (identical()) {
+      <p class="status status--ok" role="status">
+        <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+        The two inputs are identical.
+      </p>
+    } @else {
+      <p class="summary" role="status">
+        <span class="summary__stat summary__stat--add">+{{ result().stats.added }} added</span>
+        <span class="summary__stat summary__stat--remove"
+          >−{{ result().stats.removed }} removed</span
+        >
+        <span class="summary__stat">{{ result().stats.unchanged }} unchanged</span>
+      </p>
+    }
+  }
+
+  <!-- Diff ------------------------------------------------------------ -->
+  @if (hasInput() && !identical()) {
+    @if (view() === 'split') {
+      <div class="diff diff--split" role="table" aria-label="Split diff">
+        @for (pair of splitRows(); track $index) {
+          <div class="diff__pair" role="row">
+            <div
+              class="cell"
+              [class.cell--remove]="pair.left?.kind === 'remove'"
+              role="cell"
+            >
+              <span class="cell__num" aria-hidden="true">{{ pair.left?.leftLine ?? '' }}</span>
+              <span class="cell__sign" aria-hidden="true">{{
+                pair.left?.kind === 'remove' ? '−' : ''
+              }}</span>
+              <code class="cell__text">{{ pair.left?.text ?? '' }}</code>
+            </div>
+            <div class="cell" [class.cell--add]="pair.right?.kind === 'add'" role="cell">
+              <span class="cell__num" aria-hidden="true">{{ pair.right?.rightLine ?? '' }}</span>
+              <span class="cell__sign" aria-hidden="true">{{
+                pair.right?.kind === 'add' ? '+' : ''
+              }}</span>
+              <code class="cell__text">{{ pair.right?.text ?? '' }}</code>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="diff diff--unified" role="table" aria-label="Unified diff">
+        @for (row of result().rows; track $index) {
+          <div
+            class="cell"
+            [class.cell--add]="row.kind === 'add'"
+            [class.cell--remove]="row.kind === 'remove'"
+            role="row"
+          >
+            <span class="cell__num" aria-hidden="true">{{ row.leftLine ?? '' }}</span>
+            <span class="cell__num" aria-hidden="true">{{ row.rightLine ?? '' }}</span>
+            <span class="cell__sign" aria-hidden="true">{{
+              row.kind === 'add' ? '+' : row.kind === 'remove' ? '−' : ''
+            }}</span>
+            <code class="cell__text">{{ row.text }}</code>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    Lines are matched with a longest-common-subsequence diff. A changed line shows as a removal on
+    the left paired with an addition on the right.
+  </p>
+</div>
+
+<app-tool-content slug="text-diff" />

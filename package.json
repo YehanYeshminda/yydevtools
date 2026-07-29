@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build && node scripts/generate-sitemap.mjs",
+    "icons": "node scripts/generate-icons.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:yydevtools": "node dist/yydevtools/server/server.mjs"
@@ -37,14 +38,22 @@
     "@cantoo/pdf-lib": "^2.7.4",
     "@jsquash/jpeg": "^1.6.0",
     "@jsquash/webp": "^1.5.0",
+    "@prettier/plugin-xml": "^3.4.2",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "comlink": "^4.4.2",
+    "cron-parser": "^5.6.2",
+    "cronstrue": "^3.24.0",
     "express": "^5.1.0",
+    "jsonpath-plus": "^10.4.0",
     "marked": "^18.0.6",
+    "prettier": "^3.9.6",
+    "qrcode": "^1.5.4",
     "rxjs": "~7.8.0",
+    "sql-formatter": "^15.8.2",
     "tslib": "^2.3.0",
-    "wasm-feature-detect": "^1.8.0"
+    "wasm-feature-detect": "^1.8.0",
+    "yaml": "^2.9.0"
   },
   "comments": {
     "overrides": "GHSA-frvp-7c67-39w9 reaches us through @angular/cli's optional MCP server. npm's suggested fix downgrades the CLI, which is worse; these pin the two packages forward instead. Drop them once @angular/cli ships a dependency tree that resolves cleanly on its own."
@@ -60,6 +69,7 @@
     "@cloudflare/workers-types": "^5.20260721.1",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
+    "@types/qrcode": "^1.5.6",
     "jsdom": "^29.1.1",
     "typescript": "~5.9.2",
     "vitest": "^4.1.10",

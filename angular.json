@@ -67,7 +67,13 @@
                                                                                                                             "pako",
                                                                                                                             "color",
                                                                                                                             "crypto-js",
-                                                                                                                            "node-html-better-parser"
+                                                                                                                            "node-html-better-parser",
+                                                                                                                            "qrcode",
+                                                                                                                            "cron-parser",
+                                                                                                                            "cronstrue",
+                                                                                                                            "nearley",
+                                                                                                                            "yaml",
+                                                                                                                            "@xml-tools/parser"
                                                                                                                         ],
                                                                                         "server":  "src/main.server.ts",
                                                                                         "outputMode":  "static",

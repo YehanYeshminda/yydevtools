@@ -4,10 +4,11 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 
+import { ClipboardService } from '../../core/clipboard.service';
 import { Language, generate } from './type-generator';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 /** Human labels for the output box, keyed by the language toggle value. */
 const LANGUAGE_LABELS: Record<Language, string> = {
@@ -16,6 +17,11 @@ const LANGUAGE_LABELS: Record<Language, string> = {
   python: 'Python',
   go: 'Go',
   zod: 'Zod',
+  rust: 'Rust',
+  kotlin: 'Kotlin',
+  java: 'Java',
+  jsonschema: 'JSON Schema',
+  pydantic: 'Pydantic',
 };
 
 /** Either the generated source, or the parse error to show instead. */
@@ -37,7 +43,7 @@ const SAMPLE = `{
 
 @Component({
   selector: 'app-json-to-types',
-  imports: [
+  imports: [ToolContent, 
     RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
@@ -50,7 +56,7 @@ const SAMPLE = `{
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JsonToTypesTool {
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly clipboard = inject(ClipboardService);
 
   protected readonly input = signal('');
   protected readonly language = signal<Language>('typescript');
@@ -114,13 +120,8 @@ export class JsonToTypesTool {
     this.input.set('');
   }
 
-  protected async copy(): Promise<void> {
-    const text = this.code();
-    if (text === '') {
-      return;
-    }
-    await navigator.clipboard.writeText(text);
-    this.snackBar.open('Copied to clipboard', undefined, { duration: 2000 });
+  protected copy(): void {
+    void this.clipboard.copy(this.code());
   }
 }
 

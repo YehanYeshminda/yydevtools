@@ -1,0 +1,115 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">Cron Explainer</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>alarm</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">Cron Explainer</h1>
+    <p class="head__sub">
+      Read a cron expression in plain English and preview when it will next run.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <!-- Expression ------------------------------------------------------ -->
+  <div class="field">
+    <label class="field__label" for="cron">Cron expression</label>
+    <input
+      id="cron"
+      class="field__input cron-input"
+      type="text"
+      spellcheck="false"
+      autocomplete="off"
+      autocapitalize="off"
+      placeholder="0 9 * * 1-5"
+      [value]="expression()"
+      (input)="onExpressionInput($event)"
+    />
+    <span class="field__hint">Standard 5-field cron, plus macros like &#64;daily and &#64;hourly.</span>
+  </div>
+
+  <div class="chips" role="group" aria-label="Examples">
+    @for (example of examples; track example.expression) {
+      <button type="button" class="chip" (click)="useExample(example.expression)">
+        {{ example.label }}
+      </button>
+    }
+  </div>
+
+  <!-- Description ----------------------------------------------------- -->
+  @if (hasInput()) {
+    @if (preview().error) {
+      <p class="status status--err" role="alert">
+        <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+        {{ preview().error }}
+      </p>
+    } @else if (preview().description) {
+      <p class="status status--ok" role="status">
+        <mat-icon class="status__icon" aria-hidden="true">schedule</mat-icon>
+        {{ preview().description }}
+      </p>
+    }
+  }
+
+  <!-- Upcoming runs --------------------------------------------------- -->
+  @if (hasInput() && formattedRuns().length) {
+    <section aria-label="Next runs">
+      <div class="runs__head">
+        <h2 class="section__title">Next {{ formattedRuns().length }} runs</h2>
+        <div class="tabs" role="group" aria-label="Time zone">
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="zone() === 'local'"
+            [attr.aria-pressed]="zone() === 'local'"
+            (click)="setZone('local')"
+          >
+            Local
+          </button>
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="zone() === 'utc'"
+            [attr.aria-pressed]="zone() === 'utc'"
+            (click)="setZone('utc')"
+          >
+            UTC
+          </button>
+        </div>
+      </div>
+
+      <ol class="runs">
+        @for (run of formattedRuns(); track $index) {
+          <li class="run">
+            <mat-icon class="run__icon" aria-hidden="true">arrow_forward</mat-icon>
+            <span class="run__time">{{ run }}</span>
+          </li>
+        }
+      </ol>
+
+      <div class="actions">
+        <button matButton (click)="refresh()">
+          <mat-icon>refresh</mat-icon>
+          Recalculate from now
+        </button>
+      </div>
+    </section>
+  }
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    Times are computed in your browser, interpreting the fields in the selected time zone.
+  </p>
+</div>
+
+<app-tool-content slug="cron-explainer" />

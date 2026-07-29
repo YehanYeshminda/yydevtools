@@ -11,13 +11,12 @@
       #searchInput
       class="search__input"
       type="search"
-      aria-label="Search tools"
-      aria-keyshortcuts="Meta+K Control+K"
+      aria-label="Search tools on this page"
       [placeholder]="'Search ' + totalCount + ' tools…'"
       [value]="query()"
       (input)="onQueryInput($event)"
     />
-    <kbd class="search__kbd" aria-hidden="true">⌘K</kbd>
+    <kbd class="search__kbd" aria-hidden="true" title="Press ⌘K or Ctrl-K to jump to any tool">⌘K</kbd>
   </div>
 </section>
 

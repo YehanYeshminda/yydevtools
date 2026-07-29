@@ -10,9 +10,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
+import { ClipboardService } from '../../core/clipboard.service';
 import { formatBytes } from '../../core/format';
 import { Spinner } from '../../shared/spinner/spinner';
 import { HashWorkerClient, type Digest } from './hash-worker.client';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 export type { Digest };
 
@@ -23,13 +25,14 @@ const MAX_FILE_BYTES = 250 * 1024 * 1024;
 
 @Component({
   selector: 'app-hash-generator',
-  imports: [RouterLink, MatButtonModule, MatIconModule, Spinner],
+  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner],
   templateUrl: './hash-generator.html',
   styleUrls: ['../tool-shell.css', './hash-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HashGeneratorTool implements OnDestroy {
   private readonly snackBar = inject(MatSnackBar);
+  private readonly clipboard = inject(ClipboardService);
   /** All hashing happens off the main thread where a worker is available. */
   private readonly hasher = new HashWorkerClient();
 
@@ -161,9 +164,8 @@ export class HashGeneratorTool implements OnDestroy {
     return this.uppercase() ? hex.toUpperCase() : hex;
   }
 
-  protected async copy(hex: string, algorithm: string): Promise<void> {
-    await navigator.clipboard.writeText(this.present(hex));
-    this.snackBar.open(`${algorithm} digest copied to clipboard`, undefined, { duration: 2000 });
+  protected copy(hex: string, algorithm: string): void {
+    void this.clipboard.copy(this.present(hex), { message: `${algorithm} digest copied to clipboard` });
   }
 
   protected formatBytes(bytes: number): string {

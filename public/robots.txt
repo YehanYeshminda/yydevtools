@@ -4,4 +4,4 @@ Allow: /
 # The API is metered and has nothing to index.
 Disallow: /api/
 
-Sitemap: https://tools.yydev.net/sitemap.xml
+Sitemap: https://yydevtools.com/sitemap.xml

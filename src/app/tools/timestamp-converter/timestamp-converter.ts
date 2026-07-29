@@ -8,8 +8,10 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
+
+import { ClipboardService } from '../../core/clipboard.service';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 export interface Row {
   key: string;
@@ -27,13 +29,13 @@ const MS_THRESHOLD = 1e11;
 
 @Component({
   selector: 'app-timestamp-converter',
-  imports: [RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './timestamp-converter.html',
   styleUrls: ['../tool-shell.css', './timestamp-converter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimestampConverterTool {
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly clipboard = inject(ClipboardService);
 
   /** Ticks once a second so the "now" panel and relative times stay current. */
   protected readonly now = signal(Date.now());
@@ -65,9 +67,8 @@ export class TimestampConverterTool {
     this.input.set('');
   }
 
-  protected async copy(value: string, label: string): Promise<void> {
-    await navigator.clipboard.writeText(value);
-    this.snackBar.open(`${label} copied to clipboard`, undefined, { duration: 2000 });
+  protected copy(value: string, label: string): void {
+    void this.clipboard.copy(value, { label });
   }
 }
 

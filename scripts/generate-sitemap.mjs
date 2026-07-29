@@ -10,7 +10,7 @@
 import { readdir, writeFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 
-const SITE_URL = 'https://tools.yydev.net';
+const SITE_URL = 'https://yydevtools.com';
 const OUT_DIR = 'dist/yydevtools/browser';
 
 /** Prerendered but deliberately not indexed. */

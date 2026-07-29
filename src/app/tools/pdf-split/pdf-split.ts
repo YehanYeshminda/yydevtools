@@ -7,6 +7,7 @@ import { PDFDocument } from '@cantoo/pdf-lib';
 import { formatBytes } from '../../core/format';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 import { Spinner } from '../../shared/spinner/spinner';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 /** How the selected pages are written out. */
 export type SplitMode = 'single' | 'perPage';
@@ -25,7 +26,7 @@ const MANY_FILES = 20;
 
 @Component({
   selector: 'app-pdf-split',
-  imports: [RouterLink, MatButtonModule, MatIconModule, Spinner, PdfPreview],
+  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner, PdfPreview],
   templateUrl: './pdf-split.html',
   styleUrls: ['../tool-shell.css', './pdf-split.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,0 +1,139 @@
+/* Sits below the tool widget, inside the tool-shell column. A top rule and
+   generous spacing set the readable article apart from the interactive tool. */
+.tc {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.tc__heading {
+  margin: 2rem 0 0.75rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--mat-sys-on-surface);
+}
+
+.tc__heading:first-child {
+  margin-top: 0;
+}
+
+.tc__p {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tc__p:last-of-type {
+  margin-bottom: 0;
+}
+
+.tc__steps,
+.tc__list {
+  margin: 0;
+  padding-left: 1.4rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tc__steps li,
+.tc__list li {
+  margin-bottom: 0.6rem;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.tc__steps li:last-child,
+.tc__list li:last-child {
+  margin-bottom: 0;
+}
+
+/* FAQ — native <details> so the answers are in the HTML and work without JS. */
+.tc__faq {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tc__faqitem {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+  overflow: hidden;
+}
+
+.tc__q {
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface);
+  cursor: pointer;
+  list-style: none;
+  position: relative;
+  padding-right: 2.5rem;
+}
+
+/* Swap the default disclosure triangle for a rotating chevron. */
+.tc__q::-webkit-details-marker {
+  display: none;
+}
+
+.tc__q::after {
+  content: '';
+  position: absolute;
+  right: 1.1rem;
+  top: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--mat-sys-on-surface-variant);
+  border-bottom: 2px solid var(--mat-sys-on-surface-variant);
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.tc__faqitem[open] .tc__q::after {
+  transform: translateY(-30%) rotate(225deg);
+}
+
+.tc__q:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: -2px;
+}
+
+.tc__a {
+  margin: 0;
+  padding: 0 1rem 1rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Related tools ---------------------------------------------------------- */
+.tc__related {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.tc__related li {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tc__link {
+  font-weight: 600;
+  color: var(--mat-sys-primary);
+  text-decoration: none;
+}
+
+.tc__link:hover {
+  text-decoration: underline;
+}
+
+.tc__reldesc {
+  color: var(--mat-sys-on-surface-variant);
+}

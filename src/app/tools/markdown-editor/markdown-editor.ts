@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import { marked } from 'marked';
+
+import { ClipboardService } from '../../core/clipboard.service';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 const STARTER = `# Markdown Editor
 
@@ -31,13 +33,13 @@ const greet = (name: string) => \`Hello, \${name}!\`;
 
 @Component({
   selector: 'app-markdown-editor',
-  imports: [RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './markdown-editor.html',
   styleUrl: './markdown-editor.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MarkdownEditorTool {
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly clipboard = inject(ClipboardService);
 
   protected readonly source = signal(STARTER);
 
@@ -60,14 +62,12 @@ export class MarkdownEditorTool {
     this.source.set((event.target as HTMLTextAreaElement).value);
   }
 
-  protected async copyHtml(): Promise<void> {
-    await navigator.clipboard.writeText(this.html());
-    this.snackBar.open('HTML copied to clipboard', undefined, { duration: 2000 });
+  protected copyHtml(): void {
+    void this.clipboard.copy(this.html(), { message: 'HTML copied to clipboard' });
   }
 
-  protected async copyMarkdown(): Promise<void> {
-    await navigator.clipboard.writeText(this.source());
-    this.snackBar.open('Markdown copied to clipboard', undefined, { duration: 2000 });
+  protected copyMarkdown(): void {
+    void this.clipboard.copy(this.source(), { message: 'Markdown copied to clipboard' });
   }
 
   protected download(): void {

@@ -1,0 +1,10 @@
+<!-- Same mark as logo.svg with a slightly heavier stroke: a browser tab renders
+     this at 16-32px, where the design calls for a thicker arm to stay legible. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <rect width="96" height="96" rx="28" fill="#FFBE3D" />
+  <g stroke="#262A33" stroke-width="13" stroke-linecap="round" fill="none">
+    <line x1="48" y1="22" x2="48" y2="74" />
+    <line x1="70.5" y1="35" x2="25.5" y2="61" />
+    <line x1="25.5" y1="35" x2="70.5" y2="61" />
+  </g>
+</svg>

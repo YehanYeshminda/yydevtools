@@ -1,0 +1,115 @@
+/* Inputs ---------------------------------------------------------------- */
+.pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.diff-input {
+  min-height: 12rem;
+}
+
+/* Controls -------------------------------------------------------------- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.controls .actions {
+  margin-inline-start: auto;
+}
+
+/* Summary --------------------------------------------------------------- */
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.summary__stat {
+  font-variant-numeric: tabular-nums;
+}
+
+.summary__stat--add {
+  color: var(--mat-sys-primary);
+  font-weight: 600;
+}
+
+.summary__stat--remove {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
+/* Diff grid ------------------------------------------------------------- */
+.diff {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  overflow: auto;
+  background: var(--mat-sys-surface-container-low);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.diff--split .diff__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.diff--split .cell + .cell {
+  border-inline-start: 1px solid var(--mat-sys-outline-variant);
+}
+
+.cell {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.05rem 0.75rem;
+  min-width: 0;
+}
+
+.cell__num {
+  flex: none;
+  width: 2.5rem;
+  text-align: end;
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.7;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell__sign {
+  flex: none;
+  width: 1ch;
+  user-select: none;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.cell__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--mat-sys-on-surface);
+}
+
+.cell--add {
+  background: color-mix(in srgb, var(--mat-sys-primary) 16%, transparent);
+}
+
+.cell--add .cell__sign {
+  color: var(--mat-sys-primary);
+}
+
+.cell--remove {
+  background: var(--mat-sys-error-container);
+}
+
+.cell--remove .cell__sign {
+  color: var(--mat-sys-error);
+}

@@ -1,0 +1,71 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">Case Converter</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>text_fields</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">Case Converter</h1>
+    <p class="head__sub">
+      Convert text between camelCase, snake_case, kebab-case, PascalCase and a URL slug, all at once.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="case-input">Text</label>
+    <textarea
+      id="case-input"
+      class="field__input case-input"
+      spellcheck="false"
+      autocomplete="off"
+      rows="3"
+      placeholder="Type or paste any words or an identifier…"
+      [value]="input()"
+      (input)="onInput($event)"
+    ></textarea>
+  </div>
+
+  <div class="actions">
+    <button matButton (click)="clear()">
+      <mat-icon>clear</mat-icon>
+      Clear
+    </button>
+  </div>
+
+  @if (hasInput()) {
+    <ul class="rows">
+      @for (row of rows(); track row.kind) {
+        <li class="row">
+          <span class="row__label">{{ row.label }}</span>
+          <p class="row__value">{{ row.value }}</p>
+          <button
+            type="button"
+            matIconButton
+            (click)="copy(row.value, row.label)"
+            [attr.aria-label]="'Copy ' + row.label"
+          >
+            <mat-icon>content_copy</mat-icon>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    Words are detected across camelCase humps, separators and letter/number boundaries, so
+    <code>getUserByID</code> and <code>get_user_by_id</code> convert the same way.
+  </p>
+</div>
+
+<app-tool-content slug="case-converter" />

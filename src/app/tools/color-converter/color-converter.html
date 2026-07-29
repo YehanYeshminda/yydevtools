@@ -15,7 +15,8 @@
   <div>
     <h1 class="head__title">Color Converter</h1>
     <p class="head__sub">
-      Convert between HEX, RGB and HSL, and check whether a pairing meets WCAG contrast minimums.
+      Convert between HEX, RGB, HSL, OKLCH and LAB, generate a palette, and check whether a pairing
+      meets WCAG contrast minimums.
     </p>
   </div>
 </header>
@@ -42,7 +43,7 @@
             autocomplete="off"
             [value]="foreground()"
             (input)="onForegroundInput($event)"
-            placeholder="#2f6f8f, rgb(47 111 143), hsl(200 50% 37%)"
+            placeholder="#2f6f8f, rgb(47 111 143), oklch(52% 0.08 220)"
           />
         </div>
       </div>
@@ -147,6 +148,49 @@
     }
   }
 
+  <!-- Palette --------------------------------------------------------- -->
+  @if (foregroundView().rgb) {
+    <section aria-label="Palette">
+      <h2 class="section__title">Tints &amp; shades</h2>
+      <ul class="swatches swatches--ramp">
+        @for (swatch of foregroundView().ramp; track swatch.label) {
+          <li>
+            <button
+              type="button"
+              class="swatch"
+              [class.swatch--light]="swatch.light"
+              [style.background]="swatch.hex"
+              (click)="pick(swatch.hex)"
+              [attr.aria-label]="'Use ' + swatch.hex + ' (' + swatch.label + ') as the foreground'"
+            >
+              <span class="swatch__step">{{ swatch.label }}</span>
+              <span class="swatch__hex">{{ swatch.hex }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+
+      <h2 class="section__title">Harmonies</h2>
+      <ul class="swatches swatches--harmony">
+        @for (swatch of foregroundView().harmonies; track swatch.label) {
+          <li>
+            <button
+              type="button"
+              class="swatch swatch--tall"
+              [class.swatch--light]="swatch.light"
+              [style.background]="swatch.hex"
+              (click)="pick(swatch.hex)"
+              [attr.aria-label]="'Use ' + swatch.hex + ' (' + swatch.label + ') as the foreground'"
+            >
+              <span class="swatch__step">{{ swatch.label }}</span>
+              <span class="swatch__hex">{{ swatch.hex }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
   @if (backgroundView().formats; as formats) {
     @if (formats.length) {
       <section aria-label="Background formats">
@@ -173,7 +217,12 @@
 
   <p class="note">
     <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
-    Large text means 18.66px bold or 24px regular and up. Alpha is ignored when computing contrast
-    — WCAG ratios are defined for opaque colours.
+    <span>
+      Large text means 18.66px bold or 24px regular and up. Alpha is ignored when computing contrast
+      — WCAG ratios are defined for opaque colours. The palette is generated in OKLCH, so its steps
+      stay perceptually even; click any swatch to load it as the foreground.
+    </span>
   </p>
 </div>
+
+<app-tool-content slug="color-converter" />

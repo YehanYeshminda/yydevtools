@@ -2,15 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>yydevtools — Free developer utilities</title>
+  <title>YYDevTools — Free developer utilities</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Per-route description, canonical, robots and social tags are written by
        SeoService and baked in at prerender time. This is only the fallback. -->
   <meta name="description" content="Free developer and PDF tools that run in your browser — JSON, JWT, Base64, hashing, image compression and PDF editing. No account, no upload, no install.">
+  <!-- Confirms site ownership to AdSense; pairs with the loader script below and
+       /ads.txt. Both are read by the crawler during the review. -->
+  <meta name="google-adsense-account" content="ca-pub-5448994963877777">
   <meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0d1015" media="(prefers-color-scheme: dark)">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- Brand mark, generated from public/logo.svg by scripts/generate-icons.mjs.
+       The .ico stays first for older browsers; anything modern prefers the SVG. -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
   <script>
     // Set the theme before first paint to avoid a flash of the wrong colours.
     (function () {
@@ -40,12 +48,32 @@
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "yydevtools",
-      "url": "https://tools.yydev.net",
-      "description": "Free developer and PDF tools that run in your browser."
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://yydevtools.com/#organization",
+          "name": "YYDevTools",
+          "url": "https://yydevtools.com/",
+          "description": "Free developer and PDF tools that run in your browser.",
+          "logo": "https://yydevtools.com/icon-512.png",
+          "sameAs": ["https://github.com/YehanYeshminda/yydevtools"]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://yydevtools.com/#website",
+          "name": "YYDevTools",
+          "url": "https://yydevtools.com/",
+          "description": "Free developer and PDF tools that run in your browser — JSON, JWT, Base64, hashing, image compression and PDF editing. No account, no upload, no install.",
+          "publisher": { "@id": "https://yydevtools.com/#organization" }
+        }
+      ]
     }
   </script>
+  <!-- Google AdSense loader. Consent Mode defaults (above) are already in place,
+       so this can load unconditionally; it will not read/write ad cookies until
+       the visitor grants consent via the banner. -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5448994963877777"
+    crossorigin="anonymous"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">

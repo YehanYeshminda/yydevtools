@@ -17,6 +17,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { RouterLink } from '@angular/router';
 
+import { ClipboardService } from '../../core/clipboard.service';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 import { Spinner } from '../../shared/spinner/spinner';
 import {
@@ -31,6 +32,7 @@ import {
 } from './base64-codec';
 import type { PreviewKind } from './base64-codec';
 import { Base64WorkerClient } from './base64-worker.client';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 type TextMode = 'encode' | 'decode';
 
@@ -110,7 +112,7 @@ interface RenderedPreview {
 
 @Component({
   selector: 'app-base64',
-  imports: [
+  imports: [ToolContent, 
     RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
@@ -126,6 +128,7 @@ interface RenderedPreview {
 })
 export class Base64Tool implements OnDestroy {
   private readonly snackBar = inject(MatSnackBar);
+  private readonly clipboard = inject(ClipboardService);
   /** All encoding and decoding happens off the main thread. */
   private readonly codec = new Base64WorkerClient();
 
@@ -239,8 +242,8 @@ export class Base64Tool implements OnDestroy {
     this.setEncoded('');
   }
 
-  protected async copyEncoded(): Promise<void> {
-    await this.copy(this.fullEncoded());
+  protected copyEncoded(): void {
+    this.copy(this.fullEncoded());
   }
 
   protected downloadEncoded(): void {
@@ -453,8 +456,8 @@ export class Base64Tool implements OnDestroy {
     this.scheduleTextConvert();
   }
 
-  protected async copyTextResult(): Promise<void> {
-    await this.copy(this.textResult);
+  protected copyTextResult(): void {
+    this.copy(this.textResult);
   }
 
   protected downloadTextResult(): void {
@@ -523,16 +526,10 @@ export class Base64Tool implements OnDestroy {
     }
   }
 
-  private async copy(text: string): Promise<void> {
-    if (text === '') {
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(text);
-      this.snackBar.open('Copied to clipboard', undefined, { duration: 2000 });
-    } catch {
-      this.showError('That value is too large for the clipboard — download it instead.');
-    }
+  private copy(text: string): void {
+    void this.clipboard.copy(text, {
+      errorMessage: 'That value is too large for the clipboard — download it instead.',
+    });
   }
 
   private saveBlob(blob: Blob, name: string): void {

@@ -1,0 +1,131 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">SQL Formatter</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>database</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">SQL Formatter</h1>
+    <p class="head__sub">
+      Format and beautify SQL for your dialect of choice, entirely in your browser.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <!-- Options --------------------------------------------------------- -->
+  <div class="options">
+    <div class="field field--select">
+      <label class="field__label" for="dialect">Dialect</label>
+      <select id="dialect" class="field__input select" [value]="dialect()" (change)="onDialectChange($event)">
+        @for (option of dialects; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <span class="field__label" id="kw-label">Keywords</span>
+      <div class="tabs" role="group" aria-labelledby="kw-label">
+        @for (option of keywordCases; track option.value) {
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="keywordCase() === option.value"
+            [attr.aria-pressed]="keywordCase() === option.value"
+            (click)="setKeywordCase(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="field field--narrow">
+      <label class="field__label" for="tab-width">Indent</label>
+      <input
+        id="tab-width"
+        class="field__input"
+        type="number"
+        min="1"
+        max="8"
+        step="1"
+        [value]="tabWidth()"
+        [disabled]="useTabs()"
+        (input)="onTabWidthInput($event)"
+      />
+    </div>
+
+    <div class="field">
+      <span class="field__label">&nbsp;</span>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="useTabs()"
+        [attr.aria-pressed]="useTabs()"
+        (click)="toggleTabs()"
+      >
+        <mat-icon aria-hidden="true">{{ useTabs() ? 'check' : 'keyboard_tab' }}</mat-icon>
+        Use tabs
+      </button>
+    </div>
+  </div>
+
+  <!-- Input ----------------------------------------------------------- -->
+  <div class="field">
+    <label class="field__label" for="sql-input">SQL</label>
+    <textarea
+      id="sql-input"
+      class="field__input sql-area"
+      spellcheck="false"
+      autocomplete="off"
+      autocapitalize="off"
+      rows="8"
+      placeholder="SELECT * FROM users WHERE active = true;"
+      [value]="input()"
+      (input)="onInput($event)"
+    ></textarea>
+  </div>
+
+  <div class="actions">
+    <button matButton (click)="clear()">
+      <mat-icon>clear</mat-icon>
+      Clear
+    </button>
+  </div>
+
+  <!-- Output ---------------------------------------------------------- -->
+  @if (error()) {
+    <p class="status status--err" role="alert">
+      <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+      {{ error() }}
+    </p>
+  } @else if (hasOutput()) {
+    <section aria-label="Formatted SQL">
+      <div class="output__head">
+        <h2 class="section__title">Formatted</h2>
+        <button matButton (click)="copy()">
+          <mat-icon>content_copy</mat-icon>
+          Copy
+        </button>
+      </div>
+      <pre class="output"><code>{{ output() }}</code></pre>
+    </section>
+  }
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    Formatting adjusts whitespace, indentation and keyword case only — it never changes the meaning
+    of your query. Nothing is uploaded.
+  </p>
+</div>
+
+<app-tool-content slug="sql-formatter" />

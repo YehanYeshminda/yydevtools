@@ -123,3 +123,60 @@
 .rows {
   margin-top: 0.75rem;
 }
+
+/* Palette --------------------------------------------------------------- */
+.swatches {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.swatches--ramp {
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+}
+
+.swatches--harmony {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  min-height: 4rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 10px;
+  /* Light labels by default — most generated swatches are mid-to-dark. */
+  color: rgba(255, 255, 255, 0.95);
+  text-align: start;
+  cursor: pointer;
+}
+
+.swatch--tall {
+  min-height: 5rem;
+}
+
+/* Dark text where the swatch is pale enough that white would wash out. */
+.swatch--light {
+  color: rgba(0, 0, 0, 0.82);
+}
+
+.swatch__step {
+  font: var(--mat-sys-label-medium);
+  font-weight: 600;
+}
+
+.swatch__hex {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.swatch:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}

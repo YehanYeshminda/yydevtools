@@ -1,0 +1,151 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">Code Formatter</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>code_blocks</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">Code Formatter</h1>
+    <p class="head__sub">
+      Beautify HTML, CSS, JavaScript, TypeScript, JSON, Markdown, YAML, GraphQL and XML with
+      Prettier — entirely in your browser.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <!-- Options --------------------------------------------------------- -->
+  <div class="options">
+    <div class="field field--select">
+      <label class="field__label" for="language">Language</label>
+      <select
+        id="language"
+        class="field__input select"
+        [value]="language()"
+        (change)="onLanguageChange($event)"
+      >
+        @for (option of languages; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field field--narrow">
+      <label class="field__label" for="tab-width">Indent</label>
+      <input
+        id="tab-width"
+        class="field__input"
+        type="number"
+        min="1"
+        max="8"
+        step="1"
+        [value]="tabWidth()"
+        [disabled]="useTabs()"
+        (input)="onTabWidthInput($event)"
+      />
+    </div>
+
+    <div class="field">
+      <span class="field__label">&nbsp;</span>
+      <div class="chips">
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="useTabs()"
+          [attr.aria-pressed]="useTabs()"
+          (click)="toggleTabs()"
+        >
+          <mat-icon aria-hidden="true">{{ useTabs() ? 'check' : 'keyboard_tab' }}</mat-icon>
+          Use tabs
+        </button>
+
+        @if (showJsOptions()) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="semi()"
+            [attr.aria-pressed]="semi()"
+            (click)="toggleSemi()"
+          >
+            <mat-icon aria-hidden="true">{{ semi() ? 'check' : 'more_horiz' }}</mat-icon>
+            Semicolons
+          </button>
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="singleQuote()"
+            [attr.aria-pressed]="singleQuote()"
+            (click)="toggleSingleQuote()"
+          >
+            <mat-icon aria-hidden="true">{{ singleQuote() ? 'check' : 'format_quote' }}</mat-icon>
+            Single quotes
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Input ----------------------------------------------------------- -->
+  <div class="field">
+    <label class="field__label" for="code-input">Source</label>
+    <textarea
+      id="code-input"
+      class="field__input code-area"
+      spellcheck="false"
+      autocomplete="off"
+      autocapitalize="off"
+      rows="10"
+      placeholder="Paste code to format…"
+      [value]="input()"
+      (input)="onInput($event)"
+    ></textarea>
+  </div>
+
+  <div class="actions">
+    <button matButton="filled" (click)="format()" [disabled]="!input() || busy()">
+      <mat-icon>format_align_left</mat-icon>
+      {{ busy() ? 'Formatting…' : 'Format' }}
+    </button>
+    <button matButton (click)="clear()" [disabled]="!input()">
+      <mat-icon>clear</mat-icon>
+      Clear
+    </button>
+  </div>
+
+  <!-- Output ---------------------------------------------------------- -->
+  @if (error()) {
+    <p class="status status--err" role="alert">
+      <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+      {{ error() }}
+    </p>
+  } @else if (hasOutput()) {
+    <section aria-label="Formatted code">
+      <div class="output__head">
+        <h2 class="section__title">Formatted</h2>
+        <button matButton (click)="copy()">
+          <mat-icon>content_copy</mat-icon>
+          Copy
+        </button>
+      </div>
+      <pre class="output"><code>{{ output() }}</code></pre>
+    </section>
+  }
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <span>
+      Formatting only changes whitespace and style, never the meaning of your code. The Prettier
+      engine loads on first use and nothing is ever uploaded.
+    </span>
+  </p>
+</div>
+
+<app-tool-content slug="code-formatter" />

@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { HostedPdfTool } from '../../core/hosted-pdf-tool';
 import { ExportFormat } from '../../core/pdf-services.client';
 import { Spinner } from '../../shared/spinner/spinner';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 interface FormatOption {
   value: ExportFormat;
@@ -19,7 +20,7 @@ const FORMATS: FormatOption[] = [
 
 @Component({
   selector: 'app-pdf-convert',
-  imports: [RouterLink, MatButtonModule, MatIconModule, Spinner],
+  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner],
   templateUrl: './pdf-convert.html',
   styleUrls: ['../tool-shell.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

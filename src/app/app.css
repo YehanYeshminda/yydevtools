@@ -39,15 +39,11 @@
   border-radius: 8px;
 }
 
+/* The tile is part of the artwork, so no background or radius here. */
 .brand__mark {
-  display: grid;
-  place-items: center;
+  display: block;
   width: 28px;
   height: 28px;
-  font-size: 18px;
-  color: var(--on-primary);
-  background: var(--primary);
-  border-radius: 8px;
 }
 
 .brand__name {

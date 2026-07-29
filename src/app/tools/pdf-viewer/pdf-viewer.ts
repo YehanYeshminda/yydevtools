@@ -6,13 +6,14 @@ import { RouterLink } from '@angular/router';
 import { describeFile, formatBytes } from '../../core/format';
 import { looksLikePdf, readPageCount } from '../../core/pdf-probe';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 /** The document is held in memory, so reject anything unreasonable up front. */
 const MAX_INPUT_BYTES = 100 * 1024 * 1024;
 
 @Component({
   selector: 'app-pdf-viewer',
-  imports: [RouterLink, MatButtonModule, MatIconModule, PdfPreview],
+  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, PdfPreview],
   templateUrl: './pdf-viewer.html',
   styleUrls: ['../tool-shell.css', './pdf-viewer.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

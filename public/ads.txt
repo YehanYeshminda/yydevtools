@@ -1,6 +1,2 @@
 # Authorized Digital Sellers — https://iabtechlab.com/ads-txt/
-#
-# TODO: replace pub-0000000000000000 with your AdSense publisher ID (found under
-# Account > Settings > Account information). Until then this file authorises
-# nobody and AdSense will report ads.txt as not found or invalid.
-google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+google.com, pub-5448994963877777, DIRECT, f08c47fec0942fa0

@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 
+import { ClipboardService } from '../../core/clipboard.service';
 import { VerifyResult, verifyJwt } from './jwt-verify';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 /** Signature-check state shown in the UI: idle until a key is entered. */
 export type VerifyState = { kind: 'idle' } | { kind: 'verifying' } | VerifyResult;
@@ -54,13 +55,13 @@ export type DecodeResult =
 
 @Component({
   selector: 'app-jwt-decoder',
-  imports: [RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './jwt-decoder.html',
   styleUrl: './jwt-decoder.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JwtDecoderTool {
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly clipboard = inject(ClipboardService);
 
   protected readonly token = signal('');
   /** Shared secret (HS) or PEM public key (RS, PS, ES) for verification. */
@@ -123,12 +124,8 @@ export class JwtDecoderTool {
     this.key.set('');
   }
 
-  protected async copy(text: string, label: string): Promise<void> {
-    if (text === '') {
-      return;
-    }
-    await navigator.clipboard.writeText(text);
-    this.snackBar.open(`${label} copied to clipboard`, undefined, { duration: 2000 });
+  protected copy(text: string, label: string): void {
+    void this.clipboard.copy(text, { label });
   }
 
   private decode(raw: string): DecodeResult {

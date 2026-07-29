@@ -1,0 +1,124 @@
+/* Pattern field --------------------------------------------------------- */
+.pattern {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.pattern__slash {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 1.1rem;
+  color: var(--mat-sys-on-surface-variant);
+  user-select: none;
+}
+
+.pattern__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.chips code {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+}
+
+.subject {
+  min-height: 9rem;
+}
+
+/* Highlighted preview --------------------------------------------------- */
+.preview {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--mat-sys-on-surface);
+}
+
+.preview__hit {
+  background: color-mix(in srgb, var(--mat-sys-primary) 30%, transparent);
+  color: var(--mat-sys-on-surface);
+  border-radius: 3px;
+  padding: 0.05em 0.1em;
+}
+
+/* Match details --------------------------------------------------------- */
+.matches {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.match {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.match__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.match__index {
+  flex: none;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.match__value {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  color: var(--mat-sys-primary);
+  overflow-wrap: anywhere;
+}
+
+.match__at {
+  margin-inline-start: auto;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.group {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.group__label {
+  flex: none;
+  min-width: 4rem;
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.group__value {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface);
+  overflow-wrap: anywhere;
+}

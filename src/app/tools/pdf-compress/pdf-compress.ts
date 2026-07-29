@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { HostedPdfTool } from '../../core/hosted-pdf-tool';
 import { Spinner } from '../../shared/spinner/spinner';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 type Level = 'LOW' | 'MEDIUM' | 'HIGH';
 
@@ -26,7 +27,7 @@ const LEVELS: LevelOption[] = [
 
 @Component({
   selector: 'app-pdf-compress',
-  imports: [RouterLink, MatButtonModule, MatIconModule, Spinner],
+  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner],
   templateUrl: './pdf-compress.html',
   styleUrls: ['../tool-shell.css', './pdf-compress.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

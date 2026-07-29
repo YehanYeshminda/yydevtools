@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { HostedPdfTool } from '../../core/hosted-pdf-tool';
 import { Spinner } from '../../shared/spinner/spinner';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 interface LanguageOption {
   value: string;
@@ -34,7 +35,7 @@ const LANGUAGES: LanguageOption[] = [
 
 @Component({
   selector: 'app-pdf-ocr',
-  imports: [RouterLink, MatButtonModule, MatIconModule, Spinner],
+  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner],
   templateUrl: './pdf-ocr.html',
   styleUrls: ['../tool-shell.css', './pdf-ocr.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

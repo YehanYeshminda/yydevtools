@@ -7,9 +7,9 @@ import { filter, map } from 'rxjs';
  * The canonical origin. Every page is reachable on the *.workers.dev URL too,
  * so without an explicit canonical the whole site indexes twice.
  */
-export const SITE_URL = 'https://tools.yydev.net';
+export const SITE_URL = 'https://yydevtools.com';
 
-const SITE_NAME = 'yydevtools';
+const SITE_NAME = 'YYDevTools';
 const DEFAULT_DESCRIPTION =
   'Free developer and PDF tools that run in your browser — JSON, JWT, Base64, hashing, ' +
   'image compression and PDF editing. No account, no upload, no install.';

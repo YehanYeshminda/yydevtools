@@ -15,7 +15,8 @@
   <div>
     <h1 class="head__title">JSON Formatter</h1>
     <p class="head__sub">
-      Format, validate and minify JSON. Everything runs in your browser.
+      Format, validate and minify JSON, convert to and from YAML, and query it with JSONPath.
+      Everything runs in your browser.
     </p>
   </div>
 </header>
@@ -74,9 +75,36 @@
       <mat-icon>compress</mat-icon>
       Minify
     </button>
+    <button matButton (click)="toYaml()" [disabled]="!input()">
+      <mat-icon>swap_horiz</mat-icon>
+      To YAML
+    </button>
+    <button matButton (click)="fromYaml()" [disabled]="!input()">
+      <mat-icon>swap_horiz</mat-icon>
+      YAML → JSON
+    </button>
     <button matButton (click)="clear()" [disabled]="!input()">
       <mat-icon>clear</mat-icon>
       Clear
+    </button>
+  </div>
+
+  <div class="query">
+    <mat-form-field appearance="outline" class="field query__field">
+      <mat-label>JSONPath query</mat-label>
+      <input
+        matInput
+        [value]="query()"
+        (input)="onQueryInput($event)"
+        (keyup.enter)="runQuery()"
+        placeholder="$.store.book[*].title"
+        spellcheck="false"
+        autocomplete="off"
+      />
+    </mat-form-field>
+    <button matButton (click)="runQuery()" [disabled]="!input() || !query()">
+      <mat-icon>search</mat-icon>
+      Run query
     </button>
   </div>
 
@@ -94,3 +122,5 @@
     </div>
   }
 </div>
+
+<app-tool-content slug="json-formatter" />

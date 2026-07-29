@@ -12,7 +12,17 @@
  * language. Kept free of Angular so the generation is testable on its own.
  */
 
-export type Language = 'typescript' | 'csharp' | 'python' | 'go' | 'zod';
+export type Language =
+  | 'typescript'
+  | 'csharp'
+  | 'python'
+  | 'go'
+  | 'zod'
+  | 'rust'
+  | 'kotlin'
+  | 'java'
+  | 'jsonschema'
+  | 'pydantic';
 
 type Primitive = 'string' | 'integer' | 'number' | 'boolean';
 
@@ -248,6 +258,16 @@ export function generate(json: unknown, options: GenerateOptions): string {
       return emitGo(types, bySignature);
     case 'zod':
       return emitZod(types, bySignature);
+    case 'rust':
+      return emitRust(types, bySignature);
+    case 'kotlin':
+      return emitKotlin(types, bySignature);
+    case 'java':
+      return emitJava(types, bySignature);
+    case 'jsonschema':
+      return emitJsonSchema(types, bySignature, rootName);
+    case 'pydantic':
+      return emitPydantic(types, bySignature);
   }
 }
 
@@ -267,6 +287,20 @@ function emitAlias(
       return `type ${rootName} = ${goType(shape, names)}\n`;
     case 'zod':
       return `import { z } from 'zod';\n\nexport const ${rootName}Schema = ${zodType(shape, names)};\n`;
+    case 'rust':
+      return `pub type ${rootName} = ${rustType(shape, names)};\n`;
+    case 'kotlin':
+      return `typealias ${rootName} = ${kotlinType(shape, names)}\n`;
+    case 'java':
+      return `// The JSON is a ${javaType(shape, names)}, not an object — there is no record to generate.\n`;
+    case 'pydantic':
+      return `${rootName} = ${pyType(shape, names)}\n`;
+    case 'jsonschema':
+      return `${JSON.stringify(
+        { $schema: 'https://json-schema.org/draft/2020-12/schema', ...schemaFor(shape, names) },
+        null,
+        2,
+      )}\n`;
     case 'csharp':
       return `// The JSON is a ${csType(shape, names)}, not an object — there is no class to generate.\n`;
   }
@@ -639,4 +673,315 @@ function emitZod(types: NamedType[], names: Map<string, string>): string {
   });
 
   return `import { z } from 'zod';\n\n${blocks.join('\n\n')}\n`;
+}
+
+// --- Rust (serde) ---
+
+const RUST_KEYWORDS = new Set([
+  'as', 'async', 'await', 'break', 'const', 'continue', 'crate', 'dyn', 'else', 'enum', 'extern',
+  'false', 'fn', 'for', 'if', 'impl', 'in', 'let', 'loop', 'match', 'mod', 'move', 'mut', 'pub',
+  'ref', 'return', 'self', 'static', 'struct', 'super', 'trait', 'true', 'type', 'union', 'unsafe',
+  'use', 'where', 'while', 'abstract', 'become', 'box', 'do', 'final', 'macro', 'override', 'priv',
+  'try', 'typeof', 'unsized', 'virtual', 'yield',
+]);
+
+/** "userName" / "user-name" -> "user_name". */
+function snakeCase(raw: string): string {
+  return raw
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[^A-Za-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase();
+}
+
+function rustType(shape: Shape, names: Map<string, string>): string {
+  switch (shape.kind) {
+    case 'object':
+      return names.get(signatureOf(shape)) ?? 'serde_json::Value';
+    case 'array':
+      return `Vec<${rustType(shape.element, names)}>`;
+    case 'nullable':
+      return `Option<${rustType(shape.inner, names)}>`;
+    case 'primitive':
+      switch (shape.name) {
+        case 'integer':
+          return 'i64';
+        case 'number':
+          return 'f64';
+        case 'boolean':
+          return 'bool';
+        default:
+          return 'String';
+      }
+    case 'null':
+      return 'Option<serde_json::Value>';
+    default:
+      return 'serde_json::Value';
+  }
+}
+
+function emitRust(types: NamedType[], names: Map<string, string>): string {
+  const structs = types.map((type) => {
+    if (type.fields.size === 0) {
+      return `#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ${type.name} {}`;
+    }
+    const rows = [...type.fields].map(([key, field]) => {
+      const snake = snakeCase(key);
+      const name = snake === '' || /^[0-9]/.test(snake) ? `field_${snake}` : snake;
+      const ident = RUST_KEYWORDS.has(name) ? `r#${name}` : name;
+      // Optional (absent in some samples) fields become Option<T> with a default.
+      const optional = field.optional && field.shape.kind !== 'nullable' && field.shape.kind !== 'null';
+      const base = rustType(field.shape, names);
+      const rustFieldType = optional && !base.startsWith('Option<') ? `Option<${base}>` : base;
+
+      const attrs: string[] = [];
+      // serde needs the wire name whenever it differs from the Rust identifier.
+      if (name !== key) {
+        attrs.push(`rename = "${key.replace(/["\\]/g, '\\$&')}"`);
+      }
+      if (optional) {
+        attrs.push('default', 'skip_serializing_if = "Option::is_none"');
+      }
+      const attrLine = attrs.length ? `    #[serde(${attrs.join(', ')})]\n` : '';
+      return `${attrLine}    pub ${ident}: ${rustFieldType},`;
+    });
+    return `#[derive(Debug, Clone, Serialize, Deserialize)]\npub struct ${type.name} {\n${rows.join('\n')}\n}`;
+  });
+
+  return `use serde::{Deserialize, Serialize};\n\n${structs.join('\n\n')}\n`;
+}
+
+// --- Kotlin (data classes) ---
+
+const KOTLIN_KEYWORDS = new Set([
+  'as', 'break', 'class', 'continue', 'do', 'else', 'false', 'for', 'fun', 'if', 'in', 'interface',
+  'is', 'null', 'object', 'package', 'return', 'super', 'this', 'throw', 'true', 'try', 'typealias',
+  'typeof', 'val', 'var', 'when', 'while',
+]);
+
+function kotlinType(shape: Shape, names: Map<string, string>): string {
+  switch (shape.kind) {
+    case 'object':
+      return names.get(signatureOf(shape)) ?? 'Any';
+    case 'array':
+      return `List<${kotlinType(shape.element, names)}>`;
+    case 'nullable':
+      return `${kotlinType(shape.inner, names)}?`;
+    case 'primitive':
+      switch (shape.name) {
+        case 'integer':
+          return 'Long';
+        case 'number':
+          return 'Double';
+        case 'boolean':
+          return 'Boolean';
+        default:
+          return 'String';
+      }
+    case 'null':
+      return 'Any?';
+    default:
+      return 'Any';
+  }
+}
+
+/** A JSON key as a Kotlin property name; invalid names are back-tick escaped. */
+function kotlinPropertyName(key: string): string {
+  if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) && !KOTLIN_KEYWORDS.has(key)) {
+    return key;
+  }
+  return `\`${key}\``;
+}
+
+function emitKotlin(types: NamedType[], names: Map<string, string>): string {
+  const classes = types.map((type) => {
+    // A Kotlin data class must declare at least one property.
+    if (type.fields.size === 0) {
+      return `class ${type.name}`;
+    }
+    const rows = [...type.fields].map(([key, field]) => {
+      const optional = field.optional && field.shape.kind !== 'nullable' && field.shape.kind !== 'null';
+      const base = kotlinType(field.shape, names);
+      const kotlinFieldType = optional && !base.endsWith('?') ? `${base}?` : base;
+      // Absent-in-some-samples fields default to null so the class stays constructible.
+      const suffix = optional ? ' = null' : '';
+      // The property keeps the JSON key verbatim (back-ticked when not a bare
+      // identifier), so the serialized name always matches — no @SerialName needed.
+      return `    val ${kotlinPropertyName(key)}: ${kotlinFieldType}${suffix},`;
+    });
+    return `data class ${type.name}(\n${rows.join('\n')}\n)`;
+  });
+
+  return `${classes.join('\n\n')}\n`;
+}
+
+// --- Java (records) ---
+
+const JAVA_KEYWORDS = new Set([
+  'abstract', 'assert', 'boolean', 'break', 'byte', 'case', 'catch', 'char', 'class', 'const',
+  'continue', 'default', 'do', 'double', 'else', 'enum', 'extends', 'final', 'finally', 'float',
+  'for', 'goto', 'if', 'implements', 'import', 'instanceof', 'int', 'interface', 'long', 'native',
+  'new', 'package', 'private', 'protected', 'public', 'return', 'short', 'static', 'strictfp',
+  'super', 'switch', 'synchronized', 'this', 'throw', 'throws', 'transient', 'try', 'void',
+  'volatile', 'while', 'true', 'false', 'null', 'var', 'record', 'yield',
+]);
+
+/** Java type. `boxed` forces the wrapper type, needed inside generics and for nullables. */
+function javaType(shape: Shape, names: Map<string, string>, boxed = false): string {
+  switch (shape.kind) {
+    case 'object':
+      return names.get(signatureOf(shape)) ?? 'Object';
+    case 'array':
+      return `List<${javaType(shape.element, names, true)}>`;
+    case 'nullable':
+      return javaType(shape.inner, names, true);
+    case 'primitive':
+      switch (shape.name) {
+        case 'integer':
+          return boxed ? 'Long' : 'long';
+        case 'number':
+          return boxed ? 'Double' : 'double';
+        case 'boolean':
+          return boxed ? 'Boolean' : 'boolean';
+        default:
+          return 'String';
+      }
+    case 'null':
+      return 'Object';
+    default:
+      return 'Object';
+  }
+}
+
+function javaComponentName(key: string): string {
+  let name = key.replace(/[^A-Za-z0-9_$]/g, '_');
+  if (name === '' || /^[0-9]/.test(name)) {
+    name = `field_${name}`;
+  }
+  return JAVA_KEYWORDS.has(name) ? `${name}_` : name;
+}
+
+function emitJava(types: NamedType[], names: Map<string, string>): string {
+  const records = types.map((type) => {
+    if (type.fields.size === 0) {
+      return `public record ${type.name}() {}`;
+    }
+    const rows = [...type.fields].map(([key, field]) => {
+      // A record component cannot be a primitive if it may be null, so box optionals.
+      const boxed = field.optional;
+      return `    ${javaType(field.shape, names, boxed)} ${javaComponentName(key)}`;
+    });
+    return `public record ${type.name}(\n${rows.join(',\n')}\n) {}`;
+  });
+
+  const needsList = records.some((record) => /\bList</.test(record));
+  const imports = needsList ? 'import java.util.List;\n\n' : '';
+  return `${imports}${records.join('\n\n')}\n`;
+}
+
+// --- JSON Schema (draft 2020-12) ---
+
+/** A JSON Schema fragment describing one shape. */
+function schemaFor(shape: Shape, names: Map<string, string>): Record<string, unknown> {
+  switch (shape.kind) {
+    case 'object': {
+      const name = names.get(signatureOf(shape));
+      return name ? { $ref: `#/$defs/${name}` } : { type: 'object' };
+    }
+    case 'array':
+      return { type: 'array', items: schemaFor(shape.element, names) };
+    case 'nullable': {
+      const inner = schemaFor(shape.inner, names);
+      // A nullable primitive can widen its `type`; anything else needs anyOf.
+      if (typeof inner['type'] === 'string' && Object.keys(inner).length === 1) {
+        return { type: [inner['type'], 'null'] };
+      }
+      return { anyOf: [inner, { type: 'null' }] };
+    }
+    case 'primitive':
+      return { type: shape.name === 'integer' ? 'integer' : shape.name };
+    case 'null':
+      return { type: 'null' };
+    default:
+      return {};
+  }
+}
+
+function emitJsonSchema(
+  types: NamedType[],
+  names: Map<string, string>,
+  rootName: string,
+): string {
+  const $defs: Record<string, unknown> = {};
+  for (const type of types) {
+    const properties: Record<string, unknown> = {};
+    const required: string[] = [];
+    for (const [key, field] of type.fields) {
+      properties[key] = schemaFor(field.shape, names);
+      if (!field.optional) {
+        required.push(key);
+      }
+    }
+    const schema: Record<string, unknown> = { type: 'object', properties };
+    if (required.length) {
+      schema['required'] = required;
+    }
+    $defs[type.name] = schema;
+  }
+
+  const root = {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    $ref: `#/$defs/${rootName}`,
+    $defs,
+  };
+  return `${JSON.stringify(root, null, 2)}\n`;
+}
+
+// --- Pydantic (v2) ---
+
+function emitPydantic(types: NamedType[], names: Map<string, string>): string {
+  const ordered = dependenciesFirst(types, names);
+  let needsField = false;
+
+  const classes = ordered.map((type) => {
+    if (type.fields.size === 0) {
+      return `class ${type.name}(BaseModel):\n    pass`;
+    }
+    const lines = [...type.fields].map(([key, field]) => {
+      const name = pyFieldName(key);
+      const optional = field.optional;
+      const annotation = optional
+        ? `Optional[${pyType(unwrap(field.shape), names)}]`
+        : pyType(field.shape, names);
+
+      // An alias is only needed when the sanitised identifier no longer matches
+      // the JSON key; a plain optional just takes a `= None` default.
+      if (name !== key) {
+        needsField = true;
+        const parts = [`alias='${key.replace(/[\\']/g, '\\$&')}'`];
+        if (optional) {
+          parts.push('default=None');
+        }
+        return `    ${name}: ${annotation} = Field(${parts.join(', ')})`;
+      }
+      return `    ${name}: ${annotation}${optional ? ' = None' : ''}`;
+    });
+    return `class ${type.name}(BaseModel):\n${lines.join('\n')}`;
+  });
+
+  const body = classes.join('\n\n\n');
+  const typing = ['Any', 'List', 'Optional'].filter((name) =>
+    new RegExp(`\\b${name}\\b`).test(body),
+  );
+  const pydanticImport = needsField
+    ? 'from pydantic import BaseModel, Field'
+    : 'from pydantic import BaseModel';
+  const imports = [
+    'from __future__ import annotations',
+    '',
+    ...(typing.length ? [`from typing import ${typing.join(', ')}`] : []),
+    pydanticImport,
+  ].join('\n');
+
+  return `${imports}\n\n\n${body}\n`;
 }

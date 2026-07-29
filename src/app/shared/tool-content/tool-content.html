@@ -1,0 +1,50 @@
+@if (content(); as c) {
+  <section class="tc" aria-label="About this tool">
+    @if (tool(); as t) {
+      <h2 class="tc__heading">About the {{ t.name }}</h2>
+    }
+    @for (paragraph of c.intro; track $index) {
+      <p class="tc__p">{{ paragraph }}</p>
+    }
+
+    <h2 class="tc__heading">How to use it</h2>
+    <ol class="tc__steps">
+      @for (step of c.steps; track $index) {
+        <li>{{ step }}</li>
+      }
+    </ol>
+
+    @if (c.features; as features) {
+      <h2 class="tc__heading">Good to know</h2>
+      <ul class="tc__list">
+        @for (feature of features; track $index) {
+          <li>{{ feature }}</li>
+        }
+      </ul>
+    }
+
+    @if (c.faq.length) {
+      <h2 class="tc__heading">Frequently asked questions</h2>
+      <div class="tc__faq">
+        @for (item of c.faq; track item.q) {
+          <details class="tc__faqitem">
+            <summary class="tc__q">{{ item.q }}</summary>
+            <p class="tc__a">{{ item.a }}</p>
+          </details>
+        }
+      </div>
+    }
+
+    @if (relatedTools().length) {
+      <h2 class="tc__heading">Related tools</h2>
+      <ul class="tc__related">
+        @for (related of relatedTools(); track related.slug) {
+          <li>
+            <a class="tc__link" [routerLink]="['/tools', related.slug]">{{ related.name }}</a>
+            <span class="tc__reldesc"> — {{ related.description }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

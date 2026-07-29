@@ -19,6 +19,7 @@ import { formatBytes } from '../../core/format';
 import { Spinner } from '../../shared/spinner/spinner';
 import { ImageCodecClient } from './image-codec.client';
 import type { CodecFormat } from './image-codec.worker';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 /** The source image: what we need to show it and describe it. */
 interface Source {
@@ -62,7 +63,7 @@ const SIZE_PRESETS: ReadonlyArray<{ value: number; label: string }> = [
 
 @Component({
   selector: 'app-image-compressor',
-  imports: [
+  imports: [ToolContent, 
     RouterLink,
     MatButtonModule,
     MatButtonToggleModule,

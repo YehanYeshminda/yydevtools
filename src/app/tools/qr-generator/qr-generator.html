@@ -1,0 +1,169 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">QR Code Generator</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>qr_code_2</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">QR Code Generator</h1>
+    <p class="head__sub">
+      Turn any text or link into a QR code and download it as PNG or SVG. Generated in your browser.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="layout">
+    <!-- Controls ------------------------------------------------------ -->
+    <div class="controls">
+      <div class="field">
+        <label class="field__label" for="qr-text">Text or URL</label>
+        <textarea
+          id="qr-text"
+          class="field__input qr-text"
+          spellcheck="false"
+          autocomplete="off"
+          rows="3"
+          placeholder="https://example.com"
+          [value]="text()"
+          (input)="onTextInput($event)"
+        ></textarea>
+      </div>
+
+      <div class="field">
+        <span class="field__label" id="ec-label">Error correction</span>
+        <div class="chips" role="group" aria-labelledby="ec-label">
+          @for (option of levels; track option.key) {
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="level() === option.key"
+              [attr.aria-pressed]="level() === option.key"
+              [attr.title]="option.hint"
+              (click)="setLevel(option.key)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label class="field__label" for="qr-size">Size (px)</label>
+          <input
+            id="qr-size"
+            class="field__input"
+            type="number"
+            [min]="minSize"
+            [max]="maxSize"
+            step="16"
+            [value]="size()"
+            (input)="onSizeInput($event)"
+          />
+        </div>
+        <div class="field">
+          <label class="field__label" for="qr-margin">Quiet margin</label>
+          <input
+            id="qr-margin"
+            class="field__input"
+            type="number"
+            min="0"
+            max="10"
+            step="1"
+            [value]="margin()"
+            (input)="onMarginInput($event)"
+          />
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label class="field__label" for="qr-dark">Foreground</label>
+          <div class="picker">
+            <input
+              class="picker__swatch"
+              id="qr-dark"
+              type="color"
+              [value]="dark()"
+              (input)="onDarkInput($event)"
+              aria-label="Foreground colour"
+            />
+            <input
+              class="field__input"
+              type="text"
+              spellcheck="false"
+              autocomplete="off"
+              [value]="dark()"
+              (input)="onDarkInput($event)"
+            />
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="qr-light">Background</label>
+          <div class="picker">
+            <input
+              class="picker__swatch"
+              id="qr-light"
+              type="color"
+              [value]="light()"
+              (input)="onLightInput($event)"
+              aria-label="Background colour"
+            />
+            <input
+              class="field__input"
+              type="text"
+              spellcheck="false"
+              autocomplete="off"
+              [value]="light()"
+              (input)="onLightInput($event)"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview ------------------------------------------------------- -->
+    <div class="preview">
+      @if (error()) {
+        <p class="status status--err" role="alert">
+          <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+          {{ error() }}
+        </p>
+      } @else if (hasCode()) {
+        <img class="preview__img" [src]="pngUrl()" alt="Generated QR code" [style.background]="light()" />
+        <div class="actions">
+          <button matButton="filled" (click)="downloadPng()">
+            <mat-icon>download</mat-icon>
+            PNG
+          </button>
+          <button matButton (click)="downloadSvg()">
+            <mat-icon>download</mat-icon>
+            SVG
+          </button>
+        </div>
+      } @else {
+        <p class="preview__empty">
+          <mat-icon aria-hidden="true">qr_code_2</mat-icon>
+          Enter text to generate a code.
+        </p>
+      }
+    </div>
+  </div>
+
+  <p class="note">
+    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    A higher error-correction level survives more damage or obscuring but packs the modules more
+    tightly. Keep good contrast between foreground and background so scanners can read it.
+  </p>
+</div>
+
+<app-tool-content slug="qr-generator" />

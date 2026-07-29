@@ -47,9 +47,6 @@ const CATEGORY_META: Record<ToolCategory, { accent: string; icon: string }> = {
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '(document:keydown)': 'onDocumentKeydown($event)',
-  },
 })
 export class Home {
   private readonly favoritesService = inject(FavoritesService);
@@ -137,15 +134,6 @@ export class Home {
   protected clearSearch(): void {
     this.query.set('');
     this.category.set('All');
-    this.focusSearch();
-  }
-
-  /** ⌘K / Ctrl-K jumps to the search box, as the shortcut hint advertises. */
-  protected onDocumentKeydown(event: KeyboardEvent): void {
-    if (event.key.toLowerCase() !== 'k' || !(event.metaKey || event.ctrlKey)) {
-      return;
-    }
-    event.preventDefault();
     this.focusSearch();
   }
 

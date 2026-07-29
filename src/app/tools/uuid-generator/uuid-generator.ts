@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
+
+import { ClipboardService } from '../../core/clipboard.service';
+import { ToolContent } from '../../shared/tool-content/tool-content';
 
 export type UuidVersion = 'v4' | 'v7';
 
@@ -11,13 +13,13 @@ const MAX_COUNT = 500;
 
 @Component({
   selector: 'app-uuid-generator',
-  imports: [RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './uuid-generator.html',
   styleUrls: ['../tool-shell.css', './uuid-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UuidGeneratorTool {
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly clipboard = inject(ClipboardService);
 
   protected readonly maxCount = MAX_COUNT;
 
@@ -81,18 +83,15 @@ export class UuidGeneratorTool {
   }
 
   // --- Output -----------------------------------------------------------
-  protected async copyOne(uuid: string): Promise<void> {
-    await navigator.clipboard.writeText(uuid);
-    this.snackBar.open('UUID copied to clipboard', undefined, { duration: 2000 });
+  protected copyOne(uuid: string): void {
+    void this.clipboard.copy(uuid, { message: 'UUID copied to clipboard' });
   }
 
-  protected async copyAll(): Promise<void> {
+  protected copyAll(): void {
     const all = this.uuids();
-    if (!all.length) {
-      return;
-    }
-    await navigator.clipboard.writeText(all.join('\n'));
-    this.snackBar.open(`${all.length} UUIDs copied to clipboard`, undefined, { duration: 2000 });
+    void this.clipboard.copy(all.join('\n'), {
+      message: `${all.length} UUIDs copied to clipboard`,
+    });
   }
 
   protected download(): void {
