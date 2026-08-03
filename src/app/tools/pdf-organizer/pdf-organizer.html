@@ -1,0 +1,232 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <mat-icon>chevron_right</mat-icon>
+    </li>
+    <li aria-current="page">PDF Organizer</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <mat-icon>dashboard_customize</mat-icon>
+  </div>
+  <div>
+    <h1 class="head__title">PDF Organizer</h1>
+    <p class="head__sub">
+      See every page, then reorder, rotate, delete and combine them — and save the result as one
+      PDF. Everything runs in your browser; your files never leave your device.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  @if (!hasPages()) {
+    <label
+      class="dropzone"
+      [class.dropzone--over]="dragOver()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave()"
+      (drop)="onDrop($event)"
+    >
+      <input
+        type="file"
+        accept="application/pdf,.pdf"
+        multiple
+        class="dropzone__input"
+        (change)="onFileSelected($event)"
+      />
+      <mat-icon class="dropzone__icon" aria-hidden="true">dashboard_customize</mat-icon>
+      <span class="dropzone__title">Drop PDFs here, or click to choose</span>
+      <span class="dropzone__hint">
+        Up to {{ maxFiles }} files and {{ maxPages }} pages — drop several to combine them
+      </span>
+    </label>
+
+    @if (loading()) {
+      <span class="working" role="status">
+        <app-spinner />
+        Opening…
+      </span>
+    }
+  } @else {
+    <!-- Toolbar ------------------------------------------------------- -->
+    <div class="bar">
+      <div class="bar__group" role="group" aria-label="Selection">
+        <button matButton (click)="allSelected() ? clearSelection() : selectAll()">
+          <mat-icon>{{ allSelected() ? 'deselect' : 'select_all' }}</mat-icon>
+          {{ allSelected() ? 'Clear selection' : 'Select all' }}
+        </button>
+        <span class="bar__count" aria-live="polite">
+          {{ pageCount() }} {{ pageCount() === 1 ? 'page' : 'pages' }}
+          @if (selectedCount()) {
+            · {{ selectedCount() }} selected
+          }
+        </span>
+      </div>
+
+      <div class="bar__group" role="group" aria-label="Actions on selected pages">
+        <button matButton [disabled]="!selectedCount()" (click)="rotateSelected(-1)">
+          <mat-icon>rotate_left</mat-icon>
+          Rotate left
+        </button>
+        <button matButton [disabled]="!selectedCount()" (click)="rotateSelected(1)">
+          <mat-icon>rotate_right</mat-icon>
+          Rotate right
+        </button>
+        <button matButton [disabled]="!selectedCount()" (click)="removeSelected()">
+          <mat-icon>delete</mat-icon>
+          Delete
+        </button>
+      </div>
+
+      <div class="bar__group" role="group" aria-label="Document actions">
+        <button matButton (click)="insertBlank(pageCount() - 1)">
+          <mat-icon>note_add</mat-icon>
+          Add blank page
+        </button>
+        <button matButton (click)="reverse()">
+          <mat-icon>swap_vert</mat-icon>
+          Reverse order
+        </button>
+        <label class="bar__add">
+          <input
+            type="file"
+            accept="application/pdf,.pdf"
+            multiple
+            class="dropzone__input"
+            (change)="onFileSelected($event)"
+          />
+          <mat-icon aria-hidden="true">add</mat-icon>
+          Add PDF
+        </label>
+      </div>
+    </div>
+
+    @if (sources().length > 1) {
+      <p class="note">
+        <mat-icon class="note__icon" aria-hidden="true">layers</mat-icon>
+        <span>Combining {{ sources().length }} documents: {{ sources().join(' · ') }}</span>
+      </p>
+    }
+
+    @if (pendingThumbs() > 0) {
+      <span class="working" role="status">
+        <app-spinner />
+        Drawing previews — {{ pendingThumbs() }} to go
+      </span>
+    }
+
+    <!-- Page grid ----------------------------------------------------- -->
+    <ul
+      class="grid"
+      cdkDropList
+      cdkDropListOrientation="mixed"
+      (cdkDropListDropped)="drop($event)"
+      aria-label="Pages, in output order"
+    >
+      @for (page of pages(); track page.id; let i = $index; let first = $first; let last = $last) {
+        <li
+          class="card"
+          cdkDrag
+          [class.card--on]="isSelected(page.id)"
+          [attr.aria-label]="sourceLabel(page) + ', position ' + (i + 1) + ' of ' + pageCount()"
+        >
+          <div class="card__frame">
+            @if (page.kind === 'blank') {
+              <div class="card__blank" aria-hidden="true">
+                <mat-icon>insert_page_break</mat-icon>
+                Blank
+              </div>
+            } @else if (thumbFor(page); as src) {
+              <img
+                class="card__img"
+                [src]="src"
+                [alt]="sourceLabel(page)"
+                [style.transform]="'rotate(' + page.rotation + 'deg)'"
+              />
+            } @else {
+              <div class="card__pending" aria-hidden="true">
+                <app-spinner [size]="22" />
+              </div>
+            }
+
+            <label class="card__pick">
+              <input
+                type="checkbox"
+                [checked]="isSelected(page.id)"
+                (change)="toggleSelected(page.id)"
+                [attr.aria-label]="'Select ' + sourceLabel(page)"
+              />
+              <span class="card__num">{{ i + 1 }}</span>
+            </label>
+          </div>
+
+          <div class="card__tools">
+            <button
+              matIconButton
+              [disabled]="first"
+              (click)="move(i, -1)"
+              [attr.aria-label]="'Move ' + sourceLabel(page) + ' earlier'"
+            >
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <button
+              matIconButton
+              (click)="rotateOne(page.id, 1)"
+              [attr.aria-label]="'Rotate ' + sourceLabel(page)"
+            >
+              <mat-icon>rotate_right</mat-icon>
+            </button>
+            <button
+              matIconButton
+              (click)="removeOne(page.id)"
+              [attr.aria-label]="'Delete ' + sourceLabel(page)"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+            <button
+              matIconButton
+              [disabled]="last"
+              (click)="move(i, 1)"
+              [attr.aria-label]="'Move ' + sourceLabel(page) + ' later'"
+            >
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+
+    <!-- Save ---------------------------------------------------------- -->
+    <div class="actions">
+      @if (exporting()) {
+        <button matButton="filled" disabled>
+          <app-spinner />
+          Building…
+        </button>
+      } @else {
+        <button matButton="filled" (click)="export()" [disabled]="!canExport()">
+          <mat-icon>download</mat-icon>
+          Save as PDF
+        </button>
+      }
+      <button matButton (click)="reset()" [disabled]="busy()">
+        <mat-icon>refresh</mat-icon>
+        Start over
+      </button>
+    </div>
+
+    <p class="note">
+      <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+      <span>
+        Drag a page to move it, or use the arrows on each card — they do the same thing and work
+        from the keyboard. Rotation is stored in the saved file, not baked into the image, so no
+        quality is lost.
+      </span>
+    </p>
+  }
+</div>
+
+<app-tool-content slug="pdf-organizer" />

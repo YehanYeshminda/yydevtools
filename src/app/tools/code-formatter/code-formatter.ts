@@ -11,6 +11,9 @@ import { RouterLink } from '@angular/router';
 import type { Plugin } from 'prettier';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { syncToolState } from '../../core/tool-state';
+import { CodeEditor, type EditorLanguage } from '../../shared/code-editor/code-editor';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 interface Lang {
@@ -18,22 +21,28 @@ interface Lang {
   label: string;
   /** The Prettier parser this language formats with. */
   parser: string;
+  /**
+   * The editor's highlighting mode. Several Prettier parsers share one grammar
+   * — SCSS and LESS highlight as CSS, JSON as JSON — and GraphQL has no mode
+   * here, so it falls back to unhighlighted text rather than mis-colouring.
+   */
+  editor: EditorLanguage;
 }
 
 // The subset of Prettier's languages people reach for, each formatted by a
 // standalone parser + plugin that is dynamically imported only when picked.
 const LANGUAGES: Lang[] = [
-  { value: 'html', label: 'HTML', parser: 'html' },
-  { value: 'css', label: 'CSS', parser: 'css' },
-  { value: 'scss', label: 'SCSS', parser: 'scss' },
-  { value: 'less', label: 'LESS', parser: 'less' },
-  { value: 'babel', label: 'JavaScript', parser: 'babel' },
-  { value: 'typescript', label: 'TypeScript', parser: 'typescript' },
-  { value: 'json', label: 'JSON', parser: 'json' },
-  { value: 'markdown', label: 'Markdown', parser: 'markdown' },
-  { value: 'yaml', label: 'YAML', parser: 'yaml' },
-  { value: 'graphql', label: 'GraphQL', parser: 'graphql' },
-  { value: 'xml', label: 'XML', parser: 'xml' },
+  { value: 'html', label: 'HTML', parser: 'html', editor: 'html' },
+  { value: 'css', label: 'CSS', parser: 'css', editor: 'css' },
+  { value: 'scss', label: 'SCSS', parser: 'scss', editor: 'css' },
+  { value: 'less', label: 'LESS', parser: 'less', editor: 'css' },
+  { value: 'babel', label: 'JavaScript', parser: 'babel', editor: 'javascript' },
+  { value: 'typescript', label: 'TypeScript', parser: 'typescript', editor: 'typescript' },
+  { value: 'json', label: 'JSON', parser: 'json', editor: 'json' },
+  { value: 'markdown', label: 'Markdown', parser: 'markdown', editor: 'markdown' },
+  { value: 'yaml', label: 'YAML', parser: 'yaml', editor: 'yaml' },
+  { value: 'graphql', label: 'GraphQL', parser: 'graphql', editor: 'text' },
+  { value: 'xml', label: 'XML', parser: 'xml', editor: 'xml' },
 ];
 
 const SAMPLE = `<section class="card"   id="hero">
@@ -43,7 +52,7 @@ const SAMPLE = `<section class="card"   id="hero">
 
 @Component({
   selector: 'app-code-formatter',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './code-formatter.html',
   styleUrls: ['../tool-shell.css', './code-formatter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,6 +69,38 @@ export class CodeFormatterTool {
   protected readonly semi = signal(true);
   protected readonly singleQuote = signal(false);
 
+  protected readonly shared = syncToolState({
+    key: 'code-formatter',
+    snapshot: () => ({
+      input: this.input(),
+      language: this.language(),
+      tabWidth: this.tabWidth(),
+      useTabs: this.useTabs(),
+      semi: this.semi(),
+      singleQuote: this.singleQuote(),
+    }),
+    restore: (state) => {
+      if (typeof state.input === 'string') {
+        this.input.set(state.input);
+      }
+      if (LANGUAGES.some((lang) => lang.value === state.language)) {
+        this.language.set(state.language as string);
+      }
+      if (typeof state.tabWidth === 'number' && Number.isFinite(state.tabWidth)) {
+        this.tabWidth.set(Math.min(8, Math.max(1, Math.round(state.tabWidth))));
+      }
+      if (typeof state.useTabs === 'boolean') {
+        this.useTabs.set(state.useTabs);
+      }
+      if (typeof state.semi === 'boolean') {
+        this.semi.set(state.semi);
+      }
+      if (typeof state.singleQuote === 'boolean') {
+        this.singleQuote.set(state.singleQuote);
+      }
+    },
+  });
+
   protected readonly output = signal('');
   protected readonly error = signal<string | null>(null);
   protected readonly busy = signal(false);
@@ -70,9 +111,9 @@ export class CodeFormatterTool {
     ['babel', 'typescript'].includes(this.language()),
   );
 
-  protected onInput(event: Event): void {
-    this.input.set((event.target as HTMLTextAreaElement).value);
-  }
+  protected readonly editorLanguage = computed<EditorLanguage>(
+    () => LANGUAGES.find((lang) => lang.value === this.language())?.editor ?? 'text',
+  );
 
   protected onLanguageChange(event: Event): void {
     this.language.set((event.target as HTMLSelectElement).value);

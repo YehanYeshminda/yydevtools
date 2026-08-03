@@ -45,10 +45,22 @@ export interface ForwardResult {
   body: ArrayBuffer;
   /** The upstream Content-Type, passed straight through to the browser. */
   contentType: string;
+  /** Selected `X-*` headers the service reported, for the route to pass on. */
+  meta: Record<string, string>;
 }
 
-/** A cold Fly machine adds a wake-up hop, so allow more than the job needs. */
+/**
+ * A cold Fly machine adds a wake-up hop, so allow more than the job needs.
+ *
+ * Each route overrides this with a budget that must stay *above* the matching
+ * service's own timeout — the service should always be the one to give up
+ * first, so a job that has run too long is killed at the source rather than
+ * left running for a caller that has already gone.
+ */
 const DEFAULT_TIMEOUT_MS = 180_000;
+
+/** Upstream headers worth surfacing to the browser. */
+const PASS_THROUGH = ['X-Input-Bytes', 'X-Output-Bytes', 'X-Compressed'];
 
 /** Sends `input` to `pathname` on the service and returns the processed bytes. */
 export async function forwardToService(
@@ -63,32 +75,68 @@ export async function forwardToService(
     target.searchParams.set(key, value);
   }
 
-  let response: Response;
-  try {
-    response = await fetch(target, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${endpoint.secret}`,
-        'Content-Type': 'application/octet-stream',
-      },
-      body: input,
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === 'TimeoutError') {
-      throw new ServiceError('TIMEOUT', 'The service took too long and was stopped.');
-    }
-    throw new ServiceError('UPSTREAM_UNAVAILABLE', 'The service could not be reached.');
-  }
+  const response = await send(target, endpoint.secret, input, timeoutMs);
 
   if (response.ok) {
+    const meta: Record<string, string> = {};
+    for (const name of PASS_THROUGH) {
+      const value = response.headers.get(name);
+      if (value !== null) {
+        meta[name] = value;
+      }
+    }
     return {
       body: await response.arrayBuffer(),
       contentType: response.headers.get('Content-Type') ?? 'application/octet-stream',
+      meta,
     };
   }
 
   throw new ServiceError(classify(response.status), await failureMessage(response));
+}
+
+/**
+ * POSTs to the service, retrying once if the connection itself failed.
+ *
+ * The machines scale to zero, so the first request after an idle period has to
+ * wake one. That wake occasionally loses a race and the connection is refused
+ * outright — which the user would otherwise see as "the service could not be
+ * reached" on a service that is, in fact, perfectly fine and now awake. One
+ * retry converts that into a slightly slow success.
+ *
+ * Only connection-level failures are retried. A timeout is not: the budget has
+ * already been spent, and re-running a job that just took three minutes would
+ * only make the wait worse. Nor is any HTTP status — the service answered, and
+ * its answer is the answer.
+ */
+async function send(
+  target: URL,
+  secret: string,
+  input: ArrayBuffer,
+  timeoutMs: number,
+): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetch(target, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          'Content-Type': 'application/octet-stream',
+        },
+        body: input,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'TimeoutError') {
+        throw new ServiceError('TIMEOUT', 'The service took too long and was stopped.');
+      }
+      if (attempt >= 1) {
+        throw new ServiceError('UPSTREAM_UNAVAILABLE', 'The service could not be reached.');
+      }
+      // Give the machine a moment to finish booting before the second attempt.
+      await new Promise((resolve) => setTimeout(resolve, 750));
+    }
+  }
 }
 
 /** Maps an upstream HTTP status onto the code the route layer expects. */

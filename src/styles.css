@@ -50,6 +50,21 @@ html {
   --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
 
+  /* Syntax highlighting, read by the shared code editor. Every one of these is
+     checked to at least 4.5:1 against --surface in its own theme, so
+     highlighted code stays AA-legible rather than merely decorative. */
+  --cm-comment: #6b7280;
+  --cm-keyword: #7c3aed;
+  --cm-string: #047857;
+  --cm-number: #b45309;
+  --cm-name: #2563eb;
+  --cm-type: #0e7490;
+  --cm-operator: #4b5563;
+  --cm-meta: #be123c;
+  --cm-invalid: #dc2626;
+  --cm-selection: #cfe0ff;
+  --cm-active-line: #f3f6fc;
+
   --r-card: 12px;
   --r-field: 10px;
   --r-btn: 10px;
@@ -92,6 +107,18 @@ html {
   --success: #3fce9f;
   --star: #f5b83d;
   --star-bg: #33280f;
+
+  --cm-comment: #8b95a7;
+  --cm-keyword: #c4a6ff;
+  --cm-string: #6ee7b7;
+  --cm-number: #fbbf24;
+  --cm-name: #7aa2ff;
+  --cm-type: #5eead4;
+  --cm-operator: #b6c0d1;
+  --cm-meta: #fda4af;
+  --cm-invalid: #ff6f62;
+  --cm-selection: #2c3f68;
+  --cm-active-line: #1b212c;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-card-hover: 0 8px 24px -8px rgba(0, 0, 0, 0.6);

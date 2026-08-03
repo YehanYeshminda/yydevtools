@@ -3,7 +3,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
+import { syncToolState } from '../../core/tool-state';
 import { compile, run } from './regex-match';
+import { CodeEditor } from '../../shared/code-editor/code-editor';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 interface FlagOption {
@@ -29,7 +32,7 @@ const FLAGS: FlagOption[] = [
 
 @Component({
   selector: 'app-regex-tester',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './regex-tester.html',
   styleUrls: ['../tool-shell.css', './regex-tester.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +49,37 @@ export class RegexTesterTool {
       .map((flag) => flag.key)
       .join(''),
   );
+
+  /**
+   * A pattern, its flags and the text it was tested against — which is exactly
+   * what someone means when they say "look at this regex".
+   *
+   * Declared after `flagString` on purpose: field initialisers run in order, and
+   * the snapshot reads it.
+   *
+   * Flags travel as the string the UI already shows (`gim`) rather than as a
+   * Set, which JSON has no representation for.
+   */
+  protected readonly shared = syncToolState({
+    key: 'regex-tester',
+    snapshot: () => ({
+      pattern: this.pattern(),
+      flags: this.flagString(),
+      text: this.text(),
+    }),
+    restore: (state) => {
+      if (typeof state.pattern === 'string') {
+        this.pattern.set(state.pattern);
+      }
+      if (typeof state.text === 'string') {
+        this.text.set(state.text);
+      }
+      if (typeof state.flags === 'string') {
+        const known = new Set(FLAGS.map((flag) => flag.key));
+        this.enabledFlags.set(new Set([...state.flags].filter((flag) => known.has(flag))));
+      }
+    },
+  });
 
   private readonly compiled = computed(() => compile(this.pattern(), this.flagString()));
 
@@ -105,7 +139,4 @@ export class RegexTesterTool {
     this.pattern.set((event.target as HTMLInputElement).value);
   }
 
-  protected onTextInput(event: Event): void {
-    this.text.set((event.target as HTMLTextAreaElement).value);
-  }
 }

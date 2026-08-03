@@ -26,14 +26,16 @@
       <span class="pane__label">Markdown</span>
       <span class="pane__stats">{{ wordCount() }} words · {{ charCount() }} chars</span>
     </div>
-    <textarea
+    <app-code-editor
       class="pane__input"
-      aria-label="Markdown source"
-      spellcheck="false"
-      [value]="source()"
-      (input)="onInput($event)"
+      label="Markdown source"
+      language="markdown"
       placeholder="Write Markdown here…"
-    ></textarea>
+      minHeight="0"
+      height="100%"
+      [frameless]="true"
+      [(value)]="source"
+    />
   </section>
 
   <section class="pane" aria-label="Preview">
@@ -61,6 +63,7 @@
     <mat-icon>clear</mat-icon>
     Clear
   </button>
+  <app-share-link [state]="shared" />
 </div>
 
 <app-tool-content slug="markdown-editor" />

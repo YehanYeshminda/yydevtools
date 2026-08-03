@@ -1,15 +1,36 @@
-# image-compress
+# image-compress — RETIRED, NOT IN USE
+
+> **Nothing calls this service.** Image compression moved back into the browser
+> (mozjpeg and libwebp as WebAssembly, in `src/app/tools/image-compressor/`),
+> and the Worker has **no `/api/image/compress` route** — see the comment at the
+> end of `worker/index.ts` explaining that the route was removed on purpose.
+> There is no `IMAGE_COMPRESS_URL` or `IMAGE_COMPRESS_SECRET` in
+> `wrangler.jsonc` either. The deploy instructions below cannot work as written.
+>
+> **If `yydevtools-image-compress` is still deployed, destroy it:**
+>
+> ```sh
+> fly apps destroy yydevtools-image-compress
+> ```
+>
+> It scales to zero so it costs little, but it is a public HTTPS endpoint
+> wrapping an image decoder that no user is behind — attack surface and a secret
+> to rotate, in exchange for nothing. This directory is kept only so the code is
+> recoverable from git if server-side encoding is ever wanted again.
+
+---
 
 Server-side image re-encoding with [sharp](https://sharp.pixelplumbing.com):
-mozjpeg for JPEG, libimagequant for palette PNG, plus WebP. Replaces the
-browser-only canvas encoder. Free per call, not metered.
+mozjpeg for JPEG, libimagequant for palette PNG, plus WebP. Free per call, not
+metered.
 
-## Trade-off (read this)
+## Why it was retired
 
-The old tool encoded live in the browser as you dragged the quality slider —
-instant, offline, private. Server-side gains mozjpeg/pngquant quality but adds a
-network round-trip per encode and cold starts. The Worker debounces slider
-changes; expect a brief spinner instead of instant preview.
+Encoding in the browser is instant as you drag the quality slider, works
+offline, and — the part that matters most for this site — means the image is
+never uploaded at all. The WebAssembly builds of mozjpeg and libwebp produce
+essentially the same output as sharp does, so the server round-trip and cold
+starts bought nothing.
 
 ## Endpoint
 

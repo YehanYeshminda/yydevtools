@@ -126,18 +126,12 @@
           {{ pages.length }} {{ pages.length === 1 ? 'page' : 'pages' }} selected —
           @if (mode() === 'single') {
             saved as a single PDF.
+          } @else if (pages.length === 1) {
+            saved as one PDF.
           } @else {
-            saved as {{ pages.length }} separate {{ pages.length === 1 ? 'file' : 'files' }}.
+            saved as {{ pages.length }} separate PDFs in a .zip.
           }
         </p>
-
-        @if (mode() === 'perPage' && pages.length > manyFiles) {
-          <p class="status status--err" role="status">
-            <mat-icon class="status__icon" aria-hidden="true">warning</mat-icon>
-            That is {{ pages.length }} downloads at once. Your browser will likely ask permission,
-            or block some of them.
-          </p>
-        }
       }
     }
 

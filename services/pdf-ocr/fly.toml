@@ -16,10 +16,16 @@ primary_region = "iad"
   auto_start_machines = true
   min_machines_running = 0
 
+  # ocrmypdf forks a Tesseract process per page and holds page rasters in
+  # memory. Ten concurrent jobs would exhaust 2 GB long before the proxy ever
+  # thought about shedding load, so the limit is set to what the machine can
+  # genuinely survive; Fly starts another machine rather than overloading this
+  # one. The service enforces the same ceiling itself (MAX_CONCURRENT) as a
+  # backstop for anything that gets past the proxy.
   [http_service.concurrency]
     type = "requests"
-    hard_limit = 10
-    soft_limit = 8
+    hard_limit = 3
+    soft_limit = 2
 
   [[http_service.checks]]
     method = "GET"

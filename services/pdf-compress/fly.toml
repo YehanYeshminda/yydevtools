@@ -22,10 +22,14 @@ primary_region = "iad"
   auto_start_machines = true
   min_machines_running = 0
 
+  # Ghostscript holds the page raster in memory while downsampling, so a
+  # handful of concurrent 20 MB scans is enough to exhaust 1 GB. 25 was the
+  # default-shaped number, not a measured one. The service enforces the same
+  # ceiling itself (MAX_CONCURRENT) as a backstop.
   [http_service.concurrency]
     type = "requests"
-    hard_limit = 25
-    soft_limit = 20
+    hard_limit = 5
+    soft_limit = 3
 
   # Fly starts a stopped machine on an inbound request, so a health check that
   # would wake it is pointless; keep it light and let the wake-on-request work.

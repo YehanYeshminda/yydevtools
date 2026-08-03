@@ -42,6 +42,37 @@ export interface Env {
 /** Keep the Worker from streaming huge bodies; the services cap a little higher. */
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 
+/**
+ * How long to wait on each service, per route.
+ *
+ * Each of these sits a little *above* that service's own internal timeout
+ * (90 s / 150 s / 120 s) plus room for a cold-machine wake. The ordering is the
+ * point: whoever gives up first decides whether the work stops, and it should
+ * always be the service — a job the Worker has abandoned but the machine is
+ * still grinding through is CPU nobody will ever collect. A single shared 180 s
+ * budget got this backwards for OCR, which was allowed to run for 240 s.
+ */
+const ROUTE_TIMEOUT_MS = {
+  compress: 120_000,
+  ocr: 165_000,
+  export: 135_000,
+} as const;
+
+/** Seconds to tell a rate-limited caller to wait, matching the 60 s window. */
+const RETRY_AFTER_SECONDS = '60';
+
+function rateLimited(): Response {
+  return Response.json(
+    {
+      error: {
+        code: 'RATE_LIMITED',
+        message: 'You are making requests too quickly. Please wait a minute and try again.',
+      },
+    },
+    { status: STATUS.RATE_LIMITED, headers: { 'Retry-After': RETRY_AFTER_SECONDS } },
+  );
+}
+
 type ErrorCode =
   | 'NOT_CONFIGURED'
   | 'UPSTREAM_UNAVAILABLE'
@@ -150,6 +181,7 @@ async function proxy(
   endpoint: ReturnType<typeof serviceEndpoint>,
   pathname: string,
   query: Record<string, string>,
+  timeoutMs: number,
 ): Promise<Response> {
   if (!endpoint) {
     return fail('NOT_CONFIGURED', 'This tool is not configured on the server right now.');
@@ -161,8 +193,16 @@ async function proxy(
   }
 
   try {
-    const result = await forwardToService(endpoint, pathname, query, body);
-    return new Response(result.body, { headers: { 'Content-Type': result.contentType } });
+    const result = await forwardToService(endpoint, pathname, query, body, timeoutMs);
+    return new Response(result.body, {
+      headers: {
+        'Content-Type': result.contentType,
+        // Results are per-request and never shared; a cache between here and the
+        // browser holding one would be both useless and a privacy problem.
+        'Cache-Control': 'no-store',
+        ...result.meta,
+      },
+    });
   } catch (error) {
     if (error instanceof ServiceError) {
       return fail(error.code, error.message);
@@ -192,18 +232,12 @@ async function handleApi(request: Request, env: Env, path: string): Promise<Resp
   if (env.API_RATE_LIMITER) {
     const { success } = await env.API_RATE_LIMITER.limit({ key: clientIp });
     if (!success) {
-      return fail(
-        'RATE_LIMITED',
-        'You are making requests too quickly. Please wait a minute and try again.',
-      );
+      return rateLimited();
     }
   }
 
   if (!(await allowRequest(env, clientIp))) {
-    return fail(
-      'RATE_LIMITED',
-      'You are making requests too quickly. Please wait a minute and try again.',
-    );
+    return rateLimited();
   }
 
   const url = new URL(request.url);
@@ -215,7 +249,7 @@ async function handleApi(request: Request, env: Env, path: string): Promise<Resp
       return fail('INVALID_INPUT', `"${level}" is not a supported compression level.`);
     }
     const endpoint = serviceEndpoint(env.PDF_COMPRESS_URL, env.PDF_COMPRESS_SECRET);
-    return proxy(request, endpoint, '/compress', { preset });
+    return proxy(request, endpoint, '/compress', { preset }, ROUTE_TIMEOUT_MS.compress);
   }
 
   if (path === '/api/pdf/ocr') {
@@ -225,7 +259,13 @@ async function handleApi(request: Request, env: Env, path: string): Promise<Resp
       return fail('INVALID_INPUT', `"${locale}" is not a supported OCR language.`);
     }
     const endpoint = serviceEndpoint(env.PDF_OCR_URL, env.PDF_OCR_SECRET);
-    return proxy(request, endpoint, '/ocr', { lang });
+    // `deskew` straightens a crooked scan before recognition. It is off unless
+    // asked for — it re-renders the page image, so it is not free.
+    const query: Record<string, string> = { lang };
+    if (url.searchParams.get('deskew') === '1') {
+      query['deskew'] = '1';
+    }
+    return proxy(request, endpoint, '/ocr', query, ROUTE_TIMEOUT_MS.ocr);
   }
 
   if (path === '/api/pdf/export') {
@@ -234,7 +274,7 @@ async function handleApi(request: Request, env: Env, path: string): Promise<Resp
       return fail('INVALID_INPUT', `"${format}" is not a supported export format.`);
     }
     const endpoint = serviceEndpoint(env.PDF_CONVERT_URL, env.PDF_CONVERT_SECRET);
-    return proxy(request, endpoint, '/convert', { format });
+    return proxy(request, endpoint, '/convert', { format }, ROUTE_TIMEOUT_MS.export);
   }
 
   // There is deliberately no /api/image/compress. Image compression moved into

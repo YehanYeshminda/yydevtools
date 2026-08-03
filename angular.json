@@ -57,6 +57,21 @@
                                                                                                            "glob":  "*.wasm",
                                                                                                            "input":  "node_modules/@jsquash/webp/codec/enc",
                                                                                                            "output":  "wasm"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "glob":  "worker.min.js",
+                                                                                                           "input":  "node_modules/tesseract.js/dist",
+                                                                                                           "output":  "tesseract"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "glob":  "*-lstm.wasm.js",
+                                                                                                           "input":  "node_modules/tesseract.js-core",
+                                                                                                           "output":  "tesseract"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "glob":  "eng.traineddata.gz",
+                                                                                                           "input":  "node_modules/@tesseract.js-data/eng/4.0.0_best_int",
+                                                                                                           "output":  "tesseract"
                                                                                                        }
                                                                                                    ],
                                                                                         "styles":  [

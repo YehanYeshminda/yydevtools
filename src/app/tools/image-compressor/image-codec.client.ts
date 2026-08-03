@@ -6,16 +6,27 @@
  * encoder either, so the caller is told plainly instead.
  */
 import { WorkerProxy, workersAvailable } from '../../core/worker-proxy';
-import type { Codec, CodecFormat, ImageCodecApi, OpenedImage } from './image-codec.worker';
+import type {
+  Codec,
+  CodecFormat,
+  EncodeOptions,
+  ImageCodecApi,
+  OpenedImage,
+} from './image-codec.worker';
 
-export type { OpenedImage };
+export type { CodecFormat, EncodeOptions, OpenedImage };
 
 export interface CompressedImage {
   blob: Blob;
+  bytes: Uint8Array;
   width: number;
   height: number;
   /** 'canvas' when the WebAssembly encoders were unavailable. */
   codec: Codec;
+  /** The quality actually used — differs from the request in target-size mode. */
+  quality: number;
+  targetMissed: boolean;
+  keptMetadata: boolean;
 }
 
 export class ImageCodecClient {
@@ -29,27 +40,33 @@ export class ImageCodecClient {
     () => 'The image encoder stopped unexpectedly.',
   );
 
-  /** Decodes an image and keeps it in the worker for subsequent encodes. */
-  open(file: File): Promise<OpenedImage> {
-    return this.proxy.call((api) => api.open(file));
+  /** Decodes an image to read its dimensions, keeping it warm for the encode. */
+  open(id: string, file: File): Promise<OpenedImage> {
+    return this.proxy.call((api) => api.open(id, file));
   }
 
-  /** Re-encodes the open image. Quality is 1–100. */
-  async encode(
-    format: CodecFormat,
-    quality: number,
-    maxDimension: number,
-  ): Promise<CompressedImage> {
-    const result = await this.proxy.call((api) => api.encode(format, quality, maxDimension));
+  /** A JPEG copy of the source that an `<img>` can render. Used for HEIC. */
+  async preview(id: string, file: File): Promise<Blob> {
+    const buffer = await this.proxy.call((api) => api.preview(id, file));
+    return new Blob([buffer], { type: 'image/jpeg' });
+  }
+
+  async encode(id: string, file: File, options: EncodeOptions): Promise<CompressedImage> {
+    const result = await this.proxy.call((api) => api.encode(id, file, options));
+    const bytes = new Uint8Array(result.buffer);
     return {
-      blob: new Blob([result.buffer], { type: format }),
+      blob: new Blob([bytes], { type: options.format }),
+      bytes,
       width: result.width,
       height: result.height,
       codec: result.codec,
+      quality: result.quality,
+      targetMissed: result.targetMissed,
+      keptMetadata: result.keptMetadata,
     };
   }
 
-  /** Releases the open image without tearing down the worker. */
+  /** Releases the cached image without tearing down the worker. */
   async close(): Promise<void> {
     if (this.proxy.started) {
       await this.proxy.call((api) => api.close());

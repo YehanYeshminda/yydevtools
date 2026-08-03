@@ -1,4 +1,18 @@
 /**
+ * RETIRED — nothing calls this service. See README.md.
+ *
+ * Image compression runs in the browser now (mozjpeg + libwebp as WebAssembly),
+ * and the Worker deliberately exposes no `/api/image/compress` route, so there
+ * is no path from the site to this code. If the Fly app is still deployed:
+ * `fly apps destroy yydevtools-image-compress`.
+ *
+ * Kept in the repo only so it is recoverable if server-side encoding is ever
+ * wanted again. It has NOT received the hardening the three live services got
+ * (format sniffing, timing-safe auth, concurrency gate, real health check), so
+ * do not redeploy it as-is.
+ */
+
+/**
  * Image compression service, powered by sharp.
  *
  * Private companion to the Worker. The Worker forwards the raw image with a

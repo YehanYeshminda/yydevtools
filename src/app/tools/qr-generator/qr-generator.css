@@ -29,6 +29,18 @@
   gap: 1rem;
 }
 
+@media (max-width: 520px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* A chip is the whole content of its field (the Wi-Fi "Hidden network" toggle),
+   and a column flex container would otherwise stretch it edge to edge. */
+.field > .chip {
+  align-self: flex-start;
+}
+
 .picker {
   display: flex;
   align-items: stretch;

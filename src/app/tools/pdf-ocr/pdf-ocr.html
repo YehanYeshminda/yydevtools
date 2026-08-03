@@ -16,8 +16,8 @@
     <h1 class="head__title">PDF OCR</h1>
     <p class="head__sub">
       Make a scanned PDF searchable. Text recognition runs over the page images and adds an
-      invisible text layer, so you can select and search the words. This needs a hosted service —
-      your file is uploaded to be processed, then deleted.
+      invisible text layer, so you can select and search the words. Short English documents can be
+      recognised entirely in your browser, without being uploaded at all.
     </p>
   </div>
 </header>
@@ -26,8 +26,7 @@
   @if (unavailable()) {
     <p class="status status--err" role="alert">
       <mat-icon class="status__icon" aria-hidden="true">cloud_off</mat-icon>
-      <a routerLink="/tools/pdf-merge">Merge</a>, <a routerLink="/tools/pdf-split">split</a> and
-      <a routerLink="/tools/pdf-viewer">viewing</a> all still work entirely in your browser.
+      {{ unavailable() }}
     </p>
   }
 
@@ -78,12 +77,67 @@
       </span>
     </div>
 
+    <!-- Where the work happens ---------------------------------------- -->
+    <div class="field">
+      <span class="field__label" id="ocr-mode-label">Where to run it</span>
+      <div class="tabs" role="group" aria-labelledby="ocr-mode-label">
+        <button
+          type="button"
+          class="tab"
+          [class.tab--active]="effectiveMode() === 'local'"
+          [attr.aria-pressed]="effectiveMode() === 'local'"
+          [disabled]="!localAvailable() || working()"
+          [attr.title]="localBlockedReason() || null"
+          (click)="setMode('local')"
+        >
+          <mat-icon aria-hidden="true">computer</mat-icon>
+          In your browser
+        </button>
+        <button
+          type="button"
+          class="tab"
+          [class.tab--active]="effectiveMode() === 'hosted'"
+          [attr.aria-pressed]="effectiveMode() === 'hosted'"
+          [disabled]="working()"
+          (click)="setMode('hosted')"
+        >
+          <mat-icon aria-hidden="true">cloud</mat-icon>
+          Hosted service
+        </button>
+      </div>
+
+      <span class="field__hint">
+        @if (localBlockedReason()) {
+          {{ localBlockedReason() }} Your file will be uploaded, processed and returned.
+        } @else if (effectiveMode() === 'local') {
+          Nothing is uploaded. The engine is about {{ engineDownload }} the first time you use it,
+          then your browser keeps it. Expect a few seconds per page.
+        } @else {
+          Your file is sent over HTTPS to our own OCR service, processed and returned. Faster, and
+          it handles every language and any length.
+        }
+      </span>
+    </div>
+
+    @if (localDeclined()) {
+      <p class="status status--err" role="status">
+        <mat-icon class="status__icon" aria-hidden="true">info</mat-icon>
+        {{ localDeclined() }} Switched to the hosted service.
+      </p>
+    }
+
     <div class="actions">
       @if (working()) {
         <button matButton="filled" disabled>
           <app-spinner />
           Recognising…
         </button>
+        @if (effectiveMode() === 'local') {
+          <button matButton (click)="cancel()">
+            <mat-icon>stop_circle</mat-icon>
+            Stop
+          </button>
+        }
       } @else {
         <button matButton="filled" (click)="recognise()" [disabled]="!canRun()">
           <mat-icon>document_scanner</mat-icon>
@@ -95,14 +149,32 @@
         Clear
       </button>
     </div>
+
+    @if (progress()) {
+      <p class="working" role="status">{{ progress() }}</p>
+    }
+
+    @if (wordsFound() !== null) {
+      <p class="status status--ok" role="status">
+        <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+        @if (wordsFound()) {
+          Added {{ wordsFound() }} words as a searchable layer, without uploading anything.
+        } @else {
+          No text could be read from these pages. If the scan is faint, the hosted service will do
+          better.
+        }
+      </p>
+    }
   }
 
   <p class="note">
     <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
-    This tool uploads your file. It is sent over HTTPS to our own OCR service, processed, and
-    returned — the file is deleted right after processing and never stored. A PDF that already has real text does not
-    need OCR; open it in the <a routerLink="/tools/pdf-viewer">viewer</a> and try selecting a word
-    to check.
+    <span>
+      Either way the page images are untouched — only an invisible text layer is added, so nothing
+      is re-compressed and the document looks exactly as it did. A PDF that already has real text
+      does not need OCR; open it in the <a routerLink="/tools/pdf-viewer">viewer</a> and try
+      selecting a word to check.
+    </span>
   </p>
 </div>
 

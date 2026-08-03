@@ -5,6 +5,9 @@ import { RouterLink } from '@angular/router';
 import { format, type KeywordCase, type SqlLanguage } from 'sql-formatter';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { syncToolState } from '../../core/tool-state';
+import { CodeEditor } from '../../shared/code-editor/code-editor';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 interface Dialect {
@@ -45,7 +48,7 @@ const SAMPLE =
 
 @Component({
   selector: 'app-sql-formatter',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './sql-formatter.html',
   styleUrls: ['../tool-shell.css', './sql-formatter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,6 +64,36 @@ export class SqlFormatterTool {
   protected readonly keywordCase = signal<KeywordCase>('upper');
   protected readonly tabWidth = signal(2);
   protected readonly useTabs = signal(false);
+
+  protected readonly shared = syncToolState({
+    key: 'sql-formatter',
+    snapshot: () => ({
+      input: this.input(),
+      dialect: this.dialect(),
+      keywordCase: this.keywordCase(),
+      tabWidth: this.tabWidth(),
+      useTabs: this.useTabs(),
+    }),
+    restore: (state) => {
+      if (typeof state.input === 'string') {
+        this.input.set(state.input);
+      }
+      // Options come from a URL anyone can edit, so each is checked against the
+      // list the tool actually offers rather than trusted.
+      if (DIALECTS.some((option) => option.value === state.dialect)) {
+        this.dialect.set(state.dialect as SqlLanguage);
+      }
+      if (KEYWORD_CASES.some((option) => option.value === state.keywordCase)) {
+        this.keywordCase.set(state.keywordCase as KeywordCase);
+      }
+      if (typeof state.tabWidth === 'number' && Number.isFinite(state.tabWidth)) {
+        this.tabWidth.set(Math.min(8, Math.max(1, Math.round(state.tabWidth))));
+      }
+      if (typeof state.useTabs === 'boolean') {
+        this.useTabs.set(state.useTabs);
+      }
+    },
+  });
 
   /** Formatted result, or an error string when the formatter rejects the input. */
   private readonly formatted = computed<{ output: string; error: string | null }>(() => {
@@ -84,10 +117,6 @@ export class SqlFormatterTool {
   protected readonly output = computed(() => this.formatted().output);
   protected readonly error = computed(() => this.formatted().error);
   protected readonly hasOutput = computed(() => this.output().length > 0);
-
-  protected onInput(event: Event): void {
-    this.input.set((event.target as HTMLTextAreaElement).value);
-  }
 
   protected onDialectChange(event: Event): void {
     this.dialect.set((event.target as HTMLSelectElement).value as SqlLanguage);

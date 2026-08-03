@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { syncToolState } from '../../core/tool-state';
 import {
   Rgb,
   Swatch,
@@ -20,6 +21,7 @@ import {
   toHex,
   toHsl,
 } from './color';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 export interface Format {
@@ -46,7 +48,7 @@ export interface ContrastCheck {
 
 @Component({
   selector: 'app-color-converter',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './color-converter.html',
   styleUrls: ['../tool-shell.css', './color-converter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -56,6 +58,19 @@ export class ColorConverterTool {
 
   protected readonly foreground = signal('#2f6f8f');
   protected readonly background = signal('#ffffff');
+
+  protected readonly shared = syncToolState({
+    key: 'color-converter',
+    snapshot: () => ({ foreground: this.foreground(), background: this.background() }),
+    restore: (state) => {
+      if (typeof state.foreground === 'string') {
+        this.foreground.set(state.foreground);
+      }
+      if (typeof state.background === 'string') {
+        this.background.set(state.background);
+      }
+    },
+  });
 
   protected readonly foregroundView = computed(() => view(this.foreground()));
   protected readonly backgroundView = computed(() => view(this.background()));

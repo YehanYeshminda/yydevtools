@@ -7,8 +7,24 @@ import { MatInputModule } from '@angular/material/input';
 import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { syncToolState } from '../../core/tool-state';
 import { Language, generate } from './type-generator';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
+
+/** The languages a restored link is allowed to select. */
+const LANGUAGES: readonly Language[] = [
+  'typescript',
+  'csharp',
+  'python',
+  'go',
+  'zod',
+  'rust',
+  'kotlin',
+  'java',
+  'jsonschema',
+  'pydantic',
+];
 
 /** Human labels for the output box, keyed by the language toggle value. */
 const LANGUAGE_LABELS: Record<Language, string> = {
@@ -43,7 +59,8 @@ const SAMPLE = `{
 
 @Component({
   selector: 'app-json-to-types',
-  imports: [ToolContent, 
+  imports: [ToolContent,
+    ShareLink,
     RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
@@ -61,6 +78,26 @@ export class JsonToTypesTool {
   protected readonly input = signal('');
   protected readonly language = signal<Language>('typescript');
   protected readonly rootName = signal('Root');
+
+  protected readonly shared = syncToolState({
+    key: 'json-to-types',
+    snapshot: () => ({
+      input: this.input(),
+      language: this.language(),
+      rootName: this.rootName(),
+    }),
+    restore: (state) => {
+      if (typeof state.input === 'string') {
+        this.input.set(state.input);
+      }
+      if (LANGUAGES.includes(state.language as Language)) {
+        this.language.set(state.language as Language);
+      }
+      if (typeof state.rootName === 'string') {
+        this.rootName.set(state.rootName);
+      }
+    },
+  });
 
   /**
    * Generation is cheap and pure, so it runs on every keystroke rather than

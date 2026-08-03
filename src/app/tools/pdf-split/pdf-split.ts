@@ -4,7 +4,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import { PDFDocument } from '@cantoo/pdf-lib';
+import { downloadBytes, fileStem } from '../../core/download';
 import { formatBytes } from '../../core/format';
+import { downloadZip, type ZipEntry } from '../../core/zip';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 import { Spinner } from '../../shared/spinner/spinner';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -21,9 +23,6 @@ export type Selection =
 /** Splitting is done in memory, so reject anything unreasonable up front. */
 const MAX_INPUT_BYTES = 100 * 1024 * 1024;
 
-/** Browsers throttle rapid programmatic downloads; warn past this many files. */
-const MANY_FILES = 20;
-
 @Component({
   selector: 'app-pdf-split',
   imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner, PdfPreview],
@@ -33,8 +32,6 @@ const MANY_FILES = 20;
 })
 export class PdfSplitTool {
   private readonly snackBar = inject(MatSnackBar);
-
-  protected readonly manyFiles = MANY_FILES;
 
   // --- State ------------------------------------------------------------
   protected readonly fileName = signal('');
@@ -156,7 +153,7 @@ export class PdfSplitTool {
     this.working.set(true);
     try {
       const doc = await PDFDocument.load(source, { ignoreEncryption: true });
-      const stem = this.fileName().replace(/\.pdf$/i, '');
+      const stem = fileStem(this.fileName(), 'document');
 
       if (this.mode() === 'single') {
         const out = await PDFDocument.create();
@@ -167,14 +164,25 @@ export class PdfSplitTool {
         for (const page of copied) {
           out.addPage(page);
         }
-        download(await out.save(), `${stem}-pages.pdf`);
+        downloadBytes(await out.save(), `${stem}-pages.pdf`, 'application/pdf');
+        return;
+      }
+
+      // One file per page used to mean one download per page, which browsers
+      // throttle and then block outright — the tool could only warn about it.
+      // A single archive sidesteps the limit entirely, however many pages.
+      const entries: ZipEntry[] = [];
+      for (const page of pages) {
+        const out = await PDFDocument.create();
+        const [copied] = await out.copyPages(doc, [page - 1]);
+        out.addPage(copied);
+        entries.push({ name: `${stem}-p${page}.pdf`, bytes: await out.save() });
+      }
+
+      if (entries.length === 1) {
+        downloadBytes(entries[0].bytes, entries[0].name, 'application/pdf');
       } else {
-        for (const page of pages) {
-          const out = await PDFDocument.create();
-          const [copied] = await out.copyPages(doc, [page - 1]);
-          out.addPage(copied);
-          download(await out.save(), `${stem}-p${page}.pdf`);
-        }
+        await downloadZip(entries, `${stem}-pages.zip`);
       }
     } catch {
       this.showError('Could not split this PDF. It may be corrupt or protected.');
@@ -251,16 +259,4 @@ function everyOther(pageCount: number, first: number): number[] {
     pages.push(page);
   }
   return pages;
-}
-
-function download(bytes: Uint8Array, name: string): void {
-  // Copy into a fresh ArrayBuffer so the Blob owns a plain ArrayBuffer, not a
-  // possibly-shared typed-array view.
-  const blob = new Blob([bytes.slice()], { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  URL.revokeObjectURL(url);
 }

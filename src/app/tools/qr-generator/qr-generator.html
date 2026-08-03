@@ -15,7 +15,8 @@
   <div>
     <h1 class="head__title">QR Code Generator</h1>
     <p class="head__sub">
-      Turn any text or link into a QR code and download it as PNG or SVG. Generated in your browser.
+      Build a QR code for a link, Wi-Fi network, contact card, email, SMS, phone number, location or
+      calendar event, and download it as PNG or SVG. Generated in your browser.
     </p>
   </div>
 </header>
@@ -25,18 +26,415 @@
     <!-- Controls ------------------------------------------------------ -->
     <div class="controls">
       <div class="field">
-        <label class="field__label" for="qr-text">Text or URL</label>
-        <textarea
-          id="qr-text"
-          class="field__input qr-text"
-          spellcheck="false"
-          autocomplete="off"
-          rows="3"
-          placeholder="https://example.com"
-          [value]="text()"
-          (input)="onTextInput($event)"
-        ></textarea>
+        <span class="field__label" id="kind-label">What should it hold?</span>
+        <div class="chips" role="group" aria-labelledby="kind-label">
+          @for (option of kinds; track option.key) {
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="kind() === option.key"
+              [attr.aria-pressed]="kind() === option.key"
+              (click)="setKind(option.key)"
+            >
+              <mat-icon aria-hidden="true">{{ option.icon }}</mat-icon>
+              {{ option.label }}
+            </button>
+          }
+        </div>
       </div>
+
+      @switch (kind()) {
+        @case ('url') {
+          <div class="field">
+            <label class="field__label" for="qr-url">Link</label>
+            <input
+              id="qr-url"
+              class="field__input"
+              type="url"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="example.com"
+              [value]="fields().url"
+              (input)="setField('url', $event)"
+            />
+            <span class="field__hint">https:// is added if you leave the scheme off.</span>
+          </div>
+        }
+
+        @case ('text') {
+          <div class="field">
+            <label class="field__label" for="qr-text">Text</label>
+            <textarea
+              id="qr-text"
+              class="field__input qr-text"
+              spellcheck="false"
+              autocomplete="off"
+              rows="4"
+              placeholder="Anything at all…"
+              [value]="fields().text"
+              (input)="setField('text', $event)"
+            ></textarea>
+          </div>
+        }
+
+        @case ('wifi') {
+          <div class="field">
+            <label class="field__label" for="wifi-ssid">Network name (SSID)</label>
+            <input
+              id="wifi-ssid"
+              class="field__input"
+              type="text"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="My Home Wi-Fi"
+              [value]="fields().wifi.ssid"
+              (input)="setGroupField('wifi', 'ssid', $event)"
+            />
+          </div>
+          <div class="field">
+            <span class="field__label" id="wifi-sec-label">Security</span>
+            <div class="tabs" role="group" aria-labelledby="wifi-sec-label">
+              <button
+                type="button"
+                class="tab"
+                [class.tab--active]="fields().wifi.security === 'WPA'"
+                [attr.aria-pressed]="fields().wifi.security === 'WPA'"
+                (click)="setWifiSecurity('WPA')"
+              >
+                WPA/WPA2/WPA3
+              </button>
+              <button
+                type="button"
+                class="tab"
+                [class.tab--active]="fields().wifi.security === 'WEP'"
+                [attr.aria-pressed]="fields().wifi.security === 'WEP'"
+                (click)="setWifiSecurity('WEP')"
+              >
+                WEP
+              </button>
+              <button
+                type="button"
+                class="tab"
+                [class.tab--active]="fields().wifi.security === 'nopass'"
+                [attr.aria-pressed]="fields().wifi.security === 'nopass'"
+                (click)="setWifiSecurity('nopass')"
+              >
+                Open
+              </button>
+            </div>
+          </div>
+          @if (fields().wifi.security !== 'nopass') {
+            <div class="field">
+              <label class="field__label" for="wifi-pass">Password</label>
+              <input
+                id="wifi-pass"
+                class="field__input"
+                type="text"
+                spellcheck="false"
+                autocomplete="off"
+                [value]="fields().wifi.password"
+                (input)="setGroupField('wifi', 'password', $event)"
+              />
+            </div>
+          }
+          <div class="field">
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="fields().wifi.hidden"
+              [attr.aria-pressed]="fields().wifi.hidden"
+              (click)="toggleWifiHidden()"
+            >
+              <mat-icon aria-hidden="true">
+                {{ fields().wifi.hidden ? 'check' : 'visibility_off' }}
+              </mat-icon>
+              Hidden network
+            </button>
+          </div>
+        }
+
+        @case ('vcard') {
+          <div class="grid2">
+            <div class="field">
+              <label class="field__label" for="vc-first">First name</label>
+              <input
+                id="vc-first"
+                class="field__input"
+                type="text"
+                autocomplete="off"
+                [value]="fields().vcard.firstName"
+                (input)="setGroupField('vcard', 'firstName', $event)"
+              />
+            </div>
+            <div class="field">
+              <label class="field__label" for="vc-last">Last name</label>
+              <input
+                id="vc-last"
+                class="field__input"
+                type="text"
+                autocomplete="off"
+                [value]="fields().vcard.lastName"
+                (input)="setGroupField('vcard', 'lastName', $event)"
+              />
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label class="field__label" for="vc-org">Organisation</label>
+              <input
+                id="vc-org"
+                class="field__input"
+                type="text"
+                autocomplete="off"
+                [value]="fields().vcard.organisation"
+                (input)="setGroupField('vcard', 'organisation', $event)"
+              />
+            </div>
+            <div class="field">
+              <label class="field__label" for="vc-title">Job title</label>
+              <input
+                id="vc-title"
+                class="field__input"
+                type="text"
+                autocomplete="off"
+                [value]="fields().vcard.title"
+                (input)="setGroupField('vcard', 'title', $event)"
+              />
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label class="field__label" for="vc-phone">Phone</label>
+              <input
+                id="vc-phone"
+                class="field__input"
+                type="tel"
+                autocomplete="off"
+                [value]="fields().vcard.phone"
+                (input)="setGroupField('vcard', 'phone', $event)"
+              />
+            </div>
+            <div class="field">
+              <label class="field__label" for="vc-email">Email</label>
+              <input
+                id="vc-email"
+                class="field__input"
+                type="email"
+                autocomplete="off"
+                [value]="fields().vcard.email"
+                (input)="setGroupField('vcard', 'email', $event)"
+              />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="vc-url">Website</label>
+            <input
+              id="vc-url"
+              class="field__input"
+              type="url"
+              autocomplete="off"
+              [value]="fields().vcard.url"
+              (input)="setGroupField('vcard', 'url', $event)"
+            />
+          </div>
+          <div class="field">
+            <label class="field__label" for="vc-addr">Address</label>
+            <input
+              id="vc-addr"
+              class="field__input"
+              type="text"
+              autocomplete="off"
+              [value]="fields().vcard.address"
+              (input)="setGroupField('vcard', 'address', $event)"
+            />
+          </div>
+          <div class="field">
+            <label class="field__label" for="vc-note">Note</label>
+            <input
+              id="vc-note"
+              class="field__input"
+              type="text"
+              autocomplete="off"
+              [value]="fields().vcard.note"
+              (input)="setGroupField('vcard', 'note', $event)"
+            />
+          </div>
+        }
+
+        @case ('email') {
+          <div class="field">
+            <label class="field__label" for="em-to">To</label>
+            <input
+              id="em-to"
+              class="field__input"
+              type="email"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="someone@example.com"
+              [value]="fields().email.to"
+              (input)="setGroupField('email', 'to', $event)"
+            />
+          </div>
+          <div class="field">
+            <label class="field__label" for="em-subject">Subject</label>
+            <input
+              id="em-subject"
+              class="field__input"
+              type="text"
+              autocomplete="off"
+              [value]="fields().email.subject"
+              (input)="setGroupField('email', 'subject', $event)"
+            />
+          </div>
+          <div class="field">
+            <label class="field__label" for="em-body">Message</label>
+            <textarea
+              id="em-body"
+              class="field__input qr-text"
+              rows="3"
+              [value]="fields().email.body"
+              (input)="setGroupField('email', 'body', $event)"
+            ></textarea>
+          </div>
+        }
+
+        @case ('sms') {
+          <div class="field">
+            <label class="field__label" for="sms-number">Phone number</label>
+            <input
+              id="sms-number"
+              class="field__input"
+              type="tel"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="+1 555 0100"
+              [value]="fields().sms.number"
+              (input)="setGroupField('sms', 'number', $event)"
+            />
+          </div>
+          <div class="field">
+            <label class="field__label" for="sms-message">Message</label>
+            <textarea
+              id="sms-message"
+              class="field__input qr-text"
+              rows="3"
+              [value]="fields().sms.message"
+              (input)="setGroupField('sms', 'message', $event)"
+            ></textarea>
+          </div>
+        }
+
+        @case ('tel') {
+          <div class="field">
+            <label class="field__label" for="tel-number">Phone number</label>
+            <input
+              id="tel-number"
+              class="field__input"
+              type="tel"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="+1 555 0100"
+              [value]="fields().tel"
+              (input)="setField('tel', $event)"
+            />
+            <span class="field__hint">Scanning offers to call this number.</span>
+          </div>
+        }
+
+        @case ('geo') {
+          <div class="grid2">
+            <div class="field">
+              <label class="field__label" for="geo-lat">Latitude</label>
+              <input
+                id="geo-lat"
+                class="field__input"
+                type="text"
+                inputmode="decimal"
+                spellcheck="false"
+                autocomplete="off"
+                placeholder="51.5072"
+                [value]="fields().geo.latitude"
+                (input)="setGroupField('geo', 'latitude', $event)"
+              />
+            </div>
+            <div class="field">
+              <label class="field__label" for="geo-lon">Longitude</label>
+              <input
+                id="geo-lon"
+                class="field__input"
+                type="text"
+                inputmode="decimal"
+                spellcheck="false"
+                autocomplete="off"
+                placeholder="-0.1276"
+                [value]="fields().geo.longitude"
+                (input)="setGroupField('geo', 'longitude', $event)"
+              />
+            </div>
+          </div>
+        }
+
+        @case ('event') {
+          <div class="field">
+            <label class="field__label" for="ev-title">Event name</label>
+            <input
+              id="ev-title"
+              class="field__input"
+              type="text"
+              autocomplete="off"
+              [value]="fields().event.title"
+              (input)="setGroupField('event', 'title', $event)"
+            />
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label class="field__label" for="ev-start">Starts</label>
+              <input
+                id="ev-start"
+                class="field__input"
+                type="datetime-local"
+                [value]="fields().event.start"
+                (input)="setGroupField('event', 'start', $event)"
+              />
+            </div>
+            <div class="field">
+              <label class="field__label" for="ev-end">Ends</label>
+              <input
+                id="ev-end"
+                class="field__input"
+                type="datetime-local"
+                [value]="fields().event.end"
+                (input)="setGroupField('event', 'end', $event)"
+              />
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="ev-location">Location</label>
+            <input
+              id="ev-location"
+              class="field__input"
+              type="text"
+              autocomplete="off"
+              [value]="fields().event.location"
+              (input)="setGroupField('event', 'location', $event)"
+            />
+          </div>
+          <div class="field">
+            <label class="field__label" for="ev-desc">Description</label>
+            <textarea
+              id="ev-desc"
+              class="field__input qr-text"
+              rows="2"
+              [value]="fields().event.description"
+              (input)="setGroupField('event', 'description', $event)"
+            ></textarea>
+          </div>
+          <p class="field__hint">
+            Times have no time zone, so the event lands at the same clock time wherever it is
+            scanned.
+          </p>
+        }
+      }
 
       <div class="field">
         <span class="field__label" id="ec-label">Error correction</span>
@@ -153,7 +551,7 @@
       } @else {
         <p class="preview__empty">
           <mat-icon aria-hidden="true">qr_code_2</mat-icon>
-          Enter text to generate a code.
+          Fill in the fields to generate a code.
         </p>
       }
     </div>

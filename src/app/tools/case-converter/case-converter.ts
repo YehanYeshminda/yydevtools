@@ -4,7 +4,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { syncToolState } from '../../core/tool-state';
 import { CaseKind, convert } from './case';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 interface CaseRow {
@@ -28,7 +30,7 @@ const CASES: { kind: CaseKind; label: string }[] = [
 
 @Component({
   selector: 'app-case-converter',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './case-converter.html',
   styleUrls: ['../tool-shell.css', './case-converter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,6 +39,16 @@ export class CaseConverterTool {
   private readonly clipboard = inject(ClipboardService);
 
   protected readonly input = signal('helloWorld example_string');
+
+  protected readonly shared = syncToolState({
+    key: 'case-converter',
+    snapshot: () => ({ input: this.input() }),
+    restore: (state) => {
+      if (typeof state.input === 'string') {
+        this.input.set(state.input);
+      }
+    },
+  });
 
   protected readonly rows = computed<CaseRow[]>(() => {
     const text = this.input();

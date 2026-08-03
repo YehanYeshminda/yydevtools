@@ -11,6 +11,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { syncToolState } from '../../core/tool-state';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 export interface Row {
@@ -29,7 +31,7 @@ const MS_THRESHOLD = 1e11;
 
 @Component({
   selector: 'app-timestamp-converter',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './timestamp-converter.html',
   styleUrls: ['../tool-shell.css', './timestamp-converter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,6 +43,16 @@ export class TimestampConverterTool {
   protected readonly now = signal(Date.now());
 
   protected readonly input = signal('');
+
+  protected readonly shared = syncToolState({
+    key: 'timestamp-converter',
+    snapshot: () => ({ input: this.input() }),
+    restore: (state) => {
+      if (typeof state.input === 'string') {
+        this.input.set(state.input);
+      }
+    },
+  });
 
   protected readonly result = computed<ParseResult>(() => parse(this.input().trim(), this.now()));
 

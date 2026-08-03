@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import { PDFDocument } from '@cantoo/pdf-lib';
+import { downloadBytes } from '../../core/download';
 import { formatBytes } from '../../core/format';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 import { Spinner } from '../../shared/spinner/spinner';
@@ -174,20 +175,8 @@ export class PdfMergeTool {
   protected download(): void {
     const bytes = this.result();
     if (bytes) {
-      this.downloadBytes(bytes);
+      downloadBytes(bytes, 'merged.pdf', 'application/pdf');
     }
-  }
-
-  private downloadBytes(bytes: Uint8Array): void {
-    // Copy into a fresh ArrayBuffer so the Blob owns a plain ArrayBuffer, not a
-    // possibly-shared typed-array view.
-    const blob = new Blob([bytes.slice()], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = 'merged.pdf';
-    anchor.click();
-    URL.revokeObjectURL(url);
   }
 
   // --- Helpers ----------------------------------------------------------

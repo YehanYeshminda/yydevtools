@@ -8,8 +8,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import { ClipboardService } from '../../core/clipboard.service';
+import { syncToolState } from '../../core/tool-state';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { JSONPath } from 'jsonpath-plus';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import { CodeEditor, type EditorLanguage } from '../../shared/code-editor/code-editor';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 type IndentOption = '2' | '4' | 'tab';
@@ -17,7 +20,9 @@ type Validity = 'empty' | 'valid' | 'invalid';
 
 @Component({
   selector: 'app-json-formatter',
-  imports: [ToolContent, 
+  imports: [ToolContent,
+    CodeEditor,
+    ShareLink,
     RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
@@ -40,6 +45,37 @@ export class JsonFormatterTool {
   protected readonly sortKeys = signal(false);
   protected readonly query = signal('');
 
+  /** Highlighting for the result pane — everything but "To YAML" emits JSON. */
+  protected readonly outputLanguage = signal<EditorLanguage>('json');
+
+  /**
+   * The input, the options and the query — but never the rendered output, which
+   * the recipient's own browser recomputes from them.
+   */
+  protected readonly shared = syncToolState({
+    key: 'json-formatter',
+    snapshot: () => ({
+      input: this.input(),
+      indent: this.indent(),
+      sortKeys: this.sortKeys(),
+      query: this.query(),
+    }),
+    restore: (state) => {
+      if (typeof state.input === 'string') {
+        this.input.set(state.input);
+      }
+      if (state.indent === '2' || state.indent === '4' || state.indent === 'tab') {
+        this.indent.set(state.indent);
+      }
+      if (typeof state.sortKeys === 'boolean') {
+        this.sortKeys.set(state.sortKeys);
+      }
+      if (typeof state.query === 'string') {
+        this.query.set(state.query);
+      }
+    },
+  });
+
   /** Live, non-intrusive validity of the current input — drives the status chip. */
   protected readonly validity = computed<Validity>(() => {
     const text = this.input().trim();
@@ -53,10 +89,6 @@ export class JsonFormatterTool {
       return 'invalid';
     }
   });
-
-  protected onInput(event: Event): void {
-    this.input.set((event.target as HTMLTextAreaElement).value);
-  }
 
   protected onQueryInput(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value);
@@ -73,15 +105,18 @@ export class JsonFormatterTool {
   }
 
   protected format(): void {
+    this.outputLanguage.set('json');
     this.transform((value) => JSON.stringify(value, this.replacer(), this.indentValue()));
   }
 
   protected minify(): void {
+    this.outputLanguage.set('json');
     this.transform((value) => JSON.stringify(value, this.replacer()));
   }
 
   /** JSON → YAML. YAML indentation is always spaces, so a tab choice falls back to 2. */
   protected toYaml(): void {
+    this.outputLanguage.set('yaml');
     this.transform((value) =>
       stringifyYaml(value, {
         indent: this.indent() === 'tab' ? 2 : Number(this.indent()),
@@ -92,6 +127,7 @@ export class JsonFormatterTool {
 
   /** YAML (a superset of JSON) → pretty JSON. */
   protected fromYaml(): void {
+    this.outputLanguage.set('json');
     const text = this.input().trim();
     if (text === '') {
       return;
@@ -108,6 +144,7 @@ export class JsonFormatterTool {
 
   /** Evaluate a JSONPath expression against the input and show the matches. */
   protected runQuery(): void {
+    this.outputLanguage.set('json');
     const path = this.query().trim();
     if (path === '') {
       this.showError('Enter a JSONPath expression first, e.g. $.store.book[*].title');

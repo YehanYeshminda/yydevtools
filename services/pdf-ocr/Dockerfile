@@ -3,9 +3,15 @@ FROM node:22-slim
 
 # ocrmypdf pulls in tesseract-ocr and ghostscript; add the language packs we
 # advertise in the tool's language picker.
+#
+# `tesseract-ocr-osd` is not a language — it is the orientation-and-script
+# detection model that `--rotate-pages` needs. Without it that flag fails, and
+# sideways scans (which scanners produce constantly) come back with an almost
+# empty text layer.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     ocrmypdf \
+    tesseract-ocr-osd \
     tesseract-ocr-eng \
     tesseract-ocr-deu \
     tesseract-ocr-fra \

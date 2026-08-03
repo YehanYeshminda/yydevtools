@@ -4,6 +4,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { syncToolState } from '../../core/tool-state';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 export type UuidVersion = 'v4' | 'v7';
@@ -13,7 +15,7 @@ const MAX_COUNT = 500;
 
 @Component({
   selector: 'app-uuid-generator',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './uuid-generator.html',
   styleUrls: ['../tool-shell.css', './uuid-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,6 +34,40 @@ export class UuidGeneratorTool {
 
   /** Canonical, unformatted UUIDs. Formatting is applied on display. */
   private readonly raw = signal<string[]>([]);
+
+  /**
+   * Only the settings travel. The generated UUIDs deliberately do not: the
+   * point of the tool is fresh random identifiers, and a link that pinned
+   * someone else's would be worse than useless.
+   */
+  protected readonly shared = syncToolState({
+    key: 'uuid-generator',
+    snapshot: () => ({
+      version: this.version(),
+      count: this.count(),
+      uppercase: this.uppercase(),
+      hyphens: this.hyphens(),
+      braces: this.braces(),
+    }),
+    restore: (state) => {
+      if (state.version === 'v4' || state.version === 'v7') {
+        this.version.set(state.version);
+      }
+      if (typeof state.count === 'number' && Number.isFinite(state.count)) {
+        this.count.set(Math.min(MAX_COUNT, Math.max(MIN_COUNT, Math.round(state.count))));
+      }
+      if (typeof state.uppercase === 'boolean') {
+        this.uppercase.set(state.uppercase);
+      }
+      if (typeof state.hyphens === 'boolean') {
+        this.hyphens.set(state.hyphens);
+      }
+      if (typeof state.braces === 'boolean') {
+        this.braces.set(state.braces);
+      }
+      this.generate();
+    },
+  });
 
   protected readonly uuids = computed(() => this.raw().map((uuid) => this.format(uuid)));
 

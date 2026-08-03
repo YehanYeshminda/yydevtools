@@ -259,3 +259,467 @@ use `crypto.subtle`, which the Node 18 shell here does not provide).
 **Validation:** `tsc -p tsconfig.app.json` clean · `ng build --configuration
 production` builds **warning-free** and prerenders all **27** routes · `vitest
 run` = **154 passed**, 19 skipped.
+
+---
+
+## Done — section E: editor, batching and the image/QR deepenings (this pass)
+
+Four themes, chosen as the highest impact per unit of work: a real code editor
+everywhere text is typed, batch processing wherever a tool only took one file, a
+much deeper Image Compressor, and QR payloads beyond plain text.
+
+### 1. Shared CodeMirror 6 editor — `src/app/shared/code-editor/`
+
+- `<app-code-editor>` replaces the `<textarea>` in **JSON Formatter, SQL
+  Formatter, Code Formatter, Regex Tester, Text Diff and Markdown Editor**, and
+  renders the read-only result panes of the three formatters. Line numbers,
+  syntax highlighting, bracket matching, code folding, undo history and Ctrl-F
+  search, from one component.
+- **It degrades to a textarea, which is the point.** Every tool page is
+  prerendered and the prerender has no DOM to mount into, so the textarea *is*
+  the server-rendered markup; CodeMirror replaces it in `afterNextRender`, and
+  if that chunk fails to load the textarea simply stays. Both share the same
+  `value` model, so callers cannot tell which is live. Focus is carried across
+  the swap.
+- Everything is lazily imported (`code-editor.engine.ts`), and each language is
+  its own dynamic import — opening the SQL formatter fetches the SQL grammar and
+  not the Markdown one. **The initial bundle is unchanged: 353.7 kB.**
+- **Tab is deliberately not bound to indent.** CodeMirror's own docs warn that
+  doing so traps keyboard users inside the editor; the default (Tab moves focus)
+  is the WCAG-conformant behaviour and is worth more than tab-to-indent.
+- Theming is entirely custom-property driven, in two layers. Colours come from
+  new `--cm-*` design tokens in `styles.css`, so a light/dark switch re-paints
+  the editor with **no JavaScript at all** — verified in the browser. Every one
+  of the nine syntax colours was checked to ≥ 4.5:1 against `--surface` in its
+  own theme (lowest: 4.83 light, 5.82 dark). Geometry uses a second set
+  (`--cme-*`) set by the component on its host, which is what lets one shared
+  stylesheet reshape per instance — Angular's emulated encapsulation tags only
+  the elements it renders, so a scoped rule can never reach CodeMirror's runtime
+  DOM, but custom properties inherit into it regardless.
+
+### 2. Batch processing and a shared download layer
+
+- `src/app/core/download.ts` — `downloadBlob/Bytes/Text` and `fileStem`, replacing
+  the same six lines copied into seven tools. The object URL is now revoked
+  **10 s after** the click rather than on the next line: revoking immediately is
+  a race the browser can lose on a large archive.
+- `src/app/core/zip.ts` — `buildZip`/`downloadZip` over **fflate**, which
+  deflates in its own worker pool. Members whose names collide are suffixed
+  ` (2)`, ` (3)` the way a file manager does — two archive members with one name
+  is not an error zip readers report, several just silently keep the last.
+  Already-compressed formats (JPEG, PNG, PDF…) are stored rather than deflated.
+  Tests: `zip.spec.ts` (11 cases, unpacking real archives).
+- **PDF Split** per-page mode now emits one zip instead of N downloads. It used
+  to *warn* that "your browser will likely block some of them"; the warning is
+  gone because the problem is.
+- **Hash Generator** takes a batch of files, with a per-file digest row and an
+  algorithm picker. Adds **checksum verification** — paste a digest and it
+  reports which file and which algorithm matched, so you need not know in
+  advance whether you were handed an MD5 or a SHA-256 — and exports the batch in
+  `sha256sum` format (`<hex>␠␠<name>`) so it can be checked elsewhere with
+  `sha256sum -c`.
+
+### 3. Image Compressor — batch, target size, HEIC, Exif, comparison
+
+`src/app/tools/image-compressor/`
+
+- **Batch**: up to 30 images, one queue, one zip. The worker's decode cache is a
+  *single slot* rather than a map — one open image is the interactive case
+  (dragging the quality slider re-encodes without re-decoding), while a batch
+  would otherwise hold every decoded bitmap at over 100 MB of RGBA each.
+- **Target size**: give a size in KB and a binary search over quality finds the
+  best fit in ~7 encodes instead of 100, reusing one rasterisation. It keeps the
+  best result seen rather than recomputing at the end, because size is not
+  perfectly monotonic in quality. If nothing fits it says so instead of
+  pretending.
+- **HEIC** input via `heic-to`, imported only when `createImageBitmap` has
+  already failed — the 3 MB libheif chunk is never fetched by anyone compressing
+  a JPEG. Since no browser renders HEIC in an `<img>`, the worker also renders a
+  JPEG preview so the format is not left without a "before" image.
+- **Exif**: the metadata panel shows what the original carries and flags a GPS
+  location. Output is stripped by default. "Keep Exif" is *real* rather than
+  cosmetic — mozjpeg emits a bare image, so the original APP1 segment is spliced
+  back into the encoded JPEG. WebP stores metadata in RIFF chunks instead, and
+  the UI says so rather than pretending. Tests: `exif.spec.ts` (16 cases,
+  including that a `FF E1` byte pair inside scan data is not mistaken for a
+  marker).
+- **Before/after slider** clipping the compressed image over the original,
+  driven by a real `<input type="range">` so it is keyboard-operable.
+- Fixed along the way: the re-encode `effect` tracked `items()`, which the run
+  itself writes results into — so every run superseded itself and nothing ever
+  finished. It now watches a `queueRevision` counter bumped only when the file
+  *set* changes.
+
+### 4. QR Code Generator — nine payload types
+
+`src/app/tools/qr-generator/qr-payload.ts`
+
+- Link, Text, **Wi-Fi**, **Contact (vCard 3.0)**, Email, SMS, Phone, Location
+  and **Calendar event**. The catalog had advertised Wi-Fi for some time while
+  the tool only accepted free text; it now does what it said.
+- The escaping is the substance: a semicolon in an SSID or a comma in a contact
+  name silently truncates the payload, which is how hand-made codes fail. Wi-Fi
+  escapes `\ ; , : "`; vCard escapes `\ ; ,` and newlines, and uses CRLF as the
+  spec requires. `mailto:` re-encodes `+` as `%20` because mail clients show a
+  form-encoded space verbatim. A bracketed trunk prefix (`+44 (0)20 …`) is
+  dropped only when the number is international, where it must be, and kept when
+  domestic, where those digits are the area code.
+- Tests: `qr-payload.spec.ts` (29 cases).
+
+### 5. Corrections to existing copy
+
+- The Image Compressor's page content still told readers **"Yes, this tool needs
+  a server… the file is sent over HTTPS"**. That stopped being true when
+  compression moved into the browser; the FAQ, intro and feature list have been
+  rewritten. This mattered beyond tidiness — the same strings feed the
+  FAQ/JSON-LD structured data.
+- Catalog descriptions, route SEO and the long-form content for image-compressor,
+  qr-generator, hash-generator and pdf-split now match what the tools do.
+
+**Validation:** `tsc -p tsconfig.app.json` clean · `npm run build` builds
+**warning-free**, prerenders all **28** routes and writes a **27**-URL sitemap ·
+`vitest run` = **210 passed**, 19 skipped (the skips are a pre-existing `skipIf`
+for the native `Uint8Array.toBase64` APIs this Node lacks). Verified in Chrome
+against the production build: editor mount + highlighting + light/dark repaint,
+batch compression with a real Exif JPEG (APP1 confirmed present at offset 2 of
+the *output*), target-size search (200 KB → 189 KB at q93), zip contents and
+name de-duplication, and hash digests checked against independently computed
+WebCrypto values.
+
+---
+
+## Done — section F: backend hardening (this pass)
+
+The three Fly services and the Worker in front of them. Nothing here changes
+what the site can do; it changes what happens when things go wrong.
+
+### 1. The OCR timeout was inverted
+
+`services/pdf-ocr/server.mjs`, `worker/services.ts`, `worker/index.ts`
+
+The OCR service allowed a job 240 s while the Worker gave up at 180 s. So on any
+long scan the user got a timeout at 180 s and the 2 GB machine kept grinding for
+another minute, finishing a document nobody would ever receive — and holding a
+concurrency slot the whole time.
+
+Timeouts are now per-route and ordered deliberately: the **service** always
+gives up first, so an over-long job is killed at the source. Worker budgets
+compress 120 s / OCR 165 s / export 135 s, against service timeouts of 90 s /
+150 s / 120 s.
+
+### 2. Hardening, applied to all three live services
+
+- **Input is sniffed before anything heavy runs.** All three shelled out to
+  Ghostscript, ocrmypdf or LibreOffice on whatever bytes arrived. A `%PDF-`
+  check within the first kilobyte (matching what real readers tolerate) rejects
+  garbage in microseconds instead of after 90 s of shared CPU. It matters most
+  for convert: LibreOffice will attempt dozens of formats, so without the check
+  that endpoint is a general-purpose document parser exposed to anything.
+- **`timingSafeEqual` for the shared secret**, replacing `!==` and the comment
+  that called it "constant-ish".
+- **An in-process concurrency gate** (3 / 2 / 2), answering `503` +
+  `Retry-After` when full. Fly's `hard_limit` shapes traffic at the proxy but
+  cannot see how heavy a request is; this is what keeps the OOM killer from
+  choosing which request dies.
+- **`/health` now runs the tool** (`gs --version` and friends) instead of only
+  proving Node is up. A machine whose image lost its one dependency used to
+  report healthy and 502 every request; it now fails its Fly health check. The
+  result is cached on success and retried on failure. Verified locally: with no
+  `gs` installed the endpoint correctly returns 503 `NOT_READY`.
+- **One JSON log line per request** — event, parameters, bytes in/out, duration
+  — so `fly logs` is enough to see what is happening.
+
+The helper block is repeated in each service rather than shared. Each service is
+its own Docker build context, so a shared module could not be `COPY`ed in
+without restructuring all three builds; independent deployability is worth more
+than removing ~50 duplicated lines.
+
+### 3. PDF Compress no longer returns a bigger file
+
+Ghostscript routinely *grows* an already-optimised PDF — a linear web-optimised
+file re-written at `/screen` can come back larger. The tool would hand that back,
+so "compress" could produce a worse file. The original now wins, and
+`X-Input-Bytes` / `X-Output-Bytes` / `X-Compressed` report which was sent
+(passed through by the Worker). Also added `-dAutoRotatePages=/None`, which stops
+gs guessing orientation from the text and silently turning landscape pages
+sideways, and `-dDetectDuplicateImages=true` for free savings on scans and decks.
+
+### 4. OCR reads sideways scans
+
+`--rotate-pages` is now on, with `tesseract-ocr-osd` added to the Dockerfile —
+without that model the flag fails. Scanners produce rotated pages constantly and
+Tesseract reads almost nothing off one, so this is often the difference between
+a useful text layer and an empty one. `--deskew` is plumbed through as an opt-in
+`?deskew=1` (it re-renders the page, so it is not free) but no UI sends it yet.
+
+### 5. Worker resilience
+
+- **One retry on a cold-start connection failure.** The machines scale to zero
+  and the wake occasionally loses a race, which surfaced as "the service could
+  not be reached" on a service that was fine and now awake. Only
+  connection-level failures retry — not timeouts (the budget is already spent)
+  and not any HTTP status (the service answered).
+- `Retry-After: 60` on 429s, `Cache-Control: no-store` on results.
+
+### 6. Fly concurrency was set above what the VMs survive
+
+OCR allowed 10 concurrent jobs on a 2 GB machine; ten ocrmypdf runs, each
+forking a Tesseract per page, exhaust that long before the proxy sheds any load.
+Now 3/2 for OCR, 5/3 for compress, 3/2 for convert — Fly starts another machine
+rather than overloading one.
+
+### 7. `services/image-compress` is orphaned
+
+Nothing calls it: image compression moved into the browser, `worker/index.ts`
+has a comment explaining the route was removed on purpose, and there is no
+`IMAGE_COMPRESS_URL` or secret in `wrangler.jsonc`. If the Fly app is still
+deployed it is a public HTTPS endpoint wrapping an image decoder with no user
+behind it. The directory and README are now marked **RETIRED** with the
+`fly apps destroy` command; the files are kept so git can recover them, but the
+app should be destroyed. **This is the one item that needs a decision rather
+than a deploy.**
+
+**Validation:** `tsc` clean for both `tsconfig.app.json` and
+`worker/tsconfig.json` · `node --check` clean on all four services ·
+`wrangler deploy --dry-run` bundles the Worker with every binding intact ·
+`vitest run` = 210 passed · each service booted locally and probed for health,
+missing auth, wrong secret, non-PDF body, empty body, bad parameter and unknown
+route — all seven behave correctly, and `/health` correctly reports 503 with the
+tool absent.
+
+---
+
+## Done — section G: shareable and restorable tool state (this pass)
+
+`src/app/core/tool-state.ts`, `src/app/shared/share-link/`
+
+Two features from one mechanism, both shaped by the same constraint: this is a
+site whose promise is that what you paste stays on your device.
+
+### 1. Session restore
+
+A reload used to wipe everything. State is now mirrored into **`sessionStorage`,
+deliberately not `localStorage`** — session storage is scoped to the one tab and
+is gone when that tab closes, so nothing accumulates on disk for the next person
+to use the machine. It solves the accidental refresh, which is the actual
+complaint, without becoming a place where a stranger's JSON quietly lives.
+
+### 2. Share links, in the fragment
+
+The state is encoded into the URL's **hash fragment**, which is the entire
+reason this is safe to offer: a fragment is never transmitted. Not in the
+request line, not in Cloudflare's logs, not in a `Referer` header.
+
+**This was verified rather than assumed.** A local server logging raw request
+lines received exactly `GET /tools/regex-tester` for a navigation to a URL
+carrying 162 characters of encoded state.
+
+Sharing is never automatic: the address bar is not rewritten as you type, so
+state cannot leak into browser history or a screen-share. A link exists only
+when the button that makes one is pressed.
+
+Encoding is JSON → deflate (fflate, already a dependency) → base64url. The
+compression is what makes it practical — the states worth sharing are text, and
+text deflates to a fraction of its size. Past **4000 encoded characters** the
+button reports that the content is too large rather than handing over a URL that
+will arrive truncated from a chat client; session restore has no such limit.
+
+A link is untrusted input, so a restore applies **only the keys the tool itself
+declared** (`pickKeys`) and each value is validated against what the tool
+actually offers — a hand-edited fragment cannot inject an unknown dialect,
+language or view mode.
+
+### 3. Which tools, and why not the others
+
+- **Share + restore (12):** regex-tester, cron-explainer, color-converter,
+  case-converter, timestamp-converter, sql-formatter, code-formatter,
+  json-formatter, json-to-types, text-diff, markdown-editor, uuid-generator.
+  UUID shares only its *settings* — pinning someone else's random identifiers
+  would be worse than useless.
+- **Restore only (1):** qr-generator. Its fields routinely hold a Wi-Fi password
+  or a home address, and a URL is the wrong container for those — it survives in
+  chat history long after the code has been scanned. There is also nothing to
+  gain: what you share from that tool is the PNG, not a link to a generator.
+- **Excluded entirely (3):** jwt-decoder (the token is a credential),
+  hash-generator (the HMAC key is a secret) and base64-converter (inputs are
+  routinely megabytes, and it has its own bulk-text handling). Neither shared
+  nor stored.
+
+Tests: `tool-state.spec.ts` (14 cases — round-trips, unicode, non-string types,
+fragment-safe output, compression ratio, and the failure paths: cyclic input,
+corrupted payload, truncated payload, and a payload that decodes to a non-object).
+
+**Validation:** `tsc` clean (app + worker) · `npm run build` warning-free,
+28 routes, 27-URL sitemap, **initial bundle unchanged at 353.73 kB** ·
+`vitest run` = **224 passed**, 19 skipped. Verified in Chrome against the
+production build: typing populates storage; reload restores with a clean URL; a
+copied link restores fully in a fresh load with storage cleared; the server
+receives no fragment; 54,000 characters correctly disables the button with an
+explanation while still surviving a reload intact; and QR restores its Wi-Fi
+state while exposing no share button at all.
+
+---
+
+## Done — section H: the PDF Organizer (this pass)
+
+`src/app/tools/pdf-organizer/` — the 24th tool, and the one that makes the other
+PDF tools make sense together.
+
+Merge joins whole files end to end; Split pulls out page ranges named in
+advance. Both assume you already know what you want. The Organizer is the case
+where you have to *see* the pages first: it lays every page out as a thumbnail
+and lets you drag them into order, rotate a sideways scan, delete the blank
+sheet the feeder picked up, drop a second PDF in, and save the result as one
+file.
+
+### Rendering without a second PDF engine
+
+pdf.js is already vendored in `public/pdfjs` for the PDF Viewer, which embeds
+its full *viewer* in an iframe. `pdf-render.ts` reaches for the library
+underneath it instead, so page rasterisation costs no new dependency and no
+second copy of a PDF engine in the bundle.
+
+The import specifier is assembled at runtime on purpose: a literal would make
+the bundler try to resolve `/pdfjs/build/pdf.mjs` at build time, where it is not
+a module path but a URL that only exists once the site is served. Keeping it in
+a variable leaves the import to the browser — verified by the build staying
+warning-free and the initial bundle moving only 2 kB.
+
+Thumbnails are drawn one at a time rather than in parallel: rasterising is the
+expensive part, and a whole document at once would fight the main thread for
+exactly the frames needed to scroll and drag.
+
+### The page model is separate and tested
+
+`organise.ts` holds move / rotate / delete / insert-blank / reverse as pure
+functions over a plain array. Getting "move page 12 before page 3" wrong is
+invisible until someone opens the export, so it is pinned down with 22 tests —
+including that a drop target is interpreted against the list *after* the page is
+lifted out, which is what a drag gesture means and what makes "drag page 1 to
+the end" put it last rather than one short of last.
+
+An inserted blank takes the size of the page it follows, so a blank dropped into
+a run of landscape scans is landscape rather than an A4 surprise.
+
+### Details worth recording
+
+- **Rotation is added, not replaced.** A page that already carried `/Rotate 90`
+  and is turned once more ends up at 180. Verified by reading the exported file
+  back: the page reports `rotate: 180`.
+- **Rotation is stored, not baked.** It is written as a page property exactly as
+  a scanner would record it, so text stays selectable and no image is resampled.
+- **Export copies per source document, not per page.** pdf-lib re-walks a
+  source's object graph on every `copyPages` call, so interleaving two documents
+  page by page would do that once per page; instead each document's pages are
+  copied in one call and then placed in the arranged order.
+- **Dragging is never the only way.** Every card carries earlier/later arrows in
+  the normal tab order. CDK's drag-drop is mouse and touch only, and a reorder
+  tool that cannot be operated from a keyboard is not finished.
+- Limits: 300 pages across 10 files, 100 MB each. The page cap exists because
+  every page is held as a rendered preview; Split's ranges remain the right tool
+  for a thousand-page scan.
+
+Merge and Split now cross-link to it, and it carries its own long-form content
+and FAQ (which is where the "organize" spelling lives, since the tool name
+follows the site's existing US-spelling convention while the prose stays
+British).
+
+**Validation:** `tsc` clean (app + worker) · `npm run build` warning-free, **29
+routes**, 28-URL sitemap, initial bundle 355.70 kB · `vitest run` = **246
+passed**, 19 skipped. Verified in Chrome against the production build by driving
+the real UI and then **reading the exported PDF back with pdf.js**: a
+three-page document reordered, rotated, one page deleted and a blank appended
+produced exactly `A2(180°), A1, blank`; adding a second document and moving one
+of its pages to the front produced exactly `B1, A2(180°), A1, blank, B2`, which
+is what the grid showed.
+
+Note for future debugging: pdf.js drives rendering from `requestAnimationFrame`,
+so thumbnails do not progress while the tab is hidden — this looks exactly like
+a hang under automation, and is not one.
+
+---
+
+## Done — section I: OCR without uploading (this pass)
+
+`src/app/tools/pdf-ocr/` — Tesseract compiled to WebAssembly, reading pages in
+the browser and writing the recognised words back as an invisible text layer.
+
+This does not replace the hosted service and is not meant to. Recognition is
+slow and the engine is a several-megabyte download, so it is the better answer
+for a short English document and the worse one for a long multilingual scan.
+What it buys, for the documents it suits, is that a payslip or a medical letter
+is never uploaded at all — and every one of those is a Fly invocation that no
+longer happens.
+
+### Eligibility, and saying no honestly
+
+In-browser runs when the language is English and the document is 20 pages or
+fewer; otherwise the hosted service is selected and the reason is shown next to
+the disabled control. One more rule is enforced at run time: pages are
+rasterised **without** their `/Rotate`, which is what keeps the coordinate
+mapping a single division rather than a matrix to invert — so a rotated page
+would reach Tesseract sideways and read as nothing. Rather than return a
+confidently empty text layer, the local path declines those specifically
+(`LocalOcrUnsupported`) and switches to the hosted service, which straightens
+pages first.
+
+### Every asset is served from this origin
+
+tesseract.js defaults to fetching its worker, engine and language data from a
+public CDN. That would quietly turn a tool promising to upload nothing into one
+that announces to a third party that you are OCR-ing something. The worker, the
+three LSTM core variants and the English model are copied out of `node_modules`
+at build time (`assets` in angular.json) — 2.95 MB for the model
+(`4.0.0_best_int`, accurate and a fifth the size of the standard one) and one
+~3.9 MB core, of which the browser fetches whichever its SIMD support calls for.
+
+### The text layer
+
+`ocr-layer.ts` is the pure, tested part, because it is where the result is won
+or lost. Tesseract works in image pixels with the origin top-left; PDF works in
+points with the origin bottom-left. Getting the flip wrong yields a document
+that looks perfect and selects upside down.
+
+Words are drawn with `TextRenderingMode.Invisible` — mode 3 draws nothing at
+all, where white text would still cover the page and transparent text would sit
+in the rendering pipeline for no reason — and the text matrix carries a
+horizontal squeeze so each word spans exactly the box it was read from, which is
+what makes dragging a selection highlight the words being pointed at.
+
+Two details worth keeping: words below 55% confidence are dropped, because a
+wrong word makes a document findable under something it does not say; and the
+character filtering is written against **code points rather than a regex**,
+after a character class containing the C1 control range degraded on its way
+through the editor into a literal hyphen — which would have silently stripped
+the hyphen out of every hyphenated word in the layer.
+
+### Two bugs found on the way
+
+- **`PdfDocumentRenderer.close()` never worked.** pdf.js 6 has no `destroy()` on
+  the document proxy; teardown belongs to the loading task. It threw from a
+  `finally`, which *replaced* the real error and made every failure look like
+  something else. The same bug was sitting unexercised in the PDF Organizer.
+- **The tesseract import needed the opposite treatment from pdf.js.** pdf.js is
+  served out of `public/` as a URL, so its specifier is built at runtime to keep
+  the bundler away from it. tesseract.js is a package path only the bundler can
+  resolve, so it must be a literal — leave it in a variable and the browser is
+  handed a bare specifier it cannot resolve. The two sit a few files apart and
+  want exactly opposite things.
+
+Tests: `ocr-layer.spec.ts` (22 cases — axis flip at top, middle and bottom of a
+page, scale handling, confidence and degenerate-box filtering, punctuation
+folding, control stripping, and a guard that hyphens survive).
+
+**Validation:** `tsc` clean (app + worker) · `npm run build` warning-free, 29
+routes, 28-URL sitemap · `vitest run` = **268 passed**, 19 skipped. Verified in
+Chrome against the production build, end to end:
+
+- A page carrying two known sentences produced **exactly 16 words** — the true
+  word count — recognised without error.
+- Reading the output back, both sentences appear **twice**: once from the
+  original page, once from the OCR layer, positioned on the same baselines and
+  at the right horizontal offsets (`quick` at x=105 on the line starting at
+  x=60; `47281` at x=217 on its line).
+- Rendering the source and the output and comparing pixel by pixel: **0 of
+  1,126,596 pixels differ.** The layer really is invisible and the page really
+  is untouched.

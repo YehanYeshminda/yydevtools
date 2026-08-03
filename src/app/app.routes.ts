@@ -110,8 +110,9 @@ export const routes: Routes = [
     title: 'Image Compressor — YYDevTools',
     data: {
       description:
-        'Compress PNG and JPEG images to JPEG or WebP and see the size saved. Runs ' +
-        'in your browser — your images are never uploaded. Free, no sign-up.',
+        'Compress JPEG, PNG and HEIC images to JPEG or WebP in bulk — by quality or to a ' +
+        'target file size — and download them as a zip. Compare before and after, and see ' +
+        'or strip the Exif metadata. Runs in your browser; your images are never uploaded.',
     },
   },
   {
@@ -122,6 +123,18 @@ export const routes: Routes = [
       description:
         'Combine several PDF files into one document, in the order you choose. Merging ' +
         'happens in your browser, so your files stay on your device. Free.',
+    },
+  },
+  {
+    path: 'tools/pdf-organizer',
+    loadComponent: () =>
+      import('./tools/pdf-organizer/pdf-organizer').then((m) => m.PdfOrganizerTool),
+    title: 'PDF Organizer — Reorder, rotate and delete PDF pages — YYDevTools',
+    data: {
+      description:
+        'Organize a PDF page by page: see every page as a thumbnail, drag to reorder, rotate, ' +
+        'delete, insert blank pages and combine several files into one. Runs in your browser, ' +
+        'so your documents never leave your device. Free, no sign-up.',
     },
   },
   {
@@ -140,8 +153,9 @@ export const routes: Routes = [
     title: 'PDF OCR — YYDevTools',
     data: {
       description:
-        'Run text recognition on a scanned PDF to make it searchable and selectable. ' +
-        'Free, with a monthly allowance and no account required.',
+        'Run text recognition on a scanned PDF to make it searchable and selectable. Short ' +
+        'English documents are recognised entirely in your browser and never uploaded; longer ' +
+        'documents and fifteen languages use our hosted service. Free, no account required.',
     },
   },
   {
@@ -171,8 +185,8 @@ export const routes: Routes = [
     title: 'PDF Split — YYDevTools',
     data: {
       description:
-        'Extract selected pages from a PDF or split it into one file per page. Runs ' +
-        'in your browser, so your document stays on your device. Free.',
+        'Extract selected pages from a PDF, or split it into one file per page and get them ' +
+        'back as a single zip. Runs in your browser, so your document stays on your device.',
     },
   },
   {
@@ -182,7 +196,8 @@ export const routes: Routes = [
     title: 'Hash & HMAC Generator — YYDevTools',
     data: {
       description:
-        'Compute MD5, CRC32, SHA-1/256/384/512 and keyed HMAC digests of text or a file. ' +
+        'Compute MD5, CRC32, SHA-1/256/384/512 and keyed HMAC digests of text or a batch of ' +
+        'files, export a sha256sum-style checksum list, and verify a digest you were given. ' +
         'Hashing happens in your browser. Free, with no sign-up.',
     },
   },
@@ -259,8 +274,9 @@ export const routes: Routes = [
     title: 'QR Code Generator — YYDevTools',
     data: {
       description:
-        'Turn text, a link or Wi-Fi details into a QR code, adjust the size and error correction, ' +
-        'and download it as PNG or SVG. Generated in your browser. Free, no sign-up.',
+        'Make a QR code for a link, Wi-Fi network, contact card, email, SMS, phone number, ' +
+        'location or calendar event, adjust the size, colours and error correction, and ' +
+        'download it as PNG or SVG. Generated in your browser. Free, no sign-up.',
     },
   },
   {

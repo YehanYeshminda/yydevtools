@@ -3,7 +3,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
+import { syncToolState } from '../../core/tool-state';
 import { DiffRow, diffLines } from './diff';
+import { CodeEditor } from '../../shared/code-editor/code-editor';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 type ViewMode = 'split' | 'unified';
@@ -16,7 +19,7 @@ interface SplitRow {
 
 @Component({
   selector: 'app-text-diff',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './text-diff.html',
   styleUrls: ['../tool-shell.css', './text-diff.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,6 +30,38 @@ export class TextDiffTool {
   protected readonly view = signal<ViewMode>('split');
   protected readonly ignoreCase = signal(false);
   protected readonly ignoreWhitespace = signal(false);
+
+  /**
+   * Both sides plus the comparison options — "here is the difference I am
+   * looking at" is most of the reason anyone links to a diff.
+   */
+  protected readonly shared = syncToolState({
+    key: 'text-diff',
+    snapshot: () => ({
+      original: this.original(),
+      changed: this.changed(),
+      view: this.view(),
+      ignoreCase: this.ignoreCase(),
+      ignoreWhitespace: this.ignoreWhitespace(),
+    }),
+    restore: (state) => {
+      if (typeof state.original === 'string') {
+        this.original.set(state.original);
+      }
+      if (typeof state.changed === 'string') {
+        this.changed.set(state.changed);
+      }
+      if (state.view === 'split' || state.view === 'unified') {
+        this.view.set(state.view);
+      }
+      if (typeof state.ignoreCase === 'boolean') {
+        this.ignoreCase.set(state.ignoreCase);
+      }
+      if (typeof state.ignoreWhitespace === 'boolean') {
+        this.ignoreWhitespace.set(state.ignoreWhitespace);
+      }
+    },
+  });
 
   protected readonly result = computed(() =>
     diffLines(this.original(), this.changed(), {
@@ -72,14 +107,6 @@ export class TextDiffTool {
     }
     return out;
   });
-
-  protected onOriginalInput(event: Event): void {
-    this.original.set((event.target as HTMLTextAreaElement).value);
-  }
-
-  protected onChangedInput(event: Event): void {
-    this.changed.set((event.target as HTMLTextAreaElement).value);
-  }
 
   protected setView(mode: ViewMode): void {
     this.view.set(mode);

@@ -25,30 +25,24 @@
   <!-- Inputs ---------------------------------------------------------- -->
   <div class="pair">
     <div class="field">
-      <label class="field__label" for="original">Original</label>
-      <textarea
-        id="original"
-        class="field__input diff-input"
-        spellcheck="false"
-        autocomplete="off"
-        rows="10"
+      <span class="field__label">Original</span>
+      <app-code-editor
+        label="Original text"
         placeholder="Paste the original text…"
-        [value]="original()"
-        (input)="onOriginalInput($event)"
-      ></textarea>
+        minHeight="14rem"
+        [wrap]="false"
+        [(value)]="original"
+      />
     </div>
     <div class="field">
-      <label class="field__label" for="changed">Changed</label>
-      <textarea
-        id="changed"
-        class="field__input diff-input"
-        spellcheck="false"
-        autocomplete="off"
-        rows="10"
+      <span class="field__label">Changed</span>
+      <app-code-editor
+        label="Changed text"
         placeholder="Paste the changed text…"
-        [value]="changed()"
-        (input)="onChangedInput($event)"
-      ></textarea>
+        minHeight="14rem"
+        [wrap]="false"
+        [(value)]="changed"
+      />
     </div>
   </div>
 
@@ -109,6 +103,7 @@
         <mat-icon>clear</mat-icon>
         Clear
       </button>
+      <app-share-link [state]="shared" />
     </div>
   </div>
 

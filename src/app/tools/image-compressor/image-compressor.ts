@@ -6,6 +6,7 @@ import {
   inject,
   OnDestroy,
   signal,
+  untracked,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -15,37 +16,55 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
-import { formatBytes } from '../../core/format';
-import { Spinner } from '../../shared/spinner/spinner';
-import { ImageCodecClient } from './image-codec.client';
-import type { CodecFormat } from './image-codec.worker';
-import { ToolContent } from '../../shared/tool-content/tool-content';
 
-/** The source image: what we need to show it and describe it. */
-interface Source {
+import { downloadBlob, fileStem } from '../../core/download';
+import { formatBytes } from '../../core/format';
+import { downloadZip, type ZipEntry } from '../../core/zip';
+import { Spinner } from '../../shared/spinner/spinner';
+import { ToolContent } from '../../shared/tool-content/tool-content';
+import type { Metadata } from './exif';
+import { ImageCodecClient, type CodecFormat } from './image-codec.client';
+
+/** How the output size is chosen. */
+export type SizeMode = 'quality' | 'target';
+
+interface Output {
+  bytes: Uint8Array;
+  url: string;
+  size: number;
+  width: number;
+  height: number;
+  quality: number;
+  targetMissed: boolean;
+  keptMetadata: boolean;
+}
+
+/** One queued image and whatever is known about it so far. */
+interface Item {
+  id: string;
+  file: File;
   name: string;
   size: number;
   width: number;
   height: number;
   previewUrl: string;
-}
-
-/** The most recent compression output. */
-interface Output {
-  blob: Blob;
-  url: string;
-  size: number;
-  width: number;
-  height: number;
+  heic: boolean;
+  working: boolean;
+  error: string | null;
+  output: Output | null;
+  metadata: Metadata | null;
 }
 
 /** Decoding happens in memory, so reject anything unreasonable up front. */
 const MAX_INPUT_BYTES = 20 * 1024 * 1024;
 
+/** A ceiling on the queue, for the same reason. */
+const MAX_FILES = 30;
+
 /**
  * How long to wait after the last option change before re-encoding.
  *
- * Encoding is now local, so this only has to outlast the gap between two slider
+ * Encoding is local, so this only has to outlast the gap between two slider
  * frames — short enough that the result feels immediate, long enough that
  * dragging across the track does not queue up an encode per step.
  */
@@ -63,7 +82,8 @@ const SIZE_PRESETS: ReadonlyArray<{ value: number; label: string }> = [
 
 @Component({
   selector: 'app-image-compressor',
-  imports: [ToolContent, 
+  imports: [
+    ToolContent,
     RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
@@ -74,7 +94,7 @@ const SIZE_PRESETS: ReadonlyArray<{ value: number; label: string }> = [
     Spinner,
   ],
   templateUrl: './image-compressor.html',
-  styleUrl: './image-compressor.css',
+  styleUrls: ['../tool-shell.css', './image-compressor.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImageCompressorTool implements OnDestroy {
@@ -82,81 +102,115 @@ export class ImageCompressorTool implements OnDestroy {
   private readonly codec = new ImageCodecClient();
 
   protected readonly sizePresets = SIZE_PRESETS;
+  protected readonly maxFiles = MAX_FILES;
 
   // --- State ------------------------------------------------------------
-  protected readonly source = signal<Source | null>(null);
-  protected readonly output = signal<Output | null>(null);
-  protected readonly processing = signal(false);
+  protected readonly items = signal<Item[]>([]);
+  protected readonly selectedId = signal<string | null>(null);
+  protected readonly dragOver = signal(false);
+  protected readonly usingFallbackCodec = signal(false);
 
+  // --- Options ----------------------------------------------------------
   protected readonly format = signal<CodecFormat>('image/jpeg');
   /** Encoding quality as a 0–1 fraction; the codecs take it as 1–100. */
   protected readonly quality = signal(0.8);
-  /** Longest-edge cap in pixels; 0 keeps the original dimensions. */
   protected readonly maxDimension = signal(0);
+  protected readonly sizeMode = signal<SizeMode>('quality');
+  /** Target size in kilobytes, for `sizeMode === 'target'`. */
+  protected readonly targetKb = signal(200);
+  protected readonly keepMetadata = signal(false);
 
-  /** True once an encode has come back from the browser's encoder instead. */
-  protected readonly usingFallbackCodec = signal(false);
+  /** Split position of the before/after comparison, as a percentage. */
+  protected readonly comparePosition = signal(50);
 
   protected readonly qualityPercent = computed(() => Math.round(this.quality() * 100));
+  protected readonly hasItems = computed(() => this.items().length > 0);
+  protected readonly busy = computed(() => this.items().some((item) => item.working));
 
-  /** Change in size, as a signed percentage (negative = smaller output). */
-  protected readonly savedPercent = computed(() => {
-    const src = this.source();
-    const out = this.output();
-    if (!src || !out || src.size === 0) {
-      return 0;
-    }
-    return Math.round(((out.size - src.size) / src.size) * 100);
+  protected readonly selected = computed(
+    () => this.items().find((item) => item.id === this.selectedId()) ?? null,
+  );
+
+  /** Metadata is only carried into JPEG; WebP would need a different container. */
+  protected readonly metadataAvailable = computed(() => this.format() === 'image/jpeg');
+
+  protected readonly done = computed(() => this.items().filter((item) => item.output !== null));
+
+  protected readonly totals = computed(() => {
+    const finished = this.done();
+    const original = finished.reduce((sum, item) => sum + item.size, 0);
+    const compressed = finished.reduce((sum, item) => sum + (item.output?.size ?? 0), 0);
+    return {
+      count: finished.length,
+      original,
+      compressed,
+      percent: original === 0 ? 0 : Math.round(((compressed - original) / original) * 100),
+    };
   });
 
-  /** Guards against an older encode overwriting a newer one. */
-  private encodeToken = 0;
+  /** Guards against an older run overwriting a newer one. */
+  private runToken = 0;
+  private nextId = 0;
+
+  /**
+   * Bumped only when the *set* of files changes — never when a result lands.
+   *
+   * This is what the re-encode effect watches instead of `items`. Watching
+   * `items` directly is a trap: the run writes each result back into that same
+   * signal, which re-triggers the effect, which supersedes the run that is
+   * still going. Nothing ever finishes.
+   */
+  private readonly queueRevision = signal(0);
 
   constructor() {
-    // Re-encode whenever the source or any option changes.
+    // Re-encode the whole queue whenever an option changes.
     effect((onCleanup) => {
-      const src = this.source();
-      if (!src) {
+      const options = {
+        format: this.format(),
+        quality: this.quality(),
+        maxDimension: this.maxDimension(),
+        sizeMode: this.sizeMode(),
+        targetKb: this.targetKb(),
+        keepMetadata: this.keepMetadata(),
+      };
+      this.queueRevision();
+
+      if (untracked(() => this.items()).length === 0) {
         return;
       }
-      const format = this.format();
-      const quality = this.quality();
-      const maxDimension = this.maxDimension();
 
-      const handle = setTimeout(() => {
-        void this.encode(src, format, quality, maxDimension);
-      }, SETTLE_MS);
+      const handle = setTimeout(() => void this.runQueue(options), SETTLE_MS);
       onCleanup(() => clearTimeout(handle));
     });
   }
 
   ngOnDestroy(): void {
-    this.releaseSource();
-    this.releaseOutput();
+    for (const item of this.items()) {
+      this.release(item);
+    }
     this.codec.terminate();
   }
 
   // --- File selection ---------------------------------------------------
   protected onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    // Reset so picking the same file again still fires (change).
+    // Copy out of the live FileList before resetting — clearing `input.value`
+    // also empties `input.files`.
+    const files = input.files ? Array.from(input.files) : [];
     input.value = '';
-    if (file) {
-      void this.loadFile(file);
+    if (files.length) {
+      void this.addFiles(files);
     }
   }
 
   protected onDrop(event: DragEvent): void {
     event.preventDefault();
     this.dragOver.set(false);
-    const file = event.dataTransfer?.files?.[0];
-    if (file) {
-      void this.loadFile(file);
+    const files = event.dataTransfer?.files;
+    if (files?.length) {
+      void this.addFiles(Array.from(files));
     }
   }
-
-  protected readonly dragOver = signal(false);
 
   protected onDragOver(event: DragEvent): void {
     event.preventDefault();
@@ -167,77 +221,110 @@ export class ImageCompressorTool implements OnDestroy {
     this.dragOver.set(false);
   }
 
-  private async loadFile(file: File): Promise<void> {
-    if (!file.type.startsWith('image/')) {
-      this.showError('That file is not an image.');
+  private async addFiles(files: File[]): Promise<void> {
+    const room = MAX_FILES - this.items().length;
+    if (room <= 0) {
+      this.showError(`You can compress up to ${MAX_FILES} images at a time.`);
       return;
     }
-    if (file.size > MAX_INPUT_BYTES) {
-      this.showError(
-        `That image is too large. The maximum size is ${formatBytes(MAX_INPUT_BYTES)}.`,
-      );
-      return;
+    if (files.length > room) {
+      this.showError(`Only the first ${room} of those files were added (limit ${MAX_FILES}).`);
     }
 
-    let opened: { width: number; height: number };
+    for (const file of files.slice(0, room)) {
+      // A HEIC file often arrives with an empty `type`, so the name has to be
+      // consulted too — otherwise the very format this tool just learned to
+      // read would be rejected at the door.
+      if (!file.type.startsWith('image/') && !/\.(hei[cf]|jpe?g|png|webp|gif|bmp|avif)$/i.test(file.name)) {
+        this.showError(`"${file.name}" is not an image and was skipped.`);
+        continue;
+      }
+      if (file.size > MAX_INPUT_BYTES) {
+        this.showError(`"${file.name}" is too large (max ${formatBytes(MAX_INPUT_BYTES)}).`);
+        continue;
+      }
+
+      const id = `img-${this.nextId++}`;
+      let opened;
+      try {
+        opened = await this.codec.open(id, file);
+      } catch {
+        this.showError(`"${file.name}" could not be read. It may be corrupt or unsupported.`);
+        continue;
+      }
+
+      const item: Item = {
+        id,
+        file,
+        name: file.name,
+        size: file.size,
+        width: opened.width,
+        height: opened.height,
+        previewUrl: URL.createObjectURL(file),
+        heic: opened.heic,
+        working: false,
+        error: null,
+        output: null,
+        metadata: null,
+      };
+
+      // The first file added picks the default output format: WebP for PNGs,
+      // which are usually screenshots or graphics, JPEG for photographs.
+      if (this.items().length === 0) {
+        this.format.set(file.type === 'image/png' ? 'image/webp' : 'image/jpeg');
+      }
+
+      this.items.update((current) => [...current, item]);
+      this.queueRevision.update((value) => value + 1);
+      this.selectedId.update((current) => current ?? id);
+      void this.loadMetadata(item);
+      if (opened.heic) {
+        void this.loadHeicPreview(item);
+      }
+    }
+  }
+
+  /**
+   * Reads the source's Exif. Failure is silent by design: a PNG or a stripped
+   * JPEG legitimately has none, and that is not something to interrupt anyone
+   * over.
+   */
+  private async loadMetadata(item: Item): Promise<void> {
     try {
-      // The worker keeps the decoded bitmap, so this is the only decode of the
-      // whole session no matter how many times the options change.
-      opened = await this.codec.open(file);
+      const [{ load }, { summarise }] = await Promise.all([
+        import('exifreader'),
+        import('./exif'),
+      ]);
+      const tags = await load(item.file, { async: true, expanded: false });
+      const metadata = summarise(tags as never);
+      if (metadata.rows.length > 0) {
+        this.patch(item.id, { metadata });
+      }
     } catch {
-      this.showError('Could not read that image. It may be corrupt or an unsupported format.');
-      return;
+      // No readable metadata.
     }
-
-    this.releaseSource();
-    this.releaseOutput();
-    this.output.set(null);
-
-    // Default the output format to WebP for PNGs (often screenshots or graphics),
-    // and JPEG for everything else.
-    this.format.set(file.type === 'image/png' ? 'image/webp' : 'image/jpeg');
-
-    this.source.set({
-      name: file.name,
-      size: file.size,
-      width: opened.width,
-      height: opened.height,
-      previewUrl: URL.createObjectURL(file),
-    });
   }
 
-  // --- Encoding ---------------------------------------------------------
-  private async encode(
-    src: Source,
-    format: CodecFormat,
-    quality: number,
-    maxDimension: number,
-  ): Promise<void> {
-    const token = ++this.encodeToken;
-    this.processing.set(true);
+  /**
+   * Swaps a HEIC item's preview for one the browser can actually display.
+   *
+   * The blob URL made from the original file is useless to an `<img>`, so it is
+   * replaced — and revoked — as soon as the worker has rendered a JPEG copy.
+   */
+  private async loadHeicPreview(item: Item): Promise<void> {
     try {
-      const result = await this.codec.encode(format, Math.round(quality * 100), maxDimension);
-      if (token !== this.encodeToken) {
-        return; // superseded by a newer request
+      const blob = await this.codec.preview(item.id, item.file);
+      const url = URL.createObjectURL(blob);
+      const current = this.items().find((entry) => entry.id === item.id);
+      if (!current) {
+        URL.revokeObjectURL(url); // removed while we were rendering
+        return;
       }
-      this.usingFallbackCodec.set(result.codec === 'canvas');
-      this.setOutput(result.blob, result.width, result.height);
-    } catch (error) {
-      if (token === this.encodeToken) {
-        this.showError(
-          error instanceof Error ? error.message : 'That image could not be compressed.',
-        );
-      }
-    } finally {
-      if (token === this.encodeToken) {
-        this.processing.set(false);
-      }
+      URL.revokeObjectURL(current.previewUrl);
+      this.patch(item.id, { previewUrl: url });
+    } catch {
+      // Leave the unrenderable URL in place; the alt text still names the file.
     }
-  }
-
-  private setOutput(blob: Blob, width: number, height: number): void {
-    this.releaseOutput();
-    this.output.set({ blob, url: URL.createObjectURL(blob), size: blob.size, width, height });
   }
 
   // --- Option handlers --------------------------------------------------
@@ -253,24 +340,152 @@ export class ImageCompressorTool implements OnDestroy {
     this.maxDimension.set(value);
   }
 
+  protected setSizeMode(mode: SizeMode): void {
+    this.sizeMode.set(mode);
+  }
+
+  protected onTargetKbInput(event: Event): void {
+    const parsed = Number((event.target as HTMLInputElement).value);
+    if (Number.isFinite(parsed)) {
+      this.targetKb.set(Math.min(20_000, Math.max(5, Math.round(parsed))));
+    }
+  }
+
+  protected toggleKeepMetadata(): void {
+    this.keepMetadata.update((value) => !value);
+  }
+
+  protected onCompareInput(event: Event): void {
+    this.comparePosition.set(Number((event.target as HTMLInputElement).value));
+  }
+
+  protected select(id: string): void {
+    this.selectedId.set(id);
+  }
+
+  // --- Encoding ---------------------------------------------------------
+  private async runQueue(options: {
+    format: CodecFormat;
+    quality: number;
+    maxDimension: number;
+    sizeMode: SizeMode;
+    targetKb: number;
+    keepMetadata: boolean;
+  }): Promise<void> {
+    const token = ++this.runToken;
+
+    for (const item of this.items()) {
+      if (token !== this.runToken) {
+        return; // superseded
+      }
+      this.patch(item.id, { working: true, error: null });
+
+      try {
+        const result = await this.codec.encode(item.id, item.file, {
+          format: options.format,
+          quality: Math.round(options.quality * 100),
+          maxDimension: options.maxDimension,
+          targetBytes: options.sizeMode === 'target' ? options.targetKb * 1024 : 0,
+          keepMetadata: options.keepMetadata,
+        });
+        if (token !== this.runToken) {
+          return;
+        }
+        this.usingFallbackCodec.set(result.codec === 'canvas');
+        this.setOutput(item.id, {
+          bytes: result.bytes,
+          url: URL.createObjectURL(result.blob),
+          size: result.blob.size,
+          width: result.width,
+          height: result.height,
+          quality: result.quality,
+          targetMissed: result.targetMissed,
+          keptMetadata: result.keptMetadata,
+        });
+      } catch (error) {
+        if (token !== this.runToken) {
+          return;
+        }
+        this.patch(item.id, {
+          working: false,
+          error: error instanceof Error ? error.message : 'That image could not be compressed.',
+        });
+      }
+    }
+  }
+
+  /** Replace an item's output, releasing the URL the previous one held. */
+  private setOutput(id: string, output: Output): void {
+    this.items.update((current) =>
+      current.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+        if (item.output) {
+          URL.revokeObjectURL(item.output.url);
+        }
+        return { ...item, output, working: false, error: null };
+      }),
+    );
+  }
+
+  private patch(id: string, changes: Partial<Item>): void {
+    this.items.update((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...changes } : item)),
+    );
+  }
+
   // --- Output actions ---------------------------------------------------
-  protected download(): void {
-    const src = this.source();
-    const out = this.output();
-    if (!src || !out) {
+  protected download(item: Item): void {
+    if (!item.output) {
       return;
     }
-    const anchor = document.createElement('a');
-    anchor.href = out.url;
-    anchor.download = outputFileName(src.name, this.format());
-    anchor.click();
+    downloadBlob(
+      new Blob([item.output.bytes.slice()], { type: this.format() }),
+      this.outputName(item),
+    );
+  }
+
+  protected async downloadAll(): Promise<void> {
+    const entries: ZipEntry[] = this.done().map((item) => ({
+      name: this.outputName(item),
+      bytes: item.output!.bytes,
+    }));
+    if (entries.length === 0) {
+      return;
+    }
+    if (entries.length === 1) {
+      this.download(this.done()[0]);
+      return;
+    }
+    try {
+      await downloadZip(entries, 'compressed-images.zip');
+    } catch (error) {
+      this.showError(
+        error instanceof Error ? error.message : 'Could not build the archive.',
+      );
+    }
+  }
+
+  protected remove(id: string): void {
+    const item = this.items().find((entry) => entry.id === id);
+    if (item) {
+      this.release(item);
+    }
+    this.items.update((current) => current.filter((entry) => entry.id !== id));
+    this.queueRevision.update((value) => value + 1);
+    if (this.selectedId() === id) {
+      this.selectedId.set(this.items()[0]?.id ?? null);
+    }
   }
 
   protected reset(): void {
-    this.releaseSource();
-    this.releaseOutput();
-    this.source.set(null);
-    this.output.set(null);
+    for (const item of this.items()) {
+      this.release(item);
+    }
+    this.items.set([]);
+    this.queueRevision.update((value) => value + 1);
+    this.selectedId.set(null);
     void this.codec.close();
   }
 
@@ -279,28 +494,26 @@ export class ImageCompressorTool implements OnDestroy {
     return formatBytes(bytes);
   }
 
+  protected savedPercent(item: Item): number {
+    if (!item.output || item.size === 0) {
+      return 0;
+    }
+    return Math.round(((item.output.size - item.size) / item.size) * 100);
+  }
+
+  private outputName(item: Item): string {
+    const ext = this.format() === 'image/webp' ? 'webp' : 'jpg';
+    return `${fileStem(item.name, 'image')}-compressed.${ext}`;
+  }
+
+  private release(item: Item): void {
+    URL.revokeObjectURL(item.previewUrl);
+    if (item.output) {
+      URL.revokeObjectURL(item.output.url);
+    }
+  }
+
   private showError(message: string): void {
     this.snackBar.open(message, 'Dismiss', { duration: 5000, panelClass: 'snack-error' });
   }
-
-  private releaseSource(): void {
-    const src = this.source();
-    if (src) {
-      URL.revokeObjectURL(src.previewUrl);
-    }
-  }
-
-  private releaseOutput(): void {
-    const out = this.output();
-    if (out) {
-      URL.revokeObjectURL(out.url);
-    }
-  }
-}
-
-// --- Pure helpers -------------------------------------------------------
-function outputFileName(originalName: string, format: CodecFormat): string {
-  const ext = format === 'image/webp' ? 'webp' : 'jpg';
-  const base = originalName.replace(/\.[^.]+$/, '') || 'image';
-  return `${base}-compressed.${ext}`;
 }

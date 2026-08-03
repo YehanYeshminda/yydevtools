@@ -81,18 +81,14 @@
 
   <!-- Input ----------------------------------------------------------- -->
   <div class="field">
-    <label class="field__label" for="sql-input">SQL</label>
-    <textarea
-      id="sql-input"
-      class="field__input sql-area"
-      spellcheck="false"
-      autocomplete="off"
-      autocapitalize="off"
-      rows="8"
+    <span class="field__label">SQL</span>
+    <app-code-editor
+      label="SQL"
+      language="sql"
       placeholder="SELECT * FROM users WHERE active = true;"
-      [value]="input()"
-      (input)="onInput($event)"
-    ></textarea>
+      minHeight="12rem"
+      [(value)]="input"
+    />
   </div>
 
   <div class="actions">
@@ -100,6 +96,7 @@
       <mat-icon>clear</mat-icon>
       Clear
     </button>
+    <app-share-link [state]="shared" />
   </div>
 
   <!-- Output ---------------------------------------------------------- -->
@@ -117,7 +114,13 @@
           Copy
         </button>
       </div>
-      <pre class="output"><code>{{ output() }}</code></pre>
+      <app-code-editor
+        label="Formatted SQL"
+        language="sql"
+        minHeight="12rem"
+        [readOnly]="true"
+        [value]="output()"
+      />
     </section>
   }
 

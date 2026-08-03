@@ -11,14 +11,27 @@ LibreOffice imports a PDF as a **Draw** document, so results vary by target:
 - **xlsx / pptx** — rough. There is no real "PDF → spreadsheet/slides" in the
   open-source world; expect a best-effort dump, not a clean conversion.
 
-If the poor xlsx/pptx quality isn't acceptable, drop those two from the tool's
-format list and keep only Word/RTF.
+The Worker already acts on this: `EXPORT_FORMATS` in `worker/index.ts` accepts
+only `docx` and `rtf`, so xlsx/pptx are unreachable from the site even though
+this service still knows how to attempt them.
 
 ## Endpoint
 
 - `POST /convert?format=docx|rtf|xlsx|pptx` — `Authorization: Bearer <CONVERT_SECRET>`,
   body `application/pdf`. Returns the converted file or `{ error: { code, message } }`.
-- `GET /health` — `ok`, no auth.
+- `GET /health` — no auth. Runs `soffice --version`, so it returns **503** when
+  LibreOffice is missing rather than reporting a broken machine as healthy.
+
+## Behaviour worth knowing
+
+- **Non-PDF bodies are rejected immediately** on a header sniff. This matters
+  more here than in the other services: LibreOffice will cheerfully attempt to
+  import dozens of formats, so without the check the endpoint is a
+  general-purpose document parser exposed to whatever reaches it.
+- **At most `MAX_CONCURRENT` (default 2) conversions run at once**; beyond that
+  the service answers `503` with `Retry-After`.
+- **Timeout is 120 s**, below the Worker's 135 s budget for this route.
+- Every request logs one JSON line (`event`, `format`, `inBytes`, `ms`).
 
 ## Deploy
 

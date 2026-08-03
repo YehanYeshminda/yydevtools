@@ -137,14 +137,17 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Enter an optional secret key and the output switches to keyed HMAC digests, which is what you use to sign a message so a recipient can confirm it was not tampered with. Files up to a quarter of a gigabyte are hashed on a background thread, so even a large file will not freeze the page, and nothing you hash is ever uploaded.',
     ],
     steps: [
-      'Type or paste text, or drop in a file.',
+      'Type or paste text, or drop in one or more files.',
       'Read the computed digests — CRC32, MD5 and the SHA family are shown together.',
       'To produce an HMAC instead, enter a secret key; the output switches to keyed digests.',
-      'Copy the digest you need.',
+      'Paste a checksum you were given into the verify box to see whether anything above matches it.',
+      'Copy a single digest, or export the whole batch as a checksum list.',
     ],
     features: [
       'MD5, CRC32, SHA-1, SHA-256, SHA-384 and SHA-512 in one pass.',
       'Keyed HMAC-SHA when you provide a secret key.',
+      'Hashes a batch of files at once and exports a sha256sum-style checksum file.',
+      'Verifies a digest you were given against everything hashed, and names the algorithm that matched.',
       'Handles files up to 250 MB on a background thread, so the UI stays responsive.',
       'All hashing is local — files are never uploaded.',
     ],
@@ -163,7 +166,11 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
       {
         q: 'Can I use this to verify a download?',
-        a: 'Yes. Drop the downloaded file in and compare the SHA-256 (or whichever algorithm the publisher listed) against the checksum they published. If the two match, the file is intact and unmodified.',
+        a: 'Yes, and there is a dedicated box for it. Drop the downloaded file in, paste the checksum the publisher listed into the verify field, and the tool tells you whether it matches — and which algorithm produced it, so you do not have to know in advance whether you were given an MD5 or a SHA-256.',
+      },
+      {
+        q: 'Can I checksum a whole folder at once?',
+        a: 'Drop in as many files as you like and each is hashed in turn. "Download .txt" then exports them in the two-space format that sha256sum and its relatives read, so the same list can be checked on another machine with sha256sum -c.',
       },
     ],
     related: ['jwt-decoder', 'base64-converter', 'uuid-generator'],
@@ -289,17 +296,20 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   'qr-generator': {
     slug: 'qr-generator',
     intro: [
-      'Turn any text, link or Wi-Fi login into a QR code that phones can scan instantly. QR codes are the quickest way to move something from a screen or a printed page onto a device without typing — a URL for a poster, contact details on a business card, or the Wi-Fi password for guests.',
+      'Build a QR code that phones act on rather than just read. Pick what it should hold — a link, a Wi-Fi network, a contact card, an email, a text message, a phone number, a map location or a calendar event — fill in the fields, and the right payload is assembled for you.',
+      'That distinction matters. A QR code only ever carries a string; what makes a phone offer to join a network or save a contact is writing that string in the exact format the camera recognises, including escaping the characters that would otherwise cut the payload short. Typing those formats by hand is where most hand-made codes go wrong.',
       'You control the size, the error-correction level and the foreground and background colours, then download the result as a crisp PNG or as a scalable SVG for print. The code is generated on your device, so whatever you encode — including a private network password — stays with you.',
     ],
     steps: [
-      'Enter the text, URL or Wi-Fi details you want to encode.',
+      'Choose what the code should hold: a link, Wi-Fi, contact, email, SMS, phone, location or event.',
+      'Fill in that type’s fields — the payload is built and the preview updates as you type.',
       'Set the size and pick an error-correction level (higher tolerates more damage but packs the code more densely).',
       'Adjust the foreground and background colours if you need to match a brand.',
       'Download the QR code as PNG for screens or SVG for print.',
     ],
     features: [
-      'Encodes plain text, links and Wi-Fi credentials.',
+      'Nine payload types, including Wi-Fi credentials, vCard contacts and calendar events.',
+      'Characters that would break a payload — semicolons in a network name, commas in a contact — are escaped correctly.',
       'Adjustable size, quiet-zone margin and colours.',
       'Four error-correction levels (L, M, Q, H).',
       'Exports to PNG or SVG; generated entirely in your browser.',
@@ -307,15 +317,23 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     faq: [
       {
         q: 'What does the error-correction level change?',
-        a: 'Higher levels add redundant data so the code still scans even if part of it is dirty, damaged or covered by a logo. The trade-off is that the pattern becomes denser, so for a plain on-screen link a lower level is usually fine.',
+        a: 'Higher levels add redundant data so the code still scans even if part of it is dirty, damaged or covered by a logo. The trade-off is that the pattern becomes denser, so for a plain on-screen link a lower level is usually fine. A long payload such as a full contact card is already dense, so a lower level keeps it readable.',
       },
       {
         q: 'Should I download PNG or SVG?',
         a: 'Use PNG for screens, chat and documents where a fixed-size image is fine. Use SVG for anything printed or resized, because it is vector-based and stays sharp at any scale.',
       },
       {
-        q: 'Can I make a QR code for Wi-Fi?',
-        a: 'Yes. Provide the network details and the generated code lets a phone join the network by scanning it, without anyone typing the password.',
+        q: 'How do I make a QR code for Wi-Fi?',
+        a: 'Choose Wi-Fi, enter the network name and password, and pick the security type — WPA for almost every modern network. Scanning the code offers to join the network without anyone typing the password. Tick "Hidden network" if the network does not broadcast its name, as phones need telling that explicitly.',
+      },
+      {
+        q: 'Why does my network name with a semicolon still work?',
+        a: 'The Wi-Fi format uses semicolons and colons as separators, so a network name or password containing one would truncate the payload and produce a code that fails or joins the wrong network. Those characters are escaped for you, which is a common failure of codes generated by hand.',
+      },
+      {
+        q: 'Will a contact card QR code work on both iPhone and Android?',
+        a: 'Yes. The contact type emits a vCard 3.0 payload, which is the version both platforms’ cameras handle most consistently — scanning it offers to create a new contact with the details you entered.',
       },
       {
         q: 'Is what I encode kept private?',
@@ -560,20 +578,24 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   'image-compressor': {
     slug: 'image-compressor',
     intro: [
-      'Shrink PNG and JPEG images by re-encoding them as efficient JPEG or modern WebP, and see the exact size you saved. Smaller images mean faster pages, quicker uploads and less storage — and for most photos and screenshots you can cut the file size dramatically with no visible loss of quality.',
-      'The compression is done by a service that processes the image and returns the smaller version; the file you choose is sent over HTTPS, converted, and the result handed straight back to you without being retained. WebP in particular tends to beat JPEG at the same quality, so it is worth comparing both outputs.',
+      'Shrink JPEG, PNG and HEIC images by re-encoding them as efficient JPEG or modern WebP, and see the exact size you saved. Smaller images mean faster pages, quicker uploads and less storage — and for most photos and screenshots you can cut the file size dramatically with no visible loss of quality.',
+      'Drop in a whole folder at once and every image is compressed with the same settings, then downloaded together as a single zip. You can compress by quality, or give a target file size and let the tool find the best quality that fits under it — useful when a form will only accept an image under a fixed limit.',
+      'All of it runs on your own device using the mozjpeg and libwebp encoders compiled to WebAssembly — the same encoders Squoosh uses, which beat what a browser produces on its own. Nothing is uploaded, so a private photo stays private.',
     ],
     steps: [
-      'Choose or drop in a PNG or JPEG image.',
+      'Drop in one or more images — JPEG, PNG, WebP or HEIC from an iPhone.',
       'Pick the output format — JPEG or WebP.',
-      'Adjust the quality if you want to trade size against fidelity.',
-      'Download the compressed image and check the size saved.',
+      'Choose how the size is decided: a quality setting, or a target size in kilobytes.',
+      'Drag the comparison slider to check the result against the original.',
+      'Download a single image, or the whole batch as a zip.',
     ],
     features: [
-      'Compresses PNG and JPEG to JPEG or WebP.',
-      'Shows the real, measured size reduction.',
-      'WebP output for the best size-to-quality ratio.',
-      'Files are processed and returned without being stored.',
+      'Compresses JPEG, PNG, WebP and HEIC to JPEG or WebP.',
+      'Batch mode: many images at once, downloaded as one zip.',
+      'Target-size mode finds the best quality that fits under a size you name.',
+      'Before-and-after slider over the two images at full resolution.',
+      'Shows the Exif metadata in the original — including any GPS location — and removes it unless you ask to keep it.',
+      'Runs entirely in your browser; images are never uploaded.',
     ],
     faq: [
       {
@@ -582,11 +604,23 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
       {
         q: 'Will compression ruin the quality?',
-        a: 'At sensible quality settings the difference is hard to see, while the file gets much smaller. Pushing the quality very low will introduce visible artefacts, so compare the result and back off if you notice them.',
+        a: 'At sensible quality settings the difference is hard to see, while the file gets much smaller. Drag the comparison slider across the image to judge it for yourself, and back the quality off if you can spot artefacts.',
       },
       {
         q: 'Is my image uploaded?',
-        a: 'Yes, this tool needs a server to re-encode the image, so the file is sent over HTTPS to the processing service. It is converted and returned to you immediately and is not retained afterwards.',
+        a: 'No. The encoders run inside your browser as WebAssembly, so the image is read from your device, compressed in memory and handed straight back. Nothing is sent to a server at any point, which makes this safe for confidential or personal photographs.',
+      },
+      {
+        q: 'How do I get an image under a specific file size?',
+        a: 'Switch "Size by" to Target size and enter the limit in kilobytes. The tool repeatedly re-encodes the image, narrowing in on the highest quality that still fits under your limit. If even the lowest usable quality is too big it tells you, and resizing the image as well will usually get you there.',
+      },
+      {
+        q: 'Does it remove the GPS location from my photos?',
+        a: 'Yes, by default. Photographs from a phone often record the exact coordinates where they were taken, and compressing an image here drops all of that metadata unless you turn on "Keep Exif". You can expand the metadata panel first to see precisely what the original contains.',
+      },
+      {
+        q: 'Can it open HEIC photos from my iPhone?',
+        a: 'Yes. HEIC and HEIF files are decoded in your browser and can be converted to JPEG or WebP, which is the usual reason for wanting to — most software outside the Apple ecosystem cannot open HEIC at all.',
       },
       {
         q: 'Can it compress a transparent PNG?',
@@ -716,18 +750,21 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     slug: 'pdf-ocr',
     intro: [
       'A scanned PDF is really just images of pages — you can see the text but you cannot select, search or copy it. OCR (optical character recognition) fixes that by reading the words in the images and adding a real, invisible text layer, so the document becomes searchable and its text selectable, without changing how it looks.',
-      'This is essential for making scanned contracts, receipts and old documents usable and findable. The recognition is compute-heavy, so it runs on a processing service: your file is sent over HTTPS, processed, returned, and then deleted. There is a monthly free allowance and no account is needed.',
+      'This is essential for making scanned contracts, receipts and old documents usable and findable. There are two ways to do it here, and the tool picks the sensible one for your document.',
+      'Short English documents are recognised in your browser: the Tesseract engine is downloaded once, runs on your own machine, and the file is never uploaded at all. That is the option to want for a payslip, a medical letter or anything else you would rather not send anywhere. Longer documents and other languages go to our own hosted service, which has a machine to itself and is much faster — your file is sent over HTTPS, processed, returned and deleted.',
     ],
     steps: [
       'Choose the scanned PDF you want to make searchable.',
+      'Pick the document language, and whether to run it in your browser or on the hosted service.',
       'Start the text recognition and wait while it processes.',
       'Download the new PDF, which now has a selectable, searchable text layer.',
     ],
     features: [
       'Adds a real text layer to scanned PDFs without altering their appearance.',
       'Makes the document searchable and its text selectable and copyable.',
-      'A monthly free allowance, with no account required.',
-      'Files are processed over HTTPS and deleted afterward.',
+      'In-browser recognition for short English documents — nothing leaves your device.',
+      'A hosted service for longer documents and fifteen languages, with a monthly free allowance and no account.',
+      'Files sent to the hosted service are processed over HTTPS and deleted afterward.',
     ],
     faq: [
       {
@@ -739,12 +776,20 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Whenever a PDF was created by scanning or photographing paper. Those pages are images with no underlying text, so search and copy do nothing until OCR has added a text layer.',
       },
       {
-        q: 'Why is the file uploaded?',
-        a: 'Text recognition is computationally intensive, so it runs on a processing service rather than in your browser. The file is sent securely, processed, returned and then deleted — it is not kept.',
+        q: 'Can I do this without uploading my file?',
+        a: 'Yes, for English documents of up to twenty pages. Choose "In your browser" and recognition runs entirely on your own machine — the file is never sent anywhere. The engine is about a 7 MB download the first time, which your browser then keeps, and recognition takes a few seconds per page.',
+      },
+      {
+        q: 'Why is the hosted service ever needed then?',
+        a: 'Speed and coverage. It has a machine to itself, so a long document finishes far sooner, and it carries fifteen language packs where the in-browser engine ships only English. It also straightens rotated pages first, which matters for scans that came out of the feeder sideways — the in-browser path declines those and points you here instead.',
       },
       {
         q: 'How accurate is it?',
-        a: 'Accuracy is very high on clean, clearly printed scans and lower on faint, skewed or handwritten pages. Better source quality gives a better text layer.',
+        a: 'Accuracy is very high on clean, clearly printed scans and lower on faint, skewed or handwritten pages. Better source quality gives a better text layer. Both paths use Tesseract, so their reading is comparable; the difference between them is speed and language coverage, not quality.',
+      },
+      {
+        q: 'Does the document change?',
+        a: 'No. The original pages are copied across untouched and the recognised words are added as text that draws nothing at all, so the file renders pixel for pixel as it did before. Nothing is re-compressed and no image is re-rendered.',
       },
     ],
     related: ['pdf-convert', 'pdf-viewer', 'pdf-compress'],
@@ -828,6 +873,56 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['pdf-ocr', 'pdf-merge', 'pdf-split'],
   },
 
+  'pdf-organizer': {
+    slug: 'pdf-organizer',
+    intro: [
+      'The PDF Organizer shows you every page of a document at once and lets you rearrange it by hand. Drag a page to move it, spin a sideways scan the right way up, throw out the blank sheet the scanner picked up, drop a second PDF in to combine them, and save the result as a single file.',
+      'It is the tool to reach for when the problem is "this document is nearly right". Merging and splitting both assume you already know what you want — a file order, a page range. Organizing is for when you need to see the pages before you can say.',
+      'Everything happens on your own device. The pages are rendered locally and the finished PDF is assembled in your browser, so a contract, a medical letter or a bank statement is never uploaded anywhere.',
+    ],
+    steps: [
+      'Drop in a PDF — or several, if you want to combine them.',
+      'Drag pages into the order you want, or use the arrows on each page.',
+      'Rotate or delete individual pages, or tick several and act on them together.',
+      'Add a blank page or reverse the whole order if you need to.',
+      'Save the result as a single PDF.',
+    ],
+    features: [
+      'Every page as a thumbnail, so you can see what you are rearranging.',
+      'Drag to reorder, with arrow buttons that do the same thing from the keyboard.',
+      'Rotate in 90° steps — stored as an instruction in the file, so no image quality is lost.',
+      'Delete pages, insert blank ones, and reverse the whole document.',
+      'Combine several PDFs and interleave their pages freely.',
+      'Runs entirely in your browser; nothing is uploaded.',
+    ],
+    faq: [
+      {
+        q: 'How is this different from PDF Merge and PDF Split?',
+        a: 'Merge joins whole files end to end, and Split pulls out page ranges you name in advance. The Organizer is visual: it shows every page so you can decide by looking, and it does both jobs at once — combine two documents, drop the pages you do not want and reorder what is left, in a single pass.',
+      },
+      {
+        q: 'Does rotating a page reduce its quality?',
+        a: 'No. The rotation is written into the PDF as a property of the page, exactly as a scanner would record it, rather than by re-drawing the image at an angle. The page data is copied across untouched, so text stays selectable and images stay as sharp as they were.',
+      },
+      {
+        q: 'Can I reorder pages without a mouse?',
+        a: 'Yes. Every page has arrow buttons that move it one position earlier or later, and they are reachable by keyboard in the normal tab order. Dragging is offered as well, but nothing depends on it.',
+      },
+      {
+        q: 'Can I combine pages from two different PDFs?',
+        a: 'Yes. Add as many files as you like and their pages all join the same grid, where you can interleave them in any order. Each page keeps a label showing which document it came from.',
+      },
+      {
+        q: 'Is there a limit on document size?',
+        a: 'One session holds up to 300 pages across up to 10 files, and each file can be up to 100 MB. The page limit is there because every page is rendered as a preview and held in memory — for pulling a range out of a much longer document, PDF Split is the better fit.',
+      },
+      {
+        q: 'Are my documents uploaded?',
+        a: 'No. The previews are rendered by your browser and the finished PDF is assembled there too. Nothing is sent to a server at any point, which is what makes this safe for documents you would not email.',
+      },
+    ],
+    related: ['pdf-merge', 'pdf-split', 'pdf-compress'],
+  },
   'pdf-merge': {
     slug: 'pdf-merge',
     intro: [
@@ -864,7 +959,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. It works in the browser with no software to install and no account to create.',
       },
     ],
-    related: ['pdf-split', 'pdf-viewer', 'pdf-compress'],
+    related: ['pdf-organizer', 'pdf-split', 'pdf-compress'],
   },
 
   'pdf-split': {
@@ -880,7 +975,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Download the extracted pages or the individual files.',
     ],
     features: [
-      'Extract selected pages, or split into one file per page.',
+      'Extract selected pages, or split into one file per page — delivered as a single zip.',
       'Runs entirely in your browser; the PDF is never uploaded.',
       'Keeps confidential documents private.',
       'Free, with no sign-up.',
@@ -892,7 +987,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
       {
         q: 'Can I split a PDF into single pages?',
-        a: 'Yes. Choose the split-into-one-file-per-page option and each page becomes its own separate PDF, which is handy when a scanner has bundled many documents into one file.',
+        a: 'Yes. Choose the split-into-one-file-per-page option and each page becomes its own separate PDF, which is handy when a scanner has bundled many documents into one file. They arrive together in a single zip, so a hundred-page document is still one download rather than a hundred.',
       },
       {
         q: 'Is my PDF uploaded?',
@@ -903,6 +998,6 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. It creates new files for the pages you extract; your original PDF is left exactly as it was.',
       },
     ],
-    related: ['pdf-merge', 'pdf-viewer', 'pdf-convert'],
+    related: ['pdf-organizer', 'pdf-merge', 'pdf-viewer'],
   },
 };

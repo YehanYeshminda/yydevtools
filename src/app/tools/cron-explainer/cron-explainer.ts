@@ -3,7 +3,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
+import { syncToolState } from '../../core/tool-state';
 import { explainCron } from './cron-schedule';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 type Zone = 'local' | 'utc';
@@ -24,7 +26,7 @@ const EXAMPLES: Example[] = [
 
 @Component({
   selector: 'app-cron-explainer',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './cron-explainer.html',
   styleUrls: ['../tool-shell.css', './cron-explainer.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,6 +36,19 @@ export class CronExplainerTool {
 
   protected readonly expression = signal('0 9 * * 1-5');
   protected readonly zone = signal<Zone>('local');
+
+  protected readonly shared = syncToolState({
+    key: 'cron-explainer',
+    snapshot: () => ({ expression: this.expression(), zone: this.zone() }),
+    restore: (state) => {
+      if (typeof state.expression === 'string') {
+        this.expression.set(state.expression);
+      }
+      if (state.zone === 'local' || state.zone === 'utc') {
+        this.zone.set(state.zone);
+      }
+    },
+  });
 
   /** Anchor for "next runs"; refreshable so the preview can be re-pinned to now. */
   private readonly now = signal(new Date());

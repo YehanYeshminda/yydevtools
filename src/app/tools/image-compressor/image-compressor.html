@@ -15,14 +15,14 @@
   <div>
     <h1 class="head__title">Image Compressor</h1>
     <p class="head__sub">
-      Shrink JPEG and PNG images to JPEG or WebP with mozjpeg compression. Everything runs on your
-      own device — your image is never uploaded.
+      Shrink JPEG, PNG and HEIC images to JPEG or WebP with mozjpeg compression — one at a time or
+      in a batch. Everything runs on your own device; your images are never uploaded.
     </p>
   </div>
 </header>
 
 <div class="panel">
-  @if (source(); as src) {
+  @if (hasItems()) {
     <div class="workspace">
       <!-- Controls ---------------------------------------------------- -->
       <div class="controls">
@@ -39,19 +39,62 @@
         </div>
 
         <div class="control">
-          <label class="control__label" for="quality-slider">
-            Quality — {{ qualityPercent() }}%
-          </label>
-          <mat-slider id="quality-track" min="0.1" max="1" step="0.05" class="quality">
-            <input
-              matSliderThumb
-              id="quality-slider"
-              [value]="quality()"
-              (valueChange)="onQualityChange($event)"
-              aria-label="Compression quality"
-            />
-          </mat-slider>
+          <span class="control__label" id="mode-label">Size by</span>
+          <div class="tabs" role="group" aria-labelledby="mode-label">
+            <button
+              type="button"
+              class="tab"
+              [class.tab--active]="sizeMode() === 'quality'"
+              [attr.aria-pressed]="sizeMode() === 'quality'"
+              (click)="setSizeMode('quality')"
+            >
+              Quality
+            </button>
+            <button
+              type="button"
+              class="tab"
+              [class.tab--active]="sizeMode() === 'target'"
+              [attr.aria-pressed]="sizeMode() === 'target'"
+              (click)="setSizeMode('target')"
+            >
+              Target size
+            </button>
+          </div>
         </div>
+
+        @if (sizeMode() === 'quality') {
+          <div class="control">
+            <label class="control__label" for="quality-slider">
+              Quality — {{ qualityPercent() }}%
+            </label>
+            <mat-slider id="quality-track" min="0.1" max="1" step="0.05" class="quality">
+              <input
+                matSliderThumb
+                id="quality-slider"
+                [value]="quality()"
+                (valueChange)="onQualityChange($event)"
+                aria-label="Compression quality"
+              />
+            </mat-slider>
+          </div>
+        } @else {
+          <div class="control">
+            <label class="control__label" for="target-kb">Target size (KB)</label>
+            <input
+              id="target-kb"
+              class="field__input"
+              type="number"
+              min="5"
+              max="20000"
+              step="10"
+              [value]="targetKb()"
+              (input)="onTargetKbInput($event)"
+            />
+            <span class="field__hint">
+              The best quality that fits under this size is found for each image.
+            </span>
+          </div>
+        }
 
         <mat-form-field appearance="outline" class="control__field">
           <mat-label>Resize (longest edge)</mat-label>
@@ -62,14 +105,48 @@
           </mat-select>
         </mat-form-field>
 
+        <div class="control">
+          <span class="control__label">Metadata</span>
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="keepMetadata() && metadataAvailable()"
+            [disabled]="!metadataAvailable()"
+            [attr.aria-pressed]="keepMetadata() && metadataAvailable()"
+            (click)="toggleKeepMetadata()"
+          >
+            <mat-icon aria-hidden="true">
+              {{ keepMetadata() && metadataAvailable() ? 'check' : 'delete_sweep' }}
+            </mat-icon>
+            Keep Exif
+          </button>
+          <span class="field__hint">
+            @if (!metadataAvailable()) {
+              WebP output always drops Exif. Choose JPEG to keep it.
+            } @else if (keepMetadata()) {
+              Camera details and any GPS location are copied into the output.
+            } @else {
+              All metadata, including any GPS location, is removed.
+            }
+          </span>
+        </div>
+
         <div class="actions">
-          <button matButton="filled" (click)="download()" [disabled]="!output() || processing()">
+          <button
+            matButton="filled"
+            (click)="downloadAll()"
+            [disabled]="totals().count === 0 || busy()"
+          >
             <mat-icon>download</mat-icon>
-            Download
+            @if (totals().count > 1) {
+              Download all ({{ totals().count }}) as .zip
+            } @else {
+              Download
+            }
           </button>
           <button matButton (click)="reset()">
             <mat-icon>refresh</mat-icon>
-            Choose another
+            Start over
           </button>
         </div>
 
@@ -77,56 +154,208 @@
           <p class="note" role="status">
             <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
             The mozjpeg encoder could not be loaded, so your browser's built-in one is being used.
-            The image is still compressed locally, just a little less tightly.
+            Images are still compressed locally, just a little less tightly.
           </p>
         }
       </div>
 
-      <!-- Preview + stats --------------------------------------------- -->
-      <div class="preview">
-        <div class="preview__frame">
-          <img
-            class="preview__img"
-            [src]="output()?.url || src.previewUrl"
-            [alt]="'Preview of ' + src.name"
-          />
-          @if (processing()) {
-            <div class="preview__busy" role="status" aria-label="Compressing">
-              <app-spinner [size]="36" />
-            </div>
-          }
-        </div>
-
-        <dl class="stats">
-          <div class="stat">
-            <dt>Original</dt>
-            <dd>
-              {{ formatBytes(src.size) }}
-              <span class="stat__dim">{{ src.width }} × {{ src.height }}</span>
-            </dd>
-          </div>
-          @if (output(); as out) {
-            <div class="stat">
-              <dt>Compressed</dt>
-              <dd>
-                {{ formatBytes(out.size) }}
-                <span class="stat__dim">{{ out.width }} × {{ out.height }}</span>
-              </dd>
-            </div>
-            <div class="stat stat--result">
-              <dt>Change</dt>
-              <dd>
-                @if (savedPercent() < 0) {
-                  <span class="saved saved--good">{{ -savedPercent() }}% smaller</span>
-                } @else if (savedPercent() > 0) {
-                  <span class="saved saved--bad">{{ savedPercent() }}% larger</span>
-                } @else {
-                  <span class="saved">No change</span>
+      <!-- Comparison + queue ------------------------------------------ -->
+      <div class="results">
+        @if (selected(); as item) {
+          <section class="compare" aria-label="Before and after comparison">
+            @if (item.output) {
+              <div
+                class="compare__frame"
+                [style.--split.%]="comparePosition()"
+                [style.aspect-ratio]="item.width + ' / ' + item.height"
+              >
+                <img class="compare__img" [src]="item.previewUrl" [alt]="'Original ' + item.name" />
+                <div class="compare__after">
+                  <img
+                    class="compare__img"
+                    [src]="item.output.url"
+                    [alt]="'Compressed ' + item.name"
+                  />
+                </div>
+                <div class="compare__divider" aria-hidden="true"></div>
+                <span class="compare__tag compare__tag--before">Original</span>
+                <span class="compare__tag compare__tag--after">Compressed</span>
+                @if (item.working) {
+                  <div class="compare__busy" role="status" aria-label="Compressing">
+                    <app-spinner [size]="36" />
+                  </div>
                 }
-              </dd>
-            </div>
-          }
-        </dl>
+              </div>
+
+              <label class="compare__control">
+                <span class="compare__control-label">Comparison position</span>
+                <input
+                  class="compare__range"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  [value]="comparePosition()"
+                  (input)="onCompareInput($event)"
+                />
+              </label>
+
+              <dl class="stats">
+                <div class="stat">
+                  <dt>Original</dt>
+                  <dd>
+                    {{ formatBytes(item.size) }}
+                    <span class="stat__dim">{{ item.width }} × {{ item.height }}</span>
+                  </dd>
+                </div>
+                <div class="stat">
+                  <dt>Compressed</dt>
+                  <dd>
+                    {{ formatBytes(item.output.size) }}
+                    <span class="stat__dim">
+                      {{ item.output.width }} × {{ item.output.height }} · q{{
+                        item.output.quality
+                      }}
+                    </span>
+                  </dd>
+                </div>
+                <div class="stat stat--result">
+                  <dt>Change</dt>
+                  <dd>
+                    @if (savedPercent(item) < 0) {
+                      <span class="saved saved--good">{{ -savedPercent(item) }}% smaller</span>
+                    } @else if (savedPercent(item) > 0) {
+                      <span class="saved saved--bad">{{ savedPercent(item) }}% larger</span>
+                    } @else {
+                      <span class="saved">No change</span>
+                    }
+                  </dd>
+                </div>
+              </dl>
+
+              @if (item.output.targetMissed) {
+                <p class="status status--err" role="status">
+                  <mat-icon class="status__icon" aria-hidden="true">warning</mat-icon>
+                  Even at the lowest usable quality this image is
+                  {{ formatBytes(item.output.size) }} — try resizing it as well.
+                </p>
+              }
+            } @else if (item.error) {
+              <p class="status status--err" role="alert">
+                <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+                {{ item.error }}
+              </p>
+            } @else {
+              <div class="compare__pending" role="status">
+                <app-spinner [size]="36" />
+                <span>Compressing {{ item.name }}…</span>
+              </div>
+            }
+
+            @if (item.metadata; as meta) {
+              <details class="meta">
+                <summary class="meta__summary">
+                  Metadata in the original
+                  @if (meta.hasLocation) {
+                    <span class="meta__flag">
+                      <mat-icon aria-hidden="true">location_on</mat-icon>
+                      Includes location
+                    </span>
+                  }
+                </summary>
+                <dl class="meta__rows">
+                  @for (row of meta.rows; track row.label) {
+                    <div class="meta__row">
+                      <dt>{{ row.label }}</dt>
+                      <dd>{{ row.value }}</dd>
+                    </div>
+                  }
+                </dl>
+                <p class="note">
+                  <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+                  @if (item.output?.keptMetadata) {
+                    This information has been copied into the compressed file.
+                  } @else {
+                    None of this is carried into the compressed file.
+                  }
+                </p>
+              </details>
+            }
+          </section>
+        }
+
+        <!-- Queue ---------------------------------------------------- -->
+        <section class="queue" aria-label="Image queue">
+          <div class="queue__head">
+            <h2 class="section__title">
+              {{ items().length }} {{ items().length === 1 ? 'image' : 'images' }}
+            </h2>
+            @if (totals().count > 1) {
+              <span class="queue__total">
+                {{ formatBytes(totals().original) }} → {{ formatBytes(totals().compressed) }}
+                @if (totals().percent < 0) {
+                  <span class="saved saved--good">({{ -totals().percent }}% smaller)</span>
+                }
+              </span>
+            }
+          </div>
+
+          <ul class="queue__list">
+            @for (item of items(); track item.id) {
+              <li>
+                <div class="queue__item" [class.queue__item--on]="item.id === selectedId()">
+                  <button
+                    type="button"
+                    class="queue__pick"
+                    [attr.aria-current]="item.id === selectedId() ? 'true' : null"
+                    (click)="select(item.id)"
+                  >
+                    <img class="queue__thumb" [src]="item.previewUrl" alt="" />
+                    <span class="queue__text">
+                      <span class="queue__name">{{ item.name }}</span>
+                      <span class="queue__meta">
+                        @if (item.working) {
+                          Compressing…
+                        } @else if (item.error) {
+                          {{ item.error }}
+                        } @else if (item.output) {
+                          {{ formatBytes(item.size) }} → {{ formatBytes(item.output.size) }}
+                          @if (savedPercent(item) < 0) {
+                            <span class="saved saved--good">
+                              −{{ -savedPercent(item) }}%
+                            </span>
+                          }
+                        } @else {
+                          {{ formatBytes(item.size) }}
+                        }
+                      </span>
+                    </span>
+                  </button>
+                  <button
+                    matIconButton
+                    class="queue__remove"
+                    [attr.aria-label]="'Remove ' + item.name"
+                    (click)="remove(item.id)"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+
+          <label class="queue__add">
+            <input
+              type="file"
+              accept="image/*,.heic,.heif"
+              multiple
+              class="dropzone__input"
+              (change)="onFileSelected($event)"
+            />
+            <mat-icon aria-hidden="true">add</mat-icon>
+            Add more images
+          </label>
+        </section>
       </div>
     </div>
   } @else {
@@ -140,13 +369,16 @@
     >
       <input
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.heif"
+        multiple
         class="dropzone__input"
         (change)="onFileSelected($event)"
       />
       <mat-icon class="dropzone__icon" aria-hidden="true">add_photo_alternate</mat-icon>
-      <span class="dropzone__title">Drop an image here, or click to choose</span>
-      <span class="dropzone__hint">JPEG, PNG, WebP and other images — up to 20 MB</span>
+      <span class="dropzone__title">Drop images here, or click to choose</span>
+      <span class="dropzone__hint">
+        JPEG, PNG, WebP and HEIC — up to {{ maxFiles }} files, 20 MB each
+      </span>
     </label>
   }
 </div>

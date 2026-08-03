@@ -35,7 +35,8 @@ export const TOOLS: Tool[] = [
   {
     slug: 'hash-generator',
     name: 'Hash Generator',
-    description: 'Compute MD5, CRC32, SHA and keyed HMAC digests of text or a file.',
+    description:
+      'Compute MD5, CRC32, SHA and keyed HMAC digests of text or many files, and verify a checksum.',
     icon: 'tag',
     category: 'Developer',
     ready: true,
@@ -67,7 +68,8 @@ export const TOOLS: Tool[] = [
   {
     slug: 'qr-generator',
     name: 'QR Code Generator',
-    description: 'Turn text, a URL or Wi-Fi details into a QR code and download it as PNG or SVG.',
+    description:
+      'Make a QR code for a link, Wi-Fi network, contact card, event or location — as PNG or SVG.',
     icon: 'qr_code_2',
     category: 'Developer',
     ready: true,
@@ -123,7 +125,8 @@ export const TOOLS: Tool[] = [
   {
     slug: 'image-compressor',
     name: 'Image Compressor',
-    description: 'Shrink PNG and JPEG images to JPEG or WebP, right in your browser.',
+    description:
+      'Shrink JPEG, PNG and HEIC images in bulk — by quality or to a target size, with Exif control.',
     icon: 'compress',
     category: 'Converter',
     ready: true,
@@ -155,7 +158,8 @@ export const TOOLS: Tool[] = [
   {
     slug: 'pdf-ocr',
     name: 'PDF OCR',
-    description: 'Make a scanned PDF searchable and selectable with text recognition.',
+    description:
+      'Make a scanned PDF searchable — short English files without uploading them at all.',
     icon: 'document_scanner',
     category: 'Document',
     ready: true,
@@ -173,6 +177,15 @@ export const TOOLS: Tool[] = [
     name: 'PDF Viewer',
     description: 'Open and read a PDF with thumbnails, search and zoom — no upload.',
     icon: 'picture_as_pdf',
+    category: 'Document',
+    ready: true,
+  },
+  {
+    slug: 'pdf-organizer',
+    name: 'PDF Organizer',
+    description:
+      'Reorder, rotate and delete PDF pages visually, and combine files — all in one place.',
+    icon: 'dashboard_customize',
     category: 'Document',
     ready: true,
   },

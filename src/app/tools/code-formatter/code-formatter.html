@@ -95,18 +95,14 @@
 
   <!-- Input ----------------------------------------------------------- -->
   <div class="field">
-    <label class="field__label" for="code-input">Source</label>
-    <textarea
-      id="code-input"
-      class="field__input code-area"
-      spellcheck="false"
-      autocomplete="off"
-      autocapitalize="off"
-      rows="10"
+    <span class="field__label">Source</span>
+    <app-code-editor
+      label="Source"
       placeholder="Paste code to format…"
-      [value]="input()"
-      (input)="onInput($event)"
-    ></textarea>
+      minHeight="15rem"
+      [language]="editorLanguage()"
+      [(value)]="input"
+    />
   </div>
 
   <div class="actions">
@@ -118,6 +114,7 @@
       <mat-icon>clear</mat-icon>
       Clear
     </button>
+    <app-share-link [state]="shared" />
   </div>
 
   <!-- Output ---------------------------------------------------------- -->
@@ -135,7 +132,13 @@
           Copy
         </button>
       </div>
-      <pre class="output"><code>{{ output() }}</code></pre>
+      <app-code-editor
+        label="Formatted code"
+        minHeight="15rem"
+        [language]="editorLanguage()"
+        [readOnly]="true"
+        [value]="output()"
+      />
     </section>
   }
 

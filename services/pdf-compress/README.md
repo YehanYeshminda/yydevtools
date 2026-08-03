@@ -10,11 +10,27 @@ metered against the monthly quota.
 
 - `POST /compress?preset=screen|ebook|printer` — `Authorization: Bearer <secret>`,
   body `application/pdf`. Returns the compressed PDF or a
-  `{ error: { code, message } }` JSON body.
-- `GET /health` — returns `ok` (no auth); used by Fly health checks.
+  `{ error: { code, message } }` JSON body. Response headers report what
+  happened: `X-Input-Bytes`, `X-Output-Bytes` and `X-Compressed` (`1` or `0`).
+- `GET /health` — no auth. Runs `gs --version`, so it returns **503** when
+  Ghostscript is missing from the image rather than reporting a broken machine
+  as healthy.
 
 The Worker maps the tool's levels onto presets: `LOW → printer` (~300 dpi),
 `MEDIUM → ebook` (~150 dpi), `HIGH → screen` (~72 dpi).
+
+## Behaviour worth knowing
+
+- **The output is never larger than the input.** Ghostscript regularly grows an
+  already-optimised PDF; when that happens the original is returned instead and
+  `X-Compressed: 0` says so.
+- **Non-PDF bodies are rejected immediately** on a header sniff, rather than
+  spending 90 s of CPU letting `gs` discover it.
+- **At most `MAX_CONCURRENT` (default 3) jobs run at once**; beyond that the
+  service answers `503` with `Retry-After`. Ghostscript holds page rasters in
+  memory, and this is what stops a burst from OOM-killing the machine.
+- Every request logs one JSON line (`event`, `preset`, `inBytes`, `outBytes`,
+  `ms`), so `fly logs` is enough to see what is happening.
 
 ## Deploy
 

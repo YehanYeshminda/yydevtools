@@ -5,6 +5,10 @@ import { RouterLink } from '@angular/router';
 import { marked } from 'marked';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { downloadText } from '../../core/download';
+import { syncToolState } from '../../core/tool-state';
+import { CodeEditor } from '../../shared/code-editor/code-editor';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 const STARTER = `# Markdown Editor
@@ -33,7 +37,7 @@ const greet = (name: string) => \`Hello, \${name}!\`;
 
 @Component({
   selector: 'app-markdown-editor',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, MatIconModule],
   templateUrl: './markdown-editor.html',
   styleUrl: './markdown-editor.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,6 +46,16 @@ export class MarkdownEditorTool {
   private readonly clipboard = inject(ClipboardService);
 
   protected readonly source = signal(STARTER);
+
+  protected readonly shared = syncToolState({
+    key: 'markdown-editor',
+    snapshot: () => ({ source: this.source() }),
+    restore: (state) => {
+      if (typeof state.source === 'string') {
+        this.source.set(state.source);
+      }
+    },
+  });
 
   /** Rendered HTML for the preview. Bound via [innerHTML], which Angular sanitizes. */
   protected readonly html = computed(() => {
@@ -58,10 +72,6 @@ export class MarkdownEditorTool {
     return words ? words.length : 0;
   });
 
-  protected onInput(event: Event): void {
-    this.source.set((event.target as HTMLTextAreaElement).value);
-  }
-
   protected copyHtml(): void {
     void this.clipboard.copy(this.html(), { message: 'HTML copied to clipboard' });
   }
@@ -71,13 +81,7 @@ export class MarkdownEditorTool {
   }
 
   protected download(): void {
-    const blob = new Blob([this.source()], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = 'document.md';
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadText(this.source(), 'document.md', 'text/markdown');
   }
 
   protected clear(): void {

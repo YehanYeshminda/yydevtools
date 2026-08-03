@@ -39,17 +39,16 @@
     </mat-checkbox>
   </div>
 
-  <mat-form-field appearance="outline" class="field">
-    <mat-label>JSON input</mat-label>
-    <textarea
-      matInput
-      rows="10"
-      [value]="input()"
-      (input)="onInput($event)"
+  <div class="field">
+    <span class="field__label">JSON input</span>
+    <app-code-editor
+      label="JSON input"
+      language="json"
       placeholder="Paste JSON here…"
-      spellcheck="false"
-    ></textarea>
-  </mat-form-field>
+      minHeight="16rem"
+      [(value)]="input"
+    />
+  </div>
 
   @switch (validity()) {
     @case ('valid') {
@@ -87,6 +86,7 @@
       <mat-icon>clear</mat-icon>
       Clear
     </button>
+    <app-share-link [state]="shared" />
   </div>
 
   <div class="query">
@@ -109,10 +109,16 @@
   </div>
 
   @if (output()) {
-    <mat-form-field appearance="outline" class="field">
-      <mat-label>Result</mat-label>
-      <textarea matInput rows="10" readonly [value]="output()" spellcheck="false"></textarea>
-    </mat-form-field>
+    <div class="field">
+      <span class="field__label">Result</span>
+      <app-code-editor
+        label="Result"
+        [language]="outputLanguage()"
+        minHeight="16rem"
+        [readOnly]="true"
+        [value]="output()"
+      />
+    </div>
 
     <div class="actions">
       <button matButton="filled" (click)="copy()">

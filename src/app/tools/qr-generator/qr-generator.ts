@@ -13,13 +13,34 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import QRCode, { type QRCodeErrorCorrectionLevel } from 'qrcode';
+import { syncToolState } from '../../core/tool-state';
 import { ToolContent } from '../../shared/tool-content/tool-content';
+import { EMPTY_FIELDS, buildPayload, type QrFields, type QrKind } from './qr-payload';
 
 interface LevelOption {
   key: QRCodeErrorCorrectionLevel;
   label: string;
   hint: string;
 }
+
+interface KindOption {
+  key: QrKind;
+  label: string;
+  icon: string;
+}
+
+/** The payload types offered, in the order people reach for them. */
+const KINDS: KindOption[] = [
+  { key: 'url', label: 'Link', icon: 'link' },
+  { key: 'text', label: 'Text', icon: 'notes' },
+  { key: 'wifi', label: 'Wi-Fi', icon: 'wifi' },
+  { key: 'vcard', label: 'Contact', icon: 'contact_page' },
+  { key: 'email', label: 'Email', icon: 'mail' },
+  { key: 'sms', label: 'SMS', icon: 'sms' },
+  { key: 'tel', label: 'Phone', icon: 'call' },
+  { key: 'geo', label: 'Location', icon: 'location_on' },
+  { key: 'event', label: 'Event', icon: 'event' },
+];
 
 const LEVELS: LevelOption[] = [
   { key: 'L', label: 'L', hint: 'Low — ~7% recovery' },
@@ -30,6 +51,35 @@ const LEVELS: LevelOption[] = [
 
 const MIN_SIZE = 128;
 const MAX_SIZE = 1024;
+
+/**
+ * Fills any gaps in a restored `fields` object from the defaults.
+ *
+ * Stored state can predate a field being added, and the payload builders read
+ * every property of their group — one `undefined` would render `"undefined"`
+ * into a vCard rather than failing loudly.
+ */
+function mergeFields(stored: Partial<QrFields>): QrFields {
+  return {
+    text: text(stored.text, EMPTY_FIELDS.text),
+    url: text(stored.url, EMPTY_FIELDS.url),
+    tel: text(stored.tel, EMPTY_FIELDS.tel),
+    wifi: { ...EMPTY_FIELDS.wifi, ...group(stored.wifi) },
+    vcard: { ...EMPTY_FIELDS.vcard, ...group(stored.vcard) },
+    email: { ...EMPTY_FIELDS.email, ...group(stored.email) },
+    sms: { ...EMPTY_FIELDS.sms, ...group(stored.sms) },
+    geo: { ...EMPTY_FIELDS.geo, ...group(stored.geo) },
+    event: { ...EMPTY_FIELDS.event, ...group(stored.event) },
+  };
+}
+
+function text(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function group<T extends object>(value: T | undefined): Partial<T> {
+  return typeof value === 'object' && value !== null ? value : {};
+}
 
 @Component({
   selector: 'app-qr-generator',
@@ -43,15 +93,74 @@ export class QrGeneratorTool {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly levels = LEVELS;
+  protected readonly kinds = KINDS;
   protected readonly minSize = MIN_SIZE;
   protected readonly maxSize = MAX_SIZE;
 
-  protected readonly text = signal('https://yydevtools.com');
+  protected readonly kind = signal<QrKind>('url');
+  /**
+   * Every type's fields at once, so switching between them and back does not
+   * throw away what was typed.
+   */
+  protected readonly fields = signal<QrFields>(EMPTY_FIELDS);
+
+  /** What actually gets encoded — derived, never edited directly. */
+  protected readonly text = computed(() => buildPayload(this.kind(), this.fields()));
+
   protected readonly size = signal(320);
   protected readonly level = signal<QRCodeErrorCorrectionLevel>('M');
   protected readonly margin = signal(2);
   protected readonly dark = signal('#000000');
   protected readonly light = signal('#ffffff');
+
+  /**
+   * Restored within the session, but **never shareable** — deliberately no
+   * "Copy link" button here, for two reasons.
+   *
+   * The fields routinely hold a Wi-Fi password or someone's home address, and a
+   * URL is exactly the wrong container for those: it survives in chat history
+   * and over anyone's shoulder long after the QR code has been scanned. And
+   * there is nothing to gain by it — what you share from this tool is the PNG
+   * or SVG, not a link to a generator with the fields pre-filled.
+   */
+  private readonly restored = syncToolState({
+    key: 'qr-generator',
+    shareable: false,
+    snapshot: () => ({
+      kind: this.kind(),
+      fields: this.fields(),
+      size: this.size(),
+      level: this.level(),
+      margin: this.margin(),
+      dark: this.dark(),
+      light: this.light(),
+    }),
+    restore: (state) => {
+      if (KINDS.some((option) => option.key === state.kind)) {
+        this.kind.set(state.kind as QrKind);
+      }
+      // Merge onto the defaults so a stored value from an older shape cannot
+      // leave a field undefined and break the payload builder.
+      if (state.fields && typeof state.fields === 'object') {
+        this.fields.set(mergeFields(state.fields as Partial<QrFields>));
+      }
+      if (typeof state.size === 'number' && Number.isFinite(state.size)) {
+        this.size.set(Math.min(MAX_SIZE, Math.max(MIN_SIZE, Math.round(state.size))));
+      }
+      if (LEVELS.some((option) => option.key === state.level)) {
+        this.level.set(state.level as QRCodeErrorCorrectionLevel);
+      }
+      if (typeof state.margin === 'number' && Number.isFinite(state.margin)) {
+        this.margin.set(Math.min(10, Math.max(0, Math.round(state.margin))));
+      }
+      if (typeof state.dark === 'string') {
+        this.dark.set(state.dark);
+      }
+      if (typeof state.light === 'string') {
+        this.light.set(state.light);
+      }
+    },
+  });
 
   /** Rendered outputs, refreshed by the effect below whenever an input changes. */
   protected readonly pngUrl = signal('');
@@ -61,8 +170,18 @@ export class QrGeneratorTool {
   protected readonly hasText = computed(() => this.text().trim().length > 0);
   protected readonly hasCode = computed(() => this.pngUrl().length > 0);
 
-  /** A stable, filesystem-friendly stem for the downloaded files. */
+  /**
+   * A stable, filesystem-friendly stem for the downloaded files.
+   *
+   * Structured payloads begin with a marker rather than anything readable
+   * ("WIFI:T:WPA…", "BEGIN:VCARD…"), so those are named after the type instead
+   * of after a slug of the payload.
+   */
   private readonly fileStem = computed(() => {
+    const kind = this.kind();
+    if (kind !== 'text' && kind !== 'url') {
+      return `qr-${kind}`;
+    }
     const slug = this.text()
       .trim()
       .toLowerCase()
@@ -120,8 +239,39 @@ export class QrGeneratorTool {
     });
   }
 
-  protected onTextInput(event: Event): void {
-    this.text.set((event.target as HTMLTextAreaElement).value);
+  protected setKind(kind: QrKind): void {
+    this.kind.set(kind);
+  }
+
+  /** Update one top-level field (`text`, `url`, `tel`). */
+  protected setField<K extends 'text' | 'url' | 'tel'>(key: K, event: Event): void {
+    const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
+    this.fields.update((current) => ({ ...current, [key]: value }));
+  }
+
+  /** Update one field inside a grouped section (`wifi.ssid`, `vcard.email`, …). */
+  protected setGroupField<G extends 'wifi' | 'vcard' | 'email' | 'sms' | 'geo' | 'event'>(
+    group: G,
+    key: keyof QrFields[G],
+    event: Event,
+  ): void {
+    const target = event.target as HTMLInputElement;
+    const value = target.type === 'checkbox' ? target.checked : target.value;
+    this.fields.update((current) => ({
+      ...current,
+      [group]: { ...current[group], [key]: value },
+    }));
+  }
+
+  protected setWifiSecurity(security: 'WPA' | 'WEP' | 'nopass'): void {
+    this.fields.update((current) => ({ ...current, wifi: { ...current.wifi, security } }));
+  }
+
+  protected toggleWifiHidden(): void {
+    this.fields.update((current) => ({
+      ...current,
+      wifi: { ...current.wifi, hidden: !current.wifi.hidden },
+    }));
   }
 
   protected onSizeInput(event: Event): void {

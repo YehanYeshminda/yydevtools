@@ -15,8 +15,9 @@
   <div>
     <h1 class="head__title">Hash Generator</h1>
     <p class="head__sub">
-      Compute MD5, CRC32 and SHA-1/256/384/512 digests of text or a file — or keyed HMAC digests.
-      Everything runs in your browser — nothing is uploaded.
+      Compute MD5, CRC32 and SHA-1/256/384/512 digests of text or a batch of files — or keyed HMAC
+      digests — and check a checksum you were given. Everything runs in your browser; nothing is
+      uploaded.
     </p>
   </div>
 </header>
@@ -63,20 +64,128 @@
       <span class="field__hint">Hashed as UTF-8 bytes.</span>
     </div>
   } @else {
-    <label class="dropzone">
-      <input type="file" class="dropzone__input" (change)="onFileSelected($event)" />
+    <label
+      class="dropzone"
+      [class.dropzone--over]="dragOver()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave()"
+      (drop)="onDrop($event)"
+    >
+      <input type="file" multiple class="dropzone__input" (change)="onFilesSelected($event)" />
       <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
-      <span class="dropzone__title">Choose a file to hash</span>
-      <span class="dropzone__hint">Any file type, up to 250 MB</span>
+      <span class="dropzone__title">Drop files here, or click to choose</span>
+      <span class="dropzone__hint">
+        Any file type — up to {{ maxFiles }} files, 250 MB each
+      </span>
     </label>
 
-    @if (fileName()) {
-      <p class="status status--ok" role="status">
-        <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
-        {{ fileName() }} · {{ formatBytes(fileSize()) }}
-      </p>
+    @if (hasFiles()) {
+      <section aria-label="Files">
+        <div class="files__head">
+          <h2 class="section__title">
+            {{ files().length }} {{ files().length === 1 ? 'file' : 'files' }}
+          </h2>
+          @if (algorithms().length) {
+            <div class="chips" role="group" aria-label="Digest shown for each file">
+              @for (name of algorithms(); track name) {
+                <button
+                  type="button"
+                  class="chip"
+                  [class.chip--on]="algorithm() === name"
+                  [attr.aria-pressed]="algorithm() === name"
+                  (click)="setAlgorithm(name)"
+                >
+                  {{ name }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <ul class="files">
+          @for (entry of files(); track entry.id) {
+            <li class="file">
+              <div class="file__head">
+                <span class="file__name">{{ entry.name }}</span>
+                <span class="file__size">{{ formatBytes(entry.size) }}</span>
+                <button
+                  type="button"
+                  matIconButton
+                  [attr.aria-label]="'Remove ' + entry.name"
+                  (click)="removeFile(entry.id)"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+              @if (entry.working) {
+                <span class="working" role="status">
+                  <app-spinner />
+                  Hashing…
+                </span>
+              } @else if (entry.error) {
+                <p class="file__error">{{ entry.error }}</p>
+              } @else if (digestFor(entry); as hex) {
+                <div class="file__digest">
+                  <code class="file__hex">{{ hex }}</code>
+                  <button
+                    type="button"
+                    matIconButton
+                    [attr.aria-label]="'Copy ' + algorithm() + ' digest of ' + entry.name"
+                    (click)="copy(hex, algorithm())"
+                  >
+                    <mat-icon>content_copy</mat-icon>
+                  </button>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+
+        @if (doneFiles().length > 1) {
+          <div class="actions">
+            <button matButton (click)="copyChecksums()">
+              <mat-icon>content_copy</mat-icon>
+              Copy all checksums
+            </button>
+            <button matButton (click)="downloadChecksums()">
+              <mat-icon>download</mat-icon>
+              Download .txt
+            </button>
+          </div>
+        }
+      </section>
     }
   }
+
+  <!-- Verify against a known digest ----------------------------------- -->
+  <div class="field">
+    <label class="field__label" for="expected">
+      Verify a checksum <span class="field__opt">(optional)</span>
+    </label>
+    <input
+      id="expected"
+      class="field__input"
+      type="text"
+      spellcheck="false"
+      autocomplete="off"
+      [value]="expected()"
+      (input)="onExpectedInput($event)"
+      placeholder="Paste the digest you were given…"
+    />
+    @if (verification(); as check) {
+      @if (check.matched) {
+        <p class="status status--ok" role="status">
+          <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+          Matches the {{ check.algorithm }} digest of {{ check.name }}.
+        </p>
+      } @else {
+        <p class="status status--err" role="status">
+          <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+          No match — this digest does not correspond to anything hashed above.
+        </p>
+      }
+    }
+  </div>
 
   <!-- HMAC key (optional) --------------------------------------------- -->
   <div class="field">
@@ -101,7 +210,7 @@
       <mat-icon>text_fields</mat-icon>
       {{ uppercase() ? 'Lowercase output' : 'Uppercase output' }}
     </button>
-    <button matButton (click)="clear()" [disabled]="!digests().length && !text()">
+    <button matButton (click)="clear()" [disabled]="!digests().length && !text() && !hasFiles()">
       <mat-icon>clear</mat-icon>
       Clear
     </button>
@@ -114,7 +223,7 @@
   </div>
 
   <!-- Digests --------------------------------------------------------- -->
-  @if (digests(); as results) {
+  @if (source() === 'text' && digests(); as results) {
     @if (results.length) {
       <section aria-label="Digests">
         <h2 class="section__title">{{ hmacMode() ? 'HMAC digests' : 'Digests' }}</h2>

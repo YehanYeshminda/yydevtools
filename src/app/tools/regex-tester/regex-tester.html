@@ -68,19 +68,19 @@
     </p>
   }
 
+  <div class="actions">
+    <app-share-link [state]="shared" />
+  </div>
+
   <!-- Subject text ---------------------------------------------------- -->
   <div class="field">
-    <label class="field__label" for="subject">Test string</label>
-    <textarea
-      id="subject"
-      class="field__input subject"
-      spellcheck="false"
-      autocomplete="off"
-      rows="8"
+    <span class="field__label">Test string</span>
+    <app-code-editor
+      label="Test string"
       placeholder="Paste the text to search…"
-      [value]="text()"
-      (input)="onTextInput($event)"
-    ></textarea>
+      minHeight="12rem"
+      [(value)]="text"
+    />
   </div>
 
   <!-- Highlighted preview --------------------------------------------- -->
