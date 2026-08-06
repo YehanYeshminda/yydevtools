@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 import { HostedPdfTool } from '../../core/hosted-pdf-tool';
 import { ExportFormat } from '../../core/pdf-services.client';
 import { Spinner } from '../../shared/spinner/spinner';
+import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 interface FormatOption {
@@ -20,7 +21,7 @@ const FORMATS: FormatOption[] = [
 
 @Component({
   selector: 'app-pdf-convert',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner],
+  imports: [Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner],
   templateUrl: './pdf-convert.html',
   styleUrls: ['../tool-shell.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

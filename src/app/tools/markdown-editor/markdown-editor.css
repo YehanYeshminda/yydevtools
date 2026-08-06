@@ -40,7 +40,7 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-.breadcrumb__sep mat-icon {
+.breadcrumb__sep ng-icon {
   font-size: 1.1rem;
   width: 1.1rem;
   height: 1.1rem;

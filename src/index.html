@@ -23,9 +23,12 @@
     // Set the theme before first paint to avoid a flash of the wrong colours.
     (function () {
       try {
+        // Anything that is not an explicit 'light'/'dark' — including the
+        // stored 'system' preference and a first visit with nothing stored —
+        // follows the OS. Keep this in sync with core/theme.service.ts.
         var stored = localStorage.getItem('theme');
-        var dark = stored ? stored === 'dark'
-          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var dark = stored === 'dark' || (stored !== 'light'
+          && window.matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
       } catch (e) {
         document.documentElement.setAttribute('data-theme', 'light');
@@ -77,8 +80,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
 </head>
 <body>
   <app-root></app-root>

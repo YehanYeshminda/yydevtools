@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">QR Code Generator</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>qr_code_2</mat-icon>
+    <ng-icon name="matQrCode2Outline" />
   </div>
   <div>
     <h1 class="head__title">QR Code Generator</h1>
@@ -36,7 +36,7 @@
               [attr.aria-pressed]="kind() === option.key"
               (click)="setKind(option.key)"
             >
-              <mat-icon aria-hidden="true">{{ option.icon }}</mat-icon>
+              <ng-icon aria-hidden="true" [name]="option.icon" />
               {{ option.label }}
             </button>
           }
@@ -145,9 +145,7 @@
               [attr.aria-pressed]="fields().wifi.hidden"
               (click)="toggleWifiHidden()"
             >
-              <mat-icon aria-hidden="true">
-                {{ fields().wifi.hidden ? 'check' : 'visibility_off' }}
-              </mat-icon>
+              <ng-icon aria-hidden="true" [name]="fields().wifi.hidden ? 'matCheckOutline' : 'matVisibilityOffOutline'" />
               Hidden network
             </button>
           </div>
@@ -533,24 +531,24 @@
     <div class="preview">
       @if (error()) {
         <p class="status status--err" role="alert">
-          <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+          <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
           {{ error() }}
         </p>
       } @else if (hasCode()) {
         <img class="preview__img" [src]="pngUrl()" alt="Generated QR code" [style.background]="light()" />
         <div class="actions">
           <button matButton="filled" (click)="downloadPng()">
-            <mat-icon>download</mat-icon>
+            <ng-icon name="matDownloadOutline" />
             PNG
           </button>
           <button matButton (click)="downloadSvg()">
-            <mat-icon>download</mat-icon>
+            <ng-icon name="matDownloadOutline" />
             SVG
           </button>
         </div>
       } @else {
         <p class="preview__empty">
-          <mat-icon aria-hidden="true">qr_code_2</mat-icon>
+          <ng-icon aria-hidden="true" name="matQrCode2Outline" />
           Fill in the fields to generate a code.
         </p>
       }
@@ -558,7 +556,7 @@
   </div>
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     A higher error-correction level survives more damage or obscuring but packs the modules more
     tightly. Keep good contrast between foreground and background so scanners can read it.
   </p>

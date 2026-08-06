@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">Cron Explainer</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>alarm</mat-icon>
+    <ng-icon name="matAlarmOutline" />
   </div>
   <div>
     <h1 class="head__title">Cron Explainer</h1>
@@ -50,12 +50,12 @@
   @if (hasInput()) {
     @if (preview().error) {
       <p class="status status--err" role="alert">
-        <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
         {{ preview().error }}
       </p>
     } @else if (preview().description) {
       <p class="status status--ok" role="status">
-        <mat-icon class="status__icon" aria-hidden="true">schedule</mat-icon>
+        <ng-icon class="status__icon" aria-hidden="true" name="matScheduleOutline" />
         {{ preview().description }}
       </p>
     }
@@ -91,7 +91,7 @@
       <ol class="runs">
         @for (run of formattedRuns(); track $index) {
           <li class="run">
-            <mat-icon class="run__icon" aria-hidden="true">arrow_forward</mat-icon>
+            <ng-icon class="run__icon" aria-hidden="true" name="matArrowForwardOutline" />
             <span class="run__time">{{ run }}</span>
           </li>
         }
@@ -99,7 +99,7 @@
 
       <div class="actions">
         <button matButton (click)="refresh()">
-          <mat-icon>refresh</mat-icon>
+          <ng-icon name="matRefreshOutline" />
           Recalculate from now
         </button>
         <app-share-link [state]="shared" />
@@ -108,7 +108,7 @@
   }
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     Times are computed in your browser, interpreting the fields in the selected time zone.
   </p>
 </div>

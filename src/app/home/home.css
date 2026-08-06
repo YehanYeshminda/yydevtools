@@ -271,7 +271,7 @@
   transition: color 0.15s ease, background 0.15s ease;
 }
 
-.fav .material-icons-outlined {
+.fav ng-icon {
   font-size: 19px;
 }
 
@@ -386,7 +386,7 @@
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.btn .material-icons-outlined {
+.btn ng-icon {
   font-size: 17px;
 }
 

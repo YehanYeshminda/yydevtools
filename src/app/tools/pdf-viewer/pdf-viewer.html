@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">PDF Viewer</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>picture_as_pdf</mat-icon>
+    <ng-icon name="matPictureAsPdfOutline" />
   </div>
   <div>
     <h1 class="head__title">PDF Viewer</h1>
@@ -22,20 +22,8 @@
 </header>
 
 <div class="panel">
-  <label
-    class="dropzone"
-    [class.dropzone--over]="dragOver()"
-    (dragover)="onDragOver($event)"
-    (dragleave)="onDragLeave()"
-    (drop)="onDrop($event)"
-  >
-    <input
-      type="file"
-      accept="application/pdf,.pdf"
-      class="dropzone__input"
-      (change)="onFileSelected($event)"
-    />
-    <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+  <app-dropzone accept="application/pdf,.pdf" (filesSelected)="acceptFiles($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
     <span class="dropzone__title">
       @if (hasFile()) {
         Drop another PDF here, or click to replace
@@ -44,11 +32,11 @@
       }
     </span>
     <span class="dropzone__hint">One file at a time — up to 100 MB</span>
-  </label>
+  </app-dropzone>
 
   @if (bytes(); as loaded) {
     <p class="status status--ok" role="status">
-      <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+      <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
       {{ fileSummary() }}
     </p>
 
@@ -56,7 +44,7 @@
 
     <div class="actions">
       <button matButton (click)="clear()">
-        <mat-icon>delete_sweep</mat-icon>
+        <ng-icon name="matDeleteSweepOutline" />
         Close file
       </button>
     </div>

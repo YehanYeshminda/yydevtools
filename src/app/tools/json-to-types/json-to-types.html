@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">JSON to Types</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>code</mat-icon>
+    <ng-icon name="matCodeOutline" />
   </div>
   <div>
     <h1 class="head__title">JSON to Types</h1>
@@ -60,18 +60,18 @@
 
   @if (error()) {
     <p class="status status--err" role="status">
-      <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
       {{ error() }}
     </p>
   }
 
   <div class="actions">
     <button matButton (click)="loadSample()">
-      <mat-icon>science</mat-icon>
+      <ng-icon name="matScienceOutline" />
       Load sample
     </button>
     <button matButton (click)="clear()" [disabled]="!input()">
-      <mat-icon>clear</mat-icon>
+      <ng-icon name="matClearOutline" />
       Clear
     </button>
     <app-share-link [state]="shared" />
@@ -91,14 +91,14 @@
 
     <div class="actions">
       <button matButton="filled" (click)="copy()">
-        <mat-icon>content_copy</mat-icon>
+        <ng-icon name="matContentCopyOutline" />
         Copy result
       </button>
     </div>
   }
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     <!-- One span, so .note's flex layout treats the sentence as a single item. -->
     <span>
       Types are inferred from the values you paste, so the more representative your sample,

@@ -104,6 +104,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/jwt-editor',
+    loadComponent: () => import('./tools/jwt-editor/jwt-editor').then((m) => m.JwtEditorTool),
+    title: 'JWT Editor — Edit and re-sign a JSON Web Token — YYDevTools',
+    data: {
+      description:
+        'Edit a JSON Web Token’s header and payload and re-sign it into a new, valid token with ' +
+        'an HMAC secret or a PKCS#8 private key (HS/RS/PS/ES). Signing runs in your browser with ' +
+        'Web Crypto — the token and key are never sent anywhere. Free, no sign-up.',
+    },
+  },
+  {
     path: 'tools/image-compressor',
     loadComponent: () =>
       import('./tools/image-compressor/image-compressor').then((m) => m.ImageCompressorTool),

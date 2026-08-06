@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import { PDFDocument } from '@cantoo/pdf-lib';
@@ -9,6 +9,7 @@ import { formatBytes } from '../../core/format';
 import { downloadZip, type ZipEntry } from '../../core/zip';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 import { Spinner } from '../../shared/spinner/spinner';
+import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 /** How the selected pages are written out. */
@@ -25,7 +26,7 @@ const MAX_INPUT_BYTES = 100 * 1024 * 1024;
 
 @Component({
   selector: 'app-pdf-split',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner, PdfPreview],
+  imports: [Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner, PdfPreview],
   templateUrl: './pdf-split.html',
   styleUrls: ['../tool-shell.css', './pdf-split.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,7 +41,6 @@ export class PdfSplitTool {
   protected readonly ranges = signal('');
   protected readonly mode = signal<SplitMode>('single');
   protected readonly working = signal(false);
-  protected readonly dragOver = signal(false);
 
   /** The loaded document, exposed so the template can preview it. */
   protected readonly bytes = signal<Uint8Array | null>(null);
@@ -61,32 +61,12 @@ export class PdfSplitTool {
   );
 
   // --- File selection ---------------------------------------------------
-  protected onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    // Reset so picking the same file again still fires (change).
-    input.value = '';
+  /** Single-file tool, so anything past the first dropped file is ignored. */
+  protected acceptFiles(files: File[]): void {
+    const file = files[0];
     if (file) {
       void this.load(file);
     }
-  }
-
-  protected onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(false);
-    const file = event.dataTransfer?.files?.[0];
-    if (file) {
-      void this.load(file);
-    }
-  }
-
-  protected onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(true);
-  }
-
-  protected onDragLeave(): void {
-    this.dragOver.set(false);
   }
 
   private async load(file: File): Promise<void> {

@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">Regex Tester</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>find_replace</mat-icon>
+    <ng-icon name="matFindReplaceOutline" />
   </div>
   <div>
     <h1 class="head__title">Regex Tester</h1>
@@ -63,7 +63,7 @@
 
   @if (error()) {
     <p class="status status--err" role="alert">
-      <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
       {{ error() }}
     </p>
   }
@@ -100,7 +100,7 @@
       </p>
       @if (truncated()) {
         <p class="note">
-          <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+          <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
           Stopped after the first 10,000 matches.
         </p>
       }
@@ -138,7 +138,7 @@
   }
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     Uses your browser's JavaScript regex engine. Without the <code>g</code> flag only the first
     match is returned, mirroring <code>String.match</code>.
   </p>

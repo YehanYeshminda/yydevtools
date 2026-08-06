@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import { PDFDocument } from '@cantoo/pdf-lib';
 import { downloadBytes } from '../../core/download';
 import { formatBytes } from '../../core/format';
+import { Dropzone } from '../../shared/dropzone/dropzone';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 import { Spinner } from '../../shared/spinner/spinner';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -24,7 +25,7 @@ const MAX_INPUT_BYTES = 100 * 1024 * 1024;
 
 @Component({
   selector: 'app-pdf-merge',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner, PdfPreview],
+  imports: [ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner, PdfPreview, Dropzone],
   templateUrl: './pdf-merge.html',
   styleUrl: './pdf-merge.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,7 +36,6 @@ export class PdfMergeTool {
   // --- State ------------------------------------------------------------
   protected readonly files = signal<PdfItem[]>([]);
   protected readonly merging = signal(false);
-  protected readonly dragOver = signal(false);
   /** The merged document, held for preview until the user downloads it. */
   protected readonly result = signal<Uint8Array | null>(null);
 
@@ -49,37 +49,7 @@ export class PdfMergeTool {
   private nextId = 0;
 
   // --- File selection ---------------------------------------------------
-  protected onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    // Copy out of the live FileList before resetting — clearing `input.value`
-    // also empties `input.files`, which would otherwise leave us nothing to add.
-    const files = input.files ? Array.from(input.files) : [];
-    // Reset so picking the same file again still fires (change).
-    input.value = '';
-    if (files.length) {
-      void this.addFiles(files);
-    }
-  }
-
-  protected onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(false);
-    const files = event.dataTransfer?.files;
-    if (files && files.length) {
-      void this.addFiles(Array.from(files));
-    }
-  }
-
-  protected onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(true);
-  }
-
-  protected onDragLeave(): void {
-    this.dragOver.set(false);
-  }
-
-  private async addFiles(list: File[]): Promise<void> {
+  protected async addFiles(list: File[]): Promise<void> {
     const added: PdfItem[] = [];
     for (const file of list) {
       if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {

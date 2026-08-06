@@ -12,7 +12,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { RouterLink } from '@angular/router';
@@ -32,6 +32,7 @@ import {
 } from './base64-codec';
 import type { PreviewKind } from './base64-codec';
 import { Base64WorkerClient } from './base64-worker.client';
+import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 type TextMode = 'encode' | 'decode';
@@ -112,12 +113,14 @@ interface RenderedPreview {
 
 @Component({
   selector: 'app-base64',
-  imports: [ToolContent, 
+  imports: [
+    Dropzone,
+    ToolContent,
     RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
     MatCheckboxModule,
-    MatIconModule,
+    NgIcon,
     MatTabsModule,
     Spinner,
     PdfPreview,
@@ -149,7 +152,6 @@ export class Base64Tool implements OnDestroy {
   protected readonly fileSize = signal(0);
   protected readonly fileMime = signal('');
   protected readonly encoding = signal(false);
-  protected readonly dragOver = signal(false);
   protected readonly withDataUri = signal(false);
 
   /** The full Base64 payload, held out of the DOM. */
@@ -174,29 +176,9 @@ export class Base64Tool implements OnDestroy {
 
   protected readonly encodedTruncated = computed(() => this.encodedLength() > PREVIEW_CHARS);
 
-  protected onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    // Reset the input so picking the same file again still fires (change).
-    input.value = '';
-    if (file) {
-      void this.acceptFile(file);
-    }
-  }
-
-  protected onEncodeDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(true);
-  }
-
-  protected onEncodeDragLeave(): void {
-    this.dragOver.set(false);
-  }
-
-  protected onEncodeDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(false);
-    const file = event.dataTransfer?.files?.[0];
+  /** Single-file tool, so anything past the first dropped file is ignored. */
+  protected acceptFiles(files: File[]): void {
+    const file = files[0];
     if (file) {
       void this.acceptFile(file);
     }

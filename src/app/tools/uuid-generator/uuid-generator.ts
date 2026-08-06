@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
@@ -15,7 +15,7 @@ const MAX_COUNT = 500;
 
 @Component({
   selector: 'app-uuid-generator',
-  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './uuid-generator.html',
   styleUrls: ['../tool-shell.css', './uuid-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import { ClipboardService } from '../../core/clipboard.service';
@@ -15,6 +15,7 @@ import { downloadText } from '../../core/download';
 import { formatBytes } from '../../core/format';
 import { Spinner } from '../../shared/spinner/spinner';
 import { HashWorkerClient, type Digest } from './hash-worker.client';
+import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 export type { Digest };
@@ -43,7 +44,7 @@ const DEFAULT_ALGORITHM = 'SHA-256';
 
 @Component({
   selector: 'app-hash-generator',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner],
+  imports: [Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner],
   templateUrl: './hash-generator.html',
   styleUrls: ['../tool-shell.css', './hash-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -143,37 +144,7 @@ export class HashGeneratorTool implements OnDestroy {
     void this.hashText(value);
   }
 
-  protected onFilesSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const files = input.files ? Array.from(input.files) : [];
-    // Reset so picking the same file again still fires (change).
-    input.value = '';
-    if (files.length) {
-      this.addFiles(files);
-    }
-  }
-
-  protected onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(false);
-    const files = event.dataTransfer?.files;
-    if (files?.length) {
-      this.addFiles(Array.from(files));
-    }
-  }
-
-  protected readonly dragOver = signal(false);
-
-  protected onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(true);
-  }
-
-  protected onDragLeave(): void {
-    this.dragOver.set(false);
-  }
-
-  private addFiles(list: File[]): void {
+  protected addFiles(list: File[]): void {
     const room = MAX_FILES - this.files().length;
     if (room <= 0) {
       this.showError(`You can hash up to ${MAX_FILES} files at a time.`);

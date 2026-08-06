@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">Timestamp Converter</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>schedule</mat-icon>
+    <ng-icon name="matScheduleOutline" />
   </div>
   <div>
     <h1 class="head__title">Timestamp Converter</h1>
@@ -32,7 +32,7 @@
       <span class="clock__value clock__value--sm">{{ nowIso() }}</span>
     </div>
     <button matButton (click)="copy(nowSeconds() + '', 'Current timestamp')">
-      <mat-icon>content_copy</mat-icon>
+      <ng-icon name="matContentCopyOutline" />
       Copy
     </button>
   </section>
@@ -57,11 +57,11 @@
 
   <div class="actions">
     <button matButton (click)="useNow()">
-      <mat-icon>bolt</mat-icon>
+      <ng-icon name="matBoltOutline" />
       Use now
     </button>
     <button matButton (click)="clear()" [disabled]="!input()">
-      <mat-icon>clear</mat-icon>
+      <ng-icon name="matClearOutline" />
       Clear
     </button>
     <app-share-link [state]="shared" />
@@ -70,7 +70,7 @@
   @switch (result().kind) {
     @case ('error') {
       <p class="status status--err" role="alert">
-        <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
         {{ $any(result()).message }}
       </p>
     }
@@ -78,7 +78,7 @@
       @let parsed = $any(result());
 
       <p class="status status--ok" role="status">
-        <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+        <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
         {{ parsed.interpretation }}
       </p>
 
@@ -95,7 +95,7 @@
                 (click)="copy(row.value, row.label)"
                 [attr.aria-label]="'Copy ' + row.label"
               >
-                <mat-icon>content_copy</mat-icon>
+                <ng-icon name="matContentCopyOutline" />
               </button>
             </li>
           }

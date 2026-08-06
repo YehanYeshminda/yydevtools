@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">UUID Generator</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>fingerprint</mat-icon>
+    <ng-icon name="matFingerprintOutline" />
   </div>
   <div>
     <h1 class="head__title">UUID Generator</h1>
@@ -47,7 +47,7 @@
   </div>
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     @if (version() === 'v4') {
       Version 4 is 122 bits of randomness — the usual choice when you just need a unique
       identifier.
@@ -80,7 +80,7 @@
         [attr.aria-pressed]="hyphens()"
         (click)="toggleHyphens()"
       >
-        <mat-icon aria-hidden="true">remove</mat-icon>
+        <ng-icon aria-hidden="true" name="matRemoveOutline" />
         Hyphens
       </button>
       <button
@@ -90,7 +90,7 @@
         [attr.aria-pressed]="uppercase()"
         (click)="toggleUppercase()"
       >
-        <mat-icon aria-hidden="true">text_fields</mat-icon>
+        <ng-icon aria-hidden="true" name="matTextFieldsOutline" />
         Uppercase
       </button>
       <button
@@ -100,7 +100,7 @@
         [attr.aria-pressed]="braces()"
         (click)="toggleBraces()"
       >
-        <mat-icon aria-hidden="true">data_object</mat-icon>
+        <ng-icon aria-hidden="true" name="matDataObjectOutline" />
         Braces
       </button>
     </div>
@@ -108,15 +108,15 @@
 
   <div class="actions">
     <button matButton="filled" (click)="generate()">
-      <mat-icon>autorenew</mat-icon>
+      <ng-icon name="matAutorenewOutline" />
       Generate
     </button>
     <button matButton (click)="copyAll()" [disabled]="!uuids().length">
-      <mat-icon>content_copy</mat-icon>
+      <ng-icon name="matContentCopyOutline" />
       Copy all
     </button>
     <button matButton (click)="download()" [disabled]="!uuids().length">
-      <mat-icon>download</mat-icon>
+      <ng-icon name="matDownloadOutline" />
       Download .txt
     </button>
     <app-share-link [state]="shared" />
@@ -140,7 +140,7 @@
                 (click)="copyOne(uuid)"
                 [attr.aria-label]="'Copy UUID ' + ($index + 1)"
               >
-                <mat-icon>content_copy</mat-icon>
+                <ng-icon name="matContentCopyOutline" />
               </button>
             </li>
           }

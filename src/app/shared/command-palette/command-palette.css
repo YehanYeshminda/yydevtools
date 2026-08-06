@@ -89,7 +89,7 @@
   color: var(--on-var);
 }
 
-.cmdk__group-label .material-icons-outlined {
+.cmdk__group-label ng-icon {
   font-size: 15px;
 }
 

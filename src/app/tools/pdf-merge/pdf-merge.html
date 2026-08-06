@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">PDF Merge</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>picture_as_pdf</mat-icon>
+    <ng-icon name="matPictureAsPdfOutline" />
   </div>
   <div>
     <h1 class="head__title">PDF Merge</h1>
@@ -23,21 +23,12 @@
 
 <div class="panel">
   <!-- Drop zone ----------------------------------------------------- -->
-  <label
-    class="dropzone"
-    [class.dropzone--over]="dragOver()"
-    (dragover)="onDragOver($event)"
-    (dragleave)="onDragLeave()"
-    (drop)="onDrop($event)"
+  <app-dropzone
+    accept="application/pdf,.pdf"
+    [multiple]="true"
+    (filesSelected)="addFiles($event)"
   >
-    <input
-      type="file"
-      accept="application/pdf,.pdf"
-      multiple
-      class="dropzone__input"
-      (change)="onFileSelected($event)"
-    />
-    <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
     <span class="dropzone__title">
       @if (files().length) {
         Drop more PDFs here, or click to add
@@ -46,7 +37,7 @@
       }
     </span>
     <span class="dropzone__hint">Add two or more PDFs — up to 100 MB each</span>
-  </label>
+  </app-dropzone>
 
   <!-- Queue --------------------------------------------------------- -->
   @if (files(); as items) {
@@ -55,7 +46,7 @@
         @for (file of items; track file.id) {
           <li class="item">
             <span class="item__index" aria-hidden="true">{{ $index + 1 }}</span>
-            <mat-icon class="item__icon" aria-hidden="true">description</mat-icon>
+            <ng-icon class="item__icon" aria-hidden="true" name="matDescriptionOutline" />
             <div class="item__body">
               <span class="item__name" [title]="file.name">{{ file.name }}</span>
               <span class="item__meta">
@@ -71,7 +62,7 @@
                 [disabled]="$first"
                 [attr.aria-label]="'Move ' + file.name + ' up'"
               >
-                <mat-icon>arrow_upward</mat-icon>
+                <ng-icon name="matArrowUpwardOutline" />
               </button>
               <button
                 type="button"
@@ -80,7 +71,7 @@
                 [disabled]="$last"
                 [attr.aria-label]="'Move ' + file.name + ' down'"
               >
-                <mat-icon>arrow_downward</mat-icon>
+                <ng-icon name="matArrowDownwardOutline" />
               </button>
               <button
                 type="button"
@@ -88,7 +79,7 @@
                 (click)="remove(file.id)"
                 [attr.aria-label]="'Remove ' + file.name"
               >
-                <mat-icon>close</mat-icon>
+                <ng-icon name="matCloseOutline" />
               </button>
             </div>
           </li>
@@ -115,12 +106,12 @@
           </button>
         } @else {
           <button matButton="filled" (click)="merge()" [disabled]="items.length < 2">
-            <mat-icon>merge</mat-icon>
+            <ng-icon name="matMergeOutline" />
             Merge
           </button>
         }
         <button matButton (click)="clearAll()" [disabled]="merging()">
-          <mat-icon>delete_sweep</mat-icon>
+          <ng-icon name="matDeleteSweepOutline" />
           Clear all
         </button>
       </div>
@@ -137,7 +128,7 @@
       <app-pdf-preview [bytes]="merged" fileName="merged.pdf" height="30rem" />
       <div class="actions">
         <button matButton="filled" (click)="download()">
-          <mat-icon>download</mat-icon>
+          <ng-icon name="matDownloadOutline" />
           Download merged.pdf
         </button>
       </div>

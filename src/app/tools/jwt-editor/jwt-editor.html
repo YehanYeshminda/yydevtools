@@ -1,0 +1,235 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <ng-icon name="matChevronRightOutline" />
+    </li>
+    <li aria-current="page">JWT Editor</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <ng-icon name="matTokenOutline" />
+  </div>
+  <div>
+    <h1 class="head__title">JWT Editor</h1>
+    <p class="head__sub">
+      Edit a JSON Web Token's claims and re-sign it into a new, valid token — all in your browser.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="jwt-input">Existing token (optional)</label>
+    <textarea
+      id="jwt-input"
+      class="field__input"
+      rows="4"
+      spellcheck="false"
+      [value]="token()"
+      (input)="onTokenInput($event)"
+      placeholder="Paste a token to load its header and payload into the editor…"
+    ></textarea>
+    @if (decodeError(); as message) {
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        {{ message }}
+      </p>
+    }
+  </div>
+
+  <div class="actions">
+    <button matButton (click)="decode()" [disabled]="!token()">
+      <ng-icon name="matDownloadOutline" />
+      Load into editor
+    </button>
+    <button matButton (click)="loadSample()">
+      <ng-icon name="matScienceOutline" />
+      Load sample
+    </button>
+    <button matButton (click)="makeUnsigned()" [disabled]="!header() && !payload()">
+      <ng-icon name="matNoEncryptionOutline" />
+      Make unsigned (alg: none)
+    </button>
+    <button matButton (click)="clear()" [disabled]="!token() && !header() && !payload() && !key()">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+  </div>
+
+  <section class="segment segment--header" aria-label="Header">
+    <div class="segment__bar">
+      <h2 class="section__title">
+        Header
+        @if (alg(); as alg) {
+          <code class="segment__alg">{{ alg }}</code>
+        }
+      </h2>
+    </div>
+    <textarea
+      id="jwt-header"
+      class="field__input segment__edit"
+      rows="4"
+      spellcheck="false"
+      aria-label="Header JSON"
+      [value]="header()"
+      (input)="onHeaderInput($event)"
+      placeholder='{ "alg": "HS256", "typ": "JWT" }'
+    ></textarea>
+    @if ($any(signState()).kind === 'invalid-json' && $any(signState()).where === 'header') {
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        Header: {{ $any(signState()).message }}
+      </p>
+    }
+  </section>
+
+  <section class="segment segment--payload" aria-label="Payload">
+    <div class="segment__bar">
+      <h2 class="section__title">Payload</h2>
+    </div>
+    <textarea
+      id="jwt-payload"
+      class="field__input segment__edit"
+      rows="8"
+      spellcheck="false"
+      aria-label="Payload JSON"
+      [value]="payload()"
+      (input)="onPayloadInput($event)"
+      placeholder='{ "sub": "1234567890", "role": "user" }'
+    ></textarea>
+    @if ($any(signState()).kind === 'invalid-json' && $any(signState()).where === 'payload') {
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        Payload: {{ $any(signState()).message }}
+      </p>
+    }
+  </section>
+
+  <section class="segment segment--signature" aria-label="Signing key">
+    <div class="verify">
+      <label class="field__label" for="jwt-key">
+        Signing key
+        @if (alg(); as alg) {
+          <code class="segment__alg segment__alg--sig">{{ alg }}</code>
+        }
+      </label>
+      <textarea
+        id="jwt-key"
+        class="field__input"
+        rows="3"
+        spellcheck="false"
+        [disabled]="keyKind() === 'none'"
+        [value]="key()"
+        (input)="onKeyInput($event)"
+        [attr.placeholder]="
+          keyKind() === 'none'
+            ? 'Not used — alg: none produces an unsigned token.'
+            : keyKind() === 'pem'
+              ? 'PKCS#8 private key (-----BEGIN PRIVATE KEY-----)…'
+              : 'HMAC secret for HS*, or a PKCS#8 private key for RS*/PS*/ES*…'
+        "
+      ></textarea>
+      @if (keyKind() === 'none') {
+        <p class="status status--warn" role="status">
+          <ng-icon class="status__icon" aria-hidden="true" name="matInfoOutline" />
+          <code>alg: none</code> produces an unsigned token — no key is used.
+        </p>
+      }
+    </div>
+
+    <p class="segment__note">
+      <ng-icon class="segment__note-icon" aria-hidden="true" name="matInfoOutline" />
+      Editing a token's claims breaks its original signature — so it has to be re-signed. The key is
+      used only in your browser to produce the new signature and is never sent anywhere. The result
+      is valid only if this is the key the verifier trusts.
+    </p>
+  </section>
+
+  @switch (signState().kind) {
+    @case ('idle') {
+      <p class="status" role="status">
+        <ng-icon class="status__icon" aria-hidden="true" name="matEditOutline" />
+        Enter the signing key to produce a signed token.
+      </p>
+    }
+    @case ('signing') {
+      <p class="status" role="status">Signing…</p>
+    }
+    @case ('missing-alg') {
+      <p class="status status--warn" role="status">
+        <ng-icon class="status__icon" aria-hidden="true" name="matHelpOutline" />
+        Add an <code>alg</code> to the header (e.g. HS256) to choose the algorithm.
+      </p>
+    }
+    @case ('unsupported') {
+      <p class="status status--warn" role="status">
+        <ng-icon class="status__icon" aria-hidden="true" name="matHelpOutline" />
+        {{ $any(signState()).alg || 'This algorithm' }} can’t be signed in the browser.
+      </p>
+    }
+    @case ('error') {
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        {{ $any(signState()).message }}
+      </p>
+    }
+    @case ('unsigned') {
+      @let out = outputSegments();
+      <section class="segment segment--unsigned" aria-label="Unsigned token">
+        <div class="segment__bar">
+          <h2 class="section__title">
+            <ng-icon class="section__title-icon section__title-icon--warn" aria-hidden="true" name="matNoEncryptionOutline" />
+            Unsigned token — alg: none
+          </h2>
+          <button matButton (click)="copy($any(signState()).token, 'Token')">
+            <ng-icon name="matContentCopyOutline" />
+            Copy
+          </button>
+        </div>
+        @if (out) {
+          <p class="token" aria-label="Colour-coded unsigned token">
+            <span class="token__seg token__seg--header">{{ out.header }}</span>
+            <span class="token__dot">.</span>
+            <span class="token__seg token__seg--payload">{{ out.payload }}</span>
+            <span class="token__dot">.</span>
+            <span class="token__sig-empty">(no signature)</span>
+          </p>
+        }
+        <p class="status status--warn" role="status">
+          <ng-icon class="status__icon" aria-hidden="true" name="matWarningOutline" />
+          This token has no signature. A correctly configured server rejects it — it is accepted only
+          by a verifier wrongly configured to allow the “none” algorithm. Use it to test for that.
+        </p>
+      </section>
+    }
+    @case ('ok') {
+      @let out = outputSegments();
+      <section class="segment segment--output" aria-label="Signed token">
+        <div class="segment__bar">
+          <h2 class="section__title">
+            <ng-icon class="section__title-icon" aria-hidden="true" name="matVerifiedOutline" />
+            Signed token
+          </h2>
+          <button matButton (click)="copy($any(signState()).token, 'Token')">
+            <ng-icon name="matContentCopyOutline" />
+            Copy
+          </button>
+        </div>
+        @if (out) {
+          <p class="token" aria-label="Colour-coded signed token">
+            <span class="token__seg token__seg--header">{{ out.header }}</span>
+            <span class="token__dot">.</span>
+            <span class="token__seg token__seg--payload">{{ out.payload }}</span>
+            <span class="token__dot">.</span>
+            <span class="token__seg token__seg--signature">{{ out.signature }}</span>
+          </p>
+        }
+      </section>
+    }
+  }
+</div>
+
+<app-tool-content slug="jwt-editor" />

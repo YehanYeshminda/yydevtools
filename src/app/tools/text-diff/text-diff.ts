@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 
 import { syncToolState } from '../../core/tool-state';
@@ -19,7 +19,7 @@ interface SplitRow {
 
 @Component({
   selector: 'app-text-diff',
-  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './text-diff.html',
   styleUrls: ['../tool-shell.css', './text-diff.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

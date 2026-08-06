@@ -47,7 +47,7 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-.breadcrumb__sep mat-icon {
+.breadcrumb__sep ng-icon {
   font-size: 1.1rem;
   width: 1.1rem;
   height: 1.1rem;
@@ -251,7 +251,7 @@
   cursor: pointer;
 }
 
-.tab mat-icon {
+.tab ng-icon {
   font-size: 1.15rem;
   width: 1.15rem;
   height: 1.15rem;
@@ -299,7 +299,7 @@
   cursor: pointer;
 }
 
-.chip mat-icon {
+.chip ng-icon {
   font-size: 1.05rem;
   width: 1.05rem;
   height: 1.05rem;
@@ -323,30 +323,13 @@
 }
 
 /* Drop zone ------------------------------------------------------------- */
-.dropzone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 2.5rem 1.5rem;
-  text-align: center;
-  border: 2px dashed var(--outline);
-  border-radius: 16px;
-  background: var(--surface-1);
-  color: var(--on-var);
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease;
-}
+/* The container and drag state live in shared/dropzone. Only the projected
+   content is styled here, because projected nodes keep this stylesheet's
+   encapsulation rather than the dropzone component's. */
 
-.dropzone:hover,
-.dropzone--over {
-  border-color: var(--primary);
-  background: var(--primary-hover);
-}
-
+/* Still needed by the standalone "add more files" inputs, which are plain
+   labelled inputs rather than drop targets. Clipped rather than hidden so the
+   input keeps its place in the accessibility tree. */
 .dropzone__input {
   position: absolute;
   width: 1px;
@@ -376,11 +359,6 @@
 .dropzone__hint {
   font-size: 0.9rem;
   color: var(--on-var);
-}
-
-.dropzone:focus-within {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
 }
 
 /* Footnote -------------------------------------------------------------- */

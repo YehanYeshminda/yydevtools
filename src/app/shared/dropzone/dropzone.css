@@ -1,0 +1,66 @@
+/* Container styles only. The projected icon, title and hint keep the calling
+   tool's encapsulation, so their rules stay in tools/tool-shell.css. */
+
+:host {
+  display: block;
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  border: 2px dashed var(--outline);
+  border-radius: 16px;
+  background: var(--surface-1);
+  color: var(--on-var);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.dropzone:hover,
+.dropzone--over {
+  border-color: var(--primary);
+  background: var(--primary-hover);
+}
+
+.dropzone--disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Hover must not imply droppable while the zone is refusing input. */
+.dropzone--disabled:hover {
+  border-color: var(--outline);
+  background: var(--surface-1);
+}
+
+/* The input stays in the accessibility tree — it is what gives the zone
+   keyboard focus and a usable role — so it is clipped rather than hidden. */
+.dropzone__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dropzone:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropzone {
+    transition: none;
+  }
+}

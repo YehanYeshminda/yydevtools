@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">JWT Decoder</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>key</mat-icon>
+    <ng-icon name="matKeyOutline" />
   </div>
   <div>
     <h1 class="head__title">JWT Decoder</h1>
@@ -36,11 +36,11 @@
 
   <div class="actions">
     <button matButton (click)="loadSample()">
-      <mat-icon>science</mat-icon>
+      <ng-icon name="matScienceOutline" />
       Load sample
     </button>
     <button matButton (click)="clear()" [disabled]="!token()">
-      <mat-icon>clear</mat-icon>
+      <ng-icon name="matClearOutline" />
       Clear
     </button>
   </div>
@@ -58,7 +58,7 @@
   @switch (result().kind) {
     @case ('error') {
       <p class="status status--err" role="alert">
-        <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
         {{ $any(result()).message }}
       </p>
     }
@@ -67,12 +67,12 @@
 
       @if (decoded.expired) {
         <p class="status status--err" role="status">
-          <mat-icon class="status__icon" aria-hidden="true">schedule</mat-icon>
+          <ng-icon class="status__icon" aria-hidden="true" name="matScheduleOutline" />
           This token has expired.
         </p>
       } @else {
         <p class="status status--ok" role="status">
-          <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+          <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
           Token decoded.
         </p>
       }
@@ -102,7 +102,7 @@
         <div class="segment__bar">
           <h2 class="section__title">Header</h2>
           <button matButton (click)="copy(decoded.header, 'Header')">
-            <mat-icon>content_copy</mat-icon>
+            <ng-icon name="matContentCopyOutline" />
             Copy
           </button>
         </div>
@@ -113,7 +113,7 @@
         <div class="segment__bar">
           <h2 class="section__title">Payload</h2>
           <button matButton (click)="copy(decoded.payload, 'Payload')">
-            <mat-icon>content_copy</mat-icon>
+            <ng-icon name="matContentCopyOutline" />
             Copy
           </button>
         </div>
@@ -147,25 +147,25 @@
             }
             @case ('valid') {
               <p class="status status--ok" role="status">
-                <mat-icon class="status__icon" aria-hidden="true">verified</mat-icon>
+                <ng-icon class="status__icon" aria-hidden="true" name="matVerifiedOutline" />
                 Signature verified.
               </p>
             }
             @case ('invalid') {
               <p class="status status--err" role="status">
-                <mat-icon class="status__icon" aria-hidden="true">gpp_bad</mat-icon>
+                <ng-icon class="status__icon" aria-hidden="true" name="matGppBadOutline" />
                 Signature does not match.
               </p>
             }
             @case ('unsupported') {
               <p class="status status--warn" role="status">
-                <mat-icon class="status__icon" aria-hidden="true">help</mat-icon>
+                <ng-icon class="status__icon" aria-hidden="true" name="matHelpOutline" />
                 {{ $any(verifyState()).alg || 'This algorithm' }} can’t be verified in the browser.
               </p>
             }
             @case ('error') {
               <p class="status status--err" role="status">
-                <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+                <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
                 {{ $any(verifyState()).message }}
               </p>
             }
@@ -173,7 +173,7 @@
         </div>
 
         <p class="segment__note">
-          <mat-icon class="segment__note-icon" aria-hidden="true">info</mat-icon>
+          <ng-icon class="segment__note-icon" aria-hidden="true" name="matInfoOutline" />
           The secret or key is used only in your browser to check the signature — it is never sent
           anywhere. Leave it blank to just decode.
         </p>

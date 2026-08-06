@@ -96,7 +96,7 @@
   gap: 1rem;
 }
 
-/* Input ----------------------------------------------------------------- */
+/* Fields ---------------------------------------------------------------- */
 .field {
   display: flex;
   flex-direction: column;
@@ -138,7 +138,7 @@
 
 /* Colour-coded token preview ------------------------------------------- */
 .token {
-  margin: 0;
+  margin: 0.6rem 0 0;
   padding: 0.85rem 1rem;
   border-radius: 10px;
   background: var(--mat-sys-surface-container-low);
@@ -171,6 +171,7 @@
   gap: 0.4rem;
   margin: 0;
   font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .status__icon {
@@ -191,85 +192,50 @@
   color: var(--mat-sys-tertiary, var(--mat-sys-on-surface-variant));
 }
 
-/* Signature verification ------------------------------------------------ */
+.status code {
+  padding: 0.05rem 0.35rem;
+  border-radius: 6px;
+  background: var(--mat-sys-surface-container-high);
+  font-size: 0.85em;
+}
+
+/* Signing key ----------------------------------------------------------- */
 .verify {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: 0.9rem;
 }
 
-.verify__alg {
-  margin-left: 0.35rem;
-  padding: 0.05rem 0.4rem;
-  border-radius: 6px;
-  background: var(--mat-sys-surface-container-high);
-  font-size: 0.8em;
-  color: var(--seg-signature);
-}
-
-/* Claims ---------------------------------------------------------------- */
 .section__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   margin: 0;
   font: var(--mat-sys-title-medium);
   color: var(--mat-sys-on-surface);
 }
 
-.claims__list {
-  margin: 0.75rem 0 0;
-  display: grid;
-  gap: 0;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 10px;
-  overflow: hidden;
+.section__title-icon {
+  font-size: 1.3rem;
+  width: 1.3rem;
+  height: 1.3rem;
+  color: var(--mat-sys-primary);
 }
 
-.claim {
-  display: grid;
-  grid-template-columns: minmax(10rem, 14rem) 1fr;
-  gap: 1rem;
-  padding: 0.6rem 0.9rem;
+.segment__alg {
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 6px;
+  background: var(--mat-sys-surface-container-high);
+  font-size: 0.75em;
+  color: var(--seg-header);
 }
 
-.claim + .claim {
-  border-top: 1px solid var(--mat-sys-outline-variant);
+.segment__alg--sig {
+  color: var(--seg-signature);
 }
 
-.claim--warn {
-  background: var(--mat-sys-error-container);
-}
-
-.claim__key {
-  margin: 0;
-  color: var(--mat-sys-on-surface);
-}
-
-.claim__key code {
-  font-size: 0.8em;
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.claim__val {
-  margin: 0;
-  color: var(--mat-sys-on-surface);
-  word-break: break-word;
-}
-
-.claim--warn .claim__key,
-.claim--warn .claim__key code,
-.claim--warn .claim__val {
-  color: var(--mat-sys-on-error-container);
-}
-
-.claim__detail {
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.claim--warn .claim__detail {
-  color: var(--mat-sys-on-error-container);
-}
-
-/* Decoded segments ------------------------------------------------------ */
+/* Editable segments ----------------------------------------------------- */
 .segment {
   border: 1px solid var(--mat-sys-outline-variant);
   border-left: 4px solid var(--seg-color, var(--mat-sys-outline));
@@ -289,6 +255,25 @@
   --seg-color: var(--seg-signature);
 }
 
+.segment--output {
+  --seg-color: var(--mat-sys-primary);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.segment--unsigned {
+  --seg-color: var(--mat-sys-tertiary, var(--mat-sys-error));
+  background: var(--mat-sys-surface-container-low);
+}
+
+.section__title-icon--warn {
+  color: var(--mat-sys-tertiary, var(--mat-sys-error));
+}
+
+.token__sig-empty {
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}
+
 .segment__bar {
   display: flex;
   align-items: center;
@@ -296,21 +281,9 @@
   gap: 1rem;
 }
 
-.segment__body {
-  margin: 0.6rem 0 0;
-  padding: 0.85rem 1rem;
-  border-radius: 8px;
+.segment__edit {
+  margin-top: 0.6rem;
   background: var(--mat-sys-surface-container-high);
-  overflow-x: auto;
-  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: var(--mat-sys-on-surface);
-}
-
-.segment__body--sig {
-  word-break: break-all;
-  white-space: pre-wrap;
 }
 
 .segment__note {

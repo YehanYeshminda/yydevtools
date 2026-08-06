@@ -25,7 +25,6 @@ export abstract class HostedPdfTool {
   /** Null when the page tree could not be read; the summary then omits it. */
   protected readonly pageCount = signal<number | null>(null);
   protected readonly working = signal(false);
-  protected readonly dragOver = signal(false);
   /** Non-empty when the hosted service cannot serve this tool at all. */
   protected readonly unavailable = signal('');
 
@@ -40,32 +39,15 @@ export abstract class HostedPdfTool {
   );
 
   // --- File selection ---------------------------------------------------
-  protected onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    // Reset so re-picking the same file still fires a change event.
-    input.value = '';
+  /**
+   * Bound to the shared dropzone, which handles the drag state and the hidden
+   * input. These tools are single-file, so anything past the first is ignored.
+   */
+  protected acceptFiles(files: File[]): void {
+    const file = files[0];
     if (file) {
       void this.load(file);
     }
-  }
-
-  protected onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(false);
-    const file = event.dataTransfer?.files?.[0];
-    if (file) {
-      void this.load(file);
-    }
-  }
-
-  protected onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(true);
-  }
-
-  protected onDragLeave(): void {
-    this.dragOver.set(false);
   }
 
   private async load(file: File): Promise<void> {

@@ -30,23 +30,37 @@
         rel="noopener"
       >
         GitHub
-        <span class="nav__ext material-icons-outlined" aria-hidden="true">open_in_new</span>
+        <ng-icon class="nav__ext" aria-hidden="true" name="matOpenInNewOutline" />
       </a>
     </nav>
 
     <button
       type="button"
       class="theme-toggle"
-      (click)="theme.toggle()"
-      [attr.aria-label]="
-        theme.theme() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-      "
-      [attr.aria-pressed]="theme.theme() === 'dark'"
+      [cdkMenuTriggerFor]="themeMenu"
+      [cdkMenuPosition]="themeMenuPosition"
+      [attr.aria-label]="'Colour theme: ' + activeThemeOption().label + '. Change it'"
     >
-      <span class="material-icons-outlined" aria-hidden="true">
-        {{ theme.theme() === 'dark' ? 'light_mode' : 'dark_mode' }}
-      </span>
+      <ng-icon aria-hidden="true" [name]="activeThemeOption().icon" />
     </button>
+
+    <ng-template #themeMenu>
+      <div class="theme-menu" cdkMenu aria-label="Colour theme">
+        @for (option of themeOptions; track option.value) {
+          <button
+            type="button"
+            class="theme-menu__item"
+            cdkMenuItemRadio
+            [cdkMenuItemChecked]="theme.preference() === option.value"
+            (cdkMenuItemTriggered)="theme.set(option.value)"
+          >
+            <ng-icon class="theme-menu__icon" aria-hidden="true" [name]="option.icon" />
+            <span>{{ option.label }}</span>
+            <ng-icon class="theme-menu__check" aria-hidden="true" [name]="theme.preference() === option.value ? 'matCheckOutline' : ''" />
+          </button>
+        }
+      </div>
+    </ng-template>
   </div>
 </header>
 

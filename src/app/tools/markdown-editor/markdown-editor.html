@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">Markdown Editor</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>edit_note</mat-icon>
+    <ng-icon name="matEditNoteOutline" />
   </div>
   <div>
     <h1 class="head__title">Markdown Editor</h1>
@@ -48,19 +48,19 @@
 
 <div class="actions">
   <button matButton="filled" (click)="copyHtml()" [disabled]="!source()">
-    <mat-icon>content_copy</mat-icon>
+    <ng-icon name="matContentCopyOutline" />
     Copy HTML
   </button>
   <button matButton (click)="copyMarkdown()" [disabled]="!source()">
-    <mat-icon>content_copy</mat-icon>
+    <ng-icon name="matContentCopyOutline" />
     Copy Markdown
   </button>
   <button matButton (click)="download()" [disabled]="!source()">
-    <mat-icon>download</mat-icon>
+    <ng-icon name="matDownloadOutline" />
     Download .md
   </button>
   <button matButton (click)="clear()" [disabled]="!source()">
-    <mat-icon>clear</mat-icon>
+    <ng-icon name="matClearOutline" />
     Clear
   </button>
   <app-share-link [state]="shared" />

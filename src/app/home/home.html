@@ -6,7 +6,7 @@
   </p>
 
   <div class="search">
-    <span class="search__icon material-icons-outlined" aria-hidden="true">search</span>
+    <ng-icon class="search__icon" aria-hidden="true" name="matSearchOutline" />
     <input
       #searchInput
       class="search__input"
@@ -49,9 +49,7 @@
         [attr.aria-labelledby]="'cat-' + group.accent"
       >
         <div class="section__head">
-          <span class="section__icon material-icons-outlined" aria-hidden="true">{{
-            group.icon
-          }}</span>
+          <ng-icon class="section__icon" aria-hidden="true" [name]="group.icon" />
           <h2 class="section__title" [id]="'cat-' + group.accent">{{ group.title }}</h2>
           <span class="section__count">{{ group.tools.length }}</span>
         </div>
@@ -59,9 +57,7 @@
         <div class="grid">
           @for (item of group.tools; track item.tool.slug) {
             <article class="card" [class]="item.cssClass">
-              <span class="card__icon material-icons-outlined" aria-hidden="true">{{
-                item.tool.icon
-              }}</span>
+              <ng-icon class="card__icon" aria-hidden="true" [name]="item.tool.icon" />
 
               <h3 class="card__name">
                 @if (item.tool.ready) {
@@ -94,9 +90,7 @@
                 "
                 (click)="toggleFavorite(item.tool.slug)"
               >
-                <span class="material-icons-outlined" aria-hidden="true">{{
-                  isFavorite(item.tool.slug) ? 'star' : 'star_border'
-                }}</span>
+                <ng-icon aria-hidden="true" [name]="isFavorite(item.tool.slug) ? 'matStarOutline' : 'matStarBorderOutline'" />
               </button>
             </article>
           }
@@ -112,7 +106,7 @@
   </div>
 } @else {
   <div class="empty">
-    <span class="empty__icon material-icons-outlined" aria-hidden="true">search_off</span>
+    <ng-icon class="empty__icon" aria-hidden="true" name="matSearchOffOutline" />
     <h2 class="empty__title">No tools match “{{ query() }}”</h2>
     <p class="empty__text">
       Try a shorter or different keyword. We don’t have this one yet — but it’s a good idea.
@@ -125,7 +119,7 @@
         target="_blank"
         rel="noopener"
       >
-        <span class="material-icons-outlined" aria-hidden="true">north_east</span>
+        <ng-icon aria-hidden="true" name="matNorthEastOutline" />
         Suggest a tool
       </a>
     </div>

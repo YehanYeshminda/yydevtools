@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">Text Diff</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>difference</mat-icon>
+    <ng-icon name="matDifferenceOutline" />
   </div>
   <div>
     <h1 class="head__title">Text Diff</h1>
@@ -56,7 +56,7 @@
         [attr.aria-pressed]="view() === 'split'"
         (click)="setView('split')"
       >
-        <mat-icon aria-hidden="true">splitscreen</mat-icon>
+        <ng-icon aria-hidden="true" name="matSplitscreenOutline" />
         Split
       </button>
       <button
@@ -66,7 +66,7 @@
         [attr.aria-pressed]="view() === 'unified'"
         (click)="setView('unified')"
       >
-        <mat-icon aria-hidden="true">notes</mat-icon>
+        <ng-icon aria-hidden="true" name="matNotesOutline" />
         Unified
       </button>
     </div>
@@ -79,7 +79,7 @@
         [attr.aria-pressed]="ignoreCase()"
         (click)="toggleIgnoreCase()"
       >
-        <mat-icon aria-hidden="true">{{ ignoreCase() ? 'check' : 'add' }}</mat-icon>
+        <ng-icon aria-hidden="true" [name]="ignoreCase() ? 'matCheckOutline' : 'matAddOutline'" />
         Ignore case
       </button>
       <button
@@ -89,18 +89,18 @@
         [attr.aria-pressed]="ignoreWhitespace()"
         (click)="toggleIgnoreWhitespace()"
       >
-        <mat-icon aria-hidden="true">{{ ignoreWhitespace() ? 'check' : 'add' }}</mat-icon>
+        <ng-icon aria-hidden="true" [name]="ignoreWhitespace() ? 'matCheckOutline' : 'matAddOutline'" />
         Ignore whitespace
       </button>
     </div>
 
     <div class="actions">
       <button matButton (click)="swap()">
-        <mat-icon>swap_vert</mat-icon>
+        <ng-icon name="matSwapVertOutline" />
         Swap
       </button>
       <button matButton (click)="clear()">
-        <mat-icon>clear</mat-icon>
+        <ng-icon name="matClearOutline" />
         Clear
       </button>
       <app-share-link [state]="shared" />
@@ -111,7 +111,7 @@
   @if (hasInput()) {
     @if (identical()) {
       <p class="status status--ok" role="status">
-        <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+        <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
         The two inputs are identical.
       </p>
     } @else {
@@ -174,7 +174,7 @@
   }
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     Lines are matched with a longest-common-subsequence diff. A changed line shows as a removal on
     the left paired with an addition on the right.
   </p>

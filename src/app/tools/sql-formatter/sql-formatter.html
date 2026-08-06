@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">SQL Formatter</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>database</mat-icon>
+    <ng-icon name="matStorageOutline" />
   </div>
   <div>
     <h1 class="head__title">SQL Formatter</h1>
@@ -73,7 +73,7 @@
         [attr.aria-pressed]="useTabs()"
         (click)="toggleTabs()"
       >
-        <mat-icon aria-hidden="true">{{ useTabs() ? 'check' : 'keyboard_tab' }}</mat-icon>
+        <ng-icon aria-hidden="true" [name]="useTabs() ? 'matCheckOutline' : 'matKeyboardTabOutline'" />
         Use tabs
       </button>
     </div>
@@ -93,7 +93,7 @@
 
   <div class="actions">
     <button matButton (click)="clear()">
-      <mat-icon>clear</mat-icon>
+      <ng-icon name="matClearOutline" />
       Clear
     </button>
     <app-share-link [state]="shared" />
@@ -102,7 +102,7 @@
   <!-- Output ---------------------------------------------------------- -->
   @if (error()) {
     <p class="status status--err" role="alert">
-      <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
       {{ error() }}
     </p>
   } @else if (hasOutput()) {
@@ -110,7 +110,7 @@
       <div class="output__head">
         <h2 class="section__title">Formatted</h2>
         <button matButton (click)="copy()">
-          <mat-icon>content_copy</mat-icon>
+          <ng-icon name="matContentCopyOutline" />
           Copy
         </button>
       </div>
@@ -125,7 +125,7 @@
   }
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     Formatting adjusts whitespace, indentation and keyword case only — it never changes the meaning
     of your query. Nothing is uploaded.
   </p>

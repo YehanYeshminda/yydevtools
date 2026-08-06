@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">Color Converter</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>palette</mat-icon>
+    <ng-icon name="matPaletteOutline" />
   </div>
   <div>
     <h1 class="head__title">Color Converter</h1>
@@ -49,7 +49,7 @@
       </div>
       @if (!foregroundView().rgb) {
         <p class="status status--err" role="alert">
-          <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+          <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
           Not a HEX, RGB or HSL colour.
         </p>
       }
@@ -80,7 +80,7 @@
       </div>
       @if (!backgroundView().rgb) {
         <p class="status status--err" role="alert">
-          <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+          <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
           Not a HEX, RGB or HSL colour.
         </p>
       }
@@ -89,7 +89,7 @@
 
   <div class="actions">
     <button matButton (click)="swap()">
-      <mat-icon>swap_horiz</mat-icon>
+      <ng-icon name="matSwapHorizOutline" />
       Swap colours
     </button>
     <app-share-link [state]="shared" />
@@ -113,9 +113,11 @@
       <ul class="checks">
         @for (check of checks(); track check.key) {
           <li class="check" [class.check--pass]="check.passes">
-            <mat-icon class="check__icon" aria-hidden="true">
-              {{ check.passes ? 'check_circle' : 'cancel' }}
-            </mat-icon>
+            <ng-icon
+              class="check__icon"
+              aria-hidden="true"
+              [name]="check.passes ? 'matCheckCircleOutline' : 'matCancelOutline'"
+            />
             <span>{{ check.label }}</span>
             <span class="check__verdict">{{ check.passes ? 'Pass' : 'Fail' }}</span>
           </li>
@@ -140,7 +142,7 @@
                 (click)="copy(format.value, format.label)"
                 [attr.aria-label]="'Copy foreground ' + format.label"
               >
-                <mat-icon>content_copy</mat-icon>
+                <ng-icon name="matContentCopyOutline" />
               </button>
             </li>
           }
@@ -207,7 +209,7 @@
                 (click)="copy(format.value, format.label)"
                 [attr.aria-label]="'Copy background ' + format.label"
               >
-                <mat-icon>content_copy</mat-icon>
+                <ng-icon name="matContentCopyOutline" />
               </button>
             </li>
           }
@@ -217,7 +219,7 @@
   }
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     <span>
       Large text means 18.66px bold or 24px regular and up. Alpha is ignored when computing contrast
       — WCAG ratios are defined for opaque colours. The palette is generated in OKLCH, so its steps

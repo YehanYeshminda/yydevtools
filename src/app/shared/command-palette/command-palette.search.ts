@@ -42,7 +42,7 @@ export function buildSections(
   const query = rawQuery.trim().toLowerCase();
   if (query !== '') {
     const ranked = rank(query);
-    return ranked.length > 0 ? [{ title: 'Results', icon: 'search', items: number(ranked) }] : [];
+    return ranked.length > 0 ? [{ title: 'Results', icon: 'matSearchOutline', items: number(ranked) }] : [];
   }
 
   const favorites = toTools(favoriteSlugs);
@@ -53,12 +53,12 @@ export function buildSections(
 
   const sections: PaletteSection[] = [];
   if (favorites.length > 0) {
-    sections.push({ title: 'Favourites', icon: 'star', items: number(favorites) });
+    sections.push({ title: 'Favourites', icon: 'matStarOutline', items: number(favorites) });
   }
   if (recents.length > 0) {
-    sections.push({ title: 'Recently used', icon: 'history', items: number(recents) });
+    sections.push({ title: 'Recently used', icon: 'matHistoryOutline', items: number(recents) });
   }
-  sections.push({ title: 'All tools', icon: 'apps', items: number(rest) });
+  sections.push({ title: 'All tools', icon: 'matAppsOutline', items: number(rest) });
   return sections;
 }
 

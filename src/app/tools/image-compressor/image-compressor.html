@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">Image Compressor</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>compress</mat-icon>
+    <ng-icon name="matCompressOutline" />
   </div>
   <div>
     <h1 class="head__title">Image Compressor</h1>
@@ -115,9 +115,12 @@
             [attr.aria-pressed]="keepMetadata() && metadataAvailable()"
             (click)="toggleKeepMetadata()"
           >
-            <mat-icon aria-hidden="true">
-              {{ keepMetadata() && metadataAvailable() ? 'check' : 'delete_sweep' }}
-            </mat-icon>
+            <ng-icon
+              aria-hidden="true"
+              [name]="
+                keepMetadata() && metadataAvailable() ? 'matCheckOutline' : 'matDeleteSweepOutline'
+              "
+            />
             Keep Exif
           </button>
           <span class="field__hint">
@@ -137,7 +140,7 @@
             (click)="downloadAll()"
             [disabled]="totals().count === 0 || busy()"
           >
-            <mat-icon>download</mat-icon>
+            <ng-icon name="matDownloadOutline" />
             @if (totals().count > 1) {
               Download all ({{ totals().count }}) as .zip
             } @else {
@@ -145,14 +148,14 @@
             }
           </button>
           <button matButton (click)="reset()">
-            <mat-icon>refresh</mat-icon>
+            <ng-icon name="matRefreshOutline" />
             Start over
           </button>
         </div>
 
         @if (usingFallbackCodec()) {
           <p class="note" role="status">
-            <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+            <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
             The mozjpeg encoder could not be loaded, so your browser's built-in one is being used.
             Images are still compressed locally, just a little less tightly.
           </p>
@@ -235,14 +238,14 @@
 
               @if (item.output.targetMissed) {
                 <p class="status status--err" role="status">
-                  <mat-icon class="status__icon" aria-hidden="true">warning</mat-icon>
+                  <ng-icon class="status__icon" aria-hidden="true" name="matWarningOutline" />
                   Even at the lowest usable quality this image is
                   {{ formatBytes(item.output.size) }} — try resizing it as well.
                 </p>
               }
             } @else if (item.error) {
               <p class="status status--err" role="alert">
-                <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+                <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
                 {{ item.error }}
               </p>
             } @else {
@@ -258,7 +261,7 @@
                   Metadata in the original
                   @if (meta.hasLocation) {
                     <span class="meta__flag">
-                      <mat-icon aria-hidden="true">location_on</mat-icon>
+                      <ng-icon aria-hidden="true" name="matLocationOnOutline" />
                       Includes location
                     </span>
                   }
@@ -272,7 +275,7 @@
                   }
                 </dl>
                 <p class="note">
-                  <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+                  <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
                   @if (item.output?.keptMetadata) {
                     This information has been copied into the compressed file.
                   } @else {
@@ -337,7 +340,7 @@
                     [attr.aria-label]="'Remove ' + item.name"
                     (click)="remove(item.id)"
                   >
-                    <mat-icon>close</mat-icon>
+                    <ng-icon name="matCloseOutline" />
                   </button>
                 </div>
               </li>
@@ -352,7 +355,7 @@
               class="dropzone__input"
               (change)="onFileSelected($event)"
             />
-            <mat-icon aria-hidden="true">add</mat-icon>
+            <ng-icon aria-hidden="true" name="matAddOutline" />
             Add more images
           </label>
         </section>
@@ -360,26 +363,17 @@
     </div>
   } @else {
     <!-- Drop zone --------------------------------------------------- -->
-    <label
-      class="dropzone"
-      [class.dropzone--over]="dragOver()"
-      (dragover)="onDragOver($event)"
-      (dragleave)="onDragLeave()"
-      (drop)="onDrop($event)"
+    <app-dropzone
+      accept="image/*,.heic,.heif"
+      [multiple]="true"
+      (filesSelected)="addFiles($event)"
     >
-      <input
-        type="file"
-        accept="image/*,.heic,.heif"
-        multiple
-        class="dropzone__input"
-        (change)="onFileSelected($event)"
-      />
-      <mat-icon class="dropzone__icon" aria-hidden="true">add_photo_alternate</mat-icon>
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matAddPhotoAlternateOutline" />
       <span class="dropzone__title">Drop images here, or click to choose</span>
       <span class="dropzone__hint">
         JPEG, PNG, WebP and HEIC — up to {{ maxFiles }} files, 20 MB each
       </span>
-    </label>
+    </app-dropzone>
   }
 </div>
 

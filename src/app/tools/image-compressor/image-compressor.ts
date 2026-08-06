@@ -11,7 +11,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -21,6 +21,7 @@ import { downloadBlob, fileStem } from '../../core/download';
 import { formatBytes } from '../../core/format';
 import { downloadZip, type ZipEntry } from '../../core/zip';
 import { Spinner } from '../../shared/spinner/spinner';
+import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import type { Metadata } from './exif';
 import { ImageCodecClient, type CodecFormat } from './image-codec.client';
@@ -83,12 +84,13 @@ const SIZE_PRESETS: ReadonlyArray<{ value: number; label: string }> = [
 @Component({
   selector: 'app-image-compressor',
   imports: [
+    Dropzone,
     ToolContent,
     RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
     MatFormFieldModule,
-    MatIconModule,
+    NgIcon,
     MatSelectModule,
     MatSliderModule,
     Spinner,
@@ -107,7 +109,6 @@ export class ImageCompressorTool implements OnDestroy {
   // --- State ------------------------------------------------------------
   protected readonly items = signal<Item[]>([]);
   protected readonly selectedId = signal<string | null>(null);
-  protected readonly dragOver = signal(false);
   protected readonly usingFallbackCodec = signal(false);
 
   // --- Options ----------------------------------------------------------
@@ -192,6 +193,10 @@ export class ImageCompressorTool implements OnDestroy {
   }
 
   // --- File selection ---------------------------------------------------
+  /**
+   * Still needed by the "Add more images" input inside the queue, which is a
+   * plain labelled input rather than a drop target.
+   */
   protected onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     // Copy out of the live FileList before resetting — clearing `input.value`
@@ -203,25 +208,7 @@ export class ImageCompressorTool implements OnDestroy {
     }
   }
 
-  protected onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(false);
-    const files = event.dataTransfer?.files;
-    if (files?.length) {
-      void this.addFiles(Array.from(files));
-    }
-  }
-
-  protected onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(true);
-  }
-
-  protected onDragLeave(): void {
-    this.dragOver.set(false);
-  }
-
-  private async addFiles(files: File[]): Promise<void> {
+  protected async addFiles(files: File[]): Promise<void> {
     const room = MAX_FILES - this.items().length;
     if (room <= 0) {
       this.showError(`You can compress up to ${MAX_FILES} images at a time.`);

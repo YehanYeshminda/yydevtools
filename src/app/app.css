@@ -110,8 +110,63 @@
   background: var(--surface-2);
 }
 
-.theme-toggle .material-icons-outlined {
+.theme-toggle ng-icon {
   font-size: 20px;
+}
+
+/* The panel renders in a CDK overlay, outside this component's view, so these
+   need ::ng-deep to reach it. cdkMenu is headless — every pixel below is ours,
+   which is the trade that keeps it off the critical path. */
+::ng-deep .theme-menu {
+  min-width: 168px;
+  padding: 6px;
+  color: var(--on);
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 12%);
+}
+
+::ng-deep .theme-menu__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+::ng-deep .theme-menu__item:hover,
+::ng-deep .theme-menu__item:focus-visible {
+  background: var(--surface-2);
+}
+
+::ng-deep .theme-menu__icon {
+  margin-right: 10px;
+  font-size: 18px;
+  color: var(--on-var);
+}
+
+/* Reserves its own width whether or not the tick is showing, so the labels do
+   not shift sideways as the selection moves. The gap is margin rather than
+   padding: `box-sizing: border-box` is global, so padding here would eat into
+   the 18px and squash the glyph. */
+::ng-deep .theme-menu__check {
+  width: 18px;
+  margin-left: 24px;
+  font-size: 18px;
+  color: var(--primary);
+}
+
+/* Pushes the tick to the trailing edge without the label moving with it. */
+::ng-deep .theme-menu__item > span:nth-child(2) {
+  margin-right: auto;
 }
 
 @media (max-width: 640px) {

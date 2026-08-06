@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import QRCode, { type QRCodeErrorCorrectionLevel } from 'qrcode';
@@ -31,15 +31,15 @@ interface KindOption {
 
 /** The payload types offered, in the order people reach for them. */
 const KINDS: KindOption[] = [
-  { key: 'url', label: 'Link', icon: 'link' },
-  { key: 'text', label: 'Text', icon: 'notes' },
-  { key: 'wifi', label: 'Wi-Fi', icon: 'wifi' },
-  { key: 'vcard', label: 'Contact', icon: 'contact_page' },
-  { key: 'email', label: 'Email', icon: 'mail' },
-  { key: 'sms', label: 'SMS', icon: 'sms' },
-  { key: 'tel', label: 'Phone', icon: 'call' },
-  { key: 'geo', label: 'Location', icon: 'location_on' },
-  { key: 'event', label: 'Event', icon: 'event' },
+  { key: 'url', label: 'Link', icon: 'matLinkOutline' },
+  { key: 'text', label: 'Text', icon: 'matNotesOutline' },
+  { key: 'wifi', label: 'Wi-Fi', icon: 'matWifiOutline' },
+  { key: 'vcard', label: 'Contact', icon: 'matContactPageOutline' },
+  { key: 'email', label: 'Email', icon: 'matMailOutline' },
+  { key: 'sms', label: 'SMS', icon: 'matSmsOutline' },
+  { key: 'tel', label: 'Phone', icon: 'matCallOutline' },
+  { key: 'geo', label: 'Location', icon: 'matLocationOnOutline' },
+  { key: 'event', label: 'Event', icon: 'matEventOutline' },
 ];
 
 const LEVELS: LevelOption[] = [
@@ -83,7 +83,7 @@ function group<T extends object>(value: T | undefined): Partial<T> {
 
 @Component({
   selector: 'app-qr-generator',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './qr-generator.html',
   styleUrls: ['../tool-shell.css', './qr-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">Code Formatter</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>code_blocks</mat-icon>
+    <ng-icon name="matCodeOutline" />
   </div>
   <div>
     <h1 class="head__title">Code Formatter</h1>
@@ -63,7 +63,7 @@
           [attr.aria-pressed]="useTabs()"
           (click)="toggleTabs()"
         >
-          <mat-icon aria-hidden="true">{{ useTabs() ? 'check' : 'keyboard_tab' }}</mat-icon>
+          <ng-icon aria-hidden="true" [name]="useTabs() ? 'matCheckOutline' : 'matKeyboardTabOutline'" />
           Use tabs
         </button>
 
@@ -75,7 +75,7 @@
             [attr.aria-pressed]="semi()"
             (click)="toggleSemi()"
           >
-            <mat-icon aria-hidden="true">{{ semi() ? 'check' : 'more_horiz' }}</mat-icon>
+            <ng-icon aria-hidden="true" [name]="semi() ? 'matCheckOutline' : 'matMoreHorizOutline'" />
             Semicolons
           </button>
           <button
@@ -85,7 +85,7 @@
             [attr.aria-pressed]="singleQuote()"
             (click)="toggleSingleQuote()"
           >
-            <mat-icon aria-hidden="true">{{ singleQuote() ? 'check' : 'format_quote' }}</mat-icon>
+            <ng-icon aria-hidden="true" [name]="singleQuote() ? 'matCheckOutline' : 'matFormatQuoteOutline'" />
             Single quotes
           </button>
         }
@@ -107,11 +107,11 @@
 
   <div class="actions">
     <button matButton="filled" (click)="format()" [disabled]="!input() || busy()">
-      <mat-icon>format_align_left</mat-icon>
+      <ng-icon name="matFormatAlignLeftOutline" />
       {{ busy() ? 'Formatting…' : 'Format' }}
     </button>
     <button matButton (click)="clear()" [disabled]="!input()">
-      <mat-icon>clear</mat-icon>
+      <ng-icon name="matClearOutline" />
       Clear
     </button>
     <app-share-link [state]="shared" />
@@ -120,7 +120,7 @@
   <!-- Output ---------------------------------------------------------- -->
   @if (error()) {
     <p class="status status--err" role="alert">
-      <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
       {{ error() }}
     </p>
   } @else if (hasOutput()) {
@@ -128,7 +128,7 @@
       <div class="output__head">
         <h2 class="section__title">Formatted</h2>
         <button matButton (click)="copy()">
-          <mat-icon>content_copy</mat-icon>
+          <ng-icon name="matContentCopyOutline" />
           Copy
         </button>
       </div>
@@ -143,7 +143,7 @@
   }
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     <span>
       Formatting only changes whitespace and style, never the meaning of your code. The Prettier
       engine loads on first use and nothing is ever uploaded.

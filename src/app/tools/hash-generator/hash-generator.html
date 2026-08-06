@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">Hash Generator</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>tag</mat-icon>
+    <ng-icon name="matTagOutline" />
   </div>
   <div>
     <h1 class="head__title">Hash Generator</h1>
@@ -33,7 +33,7 @@
       [attr.aria-selected]="source() === 'text'"
       (click)="selectSource('text')"
     >
-      <mat-icon aria-hidden="true">notes</mat-icon>
+      <ng-icon aria-hidden="true" name="matNotesOutline" />
       Text
     </button>
     <button
@@ -44,7 +44,7 @@
       [attr.aria-selected]="source() === 'file'"
       (click)="selectSource('file')"
     >
-      <mat-icon aria-hidden="true">draft</mat-icon>
+      <ng-icon aria-hidden="true" name="matDescriptionOutline" />
       File
     </button>
   </div>
@@ -64,20 +64,13 @@
       <span class="field__hint">Hashed as UTF-8 bytes.</span>
     </div>
   } @else {
-    <label
-      class="dropzone"
-      [class.dropzone--over]="dragOver()"
-      (dragover)="onDragOver($event)"
-      (dragleave)="onDragLeave()"
-      (drop)="onDrop($event)"
-    >
-      <input type="file" multiple class="dropzone__input" (change)="onFilesSelected($event)" />
-      <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+    <app-dropzone [multiple]="true" (filesSelected)="addFiles($event)">
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
       <span class="dropzone__title">Drop files here, or click to choose</span>
       <span class="dropzone__hint">
         Any file type — up to {{ maxFiles }} files, 250 MB each
       </span>
-    </label>
+    </app-dropzone>
 
     @if (hasFiles()) {
       <section aria-label="Files">
@@ -114,7 +107,7 @@
                   [attr.aria-label]="'Remove ' + entry.name"
                   (click)="removeFile(entry.id)"
                 >
-                  <mat-icon>close</mat-icon>
+                  <ng-icon name="matCloseOutline" />
                 </button>
               </div>
               @if (entry.working) {
@@ -133,7 +126,7 @@
                     [attr.aria-label]="'Copy ' + algorithm() + ' digest of ' + entry.name"
                     (click)="copy(hex, algorithm())"
                   >
-                    <mat-icon>content_copy</mat-icon>
+                    <ng-icon name="matContentCopyOutline" />
                   </button>
                 </div>
               }
@@ -144,11 +137,11 @@
         @if (doneFiles().length > 1) {
           <div class="actions">
             <button matButton (click)="copyChecksums()">
-              <mat-icon>content_copy</mat-icon>
+              <ng-icon name="matContentCopyOutline" />
               Copy all checksums
             </button>
             <button matButton (click)="downloadChecksums()">
-              <mat-icon>download</mat-icon>
+              <ng-icon name="matDownloadOutline" />
               Download .txt
             </button>
           </div>
@@ -175,12 +168,12 @@
     @if (verification(); as check) {
       @if (check.matched) {
         <p class="status status--ok" role="status">
-          <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+          <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
           Matches the {{ check.algorithm }} digest of {{ check.name }}.
         </p>
       } @else {
         <p class="status status--err" role="status">
-          <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+          <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
           No match — this digest does not correspond to anything hashed above.
         </p>
       }
@@ -207,11 +200,11 @@
 
   <div class="actions">
     <button matButton (click)="toggleCase()">
-      <mat-icon>text_fields</mat-icon>
+      <ng-icon name="matTextFieldsOutline" />
       {{ uppercase() ? 'Lowercase output' : 'Uppercase output' }}
     </button>
     <button matButton (click)="clear()" [disabled]="!digests().length && !text() && !hasFiles()">
-      <mat-icon>clear</mat-icon>
+      <ng-icon name="matClearOutline" />
       Clear
     </button>
     @if (hashing()) {
@@ -238,7 +231,7 @@
                 (click)="copy(digest.hex, digest.algorithm)"
                 [attr.aria-label]="'Copy ' + digest.algorithm + ' digest'"
               >
-                <mat-icon>content_copy</mat-icon>
+                <ng-icon name="matContentCopyOutline" />
               </button>
             </li>
           }
@@ -248,7 +241,7 @@
   }
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     MD5, CRC32 and SHA-1 are provided for checksums and compatibility only — they are unsafe for
     anything security related, so prefer SHA-256 or stronger, or a keyed HMAC.
   </p>

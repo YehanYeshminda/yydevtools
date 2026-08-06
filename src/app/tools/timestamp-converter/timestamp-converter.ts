@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
@@ -31,7 +31,7 @@ const MS_THRESHOLD = 1e11;
 
 @Component({
   selector: 'app-timestamp-converter',
-  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './timestamp-converter.html',
   styleUrls: ['../tool-shell.css', './timestamp-converter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

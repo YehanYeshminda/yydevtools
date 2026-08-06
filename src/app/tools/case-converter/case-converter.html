@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">Case Converter</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>text_fields</mat-icon>
+    <ng-icon name="matTextFieldsOutline" />
   </div>
   <div>
     <h1 class="head__title">Case Converter</h1>
@@ -37,7 +37,7 @@
 
   <div class="actions">
     <button matButton (click)="clear()">
-      <mat-icon>clear</mat-icon>
+      <ng-icon name="matClearOutline" />
       Clear
     </button>
     <app-share-link [state]="shared" />
@@ -55,7 +55,7 @@
             (click)="copy(row.value, row.label)"
             [attr.aria-label]="'Copy ' + row.label"
           >
-            <mat-icon>content_copy</mat-icon>
+            <ng-icon name="matContentCopyOutline" />
           </button>
         </li>
       }
@@ -63,7 +63,7 @@
   }
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     Words are detected across camelCase humps, separators and letter/number boundaries, so
     <code>getUserByID</code> and <code>get_user_by_id</code> convert the same way.
   </p>

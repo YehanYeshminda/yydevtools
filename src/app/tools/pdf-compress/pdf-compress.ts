@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 import { HostedPdfTool } from '../../core/hosted-pdf-tool';
 import { Spinner } from '../../shared/spinner/spinner';
+import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 type Level = 'LOW' | 'MEDIUM' | 'HIGH';
@@ -27,7 +28,7 @@ const LEVELS: LevelOption[] = [
 
 @Component({
   selector: 'app-pdf-compress',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, Spinner],
+  imports: [Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner],
   templateUrl: './pdf-compress.html',
   styleUrls: ['../tool-shell.css', './pdf-compress.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

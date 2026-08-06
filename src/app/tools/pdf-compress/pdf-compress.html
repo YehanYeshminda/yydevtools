@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">PDF Compress</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>compress</mat-icon>
+    <ng-icon name="matCompressOutline" />
   </div>
   <div>
     <h1 class="head__title">PDF Compress</h1>
@@ -24,26 +24,14 @@
 <div class="panel">
   @if (unavailable()) {
     <p class="status status--err" role="alert">
-      <mat-icon class="status__icon" aria-hidden="true">cloud_off</mat-icon>
+      <ng-icon class="status__icon" aria-hidden="true" name="matCloudOffOutline" />
       <a routerLink="/tools/pdf-merge">Merge</a>, <a routerLink="/tools/pdf-split">split</a> and
       <a routerLink="/tools/pdf-viewer">viewing</a> all still work entirely in your browser.
     </p>
   }
 
-  <label
-    class="dropzone"
-    [class.dropzone--over]="dragOver()"
-    (dragover)="onDragOver($event)"
-    (dragleave)="onDragLeave()"
-    (drop)="onDrop($event)"
-  >
-    <input
-      type="file"
-      accept="application/pdf,.pdf"
-      class="dropzone__input"
-      (change)="onFileSelected($event)"
-    />
-    <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+  <app-dropzone accept="application/pdf,.pdf" (filesSelected)="acceptFiles($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
     <span class="dropzone__title">
       @if (hasFile()) {
         Drop another PDF here, or click to replace
@@ -52,11 +40,11 @@
       }
     </span>
     <span class="dropzone__hint">One file at a time — up to 20 MB</span>
-  </label>
+  </app-dropzone>
 
   @if (hasFile()) {
     <p class="status status--ok" role="status">
-      <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+      <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
       {{ fileSummary() }}
     </p>
 
@@ -86,12 +74,12 @@
         </button>
       } @else {
         <button matButton="filled" (click)="compress()" [disabled]="!canRun()">
-          <mat-icon>compress</mat-icon>
+          <ng-icon name="matCompressOutline" />
           Compress
         </button>
       }
       <button matButton (click)="clear()" [disabled]="working()">
-        <mat-icon>delete_sweep</mat-icon>
+        <ng-icon name="matDeleteSweepOutline" />
         Clear
       </button>
     </div>
@@ -105,7 +93,7 @@
             <span class="compare__label">Before</span>
             <span class="compare__size">{{ formatBytes(fileSize()) }}</span>
           </div>
-          <mat-icon class="compare__arrow" aria-hidden="true">arrow_forward</mat-icon>
+          <ng-icon class="compare__arrow" aria-hidden="true" name="matArrowForwardOutline" />
           <div class="compare__side">
             <span class="compare__label">After</span>
             <span class="compare__size compare__size--after">{{ formatBytes(resultSize()) }}</span>
@@ -114,12 +102,12 @@
 
         @if (savedPercent() > 0) {
           <p class="verdict verdict--good">
-            <mat-icon class="status__icon" aria-hidden="true">trending_down</mat-icon>
+            <ng-icon class="status__icon" aria-hidden="true" name="matTrendingDownOutline" />
             {{ formatBytes(savedBytes()) }} smaller — a {{ savedPercent() }}% saving.
           </p>
         } @else {
           <p class="verdict">
-            <mat-icon class="status__icon" aria-hidden="true">info</mat-icon>
+            <ng-icon class="status__icon" aria-hidden="true" name="matInfoOutline" />
             This PDF was already well optimised, so there was nothing worth removing. Keep your
             original.
           </p>
@@ -127,7 +115,7 @@
 
         <div class="actions">
           <button matButton="filled" (click)="save()">
-            <mat-icon>download</mat-icon>
+            <ng-icon name="matDownloadOutline" />
             Download compressed PDF
           </button>
         </div>
@@ -136,7 +124,7 @@
   }
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     This tool uploads your file. It is sent over HTTPS to our own compression service, processed, and
     returned — the file is deleted right after processing and never stored. Savings come from the
     images inside the PDF, so a text-only document will barely shrink.

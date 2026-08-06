@@ -8,6 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { NgIcon } from '@ng-icons/core';
 
 import { FavoritesService } from '../core/favorites.service';
 import { AdSlot } from '../shared/ad-slot/ad-slot';
@@ -36,14 +37,14 @@ interface ToolGroup {
 }
 
 const CATEGORY_META: Record<ToolCategory, { accent: string; icon: string }> = {
-  Developer: { accent: 'dev', icon: 'terminal' },
-  Converter: { accent: 'conv', icon: 'sync_alt' },
-  Document: { accent: 'doc', icon: 'description' },
+  Developer: { accent: 'dev', icon: 'matTerminalOutline' },
+  Converter: { accent: 'conv', icon: 'matSyncAltOutline' },
+  Document: { accent: 'doc', icon: 'matDescriptionOutline' },
 };
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, AdSlot],
+  imports: [RouterLink, NgIcon, AdSlot],
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -84,7 +85,7 @@ export class Home {
       .filter((tool): tool is Tool => tool !== undefined)
       .map((tool) => this.toCard(tool));
 
-    return tools.length > 0 ? { title: 'Favorites', accent: 'fav', icon: 'star', tools } : null;
+    return tools.length > 0 ? { title: 'Favorites', accent: 'fav', icon: 'matStarOutline', tools } : null;
   });
 
   /**

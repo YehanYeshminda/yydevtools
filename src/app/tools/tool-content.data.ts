@@ -127,7 +127,51 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. Anyone can decode the payload — it is only Base64, not encryption. A token is only trustworthy if its signature verifies against the correct key, which is what the verification step checks.',
       },
     ],
-    related: ['base64-converter', 'hash-generator', 'json-formatter'],
+    related: ['jwt-editor', 'base64-converter', 'hash-generator'],
+  },
+
+  'jwt-editor': {
+    slug: 'jwt-editor',
+    intro: [
+      'A JSON Web Token is signed over its header and payload, so the moment you change a claim — a role, an expiry, a subject — the original signature no longer matches and every correct verifier rejects the token. There is no way to edit a JWT and keep it valid without re-signing it, and re-signing needs the signing key. This editor does exactly that: it decodes an existing token into its header and payload, lets you edit them as JSON, and produces a fresh, correctly signed token.',
+      'It signs with the browser Web Crypto API — HS256/384/512 from a shared secret, and the RSA and ECDSA families (RS, PS and ES) from a PKCS#8 private key. The token you paste, the JSON you edit and the key you supply never leave your device, so you can rebuild a test token from a real one without exposing either the token or the key to a remote server.',
+    ],
+    steps: [
+      'Paste an existing token and choose “Load into editor” to fill the header and payload, or type them in directly.',
+      'Edit the header and payload JSON — the algorithm is read from the header’s alg field.',
+      'Paste the signing key: the shared secret for HS*, or a PKCS#8 private key (-----BEGIN PRIVATE KEY-----) for RS/PS/ES.',
+      'Copy the freshly signed token from the result. It verifies against the matching key.',
+    ],
+    features: [
+      'Re-signs edited HS256/384/512 tokens from a secret, and RS/PS/ES256/384/512 from a PKCS#8 private key.',
+      'Reads the algorithm from the header, so editing alg switches the key it expects.',
+      'Can emit an unsigned alg:none token, to test whether a server wrongly accepts one.',
+      'Uses the browser Web Crypto API — no library and no network request.',
+      'The token, the edited claims and the key never leave your browser.',
+    ],
+    faq: [
+      {
+        q: 'Can I change a JWT without invalidating it?',
+        a: 'Not without the signing key. The signature is computed over the header and payload, so any edit to the claims breaks it. What you can do — and what this tool does — is edit the claims and then re-sign with the key, which produces a new token that is valid against that key.',
+      },
+      {
+        q: 'Do I need the signing key?',
+        a: 'Yes. For HS256/384/512 that is the shared HMAC secret; for RS, PS and ES tokens it is the PKCS#8 private key. Without the correct key you can decode and edit a token, but any token produced will be rejected by a verifier that checks the signature. This tool cannot forge a token for a key you do not have.',
+      },
+      {
+        q: 'Why is my RSA or EC private key rejected?',
+        a: 'Web Crypto imports unencrypted PKCS#8 keys — the ones that begin with “-----BEGIN PRIVATE KEY-----”. Legacy PKCS#1 (“BEGIN RSA PRIVATE KEY”) and SEC1 (“BEGIN EC PRIVATE KEY”) formats are not accepted. Convert one with: openssl pkcs8 -topk8 -nocrypt -in key.pem.',
+      },
+      {
+        q: 'Is it safe to paste a real token and key here?',
+        a: 'Editing and signing both run locally in your browser with Web Crypto. The token, the JSON you edit and the private key you enter are never transmitted. Even so, treat a private key with care and prefer a test key where you can.',
+      },
+      {
+        q: 'What is the “alg: none” / unsigned option for?',
+        a: 'Setting the header algorithm to “none” produces an unsigned token — a header and payload with an empty signature and no key. A correctly configured server rejects it outright; it is accepted only by a verifier misconfigured to allow the “none” algorithm, which is a known JWT vulnerability. The option exists so you can test your own service (or one you are authorised to test) for that flaw. It does not let you forge a valid token — a properly configured server will still reject it.',
+      },
+    ],
+    related: ['jwt-decoder', 'hash-generator', 'json-formatter'],
   },
 
   'hash-generator': {

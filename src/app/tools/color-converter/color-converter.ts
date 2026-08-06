@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
@@ -48,7 +48,7 @@ export interface ContrastCheck {
 
 @Component({
   selector: 'app-color-converter',
-  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './color-converter.html',
   styleUrls: ['../tool-shell.css', './color-converter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

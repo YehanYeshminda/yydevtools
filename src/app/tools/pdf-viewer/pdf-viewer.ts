@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import { describeFile, formatBytes } from '../../core/format';
 import { looksLikePdf, readPageCount } from '../../core/pdf-probe';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
+import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 /** The document is held in memory, so reject anything unreasonable up front. */
@@ -13,7 +14,7 @@ const MAX_INPUT_BYTES = 100 * 1024 * 1024;
 
 @Component({
   selector: 'app-pdf-viewer',
-  imports: [ToolContent, RouterLink, MatButtonModule, MatIconModule, PdfPreview],
+  imports: [Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, PdfPreview],
   templateUrl: './pdf-viewer.html',
   styleUrls: ['../tool-shell.css', './pdf-viewer.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,7 +27,6 @@ export class PdfViewerTool {
   /** Null when the page tree could not be read; the summary then omits it. */
   protected readonly pageCount = signal<number | null>(null);
   protected readonly bytes = signal<Uint8Array | null>(null);
-  protected readonly dragOver = signal(false);
 
   protected readonly hasFile = computed(() => this.bytes() !== null);
 
@@ -35,32 +35,12 @@ export class PdfViewerTool {
     describeFile(this.fileName(), this.pageCount(), this.fileSize()),
   );
 
-  protected onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    // Reset so picking the same file again still fires (change).
-    input.value = '';
+  /** Single-file tool, so anything past the first dropped file is ignored. */
+  protected acceptFiles(files: File[]): void {
+    const file = files[0];
     if (file) {
       void this.load(file);
     }
-  }
-
-  protected onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(false);
-    const file = event.dataTransfer?.files?.[0];
-    if (file) {
-      void this.load(file);
-    }
-  }
-
-  protected onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(true);
-  }
-
-  protected onDragLeave(): void {
-    this.dragOver.set(false);
   }
 
   private async load(file: File): Promise<void> {

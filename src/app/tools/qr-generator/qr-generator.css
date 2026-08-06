@@ -93,7 +93,7 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-.preview__empty mat-icon {
+.preview__empty ng-icon {
   font-size: 2.5rem;
   width: 2.5rem;
   height: 2.5rem;

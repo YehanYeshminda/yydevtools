@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import type { ToolState } from '../../core/tool-state';
@@ -18,7 +18,7 @@ import type { ToolState } from '../../core/tool-state';
  */
 @Component({
   selector: 'app-share-link',
-  imports: [MatButtonModule, MatIconModule],
+  imports: [MatButtonModule, NgIcon],
   template: `
     <button
       matButton
@@ -26,7 +26,7 @@ import type { ToolState } from '../../core/tool-state';
       [attr.title]="hint()"
       (click)="copy()"
     >
-      <mat-icon>link</mat-icon>
+      <ng-icon name="matLinkOutline" />
       Copy link
     </button>
   `,

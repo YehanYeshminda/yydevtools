@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">JSON Formatter</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>data_object</mat-icon>
+    <ng-icon name="matDataObjectOutline" />
   </div>
   <div>
     <h1 class="head__title">JSON Formatter</h1>
@@ -53,13 +53,13 @@
   @switch (validity()) {
     @case ('valid') {
       <p class="status status--ok" role="status">
-        <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+        <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
         Valid JSON
       </p>
     }
     @case ('invalid') {
       <p class="status status--err" role="status">
-        <mat-icon class="status__icon" aria-hidden="true">error</mat-icon>
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
         Invalid JSON — click Format for details.
       </p>
     }
@@ -67,23 +67,23 @@
 
   <div class="actions">
     <button matButton="filled" (click)="format()" [disabled]="!input()">
-      <mat-icon>format_indent_increase</mat-icon>
+      <ng-icon name="matFormatIndentIncreaseOutline" />
       Format
     </button>
     <button matButton (click)="minify()" [disabled]="!input()">
-      <mat-icon>compress</mat-icon>
+      <ng-icon name="matCompressOutline" />
       Minify
     </button>
     <button matButton (click)="toYaml()" [disabled]="!input()">
-      <mat-icon>swap_horiz</mat-icon>
+      <ng-icon name="matSwapHorizOutline" />
       To YAML
     </button>
     <button matButton (click)="fromYaml()" [disabled]="!input()">
-      <mat-icon>swap_horiz</mat-icon>
+      <ng-icon name="matSwapHorizOutline" />
       YAML → JSON
     </button>
     <button matButton (click)="clear()" [disabled]="!input()">
-      <mat-icon>clear</mat-icon>
+      <ng-icon name="matClearOutline" />
       Clear
     </button>
     <app-share-link [state]="shared" />
@@ -103,7 +103,7 @@
       />
     </mat-form-field>
     <button matButton (click)="runQuery()" [disabled]="!input() || !query()">
-      <mat-icon>search</mat-icon>
+      <ng-icon name="matSearchOutline" />
       Run query
     </button>
   </div>
@@ -122,7 +122,7 @@
 
     <div class="actions">
       <button matButton="filled" (click)="copy()">
-        <mat-icon>content_copy</mat-icon>
+        <ng-icon name="matContentCopyOutline" />
         Copy result
       </button>
     </div>

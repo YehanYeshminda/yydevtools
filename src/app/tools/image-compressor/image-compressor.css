@@ -255,7 +255,7 @@
   font-weight: 600;
 }
 
-.meta__flag mat-icon {
+.meta__flag ng-icon {
   font-size: 0.95rem;
   width: 0.95rem;
   height: 0.95rem;

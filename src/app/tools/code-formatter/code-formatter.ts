@@ -6,7 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 import type { Plugin } from 'prettier';
 
@@ -52,7 +52,7 @@ const SAMPLE = `<section class="card"   id="hero">
 
 @Component({
   selector: 'app-code-formatter',
-  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './code-formatter.html',
   styleUrls: ['../tool-shell.css', './code-formatter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

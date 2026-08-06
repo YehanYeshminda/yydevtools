@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">PDF OCR</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>document_scanner</mat-icon>
+    <ng-icon name="matDocumentScannerOutline" />
   </div>
   <div>
     <h1 class="head__title">PDF OCR</h1>
@@ -25,25 +25,13 @@
 <div class="panel">
   @if (unavailable()) {
     <p class="status status--err" role="alert">
-      <mat-icon class="status__icon" aria-hidden="true">cloud_off</mat-icon>
+      <ng-icon class="status__icon" aria-hidden="true" name="matCloudOffOutline" />
       {{ unavailable() }}
     </p>
   }
 
-  <label
-    class="dropzone"
-    [class.dropzone--over]="dragOver()"
-    (dragover)="onDragOver($event)"
-    (dragleave)="onDragLeave()"
-    (drop)="onDrop($event)"
-  >
-    <input
-      type="file"
-      accept="application/pdf,.pdf"
-      class="dropzone__input"
-      (change)="onFileSelected($event)"
-    />
-    <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+  <app-dropzone accept="application/pdf,.pdf" (filesSelected)="acceptFiles($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
     <span class="dropzone__title">
       @if (hasFile()) {
         Drop another PDF here, or click to replace
@@ -52,11 +40,11 @@
       }
     </span>
     <span class="dropzone__hint">One file at a time — up to 20 MB</span>
-  </label>
+  </app-dropzone>
 
   @if (hasFile()) {
     <p class="status status--ok" role="status">
-      <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+      <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
       {{ fileSummary() }}
     </p>
 
@@ -90,7 +78,7 @@
           [attr.title]="localBlockedReason() || null"
           (click)="setMode('local')"
         >
-          <mat-icon aria-hidden="true">computer</mat-icon>
+          <ng-icon aria-hidden="true" name="matComputerOutline" />
           In your browser
         </button>
         <button
@@ -101,7 +89,7 @@
           [disabled]="working()"
           (click)="setMode('hosted')"
         >
-          <mat-icon aria-hidden="true">cloud</mat-icon>
+          <ng-icon aria-hidden="true" name="matCloudOutline" />
           Hosted service
         </button>
       </div>
@@ -121,7 +109,7 @@
 
     @if (localDeclined()) {
       <p class="status status--err" role="status">
-        <mat-icon class="status__icon" aria-hidden="true">info</mat-icon>
+        <ng-icon class="status__icon" aria-hidden="true" name="matInfoOutline" />
         {{ localDeclined() }} Switched to the hosted service.
       </p>
     }
@@ -134,18 +122,18 @@
         </button>
         @if (effectiveMode() === 'local') {
           <button matButton (click)="cancel()">
-            <mat-icon>stop_circle</mat-icon>
+            <ng-icon name="matStopCircleOutline" />
             Stop
           </button>
         }
       } @else {
         <button matButton="filled" (click)="recognise()" [disabled]="!canRun()">
-          <mat-icon>document_scanner</mat-icon>
+          <ng-icon name="matDocumentScannerOutline" />
           Run OCR &amp; download
         </button>
       }
       <button matButton (click)="clear()" [disabled]="working()">
-        <mat-icon>delete_sweep</mat-icon>
+        <ng-icon name="matDeleteSweepOutline" />
         Clear
       </button>
     </div>
@@ -156,7 +144,7 @@
 
     @if (wordsFound() !== null) {
       <p class="status status--ok" role="status">
-        <mat-icon class="status__icon" aria-hidden="true">check_circle</mat-icon>
+        <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
         @if (wordsFound()) {
           Added {{ wordsFound() }} words as a searchable layer, without uploading anything.
         } @else {
@@ -168,7 +156,7 @@
   }
 
   <p class="note">
-    <mat-icon class="note__icon" aria-hidden="true">info</mat-icon>
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     <span>
       Either way the page images are untouched — only an invisible text layer is added, so nothing
       is re-compressed and the document looks exactly as it did. A PDF that already has real text

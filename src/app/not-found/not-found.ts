@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { NgIcon } from '@ng-icons/core';
 
 @Component({
   selector: 'app-not-found',
-  imports: [RouterLink],
+  imports: [RouterLink, NgIcon],
   template: `
     <div class="nf">
-      <span class="nf__icon material-icons-outlined" aria-hidden="true">explore_off</span>
+      <ng-icon class="nf__icon" aria-hidden="true" name="matExploreOffOutline" />
       <h1 class="nf__title">Page not found</h1>
       <p class="nf__text">
         That page doesn’t exist — it may have moved, or the link may be mistyped.

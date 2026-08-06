@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 import { format, type KeywordCase, type SqlLanguage } from 'sql-formatter';
 
@@ -48,7 +48,7 @@ const SAMPLE =
 
 @Component({
   selector: 'app-sql-formatter',
-  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './sql-formatter.html',
   styleUrls: ['../tool-shell.css', './sql-formatter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

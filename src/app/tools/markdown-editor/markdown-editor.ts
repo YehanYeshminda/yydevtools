@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 import { marked } from 'marked';
 
@@ -37,7 +37,7 @@ const greet = (name: string) => \`Hello, \${name}!\`;
 
 @Component({
   selector: 'app-markdown-editor',
-  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, MatIconModule],
+  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './markdown-editor.html',
   styleUrl: './markdown-editor.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

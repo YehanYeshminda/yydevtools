@@ -2,7 +2,7 @@
   <ol class="breadcrumb">
     <li><a routerLink="/">All tools</a></li>
     <li class="breadcrumb__sep" aria-hidden="true">
-      <mat-icon>chevron_right</mat-icon>
+      <ng-icon name="matChevronRightOutline" />
     </li>
     <li aria-current="page">Base64 Converter</li>
   </ol>
@@ -10,7 +10,7 @@
 
 <header class="head">
   <div class="head__icon" aria-hidden="true">
-    <mat-icon>swap_horiz</mat-icon>
+    <ng-icon name="matSwapHorizOutline" />
   </div>
   <div>
     <h1 class="head__title">Base64 Converter</h1>
@@ -25,15 +25,8 @@
   <!-- --------------------------------------------------- Encode a file -->
   <mat-tab label="Encode file">
     <div class="panel panel--tab">
-      <label
-        class="dropzone"
-        [class.dropzone--over]="dragOver()"
-        (dragover)="onEncodeDragOver($event)"
-        (dragleave)="onEncodeDragLeave()"
-        (drop)="onEncodeDrop($event)"
-      >
-        <input type="file" class="dropzone__input" (change)="onFileSelected($event)" />
-        <mat-icon class="dropzone__icon" aria-hidden="true">upload_file</mat-icon>
+      <app-dropzone (filesSelected)="acceptFiles($event)">
+        <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
         <span class="dropzone__title">
           @if (fileName()) {
             Drop another file here, or click to replace
@@ -42,11 +35,11 @@
           }
         </span>
         <span class="dropzone__hint">Any file, up to {{ maxFileLabel }} — nothing is uploaded</span>
-      </label>
+      </app-dropzone>
 
       @if (fileName()) {
         <p class="status status--ok" role="status">
-          <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+          <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
           {{ fileName() }} · {{ formatBytes(fileSize()) }}
         </p>
       }
@@ -84,15 +77,15 @@
 
         <div class="actions">
           <button matButton="filled" (click)="copyEncoded()">
-            <mat-icon>content_copy</mat-icon>
+            <ng-icon name="matContentCopyOutline" />
             Copy
           </button>
           <button matButton (click)="downloadEncoded()">
-            <mat-icon>download</mat-icon>
+            <ng-icon name="matDownloadOutline" />
             Download .txt
           </button>
           <button matButton (click)="clearEncoded()">
-            <mat-icon>delete_sweep</mat-icon>
+            <ng-icon name="matDeleteSweepOutline" />
             Clear
           </button>
         </div>
@@ -131,13 +124,13 @@
           @if (decodeSource.length() > 0) {
             @if (decodeValid()) {
               <p class="status status--ok" role="status">
-                <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+                <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
                 {{ decodeLabel() }} · about {{ formatBytes(decodeBytes()) }} ·
                 {{ count(decodeSource.length()) }} characters
               </p>
             } @else {
               <p class="status status--err" role="alert">
-                <mat-icon class="status__icon" aria-hidden="true">error_outline</mat-icon>
+                <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutlineOutline" />
                 That does not look like valid Base64.
               </p>
             }
@@ -151,12 +144,12 @@
               </button>
             } @else {
               <button matButton="filled" (click)="render()" [disabled]="!canRender()">
-                <mat-icon>visibility</mat-icon>
+                <ng-icon name="matVisibilityOutline" />
                 Render preview
               </button>
             }
             <button matButton (click)="clearDecode()" [disabled]="!decodeSource.length()">
-              <mat-icon>delete_sweep</mat-icon>
+              <ng-icon name="matDeleteSweepOutline" />
               Clear
             </button>
           </div>
@@ -177,7 +170,7 @@
               (click)="downloadDecoded()"
               [disabled]="!decodeSource.length() || rendering()"
             >
-              <mat-icon>download</mat-icon>
+              <ng-icon name="matDownloadOutline" />
               Download file
             </button>
           </div>
@@ -189,7 +182,7 @@
           @if (preview(); as rendered) {
             @if (previewStale()) {
               <p class="status status--warn" role="status">
-                <mat-icon class="status__icon" aria-hidden="true">update</mat-icon>
+                <ng-icon class="status__icon" aria-hidden="true" name="matUpdateOutline" />
                 The input changed — render again to refresh this.
               </p>
             }
@@ -229,14 +222,14 @@
               }
               @default {
                 <p class="preview-note">
-                  <mat-icon class="status__icon" aria-hidden="true">description</mat-icon>
+                  <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
                   No preview for {{ rendered.mime }}, but the file is ready to download.
                 </p>
               }
             }
           } @else {
             <div class="empty">
-              <mat-icon class="empty__icon" aria-hidden="true">visibility_off</mat-icon>
+              <ng-icon class="empty__icon" aria-hidden="true" name="matVisibilityOffOutline" />
               <p class="empty__title">Nothing rendered yet</p>
               <p class="empty__hint">
                 Paste your Base64 and press <strong>Render preview</strong>. Rendering is never
@@ -287,7 +280,7 @@
 
       @if (textError()) {
         <p class="status status--err" role="alert">
-          <mat-icon class="status__icon" aria-hidden="true">error_outline</mat-icon>
+          <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutlineOutline" />
           {{ textError() }}
         </p>
       }
@@ -316,19 +309,19 @@
 
       <div class="actions">
         <button matButton="filled" [disabled]="!textResultLength()" (click)="copyTextResult()">
-          <mat-icon>content_copy</mat-icon>
+          <ng-icon name="matContentCopyOutline" />
           Copy result
         </button>
         <button matButton [disabled]="!textResultLength()" (click)="downloadTextResult()">
-          <mat-icon>download</mat-icon>
+          <ng-icon name="matDownloadOutline" />
           Download .txt
         </button>
         <button matButton (click)="swapText()" [disabled]="!textResultLength()">
-          <mat-icon>swap_vert</mat-icon>
+          <ng-icon name="matSwapVertOutline" />
           Use as input
         </button>
         <button matButton (click)="clearText()" [disabled]="!textSource.length()">
-          <mat-icon>clear</mat-icon>
+          <ng-icon name="matClearOutline" />
           Clear
         </button>
       </div>

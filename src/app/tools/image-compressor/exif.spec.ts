@@ -75,7 +75,9 @@ describe('insertExifSegment', () => {
   });
 
   it('replaces an existing Exif segment rather than adding a second', () => {
-    const first = new Uint8Array(exifSegment([0x11]));
+    // `first` goes through jpeg(), which builds the file from raw byte arrays;
+    // only `second` is handed to insertExifSegment, which takes a Uint8Array.
+    const first = exifSegment([0x11]);
     const second = new Uint8Array(exifSegment([0x22]));
     const out = insertExifSegment(jpeg([first]), second);
     expect(Array.from(extractExifSegment(out)!)).toEqual(Array.from(second));

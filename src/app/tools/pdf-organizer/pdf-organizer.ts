@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import { PDFDocument, degrees } from '@cantoo/pdf-lib';
@@ -17,6 +17,7 @@ import { downloadBytes, fileStem } from '../../core/download';
 import { formatBytes } from '../../core/format';
 import { looksLikePdf } from '../../core/pdf-probe';
 import { Spinner } from '../../shared/spinner/spinner';
+import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import {
   insertBlankAfter,
@@ -55,11 +56,12 @@ const THUMB_EDGE = 260;
 @Component({
   selector: 'app-pdf-organizer',
   imports: [
+    Dropzone,
     ToolContent,
     RouterLink,
     DragDropModule,
     MatButtonModule,
-    MatIconModule,
+    NgIcon,
     Spinner,
   ],
   templateUrl: './pdf-organizer.html',
@@ -80,7 +82,6 @@ export class PdfOrganizerTool implements OnDestroy {
   protected readonly thumbs = signal<ReadonlyMap<string, string>>(new Map());
   protected readonly loading = signal(false);
   protected readonly exporting = signal(false);
-  protected readonly dragOver = signal(false);
   /** How many thumbnails are still to be drawn, for the progress line. */
   protected readonly pendingThumbs = signal(0);
 
@@ -108,6 +109,10 @@ export class PdfOrganizerTool implements OnDestroy {
   }
 
   // --- File selection ---------------------------------------------------
+  /**
+   * Still needed by the "add more" input in the page grid, which is a plain
+   * labelled input rather than a drop target.
+   */
   protected onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const files = input.files ? Array.from(input.files) : [];
@@ -117,25 +122,7 @@ export class PdfOrganizerTool implements OnDestroy {
     }
   }
 
-  protected onDrop(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(false);
-    const files = event.dataTransfer?.files;
-    if (files?.length) {
-      void this.addFiles(Array.from(files));
-    }
-  }
-
-  protected onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    this.dragOver.set(true);
-  }
-
-  protected onDragLeave(): void {
-    this.dragOver.set(false);
-  }
-
-  private async addFiles(files: File[]): Promise<void> {
+  protected async addFiles(files: File[]): Promise<void> {
     if (this.docs().length + files.length > MAX_FILES) {
       this.showError(`You can open up to ${MAX_FILES} documents at once.`);
       return;

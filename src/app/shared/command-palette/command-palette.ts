@@ -14,6 +14,7 @@ import { Router } from '@angular/router';
 
 import { FavoritesService } from '../../core/favorites.service';
 import { RecentToolsService } from '../../core/recent-tools.service';
+import { NgIcon } from '@ng-icons/core';
 import { PaletteItem, PaletteSection, buildSections } from './command-palette.search';
 
 /**
@@ -29,7 +30,7 @@ import { PaletteItem, PaletteSection, buildSections } from './command-palette.se
  */
 @Component({
   selector: 'app-command-palette',
-  imports: [],
+  imports: [NgIcon],
   template: `
     @if (open()) {
       <div class="cmdk" (click)="onBackdrop($event)">
@@ -40,7 +41,7 @@ import { PaletteItem, PaletteSection, buildSections } from './command-palette.se
           aria-label="Search tools"
         >
           <div class="cmdk__search">
-            <span class="cmdk__search-icon material-icons-outlined" aria-hidden="true">search</span>
+            <ng-icon class="cmdk__search-icon" aria-hidden="true" name="matSearchOutline" />
             <input
               #searchInput
               class="cmdk__input"
@@ -64,7 +65,7 @@ import { PaletteItem, PaletteSection, buildSections } from './command-palette.se
               @for (section of sections(); track section.title) {
                 <li class="cmdk__group" role="presentation">
                   <p class="cmdk__group-label" role="presentation">
-                    <span class="material-icons-outlined" aria-hidden="true">{{ section.icon }}</span>
+                    <ng-icon aria-hidden="true" [name]="section.icon" />
                     {{ section.title }}
                   </p>
                   <ul class="cmdk__group-list" role="presentation">
@@ -78,9 +79,11 @@ import { PaletteItem, PaletteSection, buildSections } from './command-palette.se
                         (click)="select(item)"
                         (mousemove)="activeIndex.set(item.index)"
                       >
-                        <span class="cmdk__opt-icon material-icons-outlined" aria-hidden="true">{{
-                          item.tool.icon
-                        }}</span>
+                        <ng-icon
+                          class="cmdk__opt-icon"
+                          aria-hidden="true"
+                          [name]="item.tool.icon"
+                        />
                         <span class="cmdk__opt-text">
                           <span class="cmdk__opt-name">{{ item.tool.name }}</span>
                           <span class="cmdk__opt-desc">{{ item.tool.description }}</span>

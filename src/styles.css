@@ -202,6 +202,24 @@ html {
   box-sizing: border-box;
 }
 
+/* Icons ------------------------------------------------------------------
+   Inline SVG via @ng-icons, so there is no icon webfont to download and no
+   window where icon names show as text before it arrives.
+
+   24px and the inline-flex box reproduce what Material's mat-icon did, so the
+   per-icon rules elsewhere — which all scale by setting font-size — did not
+   have to change. `currentColor` is what lets an icon inherit the colour of the button
+   or status line it sits in. */
+ng-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 24px;
+  color: currentColor;
+  line-height: 1;
+}
+
 ::selection {
   background: var(--primary-c);
   color: var(--on-primary-c);
@@ -210,4 +228,40 @@ html {
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* Route transitions ------------------------------------------------------
+   The router drives these via withViewTransitions(). Browsers without the API
+   simply navigate as before, so there is nothing to feature-detect here.
+
+   Opt-in rather than opt-out: the animation only exists inside the
+   no-preference branch, so a visitor asking for reduced motion gets the
+   default instant swap instead of a shortened-but-still-moving one. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: route-fade-out 90ms ease-in both;
+  }
+
+  ::view-transition-new(root) {
+    animation: route-fade-in 180ms ease-out both;
+  }
+
+  @keyframes route-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes route-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+}
+
+/* The tool pages own their scroll position; letting the snapshot capture a
+   full-page scroll container makes long tools jump on exit. */
+::view-transition-group(root) {
+  overflow: clip;
 }

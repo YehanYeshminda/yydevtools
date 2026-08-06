@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
+import { NgIcon } from '@ng-icons/core';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
@@ -28,7 +28,7 @@ type Validity = 'empty' | 'valid' | 'invalid';
     MatButtonToggleModule,
     MatCheckboxModule,
     MatFormFieldModule,
-    MatIconModule,
+    NgIcon,
     MatInputModule,
   ],
   templateUrl: './json-formatter.html',

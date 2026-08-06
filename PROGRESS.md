@@ -723,3 +723,221 @@ Chrome against the production build, end to end:
 - Rendering the source and the output and comparing pixel by pixel: **0 of
   1,126,596 pixels differ.** The layer really is invisible and the page really
   is untouched.
+
+---
+
+## Done — section J: the shell — icons, theme, drop targets and the JWT Editor (this pass)
+
+Four shell-level changes and one new tool. Nothing here is a feature the
+homepage advertises; all of it is what the site feels like to use.
+
+### 1. The icon webfont is gone
+
+`src/app/core/icons.ts`, `src/index.html`, `src/styles.css`
+
+Every icon was a `<span class="material-icons-outlined">name</span>` resolved by
+two render-blocking stylesheets from `fonts.googleapis.com`. Both `<link>`s are
+now deleted and the **198 icons the app actually uses** ship as inline SVG via
+`@ng-icons`, registered once at the root with `provideIcons(APP_ICONS)`.
+
+Three things this buys, in order of how much they matter:
+
+- **No third-party request on first paint.** A site whose entire argument is
+  that your data does not leave the browser was announcing every page view to
+  Google before it rendered. That was the real defect.
+- **No flash of icon names.** Until the font arrived, every icon rendered as its
+  literal text — `content_copy`, `dark_mode` — which is what the appbar looked
+  like on a cold cache.
+- The set is explicit, so an icon that no longer exists is a **compile error**
+  rather than a word rendered where a glyph should be.
+
+The cost is honest: initial bundle **355.70 → 498.46 kB raw (132.73 kB
+transferred)**. That buys back two blocking cross-origin round trips and the
+font files behind them, so the first paint is earlier despite the larger bundle
+— but it is the number to watch if the icon set keeps growing.
+
+One base rule in `styles.css` sets `ng-icon` to 24px in an inline-flex box with
+`color: currentColor`, reproducing what `mat-icon` did. Sizing is configured in
+`em` (`provideNgIconsConfig({ size: '1em' })`) so the existing per-icon rules —
+which all work by setting `font-size` — kept working without being touched.
+
+### 2. Theme: light / dark / **system**
+
+`src/app/core/theme.service.ts`, `src/app/app.html`
+
+The toggle flipped between two states, so a visitor who follows their OS had no
+way back to it once they touched the button — and the site then ignored a
+system change until localStorage was cleared. It is now a CDK menu with three
+options, and `system` is the default for anyone who has never chosen.
+
+The service keeps **two signals rather than one**: `preference` is what was
+picked and what the menu ticks, `theme` is what is painted. They differ only
+while the preference is `system`, where a `matchMedia` listener keeps `theme`
+following the OS live — without it a visitor on `system` would have to reload to
+see a change made outside the page.
+
+The inline pre-paint script in `index.html` was updated in step: anything not an
+explicit `light`/`dark` — the stored `system` and a first visit alike — follows
+the media query, so there is still no flash of the wrong colours.
+
+### 3. Route transitions and scroll position
+
+`src/app/app.config.ts`, `src/styles.css`
+
+- `withViewTransitions({ skipInitialTransition: true })` plus a 90 ms out / 180 ms
+  in fade. The animation lives **inside** a `prefers-reduced-motion:
+  no-preference` block, so reduced motion gets the plain instant swap rather
+  than a shortened one that still moves.
+- `withInMemoryScrolling({ scrollPositionRestoration: 'enabled' })`. The router's
+  default is to keep the previous page's offset, so opening a tool from halfway
+  down the home directory dropped you into the middle of the tool page.
+- **`anchorScrolling` is deliberately left off.** The only fragments this app
+  puts in a URL are share-link payloads (`#s=…`, section G); with anchor
+  scrolling on, the router would hunt for an element named after the payload and
+  skip the scroll-to-top fallback when it found none.
+
+### 4. One drop target, shared by ten tools
+
+`src/app/shared/dropzone/`
+
+`<app-dropzone>` replaces the hand-rolled drag handling in **base64,
+hash-generator, image-compressor and the seven PDF tools**, and deletes the
+copy that lived in `core/hosted-pdf-tool.ts`. Callers project the icon, title
+and hint, so the copy stays with the tool that owns it.
+
+Three bugs every copy shared, fixed once:
+
+- **`dragleave` fires whenever the pointer crosses onto a child node**, so the
+  highlight flickered off while the pointer was still well inside the zone. The
+  new one counts enter/leave pairs and only clears at zero.
+- `dropEffect` is set to `copy`, so the cursor stops promising a *move*.
+- Drags carrying no files are ignored — dragging a text selection across the
+  page no longer lights up every drop zone on it.
+
+### 5. New tool — JWT Editor (`tools/jwt-editor`), the 25th
+
+`jwt-sign.ts` is the signing counterpart to the decoder's `jwt-verify.ts`: edit
+a token's header and payload and get a **genuinely valid** signature back, via
+WebCrypto, with no network and no library. HS256/384/512 from a shared secret;
+RS/PS/ES256/384/512 from a PKCS#8 private-key PEM.
+
+It cannot forge anything — a signature requires the signing key, and it re-signs
+with the key you supply. What it removes is the habit of pasting a token *and a
+private key* into a stranger's website to change one claim.
+
+Two details: ES512 uses curve **P-521**, not P-512, which is the easy way to get
+this wrong; and WebCrypto's ECDSA output is already the fixed-size `r‖s`
+concatenation JWS wants, so there is no DER to unwrap. Tests: `jwt-sign.spec.ts`
+(15 cases). Decoder and editor cross-link.
+
+**Validation:** `tsc -p tsconfig.app.json` clean · `npm run build`
+**warning-free**, prerenders **30 routes**, writes a **29**-URL sitemap ·
+`vitest run` = **280 passed**, 19 skipped. Not yet driven in Chrome — the theme
+menu, the view transitions and the ten migrated drop zones are verified by
+build and tests only, so a browser pass over the shell is still owed.
+
+---
+
+## Next — the roadmap (drawn up 2026-08-04)
+
+Written after the first production deploy of sections F–I. Ordered by payoff per
+unit of work, not by how interesting each one is to build. Everything below is
+grounded in what is actually in the repo today — the file references are the
+evidence, and they are worth re-checking before starting, since they will drift.
+
+### Quick wins — small, disproportionate payoff
+
+- [ ] **A visible search button in the appbar.** `app.html` renders
+      `<app-command-palette />`, but the only way to open it is ⌘K/Ctrl-K
+      (`command-palette.ts`, the global `keydown` handler). There is no visible
+      trigger anywhere. The consequence is not cosmetic: on a touch device the
+      palette is *unreachable*, and on any tool page there is no way to search
+      at all — the header carries only Tools, About and GitHub. This is closer
+      to a defect than a nicety.
+- [ ] **Finish the PWA.** `public/site.webmanifest` and the full icon set
+      (`icon-192`, `icon-512`, `icon-maskable-512`, `apple-touch-icon`) are
+      already shipping, but there is no service worker, so none of it amounts to
+      offline. This is half-paid-for work. It is also the honest proof of the
+      whole premise: a tool that genuinely runs in your browser should still run
+      on a plane.
+- [ ] **Share links for the last of the text tools.** 13 of the 24 tools call
+      `syncToolState`; `base64`, `hash-generator` and `jwt-decoder` do not.
+      Worth a deliberate decision rather than a reflex — the fragment is never
+      transmitted (that property is proven in section G), but a *shareable* link
+      containing someone's JWT still invites a mistake that the privacy
+      guarantee does not actually cover. Reasonable answers include "input only,
+      never the token".
+- [ ] **CodeMirror for the JSON to Types output.** Six tools use the shared
+      editor (`code-formatter`, `json-formatter`, `markdown-editor`,
+      `regex-tester`, `sql-formatter`, `text-diff`). `json-to-types` emits
+      TypeScript, Rust and Kotlin into a plain box — the one tool whose entire
+      output is source code.
+- [ ] **"Try an example" on empty states.** Every tool opens blank. The cheapest
+      engagement and dwell-time win available, and it doubles as documentation.
+
+### New tools, ranked by fit with what already exists
+
+- [ ] **1. Images → PDF, and PDF → Images.** The strongest candidate by a wide
+      margin. `core/pdf-render.ts`, pdf-lib, `core/zip.ts` and `core/download.ts`
+      are all written, tested and deployed; this is mostly assembly. Entirely
+      client-side, and among the highest-volume PDF searches there are. The most
+      new capability per line of new code.
+- [ ] **2. Image converter and resizer.** The mozjpeg and libwebp WASM codecs
+      already ship (see the `wasm` assets in `angular.json`). Conversion and
+      resizing sit right next to compression and cost almost nothing extra.
+- [ ] **3. Password / passphrase generator.** Small, heavily searched, and the
+      most on-brand tool on this list — a password generator that provably never
+      phones home is the entire privacy argument in miniature.
+- [ ] **4. URL and query-string encoder/decoder.** A conspicuous gap beside the
+      Base64 converter.
+- [ ] **5. JSON ↔ CSV.** Common, and needs no dependency that is not already here.
+- [ ] **6. Favicon / app-icon generator.** Image codecs plus `zip.ts`, and
+      `scripts/generate-icons.mjs` means the resizing logic has been written once
+      already.
+- [ ] **7. X.509 certificate decoder.** The natural sibling of the JWT decoder,
+      and exactly the kind of file nobody should paste into a random website.
+- [ ] **8. PDF watermark and page numbers.** pdf-lib handles both, and the page
+      model in `pdf-organizer/organise.ts` is already the right shape for it.
+
+### UI and shell
+
+- [ ] **Category navigation in the header.** 24 tools and no browsing structure
+      outside the homepage grid.
+- [ ] **Surface favourites and recents in the shell.** `FavoritesService` and
+      `RecentToolsService` exist but appear only in `home.ts` and the command
+      palette — invisible from every tool page.
+- [ ] **A shared tool-page shell component.** `tools/tool-shell.css` exists with
+      no component behind it, so the title, description, share and favourite
+      affordances are reassembled per tool. That is where drift starts.
+- [ ] **Global drag-and-drop on file tools** — drop anywhere on the page, not
+      only onto the input.
+- [ ] **Skeletons for the heavy lazy chunks.** `heic-to` is 3.00 MB and
+      `typescript` 900 kB; today both load behind an inert UI.
+- [ ] **Mobile audit of the split-pane tools** — Text Diff and Markdown Editor
+      are side-by-side layouts on a phone.
+- [ ] **Undo (or a toast) in the PDF Organizer.** Deleting a page currently has
+      no way back.
+- [ ] **A `?` shortcut sheet**, once per-tool shortcuts exist.
+
+### Housekeeping carried over from the first deploy
+
+- [ ] **`tools.data.ts` claims a catalog endpoint that does not exist.** The
+      header comment says the backend exposes the same catalog at
+      `GET /api/tools`. It does not — that path 404s, and `worker/index.ts` has
+      exactly three API routes on purpose. The catalog is compile-time only.
+- [ ] **`README.md` is badly out of date.** It documents six tools (there are
+      24) and describes an SPA `index.html` fallback, which was replaced by
+      prerendered pages and real 404s.
+- [ ] **Orphaned `IMAGE_COMPRESS_SECRET` Worker secret.** The Fly app it
+      authenticated is already destroyed; this is a live credential for nothing.
+- [ ] **The PDF sniff is loose.** `services/*/server.mjs` searches for `%PDF-`
+      anywhere in the first 1 KB rather than requiring it at offset 0. Found by
+      accident when a `curl -F` test had its whole multipart envelope accepted
+      as a PDF and echoed back with a 200. The failure is benign — Ghostscript
+      fails and the original is returned — but malformed input gets a success
+      status instead of a 400.
+
+**Suggested order:** the search button, then the service worker, then
+Images ↔ PDF. The first is a real defect, the second completes something already
+mostly paid for, and the third is the largest new capability for the least new
+code.
