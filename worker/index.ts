@@ -11,6 +11,7 @@
 
 import { ServiceError, serviceEndpoint, forwardToService } from './services';
 import { allowRequest } from './rate-limit';
+import { getNews } from './news';
 
 /** Workers Rate Limiting binding (see the `ratelimits` block in wrangler.jsonc). */
 interface RateLimiter {
@@ -29,6 +30,9 @@ export interface Env {
   PDF_COMPRESS_SECRET?: string;
   PDF_OCR_SECRET?: string;
   PDF_CONVERT_SECRET?: string;
+
+  /** CurrentsAPI key for the news feed — a secret (`wrangler secret put CURRENTS_API_KEY`). */
+  CURRENTS_API_KEY?: string;
 
   /** Coarse per-location rate limiter for the API operations (Cloudflare binding). */
   API_RATE_LIMITER?: RateLimiter;
@@ -211,9 +215,65 @@ async function proxy(
   }
 }
 
-async function handleApi(request: Request, env: Env, path: string): Promise<Response> {
+/** How long the news response may be re-used, in the browser and at the edge. */
+const NEWS_CACHE_CONTROL = 'public, max-age=1800, s-maxage=10800';
+
+/**
+ * Serves the cached technology-news feed. This is a cheap read, not a metered
+ * operation, so it skips the per-IP limiter that guards the Fly services and
+ * leans on caching instead: an edge hit here never runs the module below, and a
+ * miss only reaches CurrentsAPI when the Redis copy has also expired.
+ */
+async function handleNews(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  if (request.method !== 'GET') {
+    return fail('NOT_FOUND', 'Unknown endpoint.');
+  }
+
+  // Collapse every caller onto one canonical, query-free cache entry so the feed
+  // cannot be cache-busted into hammering Redis.
+  const cache = caches.default;
+  const cacheKey = new Request(new URL('/api/news', request.url).toString(), { method: 'GET' });
+  const hit = await cache.match(cacheKey);
+  if (hit) {
+    return hit;
+  }
+
+  const result = await getNews(env);
+  if (!result.ok) {
+    // Failures are deliberately not cached: a missing key or a transient outage
+    // should recover the moment it is fixed, not linger for the cache window.
+    return fail(
+      result.code,
+      result.code === 'NOT_CONFIGURED'
+        ? 'The news feed is not configured on the server right now.'
+        : 'The news feed could not be reached right now.',
+    );
+  }
+
+  const response = new Response(JSON.stringify(result.payload), {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': NEWS_CACHE_CONTROL,
+    },
+  });
+  // Populate the edge cache off the response path.
+  ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  return response;
+}
+
+async function handleApi(
+  request: Request,
+  env: Env,
+  path: string,
+  ctx: ExecutionContext,
+): Promise<Response> {
   if (!sameOrigin(request)) {
     return fail('INVALID_INPUT', 'Cross-origin requests are not accepted.');
+  }
+
+  // The news feed is a cached GET, handled before the POST-only gate below.
+  if (path === '/api/news') {
+    return handleNews(request, env, ctx);
   }
 
   if (request.method !== 'POST') {
@@ -286,7 +346,7 @@ async function handleApi(request: Request, env: Env, path: string): Promise<Resp
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // The site is canonical on the apex domain; www exists only so that anyone
@@ -301,7 +361,7 @@ export default {
 
     const path = url.pathname;
     if (path.startsWith('/api/')) {
-      return handleApi(request, env, path);
+      return handleApi(request, env, path, ctx);
     }
     // Every route is prerendered to its own HTML file, so a miss is a genuine
     // miss. Serve the prerendered 404 page, but with a 404 status — returning

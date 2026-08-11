@@ -1,0 +1,131 @@
+@if (guide(); as g) {
+  <article class="doc">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <ol class="breadcrumb">
+        <li><a routerLink="/">All tools</a></li>
+        <li class="breadcrumb__sep" aria-hidden="true">›</li>
+        <li><a routerLink="/guides">Guides</a></li>
+        <li class="breadcrumb__sep" aria-hidden="true">›</li>
+        <li aria-current="page">{{ g.category }}</li>
+      </ol>
+    </nav>
+
+    <header class="doc__head">
+      <span class="doc__eyebrow">{{ g.category }}</span>
+      <h1 class="doc__title">{{ g.title }}</h1>
+      <p class="doc__meta">
+        <span>{{ g.readingMinutes }} min read</span>
+        <span class="doc__dot" aria-hidden="true">·</span>
+        <span>Updated {{ g.updated | date: 'mediumDate' }}</span>
+      </p>
+    </header>
+
+    <div class="doc__body">
+      @for (paragraph of g.intro; track $index) {
+        <p class="doc__lead">{{ paragraph }}</p>
+      }
+
+      @for (block of g.blocks; track $index) {
+        @switch (block.kind) {
+          @case ('h2') {
+            <h2 class="doc__h2" [id]="anchor(block.text)">{{ block.text }}</h2>
+          }
+          @case ('h3') {
+            <h3 class="doc__h3" [id]="anchor(block.text)">{{ block.text }}</h3>
+          }
+          @case ('p') {
+            <p class="doc__p">{{ block.text }}</p>
+          }
+          @case ('ul') {
+            <ul class="doc__ul">
+              @for (item of block.items; track $index) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+          }
+          @case ('ol') {
+            <ol class="doc__ol">
+              @for (item of block.items; track $index) {
+                <li>{{ item }}</li>
+              }
+            </ol>
+          }
+          @case ('code') {
+            <figure class="doc__code">
+              <pre><code>{{ block.code }}</code></pre>
+              @if (block.caption) {
+                <figcaption>{{ block.caption }}</figcaption>
+              }
+            </figure>
+          }
+          @case ('callout') {
+            <aside class="callout" [class.callout--warn]="block.tone === 'warn'">
+              <ng-icon
+                class="callout__icon"
+                aria-hidden="true"
+                [name]="block.tone === 'warn' ? 'matWarningOutline' : 'matInfoOutline'"
+              />
+              <p class="callout__text">{{ block.text }}</p>
+            </aside>
+          }
+          @case ('tool') {
+            @if (toolFor(block.slug); as t) {
+              @if (block.lead) {
+                <p class="doc__ctalead">{{ block.lead }}</p>
+              }
+              <a class="toolcard" [routerLink]="['/tools', t.slug]">
+                <ng-icon class="toolcard__icon" aria-hidden="true" [name]="t.icon" />
+                <span class="toolcard__text">
+                  <span class="toolcard__name">{{ t.name }}</span>
+                  <span class="toolcard__desc">{{ t.description }}</span>
+                </span>
+                <ng-icon class="toolcard__go" aria-hidden="true" name="matArrowForwardOutline" />
+              </a>
+            }
+          }
+        }
+      }
+    </div>
+
+    @if (relatedTools().length) {
+      <section class="ends" aria-labelledby="tools-heading">
+        <h2 class="ends__heading" id="tools-heading">Tools in this guide</h2>
+        <ul class="ends__list" role="list">
+          @for (tool of relatedTools(); track tool.slug) {
+            <li>
+              <a class="toolcard" [routerLink]="['/tools', tool.slug]">
+                <ng-icon class="toolcard__icon" aria-hidden="true" [name]="tool.icon" />
+                <span class="toolcard__text">
+                  <span class="toolcard__name">{{ tool.name }}</span>
+                  <span class="toolcard__desc">{{ tool.description }}</span>
+                </span>
+                <ng-icon class="toolcard__go" aria-hidden="true" name="matArrowForwardOutline" />
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (relatedGuides().length) {
+      <section class="ends" aria-labelledby="more-heading">
+        <h2 class="ends__heading" id="more-heading">Continue reading</h2>
+        <ul class="ends__guides" role="list">
+          @for (more of relatedGuides(); track more.slug) {
+            <li>
+              <a class="moreguide" [routerLink]="['/guides', more.slug]">
+                <span class="moreguide__title">{{ more.title }}</span>
+                <span class="moreguide__desc">{{ more.description }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <a class="backlink" routerLink="/guides">
+      <ng-icon aria-hidden="true" name="matLibraryBooksOutline" />
+      All {{ totalGuides }} guides
+    </a>
+  </article>
+}

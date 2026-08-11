@@ -23,8 +23,8 @@ export const routes: Routes = [
     title: 'About — YYDevTools',
     data: {
       description:
-        'What YYDevTools is, what it stands for, and what is inside: free, fast, ' +
-        'sign-up-free utilities that do their work in your browser.',
+        'What YYDevTools is and how it works: a free, no-sign-up collection of ' +
+        'developer and PDF tools that run in your browser, and how your files are handled.',
     },
   },
   {
@@ -322,6 +322,92 @@ export const routes: Routes = [
         'Beautify HTML, CSS, SCSS, JavaScript, TypeScript, JSON, Markdown, YAML, GraphQL and XML ' +
         'with Prettier, with adjustable indentation and quote style. Runs in your browser, nothing ' +
         'is uploaded. Free, no sign-up.',
+    },
+  },
+  {
+    path: 'guides',
+    loadComponent: () => import('./guides/guides').then((m) => m.Guides),
+    title: 'Guides — YYDevTools',
+    data: {
+      description:
+        'Plain-English explainers on the ideas behind the tools — JWTs, Base64, hashing, cron ' +
+        'schedules, UUIDs and image compression. Free, and written to be read on their own.',
+    },
+  },
+  {
+    path: 'guides/jwt-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'JSON Web Tokens explained — YYDevTools',
+    data: {
+      slug: 'jwt-explained',
+      description:
+        'A plain-English guide to JSON Web Tokens: how the header, payload and signature fit ' +
+        'together, why decoding is not verifying, and the classic JWT forgery attacks.',
+    },
+  },
+  {
+    path: 'guides/base64-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Base64 explained — YYDevTools',
+    data: {
+      slug: 'base64-explained',
+      description:
+        'How Base64 turns binary into safe text, roughly how the encoding works, why it grows ' +
+        'your data by a third, what data URIs are, and why Base64 is not encryption.',
+    },
+  },
+  {
+    path: 'guides/hashing-vs-encryption-vs-encoding',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Hashing vs encryption vs encoding — YYDevTools',
+    data: {
+      slug: 'hashing-vs-encryption-vs-encoding',
+      description:
+        'Encoding is for compatibility, encryption is for secrecy, hashing is for integrity. ' +
+        'How to tell the three apart, where HMAC fits, and when to reach for each.',
+    },
+  },
+  {
+    path: 'guides/cron-expressions-guide',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Cron expressions: a practical guide — YYDevTools',
+    data: {
+      slug: 'cron-expressions-guide',
+      description:
+        'Read and write cron schedules with confidence: the five fields, the asterisks, slashes ' +
+        'and ranges, worked examples, and the timezone gotcha that fires jobs at the wrong hour.',
+    },
+  },
+  {
+    path: 'guides/uuid-versions-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'UUIDs explained: v4 vs v7 — YYDevTools',
+    data: {
+      slug: 'uuid-versions-explained',
+      description:
+        'UUID version 4 vs version 7: why v4 is random, how v7 embeds a timestamp so ids sort by ' +
+        'creation time, and why that ordering matters for database index performance.',
+    },
+  },
+  {
+    path: 'guides/compress-images-for-web',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'How to compress images for the web — YYDevTools',
+    data: {
+      slug: 'compress-images-for-web',
+      description:
+        'Compress images for the web without visible loss: JPEG vs WebP, how the quality slider ' +
+        'really works, resizing before compressing, and stripping the GPS metadata in photos.',
+    },
+  },
+  {
+    path: 'news',
+    loadComponent: () => import('./news/news').then((m) => m.News),
+    title: 'Tech News — YYDevTools',
+    data: {
+      description:
+        'Today’s technology news, gathered from many independent publishers for a spread of ' +
+        'perspectives on software, hardware, security and the wider tech industry. Free, no sign-up.',
     },
   },
   {

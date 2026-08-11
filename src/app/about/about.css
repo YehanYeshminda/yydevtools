@@ -83,6 +83,18 @@
   color: var(--primary);
 }
 
+/* Prose ----------------------------------------------------------------- */
+.prose p {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--on-var);
+}
+
+.prose p:last-child {
+  margin-bottom: 0;
+}
+
 /* Principles ------------------------------------------------------------ */
 .principles {
   display: grid;
@@ -134,4 +146,111 @@
 
 .cta:hover {
   background: var(--primary-strong);
+}
+
+/* Category blocks ------------------------------------------------------- */
+.cats {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.cat {
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+}
+
+.cat__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--on);
+}
+
+.cat__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-var);
+  background: var(--surface-2);
+  border-radius: 999px;
+}
+
+.cat__desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--on-var);
+}
+
+.cat__desc .link {
+  text-decoration: none;
+}
+
+.cat__desc .link:hover {
+  text-decoration: underline;
+}
+
+/* FAQ ------------------------------------------------------------------- */
+.faq {
+  display: grid;
+  gap: 10px;
+}
+
+.faq__item {
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+}
+
+.faq__q {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--on);
+  cursor: pointer;
+  list-style: none;
+}
+
+.faq__q::-webkit-details-marker {
+  display: none;
+}
+
+.faq__q::after {
+  content: '+';
+  float: inline-end;
+  margin-inline-start: 12px;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--on-var);
+}
+
+.faq__item[open] .faq__q::after {
+  content: '−';
+}
+
+.faq__q:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.faq__a {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--on-var);
 }

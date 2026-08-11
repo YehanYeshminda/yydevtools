@@ -162,7 +162,12 @@ export class CommandPalette {
     this.open() ? this.close() : this.openPalette();
   }
 
-  private openPalette(): void {
+  /**
+   * Public because the appbar's search button calls it through a template
+   * reference. The shortcut is not the only way in — it cannot be, on a device
+   * with no keyboard.
+   */
+  openPalette(): void {
     if (this.isBrowser) {
       this.previouslyFocused = document.activeElement as HTMLElement | null;
     }

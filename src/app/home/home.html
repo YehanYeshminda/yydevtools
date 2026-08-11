@@ -125,3 +125,33 @@
     </div>
   </div>
 }
+
+<section class="guides-teaser" aria-labelledby="guides-teaser-title">
+  <div class="guides-teaser__head">
+    <div>
+      <span class="guides-teaser__eyebrow">Guides</span>
+      <h2 class="guides-teaser__title" id="guides-teaser-title">Learn the ideas behind the tools</h2>
+      <p class="guides-teaser__lead">
+        Plain-English explainers — what a JWT really is, why Base64 is not encryption, how cron
+        schedules work, and more.
+      </p>
+    </div>
+    <a class="guides-teaser__all" routerLink="/guides">
+      All {{ guideCount }} guides
+      <ng-icon aria-hidden="true" name="matArrowForwardOutline" />
+    </a>
+  </div>
+
+  <ul class="guides-teaser__list" role="list">
+    @for (guide of featuredGuides; track guide.slug) {
+      <li>
+        <a class="guides-teaser__card" [routerLink]="['/guides', guide.slug]">
+          <span class="guides-teaser__cat">{{ guide.category }}</span>
+          <span class="guides-teaser__name">{{ guide.title }}</span>
+          <span class="guides-teaser__desc">{{ guide.description }}</span>
+          <span class="guides-teaser__meta">{{ guide.readingMinutes }} min read</span>
+        </a>
+      </li>
+    }
+  </ul>
+</section>

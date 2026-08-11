@@ -88,15 +88,16 @@
   font-size: 15px;
 }
 
-/* Sits at the far end of the bar. */
-.theme-toggle {
-  margin-left: auto;
+/* Appbar buttons -------------------------------------------------------- */
+
+/* Chrome shared by the two buttons at the trailing end of the bar. The theme
+   toggle stays a square; the search trigger widens to hold its label until the
+   bar runs out of room. */
+.bar-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
   height: 38px;
-  padding: 0;
   color: var(--on-var);
   background: var(--surface);
   border: 1px solid var(--outline);
@@ -105,9 +106,66 @@
   transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
-.theme-toggle:hover {
+.bar-btn:hover {
   color: var(--on);
   background: var(--surface-2);
+}
+
+/* Takes the `margin-left: auto` that used to sit on the theme toggle, so the
+   two of them travel together at the trailing end of the bar. */
+.search-trigger {
+  margin-left: auto;
+  gap: 8px;
+  padding: 0 8px 0 10px;
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.search-trigger__icon {
+  font-size: 19px;
+}
+
+.search-trigger__label {
+  /* Trailing padding rather than a wider gap, so the label sits away from the
+     key chip without the icon drifting from it. */
+  padding-right: 14px;
+}
+
+.search-trigger__key {
+  padding: 3px 6px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--on-var);
+  background: var(--surface-2);
+  border: 1px solid var(--outline);
+  border-radius: 5px;
+}
+
+/* Below this the bar cannot hold the label; the button becomes an icon square
+   matching the theme trigger. The accessible name is on the button itself, so
+   nothing is lost with the text gone. */
+@media (max-width: 860px) {
+  .search-trigger {
+    width: 38px;
+    padding: 0;
+  }
+
+  .search-trigger__label,
+  .search-trigger__key {
+    display: none;
+  }
+
+  .search-trigger__icon {
+    font-size: 20px;
+  }
+}
+
+/* Sits at the far end of the bar. */
+.theme-toggle {
+  width: 38px;
+  padding: 0;
 }
 
 .theme-toggle ng-icon {

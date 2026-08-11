@@ -899,6 +899,67 @@ evidence, and they are worth re-checking before starting, since they will drift.
 - [ ] **8. PDF watermark and page numbers.** pdf-lib handles both, and the page
       model in `pdf-organizer/organise.ts` is already the right shape for it.
 
+### Everyday-work expansion — broadening past developers (added 2026-08-11)
+
+The list above leans developer. This set deliberately widens the audience to
+writers, students, analysts and general users — the highest-volume utility
+searches there are, and the best lever for both traffic and AdSense revenue —
+while keeping the client-side promise. Tiered by return on effort. Items already
+in the ranked list above are cross-referenced, not repeated.
+
+**Tier 1 — high volume, pure client-side, broad audience (do first):**
+
+- [ ] **Password / passphrase generator** *(+ strength checker)* — see #3 above.
+      Massive search volume, trivial build, the crypto primitives already exist
+      in the hash/UUID tools, and it is the privacy argument in miniature.
+- [ ] **Word & character counter** *(+ reading time, keyword density)* — one of
+      the highest-traffic utility keywords that exists. Writers, students, SEO,
+      social. All in-browser.
+- [ ] **Unit converter** — length / weight / temperature / volume / speed. The
+      broadest possible non-dev audience; pure client-side.
+- [ ] **Text cleaner / line tools** — sort lines, remove duplicates, trim
+      whitespace, strip blank lines, find & replace, convert line endings. Cheap
+      to build, heavily searched, serves office + data + dev.
+- [ ] **CSV ↔ JSON** *(+ a CSV viewer)* — see #5 above. Bridges the dev tools to
+      the spreadsheet crowd; needs no new dependency.
+- [ ] **URL / query-string encoder-decoder** — see #4 above. Conspicuous gap
+      beside the Base64 converter.
+- [ ] **Image resizer / format converter** *(PNG ↔ JPG ↔ WebP, resize, crop)* —
+      see #2 above. The `heic-to` codec already ships, so this is half-built.
+
+**Tier 2 — solid follow-ups, still fully in-browser:**
+
+- [ ] **Images → PDF, PDF → Images** — see #1 above (the strongest single
+      candidate overall).
+- [ ] **Lorem Ipsum / placeholder-text generator** — classic, high volume, tiny.
+- [ ] **Number base converter** — binary / octal / decimal / hex, sibling of the
+      developer tools.
+- [ ] **Age & date-difference calculator** — very broad, non-dev, trivial.
+- [ ] **YAML ↔ JSON converter** — natural neighbour to the JSON tools (the
+      formatter already does YAML both ways; this is the standalone version).
+- [ ] **Color palette extractor from an image** — pairs with the Color Converter,
+      which already does palette work.
+- [ ] **Slug generator** — writers + devs.
+- [ ] **Barcode generator** — sibling of the QR generator; same neighbourhood.
+- [ ] **Pomodoro / stopwatch timer** — everyday productivity, tiny build.
+
+**Tier 3 — high appeal, but weigh against the "no upload" promise:**
+
+- [ ] **Currency converter** — needs live rates, so it cannot be purely local.
+      Proxy the rates through the Worker and cache in Upstash, exactly like the
+      news feed (`worker/news.ts` is the template). The one server-dependent
+      item genuinely worth the trade.
+- [ ] **Background remover** — a client-side WASM model is possible but a heavy
+      download; gate it behind a skeleton and an explicit "download the model"
+      step so the page stays honest about the cost.
+- [ ] **Speech-to-text / text-to-speech** — the browser's own Web Speech API
+      keeps both local, so these stay on-brand despite sounding server-heavy.
+
+**Suggested first picks:** Password Generator, Word Counter, Unit Converter and
+Text Cleaner — all four are small, purely client-side, and target keywords with
+10–100× the volume of developer tools, which is exactly the "help everyone's
+everyday work" audience this expansion is for.
+
 ### UI and shell
 
 - [ ] **Category navigation in the header.** 24 tools and no browsing structure

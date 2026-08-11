@@ -1,0 +1,144 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 860px;
+  margin-inline: auto;
+  padding: 24px clamp(16px, 4vw, 28px) 56px;
+}
+
+/* Breadcrumb ------------------------------------------------------------ */
+.crumbs {
+  margin-bottom: 20px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--on-var);
+}
+
+.breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumb a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb__sep,
+.breadcrumb [aria-current='page'] {
+  color: var(--on-var);
+}
+
+/* Head ------------------------------------------------------------------ */
+.head {
+  margin-bottom: 28px;
+}
+
+.head__title {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 34px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--on);
+}
+
+.head__lead {
+  margin: 12px 0 0;
+  max-width: 60ch;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--on-var);
+}
+
+/* List of guides -------------------------------------------------------- */
+.guides {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide {
+  display: block;
+}
+
+.guide__link {
+  display: block;
+  padding: 20px 22px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.guide__link:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.guide__link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.guide__eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.guide__title {
+  margin: 8px 0 0;
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--on);
+}
+
+.guide__desc {
+  margin: 8px 0 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--on-var);
+}
+
+.guide__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-var);
+}
+
+.guide__arrow {
+  transition: transform 0.15s ease;
+}
+
+.guide__link:hover .guide__arrow {
+  transform: translateX(3px);
+  color: var(--primary);
+}

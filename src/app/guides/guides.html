@@ -1,0 +1,32 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">›</li>
+    <li aria-current="page">Guides</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <h1 class="head__title">Guides</h1>
+  <p class="head__lead">
+    Plain-English explainers on the concepts behind the tools — what a JWT really is, why
+    Base64 is not encryption, how cron schedules work, and more. Written to be read on their
+    own, and to send you to the right tool when you want to try it.
+  </p>
+</header>
+
+<ul class="guides" role="list">
+  @for (guide of guides; track guide.slug) {
+    <li class="guide">
+      <a class="guide__link" [routerLink]="['/guides', guide.slug]">
+        <span class="guide__eyebrow">{{ guide.category }}</span>
+        <h2 class="guide__title">{{ guide.title }}</h2>
+        <p class="guide__desc">{{ guide.description }}</p>
+        <span class="guide__meta">
+          {{ guide.readingMinutes }} min read
+          <span class="guide__arrow" aria-hidden="true">→</span>
+        </span>
+      </a>
+    </li>
+  }
+</ul>

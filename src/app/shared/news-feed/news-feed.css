@@ -1,0 +1,310 @@
+:host {
+  display: block;
+}
+
+/* Strip — the site-wide band above the footer -------------------------- */
+.strip {
+  /* Constrained to the content column, like the guides teaser, with its own
+     top rule so it reads as one more section rather than part of the footer. */
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  margin-top: 8px;
+  padding: 28px clamp(16px, 4vw, 28px) 4px;
+  border-top: 1px solid var(--outline);
+}
+
+.strip__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.strip__icon {
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.strip__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--on);
+}
+
+.strip__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.strip__more ng-icon {
+  font-size: 15px;
+  transition: transform 0.15s ease;
+}
+
+.strip__more:hover {
+  text-decoration: underline;
+}
+
+.strip__more:hover ng-icon {
+  transform: translate(2px, -2px);
+}
+
+.strip__more:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.strip__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.strip__link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.strip__link:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.strip__link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.strip__headline {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--on);
+  /* Keep every card the same height regardless of headline length. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.strip__meta {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--on-var);
+}
+
+/* Feed — the full list on /news ---------------------------------------- */
+.feed {
+  display: block;
+}
+
+.feed__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feed__item {
+  display: flex;
+}
+
+.feed__link {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.feed__link:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.feed__link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.feed__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.feed__source {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.feed__source ng-icon {
+  font-size: 14px;
+}
+
+.feed__time {
+  flex: none;
+  font-weight: 500;
+  color: var(--on-var);
+}
+
+.feed__title {
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--on);
+}
+
+.feed__desc {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--on-var);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.feed__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.feed__cta ng-icon {
+  font-size: 15px;
+}
+
+.feed__updated {
+  margin: 20px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--on-var);
+}
+
+.feed__status {
+  margin: 16px 0 0;
+  font-size: 13px;
+  color: var(--on-var);
+}
+
+/* Loading skeleton ------------------------------------------------------ */
+.feed__item--skeleton {
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+
+.skeleton-line--meta {
+  width: 40%;
+  height: 10px;
+}
+
+.skeleton-line--title {
+  width: 85%;
+  height: 16px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-line {
+    animation: news-shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes news-shimmer {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Empty / unavailable state -------------------------------------------- */
+.feed__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 24px 48px;
+}
+
+.feed__empty-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 14px;
+  font-size: 28px;
+  color: var(--on-var);
+  background: var(--surface-2);
+  border-radius: 14px;
+}
+
+.feed__empty-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--on);
+}
+
+.feed__empty-text {
+  max-width: 360px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--on-var);
+}

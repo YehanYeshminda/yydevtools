@@ -11,6 +11,7 @@ import { RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
 
 import { FavoritesService } from '../core/favorites.service';
+import { GUIDES } from '../guides/guides.data';
 import { AdSlot } from '../shared/ad-slot/ad-slot';
 import { Tool, ToolCategory } from '../tools/tool.model';
 import { TOOLS, TOOL_CATEGORIES } from '../tools/tools.data';
@@ -55,6 +56,10 @@ export class Home {
 
   protected readonly categories: readonly CategoryFilter[] = ['All', ...TOOL_CATEGORIES];
   protected readonly totalCount = TOOLS.length;
+
+  /** A few guides to surface at the foot of the page; the rest live at /guides. */
+  protected readonly featuredGuides = GUIDES.slice(0, 3);
+  protected readonly guideCount = GUIDES.length;
 
   protected readonly query = signal('');
   protected readonly category = signal<CategoryFilter>('All');

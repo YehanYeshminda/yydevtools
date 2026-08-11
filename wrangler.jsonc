@@ -46,10 +46,13 @@
     "PDF_COMPRESS_URL": "https://yydevtools-pdf-compress.fly.dev",
     "PDF_OCR_URL": "https://yydevtools-pdf-ocr.fly.dev",
     "PDF_CONVERT_URL": "https://yydevtools-pdf-convert.fly.dev",
-    // Upstash Redis for global rate limiting. The URL is safe to keep here; the
-    // token is a secret — set it with:
+    // Upstash Redis for global rate limiting AND the cached news feed. The URL
+    // is safe to keep here; the token is a secret — set it with:
     //   npx wrangler secret put UPSTASH_REDIS_REST_TOKEN
     "UPSTASH_REDIS_REST_URL": "https://moral-kid-122505.upstash.io",
+    // CurrentsAPI key for the /api/news feed is a secret, not a var — set it with:
+    //   npx wrangler secret put CURRENTS_API_KEY
+    // and put a local copy in .dev.vars for `wrangler dev`.
   },
   // Per-IP rate limit for the /api/* operations, so nobody can hammer the
   // (metered-compute) Fly services. Keyed by CF-Connecting-IP in worker/index.ts.

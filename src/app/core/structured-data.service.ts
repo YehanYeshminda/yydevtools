@@ -1,5 +1,6 @@
 import { DOCUMENT, Injectable, inject } from '@angular/core';
 
+import type { Guide } from '../guides/guide.model';
 import type { Tool } from '../tools/tool.model';
 import type { ToolContent } from '../tools/tool-content.model';
 import { SITE_URL } from './seo.service';
@@ -61,6 +62,98 @@ export class StructuredDataService {
     }
 
     this.set(graph);
+  }
+
+  /** Replace the page's structured data with an Article graph for one guide. */
+  setGuidePage(guide: Guide): void {
+    const url = `${SITE_URL}/guides/${guide.slug}`;
+
+    this.set([
+      {
+        '@type': 'Article',
+        headline: guide.title,
+        description: guide.description,
+        articleSection: guide.category,
+        url,
+        mainEntityOfPage: url,
+        datePublished: guide.published,
+        dateModified: guide.updated,
+        inLanguage: 'en',
+        isAccessibleForFree: true,
+        author: { '@id': `${SITE_URL}/#organization` },
+        publisher: { '@id': `${SITE_URL}/#organization` },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Guides', item: `${SITE_URL}/guides` },
+          { '@type': 'ListItem', position: 2, name: guide.title, item: url },
+        ],
+      },
+    ]);
+  }
+
+  /** Replace the page's structured data with an AboutPage graph (plus any FAQ). */
+  setAboutPage(faq: readonly { q: string; a: string }[]): void {
+    const url = `${SITE_URL}/about`;
+
+    const graph: Record<string, unknown>[] = [
+      {
+        '@type': 'AboutPage',
+        name: 'About YYDevTools',
+        url,
+        description:
+          'What YYDevTools is, why it exists and how it works: a free collection of ' +
+          'developer and PDF tools that run in your browser, with no account or install.',
+        isPartOf: { '@id': `${SITE_URL}/#website` },
+        about: { '@id': `${SITE_URL}/#organization` },
+        inLanguage: 'en',
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'All tools', item: `${SITE_URL}/` },
+          { '@type': 'ListItem', position: 2, name: 'About', item: url },
+        ],
+      },
+    ];
+
+    if (faq.length > 0) {
+      graph.push({
+        '@type': 'FAQPage',
+        mainEntity: faq.map((item) => ({
+          '@type': 'Question',
+          name: item.q,
+          acceptedAnswer: { '@type': 'Answer', text: item.a },
+        })),
+      });
+    }
+
+    this.set(graph);
+  }
+
+  /** Replace the page's structured data with a listing graph for the guides index. */
+  setGuidesIndex(guides: readonly Guide[]): void {
+    this.set([
+      {
+        '@type': 'CollectionPage',
+        name: 'Guides — YYDevTools',
+        url: `${SITE_URL}/guides`,
+        description:
+          'In-depth, plain-English guides on the concepts behind the tools — JWTs, ' +
+          'Base64, hashing, cron, UUIDs and image compression.',
+        isPartOf: { '@id': `${SITE_URL}/#website` },
+        mainEntity: {
+          '@type': 'ItemList',
+          itemListElement: guides.map((guide, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: guide.title,
+            url: `${SITE_URL}/guides/${guide.slug}`,
+          })),
+        },
+      },
+    ]);
   }
 
   /** Remove every script tag this service owns. Called when leaving a tool page. */

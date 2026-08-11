@@ -418,3 +418,138 @@
     margin-left: 0;
   }
 }
+
+/* Guides teaser --------------------------------------------------------- */
+.guides-teaser {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--outline);
+}
+
+.guides-teaser__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.guides-teaser__eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.guides-teaser__title {
+  margin: 6px 0 0;
+  font-size: clamp(20px, 3.5vw, 24px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--on);
+}
+
+.guides-teaser__lead {
+  margin: 8px 0 0;
+  max-width: 60ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--on-var);
+}
+
+.guides-teaser__all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.guides-teaser__all ng-icon {
+  font-size: 18px;
+  transition: transform 0.15s ease;
+}
+
+.guides-teaser__all:hover {
+  text-decoration: underline;
+}
+
+.guides-teaser__all:hover ng-icon {
+  transform: translateX(3px);
+}
+
+.guides-teaser__all:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.guides-teaser__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guides-teaser__card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.guides-teaser__card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.guides-teaser__card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.guides-teaser__cat {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.guides-teaser__name {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--on);
+}
+
+.guides-teaser__desc {
+  margin-top: 7px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--on-var);
+}
+
+.guides-teaser__meta {
+  margin-top: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--on-var);
+}

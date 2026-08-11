@@ -1,0 +1,88 @@
+@if (variant() === 'strip') {
+  <!-- The strip stays out of the page entirely until stories are in hand, so a
+       page with no feed never shows an empty band. -->
+  @if (!suppressed() && status() === 'ready') {
+    <section class="strip" aria-labelledby="news-strip-title">
+      <div class="strip__head">
+        <ng-icon class="strip__icon" aria-hidden="true" name="matNewspaperOutline" />
+        <h2 class="strip__title" id="news-strip-title">In the news</h2>
+        <a class="strip__more" routerLink="/news">
+          More tech news
+          <ng-icon aria-hidden="true" name="matNorthEastOutline" />
+        </a>
+      </div>
+
+      <ul class="strip__list" role="list">
+        @for (item of items(); track item.url) {
+          <li class="strip__item">
+            <a class="strip__link" [href]="item.url" target="_blank" rel="noopener nofollow">
+              <span class="strip__headline">{{ item.title }}</span>
+              <span class="strip__meta">{{ item.meta }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+} @else {
+  <div class="feed">
+    @switch (view()) {
+      @case ('list') {
+        <ul class="feed__list" role="list">
+          @for (item of items(); track item.url) {
+            <li class="feed__item">
+              <a class="feed__link" [href]="item.url" target="_blank" rel="noopener nofollow">
+                <span class="feed__meta">
+                  <span class="feed__source">
+                    <ng-icon aria-hidden="true" name="matPublicOutline" />
+                    {{ item.source }}
+                  </span>
+                  @if (item.when) {
+                    <span class="feed__time">{{ item.when }}</span>
+                  }
+                </span>
+                <span class="feed__title">{{ item.title }}</span>
+                @if (item.description) {
+                  <span class="feed__desc">{{ item.description }}</span>
+                }
+                <span class="feed__cta">
+                  Read the full story
+                  <ng-icon aria-hidden="true" name="matNorthEastOutline" />
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+
+        @if (updatedLabel(); as updated) {
+          <p class="feed__updated">
+            Updated {{ updated }}. Headlines are aggregated from independent publishers and open on
+            their original sites.
+          </p>
+        }
+      }
+      @case ('skeleton') {
+        <ul class="feed__list" role="list" aria-hidden="true">
+          @for (row of skeletonRows; track row) {
+            <li class="feed__item feed__item--skeleton">
+              <span class="skeleton-line skeleton-line--meta"></span>
+              <span class="skeleton-line skeleton-line--title"></span>
+              <span class="skeleton-line"></span>
+            </li>
+          }
+        </ul>
+        <p class="feed__status" role="status">Loading the latest headlines…</p>
+      }
+      @default {
+        <div class="feed__empty">
+          <ng-icon class="feed__empty-icon" aria-hidden="true" name="matCloudOffOutline" />
+          <p class="feed__empty-title">News isn’t available right now</p>
+          <p class="feed__empty-text">
+            The feed couldn’t be loaded this time. It refreshes through the day — please check back a
+            little later.
+          </p>
+        </div>
+      }
+    }
+  </div>
+}

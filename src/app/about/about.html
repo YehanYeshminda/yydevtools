@@ -10,27 +10,50 @@
   <header class="about__head">
     <h1 class="about__title">About YYDevTools</h1>
     <p class="about__lead">
-      YYDevTools is a small, growing collection of fast, free utilities for developers — the
-      kind of tools you reach for a few times a day and would rather not fuss over.
+      YYDevTools is a free collection of fast, focused utilities for developers and anyone who
+      works with files — JSON, JWTs, hashing, regular expressions, colour, plus a full set of PDF
+      tools, all in one place.
+    </p>
+    <p class="about__lead">
+      Open a tool and start. There is no account to create, nothing to install, and most tools do
+      their work entirely in your browser, so your data stays with you.
     </p>
   </header>
+
+  <section class="section" aria-labelledby="why-title">
+    <h2 id="why-title" class="section__title">Why YYDevTools exists</h2>
+    <div class="prose">
+      <p>
+        Most small development tasks — pretty-printing a JSON payload, decoding a token to see what
+        is inside it, checking a file's checksum, shrinking a PDF before you email it — don't need a
+        desktop app or a sign-up wall. They need a page that loads instantly, does one thing well,
+        and forgets about you the moment you close the tab.
+      </p>
+      <p>
+        YYDevTools is that page, repeated for the couple of dozen jobs that come up most often. Each
+        tool is deliberately small and single-purpose, with a clean interface, sensible defaults and
+        clear error messages, so you can get in, get the answer and get back to what you were
+        actually doing.
+      </p>
+    </div>
+  </section>
 
   <section class="section" aria-labelledby="principles-title">
     <h2 id="principles-title" class="section__title">What it stands for</h2>
     <ul class="principles">
       <li class="principle">
         <h3 class="principle__name">No sign-up</h3>
-        <p class="principle__desc">Open a tool and start. No accounts, nothing to install.</p>
+        <p class="principle__desc">Open a tool and start. No accounts, no email, nothing to install.</p>
       </li>
       <li class="principle">
         <h3 class="principle__name">Runs in your browser</h3>
         <p class="principle__desc">
-          The tools do their work client-side, so your input stays with you.
+          Wherever it's possible, tools work client-side, so your input never leaves your device.
         </p>
       </li>
       <li class="principle">
         <h3 class="principle__name">Free</h3>
-        <p class="principle__desc">Every tool is free to use, with no limits or paywalls.</p>
+        <p class="principle__desc">Every tool is free, with no limits, no trial and no paywall.</p>
       </li>
       <li class="principle">
         <h3 class="principle__name">Fast</h3>
@@ -39,21 +62,127 @@
     </ul>
   </section>
 
+  <section class="section" aria-labelledby="privacy-title">
+    <h2 id="privacy-title" class="section__title">How your data is handled</h2>
+    <div class="prose">
+      <p>
+        Privacy is built into how the tools are made, not bolted on afterwards. Formatting, decoding,
+        hashing, diffing, colour conversion, QR generation and even most image and PDF work happen
+        with code that runs in your browser — the file or text you paste in is processed on your own
+        machine and is never sent to a server.
+      </p>
+      <p>
+        A few heavier PDF operations are the exception: converting a PDF to an editable Office
+        document, compressing one, and running text recognition on long or non-English scans use a
+        small hosted service that processes the file and returns the result without keeping it. Which
+        tools stay local and which use that service is spelled out on the
+        <a class="link" routerLink="/privacy">Privacy page</a>.
+      </p>
+    </div>
+  </section>
+
   <section class="section" aria-labelledby="inside-title">
     <h2 id="inside-title" class="section__title">What's inside</h2>
     <p class="section__text">
-      There {{ readyCount === 1 ? 'is' : 'are' }} {{ readyCount }}
-      {{ readyCount === 1 ? 'tool' : 'tools' }} ready to use right now, with more on the way —
-      {{ totalCount }} in the catalog across Developer, Converter and Document categories.
+      There are {{ totalCount }} tools in the catalog, grouped into three families so the one you
+      need is easy to find.
     </p>
+
+    <div class="cats">
+      <div class="cat">
+        <h3 class="cat__name">
+          Developer tools <span class="cat__count">{{ developerCount }}</span>
+        </h3>
+        <p class="cat__desc">
+          The everyday toolkit: a
+          <a class="link" routerLink="/tools/json-formatter">JSON formatter</a>, a
+          <a class="link" routerLink="/tools/jwt-decoder">JWT decoder</a> and
+          <a class="link" routerLink="/tools/jwt-editor">editor</a>, a
+          <a class="link" routerLink="/tools/regex-tester">regex tester</a>, a
+          <a class="link" routerLink="/tools/hash-generator">hash &amp; HMAC generator</a>, a
+          <a class="link" routerLink="/tools/cron-explainer">cron explainer</a>,
+          <a class="link" routerLink="/tools/sql-formatter">SQL</a> and
+          <a class="link" routerLink="/tools/code-formatter">code formatters</a>, a
+          <a class="link" routerLink="/tools/json-to-types">JSON-to-types</a> generator and more.
+        </p>
+      </div>
+
+      <div class="cat">
+        <h3 class="cat__name">
+          Converters <span class="cat__count">{{ converterCount }}</span>
+        </h3>
+        <p class="cat__desc">
+          Turn one thing into another:
+          <a class="link" routerLink="/tools/base64-converter">Base64 encode and decode</a>,
+          <a class="link" routerLink="/tools/timestamp-converter">Unix timestamps to dates</a>, and
+          bulk <a class="link" routerLink="/tools/image-compressor">image compression</a> to JPEG or
+          WebP.
+        </p>
+      </div>
+
+      <div class="cat">
+        <h3 class="cat__name">
+          Document &amp; PDF tools <span class="cat__count">{{ documentCount }}</span>
+        </h3>
+        <p class="cat__desc">
+          A complete PDF workbench:
+          <a class="link" routerLink="/tools/pdf-merge">merge</a>,
+          <a class="link" routerLink="/tools/pdf-split">split</a>,
+          <a class="link" routerLink="/tools/pdf-organizer">reorder and rotate pages</a>,
+          <a class="link" routerLink="/tools/pdf-compress">compress</a>,
+          <a class="link" routerLink="/tools/pdf-convert">convert to Office formats</a>,
+          <a class="link" routerLink="/tools/pdf-ocr">recognise text (OCR)</a> and
+          <a class="link" routerLink="/tools/pdf-viewer">read</a> PDFs — plus a
+          <a class="link" routerLink="/tools/markdown-editor">Markdown editor</a>.
+        </p>
+      </div>
+    </div>
+
     <a class="cta" routerLink="/">Browse all tools <span aria-hidden="true">→</span></a>
   </section>
 
+  <section class="section" aria-labelledby="learn-title">
+    <h2 id="learn-title" class="section__title">The ideas behind the tools</h2>
+    <div class="prose">
+      <p>
+        If you want to understand a concept rather than just run a tool, the
+        <a class="link" routerLink="/guides">guides</a> are plain-English explainers on the ideas the
+        tools touch — what a JWT really is and why decoding isn't verifying, how Base64 works, the
+        difference between hashing, encryption and encoding, how cron schedules are read, and more.
+        There's also a <a class="link" routerLink="/news">tech news</a> feed to keep an eye on what's
+        happening across the wider industry.
+      </p>
+    </div>
+  </section>
+
   <section class="section" aria-labelledby="built-title">
-    <h2 id="built-title" class="section__title">Built with</h2>
-    <p class="section__text">
-      YYDevTools is built with Angular and Angular Material. The source lives on
-      <a class="link" href="https://github.com/YehanYeshminda/yydevtools" target="_blank" rel="noopener">GitHub</a>.
-    </p>
+    <h2 id="built-title" class="section__title">How it's built</h2>
+    <div class="prose">
+      <p>
+        YYDevTools is a single-page app built with Angular and prerendered to static HTML, then
+        served from Cloudflare's edge so pages arrive quickly wherever you are. The in-browser tools
+        lean on well-tested open-source libraries and WebAssembly for the heavy lifting, and the few
+        server-side PDF operations are handled by open-source engines such as Ghostscript, OCRmyPDF
+        and LibreOffice.
+      </p>
+      <p>
+        The whole project is open source. The code lives on
+        <a class="link" href="https://github.com/YehanYeshminda/yydevtools" target="_blank" rel="noopener">GitHub</a>,
+        where you can read how any tool works, report a bug, or suggest one that's missing — or reach
+        out through the <a class="link" routerLink="/contact">contact page</a>.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="faq-title">
+    <h2 id="faq-title" class="section__title">Frequently asked questions</h2>
+    <div class="faq">
+      @for (item of faq; track item.q) {
+        <details class="faq__item">
+          <summary class="faq__q">{{ item.q }}</summary>
+          <p class="faq__a">{{ item.a }}</p>
+        </details>
+      }
+    </div>
   </section>
 </article>
