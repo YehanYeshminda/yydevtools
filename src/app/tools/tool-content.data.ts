@@ -1102,4 +1102,61 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['pdf-organizer', 'pdf-merge', 'pdf-viewer'],
   },
+
+  'image-pdf': {
+    slug: 'image-pdf',
+    intro: [
+      'This tool converts in both directions between images and PDF. Drop in a set of JPG, PNG or WebP images and it combines them into a single PDF — one image per page, in the order you arrange them — which is exactly what you need to turn photographed receipts, scanned pages or screenshots into one document you can email or file. Or drop in a PDF and it turns every page back into a PNG or JPG image, ready to embed in a slide, a document or a web page.',
+      'Both directions run entirely on your device. The images and PDFs you pick are never uploaded to a server, so it is safe to use on receipts, contracts, ID scans and anything else you would rather not send anywhere. There is no watermark, no sign-up and no file-count paywall.',
+    ],
+    steps: [
+      'Choose a direction: “Images to PDF” or “PDF to images”.',
+      'For images to PDF, drop in your JPG, PNG or WebP files and drag them into the order you want.',
+      'Pick the page size (fit-to-image, A4 or Letter), orientation and margin, then save the PDF.',
+      'For PDF to images, drop in a PDF and choose PNG or JPG and a resolution.',
+      'Convert — a single page downloads on its own, and several pages arrive together as one zip.',
+    ],
+    features: [
+      'JPG and PNG are embedded into the PDF without re-encoding, so no quality is lost; WebP, GIF, BMP and AVIF are converted to lossless PNG inside the document.',
+      'Reorder images by dragging, or with the arrow buttons on each card for keyboard access.',
+      'Fit-to-image sizing keeps each page exactly the shape of its photo, with no white borders.',
+      'Rasterise a PDF at 96, 150 or 300 DPI — screen resolution through to print quality.',
+      'Everything runs in your browser; your files never leave your device.',
+    ],
+    faq: [
+      {
+        q: 'How do I convert JPG images to a PDF?',
+        a: 'Open the tool on “Images to PDF”, drop in your JPG files, drag them into the order you want, then choose a page size and save. Each image becomes one page of a single PDF, and nothing is uploaded — the whole conversion happens in your browser.',
+      },
+      {
+        q: 'How do I convert a PDF to JPG or PNG images?',
+        a: 'Switch to “PDF to images”, drop in your PDF, and choose PNG (sharpest, lossless) or JPG (smaller files) along with a resolution. Each page is rendered to an image; a one-page PDF downloads a single image, and a multi-page PDF gives you one zip containing them all.',
+      },
+      {
+        q: 'Are my images and PDFs uploaded anywhere?',
+        a: 'No. Both directions run locally in your browser using your device’s own graphics and PDF engine. Nothing is sent to a server, which is why it is safe for receipts, contracts, ID scans and other private documents.',
+      },
+      {
+        q: 'Does combining images into a PDF reduce their quality?',
+        a: 'JPG and PNG images are embedded byte-for-byte, so they keep exactly the quality of the original file. Other formats (WebP, GIF, BMP, AVIF) are converted to a lossless PNG inside the PDF, which also preserves any transparency.',
+      },
+      {
+        q: 'What resolution should I choose when converting a PDF to images?',
+        a: '96 DPI is fine for on-screen use and gives the smallest files. 150 DPI is a good general-purpose middle ground. 300 DPI matches print quality and produces the largest, crispest images — choose it when you intend to print or zoom in.',
+      },
+      {
+        q: 'Can I control the page size and margins for images-to-PDF?',
+        a: 'Yes. “Fit to image” makes each page exactly the shape of its image with no borders. A4 and Letter place the image on a standard page, centred, and let you pick portrait, landscape or automatic orientation plus a small or large margin.',
+      },
+      {
+        q: 'Is there a limit on how many files I can convert?',
+        a: 'You can combine up to 50 images into one PDF, and rasterise up to 200 pages of a PDF at a time. Because everything is processed in memory on your device, these limits keep a very large job from exhausting the browser’s memory.',
+      },
+      {
+        q: 'Can I reorder the images before saving the PDF?',
+        a: 'Yes. Drag any image to a new position, or use the left and right arrows on each card, which do the same thing from the keyboard. The pages of the finished PDF follow the order shown.',
+      },
+    ],
+    related: ['pdf-organizer', 'image-compressor', 'pdf-merge'],
+  },
 };

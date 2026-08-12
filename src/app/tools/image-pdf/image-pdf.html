@@ -1,0 +1,370 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <ng-icon name="matChevronRightOutline" />
+    </li>
+    <li aria-current="page">Image ↔ PDF</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <ng-icon name="matPhotoLibraryOutline" />
+  </div>
+  <div>
+    <h1 class="head__title">Image ↔ PDF</h1>
+    <p class="head__sub">
+      Combine JPG, PNG and WebP images into a single PDF, or turn every page of a PDF back into an
+      image. Everything runs in your browser; your files never leave your device.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <!-- Direction ------------------------------------------------------- -->
+  <div class="tabs" role="tablist" aria-label="Conversion direction">
+    <button
+      type="button"
+      class="tab"
+      [class.tab--active]="mode() === 'to-pdf'"
+      role="tab"
+      [attr.aria-selected]="mode() === 'to-pdf'"
+      (click)="setMode('to-pdf')"
+    >
+      <ng-icon aria-hidden="true" name="matPictureAsPdfOutline" />
+      Images to PDF
+    </button>
+    <button
+      type="button"
+      class="tab"
+      [class.tab--active]="mode() === 'to-images'"
+      role="tab"
+      [attr.aria-selected]="mode() === 'to-images'"
+      (click)="setMode('to-images')"
+    >
+      <ng-icon aria-hidden="true" name="matImageOutline" />
+      PDF to images
+    </button>
+  </div>
+
+  @if (mode() === 'to-pdf') {
+    <!-- ============================================================= -->
+    <!-- Images -> PDF                                                  -->
+    <!-- ============================================================= -->
+    @if (!hasImages()) {
+      <app-dropzone accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.bmp,.avif" [multiple]="true" (filesSelected)="addImages($event)">
+        <ng-icon class="dropzone__icon" aria-hidden="true" name="matAddPhotoAlternateOutline" />
+        <span class="dropzone__title">Drop images here, or click to choose</span>
+        <span class="dropzone__hint">
+          JPG, PNG, WebP, GIF, BMP or AVIF — up to {{ maxImages }} at once, arranged in order
+        </span>
+      </app-dropzone>
+    } @else {
+      <!-- Options -->
+      <section aria-label="PDF options">
+        <div class="opt">
+          <span class="opt__label">Page size</span>
+          <div class="chips" role="group" aria-label="Page size">
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="pagePreset() === 'fit'"
+              [attr.aria-pressed]="pagePreset() === 'fit'"
+              (click)="setPagePreset('fit')"
+            >
+              Fit to image
+            </button>
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="pagePreset() === 'a4'"
+              [attr.aria-pressed]="pagePreset() === 'a4'"
+              (click)="setPagePreset('a4')"
+            >
+              A4
+            </button>
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="pagePreset() === 'letter'"
+              [attr.aria-pressed]="pagePreset() === 'letter'"
+              (click)="setPagePreset('letter')"
+            >
+              Letter
+            </button>
+          </div>
+        </div>
+
+        @if (showOrientation()) {
+          <div class="opt">
+            <span class="opt__label">Orientation</span>
+            <div class="chips" role="group" aria-label="Orientation">
+              <button
+                type="button"
+                class="chip"
+                [class.chip--on]="orientation() === 'auto'"
+                [attr.aria-pressed]="orientation() === 'auto'"
+                (click)="setOrientation('auto')"
+              >
+                Auto
+              </button>
+              <button
+                type="button"
+                class="chip"
+                [class.chip--on]="orientation() === 'portrait'"
+                [attr.aria-pressed]="orientation() === 'portrait'"
+                (click)="setOrientation('portrait')"
+              >
+                Portrait
+              </button>
+              <button
+                type="button"
+                class="chip"
+                [class.chip--on]="orientation() === 'landscape'"
+                [attr.aria-pressed]="orientation() === 'landscape'"
+                (click)="setOrientation('landscape')"
+              >
+                Landscape
+              </button>
+            </div>
+          </div>
+        }
+
+        <div class="opt">
+          <span class="opt__label">Margin</span>
+          <div class="chips" role="group" aria-label="Margin">
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="margin() === 'none'"
+              [attr.aria-pressed]="margin() === 'none'"
+              (click)="setMargin('none')"
+            >
+              None
+            </button>
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="margin() === 'small'"
+              [attr.aria-pressed]="margin() === 'small'"
+              (click)="setMargin('small')"
+            >
+              Small
+            </button>
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="margin() === 'large'"
+              [attr.aria-pressed]="margin() === 'large'"
+              (click)="setMargin('large')"
+            >
+              Large
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <p class="working" role="status">
+        {{ imageCount() }} {{ imageCount() === 1 ? 'image' : 'images' }} · drag to reorder
+      </p>
+
+      <!-- Image list -->
+      <ul
+        class="grid"
+        cdkDropList
+        cdkDropListOrientation="mixed"
+        (cdkDropListDropped)="dropImage($event)"
+        aria-label="Images, in output order"
+      >
+        @for (item of images(); track item.id; let i = $index; let first = $first; let last = $last) {
+          <li class="card" cdkDrag [attr.aria-label]="item.name + ', position ' + (i + 1) + ' of ' + imageCount()">
+            <div class="card__frame">
+              <span class="card__num" aria-hidden="true">{{ i + 1 }}</span>
+              <img class="card__img" [src]="item.url" [alt]="item.name" />
+            </div>
+            <div class="card__meta">
+              <span class="card__name" [title]="item.name">{{ item.name }}</span>
+              <span class="card__dim">{{ item.width }}×{{ item.height }} · {{ formatBytes(item.size) }}</span>
+            </div>
+            <div class="card__tools">
+              <button
+                matIconButton
+                [disabled]="first"
+                (click)="moveImage(i, -1)"
+                [attr.aria-label]="'Move ' + item.name + ' earlier'"
+              >
+                <ng-icon name="matChevronLeftOutline" />
+              </button>
+              <button
+                matIconButton
+                [disabled]="last"
+                (click)="moveImage(i, 1)"
+                [attr.aria-label]="'Move ' + item.name + ' later'"
+              >
+                <ng-icon name="matChevronRightOutline" />
+              </button>
+              <button matIconButton (click)="removeImage(item.id)" [attr.aria-label]="'Remove ' + item.name">
+                <ng-icon name="matCloseOutline" />
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+
+      <div class="actions">
+        @if (buildingPdf()) {
+          <button matButton="filled" disabled>
+            <app-spinner />
+            Building…
+          </button>
+        } @else {
+          <button matButton="filled" (click)="buildPdf()" [disabled]="!hasImages()">
+            <ng-icon name="matPictureAsPdfOutline" />
+            Save as PDF
+          </button>
+        }
+        <label class="add-more">
+          <input
+            type="file"
+            accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.bmp,.avif"
+            multiple
+            class="dropzone__input"
+            (change)="onImagesPicked($event)"
+          />
+          <ng-icon aria-hidden="true" name="matAddOutline" />
+          Add more
+        </label>
+        <button matButton (click)="resetImages()" [disabled]="buildingPdf()">
+          <ng-icon name="matRefreshOutline" />
+          Start over
+        </button>
+      </div>
+
+      <p class="note">
+        <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+        <span>
+          One image per page, in the order shown. JPG and PNG files are embedded without
+          re-encoding, so no quality is lost; other formats are converted to lossless PNG inside the
+          PDF.
+        </span>
+      </p>
+    }
+  } @else {
+    <!-- ============================================================= -->
+    <!-- PDF -> Images                                                 -->
+    <!-- ============================================================= -->
+    @if (!hasPdf()) {
+      <app-dropzone accept="application/pdf,.pdf" (filesSelected)="loadPdf($event)">
+        <ng-icon class="dropzone__icon" aria-hidden="true" name="matPictureAsPdfOutline" />
+        <span class="dropzone__title">Drop a PDF here, or click to choose</span>
+        <span class="dropzone__hint">Every page becomes a PNG or JPG, up to {{ maxRenderPages }} pages</span>
+      </app-dropzone>
+    } @else {
+      <!-- Options -->
+      <section aria-label="Image options">
+        <div class="opt">
+          <span class="opt__label">Format</span>
+          <div class="chips" role="group" aria-label="Image format">
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="imageFormat() === 'image/png'"
+              [attr.aria-pressed]="imageFormat() === 'image/png'"
+              (click)="setImageFormat('image/png')"
+            >
+              PNG
+            </button>
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="imageFormat() === 'image/jpeg'"
+              [attr.aria-pressed]="imageFormat() === 'image/jpeg'"
+              (click)="setImageFormat('image/jpeg')"
+            >
+              JPG
+            </button>
+          </div>
+        </div>
+
+        <div class="opt">
+          <span class="opt__label">Resolution</span>
+          <div class="chips" role="group" aria-label="Resolution">
+            @for (option of dpiOptions; track option.value) {
+              <button
+                type="button"
+                class="chip"
+                [class.chip--on]="dpi() === option.value"
+                [attr.aria-pressed]="dpi() === option.value"
+                (click)="setDpi(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+        </div>
+      </section>
+
+      @if (pendingThumbs() > 0) {
+        <span class="working" role="status">
+          <app-spinner />
+          Drawing previews — {{ pendingThumbs() }} to go
+        </span>
+      } @else {
+        <p class="working" role="status">
+          {{ pageCount() }} {{ pageCount() === 1 ? 'page' : 'pages' }}
+        </p>
+      }
+
+      <!-- Page previews -->
+      <ul class="grid grid--pages" aria-label="Pages">
+        @for (i of pageIndices(); track i) {
+          <li class="card card--page">
+            <div class="card__frame">
+              <span class="card__num" aria-hidden="true">{{ i + 1 }}</span>
+              @if (thumbFor(i); as src) {
+                <img class="card__img" [src]="src" [alt]="'Page ' + (i + 1)" />
+              } @else {
+                <div class="card__pending" aria-hidden="true"><app-spinner [size]="22" /></div>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+
+      <div class="actions">
+        @if (rendering()) {
+          <button matButton="filled" disabled>
+            <app-spinner />
+            Converting — {{ renderProgress() }}/{{ pageCount() }}
+          </button>
+        } @else if (hasRendered()) {
+          <button matButton="filled" (click)="downloadAll()">
+            <ng-icon name="matDownloadOutline" />
+            {{ rendered().length === 1 ? 'Download image' : 'Download all (.zip)' }}
+          </button>
+        } @else {
+          <button matButton="filled" (click)="convertToImages()">
+            <ng-icon name="matImageOutline" />
+            Convert to images
+          </button>
+        }
+        <button matButton (click)="resetPdf()" [disabled]="rendering()">
+          <ng-icon name="matRefreshOutline" />
+          Start over
+        </button>
+      </div>
+
+      <p class="note">
+        <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+        <span>
+          Choose PNG for the sharpest, lossless output, or JPG for smaller files. A higher
+          resolution gives a larger, crisper image. One page downloads directly; several are bundled
+          into a single .zip.
+        </span>
+      </p>
+    }
+  }
+</div>
+
+<app-tool-content slug="image-pdf" />

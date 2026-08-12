@@ -165,6 +165,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'image-pdf',
+    name: 'Image ↔ PDF',
+    description:
+      'Combine JPG, PNG and WebP images into one PDF, or turn every PDF page back into an image.',
+    icon: 'matPhotoLibraryOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'pdf-convert',
     name: 'PDF Convert',
     description: 'Turn a PDF into an editable Word or rich-text file.',

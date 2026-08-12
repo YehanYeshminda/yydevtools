@@ -1,0 +1,152 @@
+/**
+ * Tool-specific styles for Image ↔ PDF. The breadcrumb, header, panel, tabs,
+ * chips, dropzone and actions all come from tool-shell.css; only the option
+ * rows and the thumbnail grid are defined here.
+ */
+
+/* Option rows ----------------------------------------------------------- */
+.opt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+}
+
+.opt__label {
+  flex: 0 0 5.5rem;
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface);
+}
+
+/* Thumbnail grid -------------------------------------------------------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+}
+
+/* The drag preview CDK lifts out of the list. */
+.card.cdk-drag-preview {
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.2);
+}
+
+.card.cdk-drag-placeholder {
+  opacity: 0.4;
+}
+
+.grid.cdk-drop-list-dragging .card:not(.cdk-drag-placeholder) {
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.card__frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 3 / 4;
+  border-radius: 8px;
+  background: var(--mat-sys-surface);
+  overflow: hidden;
+}
+
+.card__img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.card__num {
+  position: absolute;
+  top: 0.35rem;
+  left: 0.35rem;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font: var(--mat-sys-label-small);
+  font-weight: 600;
+}
+
+.card__pending {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.card__name {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card__dim {
+  font-size: 0.78rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.card__tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Pages are read-only previews, so they need no per-card toolbar and can be
+   a touch denser than the reorderable image cards. */
+.grid--pages {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+/* "Add more images" is a labelled input styled to sit beside the buttons. */
+.add-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 999px;
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-label-large);
+  cursor: pointer;
+}
+
+.add-more:hover {
+  background: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+}
+
+.add-more:focus-within {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.add-more ng-icon {
+  font-size: 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+}

@@ -127,6 +127,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/image-pdf',
+    loadComponent: () => import('./tools/image-pdf/image-pdf').then((m) => m.ImagePdfTool),
+    title: 'Image to PDF & PDF to Image — JPG ⇄ PDF — YYDevTools',
+    data: {
+      description:
+        'Convert JPG, PNG and WebP images to a single PDF, or turn every page of a PDF into a ' +
+        'PNG or JPG image. Reorder pages, pick the page size and resolution. Everything runs ' +
+        'in your browser — nothing is uploaded. Free, no sign-up.',
+    },
+  },
+  {
     path: 'tools/pdf-merge',
     loadComponent: () => import('./tools/pdf-merge/pdf-merge').then((m) => m.PdfMergeTool),
     title: 'PDF Merge — YYDevTools',

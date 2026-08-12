@@ -875,6 +875,33 @@ evidence, and they are worth re-checking before starting, since they will drift.
       shows; the menu opens right-aligned on-screen with all five links, the
       active item is marked, tapping a link navigates and closes the menu; at
       desktop width the inline nav is back and the hamburger is gone.
+- [x] **Image ↔ PDF (images to PDF, and PDF to images).** *(done 2026-08-12)*
+      The 26th tool, at `tools/image-pdf/`, and the roadmap's top-ranked
+      candidate — built almost entirely from primitives already shipped. One tool
+      with two modes, so one page ranks for both "JPG to PDF" and "PDF to JPG".
+      **Images → PDF:** drop in JPG/PNG/WebP/GIF/BMP/AVIF, drag to reorder, and
+      save one PDF (one image per page). JPG and PNG are embedded byte-for-byte
+      via pdf-lib's `embedJpg`/`embedPng` (no re-encode, no quality loss);
+      everything else — and any progressive JPEG pdf-lib refuses — is drawn to a
+      canvas and embedded as a lossless PNG, which also preserves transparency.
+      Page size is fit-to-image (1 px → 1 pt), A4 or Letter, with auto/portrait/
+      landscape orientation and a margin. **PDF → images:** reuses the existing
+      `PdfDocumentRenderer` (the vendored pdf.js the Organizer/Viewer already use)
+      to rasterise every page at 96/150/300 DPI as PNG or JPG; one page downloads
+      directly, several are bundled into a single `.zip` via `core/zip.ts`. The
+      page-placement maths is isolated in a pure, tested `layout.ts`
+      (`placeImage`, `dpiScale`) — **10 unit tests** covering fit sizing, aspect-
+      preserving centring, auto-orientation and degenerate input. Added
+      `matImageOutline` + `matPhotoLibraryOutline` to `core/icons.ts`, a catalog
+      entry, a route with dual-keyword SEO, and a full `TOOL_CONTENT` entry (8 FAQ
+      items answering "how do I convert JPG to PDF / PDF to JPG"). Verified in a
+      real dev server (the pdf.js module worker will not spin up under a bare
+      `http-server` — confirmed the shipped Organizer hangs there too, so it is
+      the static host, not the tool): images → PDF produced pages sized exactly to
+      each image and, on A4-auto, portrait/landscape following each image's shape;
+      PDF → images rendered all thumbnails, produced correctly-sized images
+      (150 DPI → ×2.083, 300 DPI → ×4.167), named them `…-page-001.png`, zipped
+      multi-page output and downloaded a single page directly.
 - [x] **Password generator (passwords + passphrases + strength).** *(done 2026-08-12)*
       A 25th tool at `tools/password-generator/`. Generation is delegated to a
       vetted third party rather than hand-rolled: **`secure-random-password`**,
@@ -938,17 +965,18 @@ evidence, and they are worth re-checking before starting, since they will drift.
 
 ### New tools, ranked by fit with what already exists
 
-- [ ] **1. Images → PDF, and PDF → Images.** The strongest candidate by a wide
-      margin. `core/pdf-render.ts`, pdf-lib, `core/zip.ts` and `core/download.ts`
-      are all written, tested and deployed; this is mostly assembly. Entirely
-      client-side, and among the highest-volume PDF searches there are. The most
-      new capability per line of new code.
+- [x] **1. Images → PDF, and PDF → Images.** *(done 2026-08-12)* The strongest
+      candidate by a wide margin. `core/pdf-render.ts`, pdf-lib, `core/zip.ts` and
+      `core/download.ts` were all written, tested and deployed; this was mostly
+      assembly. Entirely client-side, and among the highest-volume PDF searches
+      there are. Shipped as one tool, `tools/image-pdf`, with two modes — see the
+      full entry below.
 - [ ] **2. Image converter and resizer.** The mozjpeg and libwebp WASM codecs
       already ship (see the `wasm` assets in `angular.json`). Conversion and
       resizing sit right next to compression and cost almost nothing extra.
-- [ ] **3. Password / passphrase generator.** Small, heavily searched, and the
-      most on-brand tool on this list — a password generator that provably never
-      phones home is the entire privacy argument in miniature.
+- [x] **3. Password / passphrase generator.** *(done 2026-08-12)* Small, heavily
+      searched, and the most on-brand tool on this list — a password generator
+      that provably never phones home is the entire privacy argument in miniature.
 - [ ] **4. URL and query-string encoder/decoder.** A conspicuous gap beside the
       Base64 converter.
 - [ ] **5. JSON ↔ CSV.** Common, and needs no dependency that is not already here.
@@ -970,9 +998,9 @@ in the ranked list above are cross-referenced, not repeated.
 
 **Tier 1 — high volume, pure client-side, broad audience (do first):**
 
-- [ ] **Password / passphrase generator** *(+ strength checker)* — see #3 above.
-      Massive search volume, trivial build, the crypto primitives already exist
-      in the hash/UUID tools, and it is the privacy argument in miniature.
+- [x] **Password / passphrase generator** *(+ strength checker)* — see #3 above.
+      *(done 2026-08-12)* Massive search volume, the crypto primitives already
+      exist in the hash/UUID tools, and it is the privacy argument in miniature.
 - [ ] **Word & character counter** *(+ reading time, keyword density)* — one of
       the highest-traffic utility keywords that exists. Writers, students, SEO,
       social. All in-browser.
@@ -990,8 +1018,8 @@ in the ranked list above are cross-referenced, not repeated.
 
 **Tier 2 — solid follow-ups, still fully in-browser:**
 
-- [ ] **Images → PDF, PDF → Images** — see #1 above (the strongest single
-      candidate overall).
+- [x] **Images → PDF, PDF → Images** — see #1 above (the strongest single
+      candidate overall). *(done 2026-08-12)*
 - [ ] **Lorem Ipsum / placeholder-text generator** — classic, high volume, tiny.
 - [ ] **Number base converter** — binary / octal / decimal / hex, sibling of the
       developer tools.
