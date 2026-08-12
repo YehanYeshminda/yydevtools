@@ -9,13 +9,14 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { CdkMenu, CdkMenuItemRadio, CdkMenuTrigger } from '@angular/cdk/menu';
+import { CdkMenu, CdkMenuItem, CdkMenuItemRadio, CdkMenuTrigger } from '@angular/cdk/menu';
 import { ConnectedPosition } from '@angular/cdk/overlay';
 import { NgIcon } from '@ng-icons/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 
 import { ConsentService } from './core/consent.service';
+import { registerServiceWorker } from './core/pwa';
 import { RecentToolsService } from './core/recent-tools.service';
 import { SeoService } from './core/seo.service';
 import { ThemePreference, ThemeService } from './core/theme.service';
@@ -57,6 +58,7 @@ const THEME_MENU_POSITION: readonly ConnectedPosition[] = [
     RouterLinkActive,
     CdkMenuTrigger,
     CdkMenu,
+    CdkMenuItem,
     CdkMenuItemRadio,
     NgIcon,
     ConsentBanner,
@@ -116,6 +118,7 @@ export class App {
 
   constructor() {
     inject(SeoService).init();
+    registerServiceWorker();
     this.trackRecentTools();
 
     afterNextRender(() => {

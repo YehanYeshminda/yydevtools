@@ -82,6 +82,46 @@
         }
       </div>
     </ng-template>
+
+    <!-- The same five links as the primary nav, surfaced through a menu at phone
+         widths where the inline row would overflow the bar. The nav above stays
+         in the DOM (CSS-hidden below 640px) so the links remain in the
+         prerendered HTML for crawlers; this is purely a small-screen affordance. -->
+    <button
+      type="button"
+      class="bar-btn nav-trigger"
+      [cdkMenuTriggerFor]="navMenu"
+      [cdkMenuPosition]="themeMenuPosition"
+      aria-label="Navigation menu"
+    >
+      <ng-icon aria-hidden="true" name="matMenuOutline" />
+    </button>
+
+    <ng-template #navMenu>
+      <div class="nav-menu" cdkMenu aria-label="Primary">
+        <a
+          class="nav-menu__item"
+          cdkMenuItem
+          routerLink="/"
+          routerLinkActive="nav-menu__item--active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          >Tools</a
+        >
+        <a class="nav-menu__item" cdkMenuItem routerLink="/guides" routerLinkActive="nav-menu__item--active">Guides</a>
+        <a class="nav-menu__item" cdkMenuItem routerLink="/news" routerLinkActive="nav-menu__item--active">News</a>
+        <a class="nav-menu__item" cdkMenuItem routerLink="/about" routerLinkActive="nav-menu__item--active">About</a>
+        <a
+          class="nav-menu__item"
+          cdkMenuItem
+          href="https://github.com/YehanYeshminda/yydevtools"
+          target="_blank"
+          rel="noopener"
+        >
+          GitHub
+          <ng-icon class="nav__ext" aria-hidden="true" name="matOpenInNewOutline" />
+        </a>
+      </div>
+    </ng-template>
   </div>
 </header>
 

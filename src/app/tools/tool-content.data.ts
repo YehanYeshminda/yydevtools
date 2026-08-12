@@ -541,6 +541,64 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['hash-generator', 'timestamp-converter', 'jwt-decoder'],
   },
 
+  'password-generator': {
+    slug: 'password-generator',
+    intro: [
+      'Generate a strong password or a memorable passphrase, and see honestly how strong it is. Password mode builds a random string from the character sets you choose — lower case, upper case, digits and symbols — at any length up to 128. Passphrase mode strings together random words from the Electronic Frontier Foundation 7,776-word list, producing something like correct-battery-house-staple that is far easier to type on a phone or read aloud down a phone line, while still being genuinely random.',
+      'The important word in both cases is random. Passwords people invent themselves cluster in predictable ways: a capital at the front, a digit and an exclamation mark at the end, a name or a date in the middle. Cracking tools model those habits directly, which is why a password that looks complicated to a human can fall in seconds. Every value here is drawn from your browser cryptographic random source, with the byte-to-character conversion done by rejection sampling so that no character is even slightly more likely than another.',
+      'Nothing you generate is transmitted or stored. The page makes no network request when you press Generate, so the secret exists only in your browser and on your clipboard until you paste it somewhere. That is also why there is no history: closing the tab is the only cleanup required.',
+    ],
+    steps: [
+      'Pick Password for a random string, or Passphrase for random words.',
+      'For a password, set the length and switch the character sets on or off; for a passphrase, set the number of words and the separator.',
+      'Optionally turn on no look-alikes to drop I, l, 1, |, O and 0, which are easy to confuse when reading a password aloud or copying it by hand.',
+      'Press Generate for a fresh value, or raise How many to produce a batch at once.',
+      'Copy the result, and read the strength meter and crack-time estimates below it.',
+    ],
+    features: [
+      'Random passwords from 4 to 128 characters, with per-set control and an option to guarantee one character from each set.',
+      'EFF passphrases of 3 to 12 words, with a choice of separator, optional capitalisation and an optional digit.',
+      'Entropy in bits, plus a strength score and estimated crack times from the zxcvbn analyser.',
+      'Bulk generation of up to 50 values, with copy-all and download.',
+      'Runs entirely in your browser; no password is uploaded, logged or stored.',
+    ],
+    faq: [
+      {
+        q: 'Are these passwords actually random?',
+        a: 'Yes. They are drawn from your browser cryptographically secure random source, the same one used for encryption keys, rather than an ordinary random number function. Bytes are converted into characters using rejection sampling, which avoids the subtle bias that the simpler modulo approach introduces when the character pool does not divide evenly into 256.',
+      },
+      {
+        q: 'Is my password sent to a server?',
+        a: 'No. Generation, the strength check and the crack-time estimates all run locally in your browser, and the page makes no network request when you generate. Nothing is stored either, so there is no history to clear beyond closing the tab.',
+      },
+      {
+        q: 'Which is better, a password or a passphrase?',
+        a: 'Per character a random password is stronger, so it is the better choice for anything a password manager will remember for you. A passphrase is far easier to type accurately on a phone, a TV remote or a games console and easier to read aloud, and it can match a password for strength if you use enough words. Five EFF words is about 64 bits, six is about 78.',
+      },
+      {
+        q: 'How long should my password be?',
+        a: 'For a random password with mixed character sets, 16 characters is a sensible floor for important accounts and 20 or more is comfortably future-proof. Length helps far more than exotic symbols do: adding characters multiplies the search space, while swapping a for @ barely changes it because cracking tools try those substitutions automatically.',
+      },
+      {
+        q: 'What does the strength meter measure?',
+        a: 'Two different things. Entropy in bits is arithmetic: it describes how large the space of possible values the generator could have produced is. The score and crack times come from zxcvbn, which looks for dictionary words, names, dates, keyboard patterns, repeats and letter-for-symbol substitutions. For a value generated here the two agree; for a password a person invented, zxcvbn is the more honest of the two.',
+      },
+      {
+        q: 'What is the EFF wordlist?',
+        a: 'A list of 7,776 words published by the Electronic Frontier Foundation for building passphrases by rolling dice. The words were chosen to be common, easy to spell and hard to confuse with one another, and no word is a prefix of another. Because 7,776 is six to the fifth power, each word represents exactly five dice rolls, or about 12.9 bits of entropy.',
+      },
+      {
+        q: 'Why do the same options sometimes give a different strength reading?',
+        a: 'The entropy figure depends only on your settings, so it does not move. The zxcvbn score looks at the actual characters produced, and occasionally a random value happens to contain a real word or a keyboard run, which it rightly penalises. Generating again gives you a different value.',
+      },
+      {
+        q: 'Should I reuse a generated password?',
+        a: 'No. Reuse is the single most common way accounts are compromised, because a password exposed in one service breach is then tried everywhere else. Generate a separate password for every account and let a password manager remember them, which is also what makes long random strings practical.',
+      },
+    ],
+    related: ['hash-generator', 'uuid-generator', 'jwt-decoder'],
+  },
+
   'color-converter': {
     slug: 'color-converter',
     intro: [

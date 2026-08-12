@@ -88,7 +88,9 @@
                                                                                                                             "cronstrue",
                                                                                                                             "nearley",
                                                                                                                             "yaml",
-                                                                                                                            "@xml-tools/parser"
+                                                                                                                            "@xml-tools/parser",
+                                                                                                                            "secure-random-password",
+                                                                                                                            "secure-random-password/lib/random"
                                                                                                                         ],
                                                                                         "server":  "src/main.server.ts",
                                                                                         "outputMode":  "static",

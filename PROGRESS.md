@@ -847,19 +847,80 @@ evidence, and they are worth re-checking before starting, since they will drift.
 
 ### Quick wins — small, disproportionate payoff
 
-- [ ] **A visible search button in the appbar.** `app.html` renders
-      `<app-command-palette />`, but the only way to open it is ⌘K/Ctrl-K
-      (`command-palette.ts`, the global `keydown` handler). There is no visible
-      trigger anywhere. The consequence is not cosmetic: on a touch device the
-      palette is *unreachable*, and on any tool page there is no way to search
-      at all — the header carries only Tools, About and GitHub. This is closer
-      to a defect than a nicety.
-- [ ] **Finish the PWA.** `public/site.webmanifest` and the full icon set
-      (`icon-192`, `icon-512`, `icon-maskable-512`, `apple-touch-icon`) are
-      already shipping, but there is no service worker, so none of it amounts to
-      offline. This is half-paid-for work. It is also the honest proof of the
-      whole premise: a tool that genuinely runs in your browser should still run
-      on a plane.
+- [x] **A visible search button in the appbar.** *(done 2026-08-11)* Added a
+      `.search-trigger` button beside the theme toggle, on every page via the
+      shell. It calls `CommandPalette.openPalette()` (made public for exactly
+      this) through a template ref, with `aria-haspopup="dialog"` and
+      `aria-keyshortcuts`; ⌘K/Ctrl-K still works unchanged. Shows a "⌘ K"/"Ctrl K"
+      hint corrected after hydration, and collapses to an icon square ≤860px.
+      Fixed a touch-target bug found while verifying: the label-less icon was
+      shrinking to 22px in the crowded flex row (under the WCAG 2.5.8 24px
+      minimum), so `.bar-btn` is now `flex-shrink: 0` — both icon buttons hold a
+      38px hit area and the nav absorbs the shrink instead. Verified in-browser
+      at desktop and phone widths: opens on click and tap, input autofocuses,
+      Esc closes.
+- [x] **Fix mobile nav overflow.** *(done 2026-08-12)* The five inline `.nav`
+      links (~316px, non-wrapping) overflowed the appbar once the search + theme
+      buttons claimed the trailing end — visible from ~640px down. Fixed by
+      swapping the inline row for a hamburger menu below 640px, reusing the same
+      **CdkMenu** overlay pattern that already drives the theme dropdown (added
+      `CdkMenuItem` to `App`, a `matMenuOutline` glyph to `core/icons.ts`, and a
+      `.nav-trigger` button + `#navMenu` template in `app.html`; panel styled via
+      `::ng-deep .nav-menu`, mirroring `.theme-menu`). The inline `.nav` stays in
+      the DOM — merely `display:none` under the query — so all five links remain
+      in the prerendered HTML for crawlers, and they are also in the footer. The
+      menu's "Tools" item carries `routerLinkActive`, and CDK closes it on
+      navigation. Verified in-browser: at 375px and 320px the bar and body have
+      **zero** horizontal overflow, `.nav` is hidden and the 38×38 hamburger
+      shows; the menu opens right-aligned on-screen with all five links, the
+      active item is marked, tapping a link navigates and closes the menu; at
+      desktop width the inline nav is back and the hamburger is gone.
+- [x] **Password generator (passwords + passphrases + strength).** *(done 2026-08-12)*
+      A 25th tool at `tools/password-generator/`. Generation is delegated to a
+      vetted third party rather than hand-rolled: **`secure-random-password`**,
+      which draws from `crypto.getRandomValues` and turns bytes into an index by
+      **rejection sampling** (no modulo bias). Chosen after rejecting
+      `eff-diceware-passphrase` — its dependency chain reaches `sodium-native`, a
+      native node-gyp addon that cannot run in a browser. Passphrases use the
+      **EFF Large Wordlist** (7,776 words, CC BY 3.0 US), vendored as
+      `eff-wordlist.ts` and lazy-imported so the ~88 KB list stays off the initial
+      bundle. Strength + crack-time comes from **@zxcvbn-ts**, also dynamically
+      imported and cached, with an instant entropy-band fallback while its
+      dictionaries download. Two interop traps handled: (1) the module's default
+      `Random` export double-wraps under esbuild's CJS→ESM interop, so the
+      **named** `Random` class is imported and fed an explicit Web Crypto byte
+      source; (2) because every route is prerendered to static HTML and the
+      library falls back to Node crypto, generating in a field/constructor would
+      **bake one password into the page for every visitor** — generation is
+      confined to `afterNextRender`, and the built `index.html` was confirmed to
+      contain the SEO copy + FAQ/SoftwareApplication JSON-LD but **no** result
+      value. Verified in-browser: 40 default samples all 20 chars and distinct
+      with every enabled set present; "no look-alikes" removes `I l 1 | O 0`;
+      lowercase-only yields `[a-z]`; deselecting all sets shows the error with a
+      blank result; `requireEach` holds even at length 6 with four sets; bulk
+      count = 5 yields five distinct outputs; passphrase mode gives 6/6 distinct
+      values and crack-time reads "centuries". Registered in `tools.data.ts`,
+      routed with SEO title/description, and given a full `TOOL_CONTENT` entry
+      (intro, steps, features, 8 FAQ items) that drives both the copy and the
+      structured data.
+- [x] **Finish the PWA.** *(done 2026-08-11)* Added a hand-written service worker
+      (`public/sw.js`) rather than ngsw, which is SPA-oriented and would serve one
+      app-shell index.html for every navigation — bypassing the per-route
+      prerendered HTML, per-route meta/JSON-LD and real 404s this site is built
+      around. Instead: navigations are **network-first** (an online visitor always
+      gets the live prerendered page, with a copy kept for offline), same-origin
+      static assets are **stale-while-revalidate**, and `/api/*` plus all
+      cross-origin requests (the AdSense loader, Google Fonts) are never
+      intercepted. A self-contained `public/offline.html` is precached as the
+      fallback for routes never visited on the device. Registration lives in
+      `core/pwa.ts`, called from `App`, guarded to browser + production, deferred
+      to `load`, with `updateViaCache: 'none'` so a redeploy's worker is always
+      seen. Because HTML is network-first and the app's assets are content-hashed,
+      there is no "stuck on an old version" trap — which matters with AdSense.
+      Verified in-browser: SW registers/activates/controls, precaches the offline
+      page; with the server stopped a visited page (/about) renders fully from
+      cache and an unvisited route falls back to the offline page; back online,
+      fresh per-route HTML is fetched and `/api/news` returns 200 untouched.
 - [ ] **Share links for the last of the text tools.** 13 of the 24 tools call
       `syncToolState`; `base64`, `hash-generator` and `jwt-decoder` do not.
       Worth a deliberate decision rather than a reflex — the fragment is never

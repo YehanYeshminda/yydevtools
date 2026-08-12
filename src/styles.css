@@ -220,6 +220,26 @@ ng-icon {
   line-height: 1;
 }
 
+/* Icons inside Material buttons ------------------------------------------
+   Material lays out a button's content inside `.mdc-button__label`, a plain
+   span that stacks its children on the text baseline — and it only vertically
+   centres and spaces its own `mat-icon`. Since every button here projects a
+   raw `@ng-icons` `ng-icon` instead, the icon lands with its bottom on the
+   baseline (floating a few px above centre) and butts straight against the
+   label. Making the label a flex row restores both: the icon centres with the
+   text, and `gap` supplies the icon-to-text spacing Material would have added.
+   Text-only buttons have a single child, so the gap never shows. 18px matches
+   Material's own button-icon metric; 24px reads oversized next to the label. */
+.mdc-button__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mdc-button__label ng-icon {
+  font-size: 18px;
+}
+
 ::selection {
   background: var(--primary-c);
   color: var(--on-primary-c);

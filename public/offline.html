@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Offline — YYDevTools</title>
+  <meta name="robots" content="noindex" />
+  <style>
+    /* Fully self-contained: this page is precached by the service worker and must
+       render with zero further network requests, so every style and the logo are
+       inline. Colours mirror src/styles.css but are hard-coded here for the same
+       reason. */
+    :root {
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --on: #1a1f29;
+      --on-var: #5a6474;
+      --outline: #dce1e9;
+      --primary: #1f4fd0;
+      --on-primary: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1015;
+        --surface: #151922;
+        --on: #e6eaf1;
+        --on-var: #98a2b3;
+        --outline: #2b323f;
+        --primary: #9ab8ff;
+        --on-primary: #0d1015;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      color: var(--on);
+      background: var(--bg);
+    }
+    .card {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+    .mark { width: 64px; height: 64px; }
+    h1 {
+      margin: 20px 0 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    p {
+      margin: 10px 0 0;
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--on-var);
+    }
+    .retry {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 11px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--on-primary);
+      background: var(--primary);
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .hint {
+      margin-top: 20px;
+      font-size: 12.5px;
+      color: var(--on-var);
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <svg class="mark" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="96" height="96" rx="28" fill="#FFBE3D" />
+      <g stroke="#262A33" stroke-width="11" stroke-linecap="round" fill="none">
+        <line x1="48" y1="22" x2="48" y2="74" />
+        <line x1="70.5" y1="35" x2="25.5" y2="61" />
+        <line x1="25.5" y1="35" x2="70.5" y2="61" />
+      </g>
+    </svg>
+    <h1>You're offline</h1>
+    <p>
+      This page hasn't been opened on this device yet, so there's no cached copy to
+      show. Tools you've already visited still work without a connection.
+    </p>
+    <button type="button" class="retry" onclick="location.reload()">Try again</button>
+    <p class="hint">YYDevTools · free utilities that run in your browser</p>
+  </main>
+</body>
+</html>

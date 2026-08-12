@@ -224,6 +224,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/password-generator',
+    loadComponent: () =>
+      import('./tools/password-generator/password-generator').then((m) => m.PasswordGeneratorTool),
+    title: 'Password Generator — Strong Passwords & Passphrases — YYDevTools',
+    data: {
+      description:
+        'Generate strong random passwords and memorable EFF passphrases in your browser, ' +
+        'with a strength meter and crack-time estimate. Nothing is uploaded. Free, no sign-up.',
+    },
+  },
+  {
     path: 'tools/timestamp-converter',
     loadComponent: () =>
       import('./tools/timestamp-converter/timestamp-converter').then(

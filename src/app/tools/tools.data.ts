@@ -115,6 +115,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'password-generator',
+    name: 'Password Generator',
+    description:
+      'Create strong random passwords or memorable passphrases, with a strength and crack-time check.',
+    icon: 'matPasswordOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'color-converter',
     name: 'Color Converter',
     description: 'Convert HEX, RGB, HSL, OKLCH and LAB, generate palettes and check WCAG contrast.',

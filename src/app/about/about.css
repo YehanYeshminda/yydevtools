@@ -1,9 +1,18 @@
 :host {
   display: block;
   width: 100%;
-  max-width: 760px;
+  max-width: 1040px;
   margin-inline: auto;
   padding: 24px clamp(16px, 4vw, 28px) 56px;
+}
+
+/* The page fills a wide column, but flowing text is held to a comfortable
+   reading measure — long-form prose across the full 1040px would be a wall.
+   The card grids below (principles, categories, FAQ) span the full width. */
+.about__lead,
+.section__text,
+.prose {
+  max-width: 68ch;
 }
 
 /* Breadcrumb ------------------------------------------------------------ */
@@ -151,6 +160,8 @@
 /* Category blocks ------------------------------------------------------- */
 .cats {
   display: grid;
+  /* Fill the wider column: three across on desktop, folding to one on narrow. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   gap: 12px;
   margin-top: 16px;
 }
@@ -205,6 +216,10 @@
 /* FAQ ------------------------------------------------------------------- */
 .faq {
   display: grid;
+  /* Two across on the wide column; `start` keeps an opened item from
+     stretching the one beside it to match its taller row. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  align-items: start;
   gap: 10px;
 }
 

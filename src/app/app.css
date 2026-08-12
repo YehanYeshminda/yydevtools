@@ -98,6 +98,10 @@
   align-items: center;
   justify-content: center;
   height: 38px;
+  /* Never let the flex row squeeze these below their tap target: when the bar is
+     crowded the label-less icon would otherwise collapse to ~22px, under the WCAG
+     2.5.8 24px minimum. The nav absorbs the shrink instead. */
+  flex-shrink: 0;
   color: var(--on-var);
   background: var(--surface);
   border: 1px solid var(--outline);
@@ -172,6 +176,18 @@
   font-size: 20px;
 }
 
+/* The hamburger only exists at phone widths; the inline nav carries every link
+   above 640px, so the trigger is hidden until that query swaps them. */
+.nav-trigger {
+  display: none;
+  width: 38px;
+  padding: 0;
+}
+
+.nav-trigger ng-icon {
+  font-size: 22px;
+}
+
 /* The panel renders in a CDK overlay, outside this component's view, so these
    need ::ng-deep to reach it. cdkMenu is headless — every pixel below is ours,
    which is the trade that keeps it off the critical path. */
@@ -227,13 +243,54 @@
   margin-right: auto;
 }
 
+/* The mobile nav panel, same overlay treatment as the theme menu. */
+::ng-deep .nav-menu {
+  min-width: 180px;
+  padding: 6px;
+  color: var(--on);
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 12%);
+}
+
+::ng-deep .nav-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--on-var);
+  text-decoration: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+::ng-deep .nav-menu__item:hover,
+::ng-deep .nav-menu__item:focus-visible {
+  color: var(--on);
+  background: var(--surface-2);
+}
+
+::ng-deep .nav-menu__item--active {
+  font-weight: 600;
+  color: var(--on);
+  background: var(--surface-2);
+}
+
+/* Below 640px the inline row cannot fit beside the trailing buttons, so it gives
+   way to the hamburger. The nav stays in the DOM (just hidden) so its links
+   remain in the prerendered HTML for crawlers. */
 @media (max-width: 640px) {
   .nav {
-    margin-left: 0;
+    display: none;
   }
 
-  .nav__link {
-    padding: 7px 8px;
+  .nav-trigger {
+    display: inline-flex;
   }
 }
 
