@@ -6,14 +6,22 @@ import { RouterLink } from '@angular/router';
 import { ClipboardService } from '../../core/clipboard.service';
 import { VerifyResult, verifyJwt } from './jwt-verify';
 import { ToolContent } from '../../shared/tool-content/tool-content';
+import { TryExample } from '../../shared/try-example/try-example';
 
 /** Signature-check state shown in the UI: idle until a key is entered. */
 export type VerifyState = { kind: 'idle' } | { kind: 'verifying' } | VerifyResult;
 
+/**
+ * "Try an example" token: genuinely signed with HS256 and {@link SAMPLE_SECRET},
+ * expiring in 2030 — so loading it demonstrates the whole tool at once,
+ * including the green "signature verified" state, not just the decode step.
+ */
 const SAMPLE_TOKEN =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
-  'eyJpc3MiOiJ5eWRldnRvb2xzIiwic3ViIjoiMTIzNDU2Nzg5MCIsIm5hbWUiOiJBZGEgTG92ZWxhY2UiLCJpYXQiOjE3MDAwMDAwMDAsIm5iZiI6MTcwMDAwMDAwMCwiZXhwIjoxNzAwMDAzNjAwfQ.' +
-  'c2lnbmF0dXJlLXBsYWNlaG9sZGVyLW5vdC12ZXJpZmllZA';
+  'eyJzdWIiOiIxMTM4IiwibmFtZSI6IkFkYSBMb3ZlbGFjZSIsInJvbGUiOiJhZG1pbiIsImlzcyI6Imh0dHBzOi8veXlkZXZ0b29scy5jb20iLCJpYXQiOjE3MzU2ODk2MDAsImV4cCI6MTg5MzQ1NjAwMH0.' +
+  '3GAzGougqSnFY_77p3O213GUikZLq9UxKnM_V3q64fc';
+
+const SAMPLE_SECRET = 'yydevtools-demo-secret';
 
 /** Registered time claims, in display order, with a human label. */
 const TIME_CLAIMS: { key: string; label: string }[] = [
@@ -55,7 +63,7 @@ export type DecodeResult =
 
 @Component({
   selector: 'app-jwt-decoder',
-  imports: [ToolContent, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolContent, TryExample, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './jwt-decoder.html',
   styleUrl: './jwt-decoder.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -115,8 +123,10 @@ export class JwtDecoderTool {
     this.key.set((event.target as HTMLTextAreaElement).value);
   }
 
-  protected loadSample(): void {
+  /** Fill in the signed sample token and its secret, so verification succeeds too. */
+  protected loadExample(): void {
     this.token.set(SAMPLE_TOKEN);
+    this.key.set(SAMPLE_SECRET);
   }
 
   protected clear(): void {

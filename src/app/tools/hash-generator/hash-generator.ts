@@ -17,6 +17,7 @@ import { Spinner } from '../../shared/spinner/spinner';
 import { HashWorkerClient, type Digest } from './hash-worker.client';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
+import { TryExample } from '../../shared/try-example/try-example';
 
 export type { Digest };
 
@@ -42,9 +43,16 @@ const MAX_FILES = 50;
 /** Shown inline on each row of the file list until the user picks another. */
 const DEFAULT_ALGORITHM = 'SHA-256';
 
+/**
+ * "Try an example" input: the classic pangram, whose digests are printed in
+ * every hash function's documentation — so the output is instantly checkable
+ * against something the visitor may already recognise.
+ */
+const SAMPLE_TEXT = 'The quick brown fox jumps over the lazy dog';
+
 @Component({
   selector: 'app-hash-generator',
-  imports: [Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner],
+  imports: [Dropzone, ToolContent, TryExample, RouterLink, MatButtonModule, NgIcon, Spinner],
   templateUrl: './hash-generator.html',
   styleUrls: ['../tool-shell.css', './hash-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -209,6 +217,13 @@ export class HashGeneratorTool implements OnDestroy {
     this.lastData = null;
     this.requestId++;
     this.fileRunToken++;
+  }
+
+  /** Switch to the text tab, drop in the pangram and hash it straight away. */
+  protected loadExample(): void {
+    this.source.set('text');
+    this.text.set(SAMPLE_TEXT);
+    void this.hashText(SAMPLE_TEXT);
   }
 
   // --- Hashing ----------------------------------------------------------

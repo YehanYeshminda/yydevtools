@@ -1,14 +1,14 @@
+/* Width and inline padding come from the app shell's `.content`, exactly as on
+   the homepage and news page, so every top-level page spans the same column as
+   the navbar. Only the vertical rhythm is set here. */
 :host {
   display: block;
-  width: 100%;
-  max-width: 1040px;
-  margin-inline: auto;
-  padding: 24px clamp(16px, 4vw, 28px) 56px;
+  padding-block: 24px 56px;
 }
 
-/* The page fills a wide column, but flowing text is held to a comfortable
-   reading measure — long-form prose across the full 1040px would be a wall.
-   The card grids below (principles, categories, FAQ) span the full width. */
+/* The page fills the shell's wide column, but flowing text is held to a
+   comfortable reading measure — long-form prose across the full width would be
+   a wall. The card grids below (principles, categories, FAQ) span it all. */
 .about__lead,
 .section__text,
 .prose {

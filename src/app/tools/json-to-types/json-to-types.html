@@ -66,14 +66,11 @@
   }
 
   <div class="actions">
-    <button matButton (click)="loadSample()">
-      <ng-icon name="matScienceOutline" />
-      Load sample
-    </button>
     <button matButton (click)="clear()" [disabled]="!input()">
       <ng-icon name="matClearOutline" />
       Clear
     </button>
+    <app-try-example (loadExample)="loadExample()" />
     <app-share-link [state]="shared" />
   </div>
 

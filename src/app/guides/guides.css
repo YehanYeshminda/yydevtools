@@ -1,9 +1,9 @@
+/* Width and inline padding come from the app shell's `.content`, exactly as on
+   the homepage and news page, so every top-level page spans the same column as
+   the navbar. Only the vertical rhythm is set here. */
 :host {
   display: block;
-  width: 100%;
-  max-width: 860px;
-  margin-inline: auto;
-  padding: 24px clamp(16px, 4vw, 28px) 56px;
+  padding-block: 24px 56px;
 }
 
 /* Breadcrumb ------------------------------------------------------------ */
@@ -64,12 +64,16 @@
 }
 
 /* List of guides -------------------------------------------------------- */
+/* Two-up on the full-width column — a single card stretched across 1240px
+   reads as a banner, not a list item. Collapses to one column on its own. */
 .guides {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 480px), 1fr));
   gap: 14px;
   margin: 0;
   padding: 0;
   list-style: none;
+  align-items: stretch;
 }
 
 .guide {
@@ -78,6 +82,8 @@
 
 .guide__link {
   display: block;
+  height: 100%;
+  box-sizing: border-box;
   padding: 20px 22px;
   background: var(--surface);
   border: 1px solid var(--outline);

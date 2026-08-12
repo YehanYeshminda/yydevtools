@@ -207,6 +207,7 @@
       <ng-icon name="matClearOutline" />
       Clear
     </button>
+    <app-try-example (loadExample)="loadExample()" />
     @if (hashing()) {
       <span class="working" role="status">
         <app-spinner />

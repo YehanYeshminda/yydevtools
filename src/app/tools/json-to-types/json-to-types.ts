@@ -11,6 +11,7 @@ import { syncToolState } from '../../core/tool-state';
 import { Language, generate } from './type-generator';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
+import { TryExample } from '../../shared/try-example/try-example';
 
 /** The languages a restored link is allowed to select. */
 const LANGUAGES: readonly Language[] = [
@@ -61,6 +62,7 @@ const SAMPLE = `{
   selector: 'app-json-to-types',
   imports: [ToolContent,
     ShareLink,
+    TryExample,
     RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
@@ -149,7 +151,7 @@ export class JsonToTypesTool {
     this.language.set(value);
   }
 
-  protected loadSample(): void {
+  protected loadExample(): void {
     this.input.set(SAMPLE);
   }
 

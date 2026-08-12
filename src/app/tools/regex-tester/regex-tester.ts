@@ -8,6 +8,7 @@ import { compile, run } from './regex-match';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
+import { TryExample } from '../../shared/try-example/try-example';
 
 interface FlagOption {
   key: string;
@@ -21,6 +22,19 @@ interface Segment {
   match: boolean;
 }
 
+/**
+ * "Try an example": pull the warnings and errors out of a log excerpt. Two
+ * capture groups (level, message), several matches, and it needs the default
+ * `g` + `m` flags — so every part of the UI lights up at once.
+ */
+const SAMPLE_PATTERN = '^\\[(WARN|ERROR)\\] (.+)$';
+
+const SAMPLE_TEXT = `[INFO] 2025-11-04 09:21:03 server started on :8080
+[WARN] 2025-11-04 09:21:07 cache miss for key "user:1138"
+[INFO] 2025-11-04 09:21:09 GET /api/orders 200 12ms
+[ERROR] 2025-11-04 09:21:14 upstream timed out after 5000ms
+[WARN] 2025-11-04 09:21:20 retrying request (attempt 2 of 3)`;
+
 const FLAGS: FlagOption[] = [
   { key: 'g', label: 'g', hint: 'global — find all matches' },
   { key: 'i', label: 'i', hint: 'ignore case' },
@@ -32,7 +46,7 @@ const FLAGS: FlagOption[] = [
 
 @Component({
   selector: 'app-regex-tester',
-  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolContent, CodeEditor, ShareLink, TryExample, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './regex-tester.html',
   styleUrls: ['../tool-shell.css', './regex-tester.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -139,4 +153,10 @@ export class RegexTesterTool {
     this.pattern.set((event.target as HTMLInputElement).value);
   }
 
+  /** Fill pattern, flags and test string with the log-scanning sample — results are live. */
+  protected loadExample(): void {
+    this.pattern.set(SAMPLE_PATTERN);
+    this.text.set(SAMPLE_TEXT);
+    this.enabledFlags.set(new Set(['g', 'm']));
+  }
 }

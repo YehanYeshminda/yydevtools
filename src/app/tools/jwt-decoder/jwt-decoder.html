@@ -35,14 +35,11 @@
   </div>
 
   <div class="actions">
-    <button matButton (click)="loadSample()">
-      <ng-icon name="matScienceOutline" />
-      Load sample
-    </button>
     <button matButton (click)="clear()" [disabled]="!token()">
       <ng-icon name="matClearOutline" />
       Clear
     </button>
+    <app-try-example (loadExample)="loadExample()" />
   </div>
 
   @if (segments(); as seg) {

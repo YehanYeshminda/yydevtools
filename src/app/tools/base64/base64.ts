@@ -34,8 +34,16 @@ import type { PreviewKind } from './base64-codec';
 import { Base64WorkerClient } from './base64-worker.client';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
+import { TryExample } from '../../shared/try-example/try-example';
 
 type TextMode = 'encode' | 'decode';
+
+/**
+ * "Try an example" input for the Text tab. Deliberately not ASCII-only — the
+ * accents, dash and emoji are exactly what trips up naive btoa() calls, so the
+ * sample also demonstrates that this tool handles UTF-8 properly.
+ */
+const SAMPLE_TEXT = 'Café menu — señor, 100% naïve pricing 🚀 (works with UTF-8!)';
 
 /** Largest file we will encode in the browser. Everything is processed on-device. */
 const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
@@ -124,6 +132,7 @@ interface RenderedPreview {
     MatTabsModule,
     Spinner,
     PdfPreview,
+    TryExample,
   ],
   templateUrl: './base64.html',
   styleUrls: ['../tool-shell.css', './base64.css'],
@@ -424,6 +433,14 @@ export class Base64Tool implements OnDestroy {
   protected clearText(): void {
     this.textSource.set('');
     this.write(this.textArea, '');
+    this.scheduleTextConvert();
+  }
+
+  /** Drop the sample sentence into the encode box — the result converts on its own. */
+  protected loadExample(): void {
+    this.mode.set('encode');
+    this.textSource.set(SAMPLE_TEXT);
+    this.write(this.textArea, this.textSource.display);
     this.scheduleTextConvert();
   }
 

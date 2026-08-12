@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { ClipboardService } from '../../core/clipboard.service';
 import { SignResult, signJwt } from './jwt-sign';
 import { ToolContent } from '../../shared/tool-content/tool-content';
+import { TryExample } from '../../shared/try-example/try-example';
 
 /** Signing state shown in the UI: idle until a key is entered. */
 export type SignState = { kind: 'idle' } | { kind: 'signing' } | SignResult;
@@ -29,7 +30,7 @@ function keyKindFor(alg: string | null): 'hmac' | 'pem' | 'none' | null {
 
 @Component({
   selector: 'app-jwt-editor',
-  imports: [ToolContent, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolContent, TryExample, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './jwt-editor.html',
   styleUrl: './jwt-editor.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -160,7 +161,7 @@ export class JwtEditorTool {
     this.header.set(JSON.stringify(header, null, 2));
   }
 
-  protected loadSample(): void {
+  protected loadExample(): void {
     this.token.set(SAMPLE_TOKEN);
     this.decode();
     this.key.set(SAMPLE_SECRET);

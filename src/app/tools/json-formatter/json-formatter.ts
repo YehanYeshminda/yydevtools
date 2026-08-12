@@ -14,15 +14,25 @@ import { JSONPath } from 'jsonpath-plus';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { CodeEditor, type EditorLanguage } from '../../shared/code-editor/code-editor';
 import { ToolContent } from '../../shared/tool-content/tool-content';
+import { TryExample } from '../../shared/try-example/try-example';
 
 type IndentOption = '2' | '4' | 'tab';
 type Validity = 'empty' | 'valid' | 'invalid';
+
+/**
+ * A realistic minified payload for the "Try an example" button — dense enough
+ * that formatting it visibly does real work, and nested enough to give the
+ * JSONPath box something to chew on (e.g. `$.items[*].sku`).
+ */
+const SAMPLE_JSON =
+  '{"orderId":"A-10422","placedAt":"2025-11-04T09:21:00Z","customer":{"name":"Ada Lovelace","email":"ada@example.com","vip":true},"items":[{"sku":"KB-201","title":"Mechanical keyboard","qty":1,"price":89.99},{"sku":"MS-115","title":"Wireless mouse","qty":2,"price":24.5}],"shipping":{"method":"express","address":{"line1":"12 Analytical Way","city":"London","postcode":"EC1A 1AA","country":"GB"}},"total":138.99,"currency":"GBP","paid":true,"tags":["priority","gift-wrap"]}';
 
 @Component({
   selector: 'app-json-formatter',
   imports: [ToolContent,
     CodeEditor,
     ShareLink,
+    TryExample,
     RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
@@ -164,6 +174,13 @@ export class JsonFormatterTool {
     this.input.set('');
     this.output.set('');
     this.query.set('');
+  }
+
+  /** Drop in the sample payload and format it straight away, so one click shows a result. */
+  protected loadExample(): void {
+    this.input.set(SAMPLE_JSON);
+    this.query.set('');
+    this.format();
   }
 
   /**

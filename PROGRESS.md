@@ -960,8 +960,32 @@ evidence, and they are worth re-checking before starting, since they will drift.
       `regex-tester`, `sql-formatter`, `text-diff`). `json-to-types` emits
       TypeScript, Rust and Kotlin into a plain box — the one tool whose entire
       output is source code.
-- [ ] **"Try an example" on empty states.** Every tool opens blank. The cheapest
-      engagement and dwell-time win available, and it doubles as documentation.
+- [x] **"Try an example" on empty states.** *(done 2026-08-12)* A shared
+      `TryExample` button (`shared/try-example`, `matAutoFixHighOutline` wand,
+      `display: contents` like ShareLink so it slots into any `.actions` row)
+      now fills eight tools with one click: **json-formatter** (minified order
+      payload, formatted immediately), **text-diff** (nginx HTTP→HTTPS config
+      pair), **regex-tester** (`^\[(WARN|ERROR)\] (.+)$` over five log lines,
+      flags reset to `gm`), **hash-generator** (the pangram — its digests are in
+      every hash function's docs, so the output is self-checking),
+      **base64** (a UTF-8 sentence with accents and an emoji, the exact thing
+      naive `btoa()` chokes on), and retrofits of the three existing "Load
+      sample" buttons: **json-to-types**, **jwt-decoder** and **jwt-editor**.
+      The JWT decoder's sample was upgraded from a placeholder-signed, expired
+      token to one genuinely signed with HS256 (secret `yydevtools-demo-secret`,
+      exp 2030) with the secret auto-filled — so the example demonstrates the
+      green "Signature verified" state, not just decoding. `matScienceOutline`
+      became unused and was dropped from `core/icons.ts`.
+
+      Rolling this out exposed a real bug in `shared/code-editor`: its effects
+      were written `effect(() => this.handle?.setValue(this.value()))` — while
+      `handle` was still null the optional chain skipped evaluating the
+      *argument*, so the effect's first run tracked no signals and never fired
+      again. Typing worked (editor→signal), but every programmatic write
+      (signal→editor: Try an example, Clear, text-diff's Swap, the result
+      pane's language switch) was silently dead once CodeMirror mounted. Fixed
+      by reading each signal into a local before the optional call; verified
+      Clear now empties the live editor too.
 
 ### New tools, ranked by fit with what already exists
 
@@ -1071,13 +1095,24 @@ everyday work" audience this expansion is for.
 
 ### Housekeeping carried over from the first deploy
 
-- [ ] **`tools.data.ts` claims a catalog endpoint that does not exist.** The
-      header comment says the backend exposes the same catalog at
-      `GET /api/tools`. It does not — that path 404s, and `worker/index.ts` has
-      exactly three API routes on purpose. The catalog is compile-time only.
-- [ ] **`README.md` is badly out of date.** It documents six tools (there are
-      24) and describes an SPA `index.html` fallback, which was replaced by
-      prerendered pages and real 404s.
+- [x] **`tools.data.ts` claims a catalog endpoint that does not exist.**
+      *(done 2026-08-12)* The false `GET /api/tools` claim is gone; the comment
+      now lists only what is actually derived from the catalog (grid, search,
+      palette, category filter, README table).
+- [x] **`README.md` is badly out of date.** *(done 2026-08-12)* Rewritten from
+      `tools.data.ts`: all 27 tools in three category tables with honest
+      *(hosted)* markers on the three proxied PDF operations, the prerender/no-
+      SPA-fallback build story, Node ≥ 20, vitest, and the actual tech stack.
+- [x] **Page width consistency.** *(done 2026-08-12, user-reported)* The guides
+      and about pages capped themselves (`:host` max-width 860px / 1040px with
+      their own inline padding) and so sat visibly narrower than the navbar,
+      while home and news filled the shell. Both now use the bare
+      `:host { display: block; padding-block: … }` pattern and inherit the
+      shell's 1240px `.content` column; the guides list became a responsive
+      two-up grid (`minmax(min(100%, 480px), 1fr)`) so cards don't stretch into
+      banners. Verified in-browser: navbar inner 13–1253, guides cards
+      41–626/640–1225, about grids 41–1225 — one column everywhere. The guide
+      *article* page keeps its 760px reading measure on purpose.
 - [ ] **Orphaned `IMAGE_COMPRESS_SECRET` Worker secret.** The Fly app it
       authenticated is already destroyed; this is a live credential for nothing.
 - [ ] **The PDF sniff is loose.** `services/*/server.mjs` searches for `%PDF-`

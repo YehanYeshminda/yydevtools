@@ -4,8 +4,8 @@ export const TOOL_CATEGORIES: ToolCategory[] = ['Developer', 'Converter', 'Docum
 
 /**
  * The catalog of free utilities. Keep this list as the single source of truth —
- * the homepage grid, search and category filter are all derived from it, and the
- * shared backend exposes the same catalog at GET /api/tools.
+ * the homepage grid, search, the command palette and the category filter are
+ * all derived from it, and the README's tool table is written from it too.
  */
 export const TOOLS: Tool[] = [
   {

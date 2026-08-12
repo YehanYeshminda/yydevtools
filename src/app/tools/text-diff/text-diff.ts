@@ -8,8 +8,47 @@ import { DiffRow, diffLines } from './diff';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
+import { TryExample } from '../../shared/try-example/try-example';
 
 type ViewMode = 'split' | 'unified';
+
+/**
+ * "Try an example" pair: an nginx server block before and after an HTTPS
+ * migration — the kind of config diff people actually paste in, with adds,
+ * removes and changed lines that exercise the pairing logic.
+ */
+const SAMPLE_ORIGINAL = `server {
+  listen 80;
+  server_name example.com;
+
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+  }
+
+  location /static/ {
+    root /var/www/example;
+    expires 30d;
+  }
+}`;
+
+const SAMPLE_CHANGED = `server {
+  listen 443 ssl http2;
+  server_name example.com www.example.com;
+
+  ssl_certificate /etc/ssl/example.com.pem;
+
+  location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto https;
+  }
+
+  location /static/ {
+    root /var/www/example;
+    expires 7d;
+  }
+}`;
 
 /** One aligned pair for the split view: a left cell and a right cell. */
 interface SplitRow {
@@ -19,7 +58,7 @@ interface SplitRow {
 
 @Component({
   selector: 'app-text-diff',
-  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolContent, CodeEditor, ShareLink, TryExample, RouterLink, MatButtonModule, NgIcon],
   templateUrl: './text-diff.html',
   styleUrls: ['../tool-shell.css', './text-diff.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -129,5 +168,11 @@ export class TextDiffTool {
   protected clear(): void {
     this.original.set('');
     this.changed.set('');
+  }
+
+  /** Fill both sides with the sample config pair; the diff renders immediately. */
+  protected loadExample(): void {
+    this.original.set(SAMPLE_ORIGINAL);
+    this.changed.set(SAMPLE_CHANGED);
   }
 }

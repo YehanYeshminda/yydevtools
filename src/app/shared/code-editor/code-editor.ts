@@ -127,9 +127,24 @@ export class CodeEditor implements OnDestroy {
   constructor() {
     afterNextRender(() => void this.upgrade());
 
-    effect(() => this.handle?.setValue(this.value()));
-    effect(() => void this.handle?.setLanguage(this.language()));
-    effect(() => this.handle?.setReadOnly(this.readOnly()));
+    // Each signal is read BEFORE the optional call. With
+    // `this.handle?.setValue(this.value())` the argument is skipped entirely
+    // while `handle` is still null (optional chaining short-circuits argument
+    // evaluation), so the effect's first run would track no signals and never
+    // fire again — leaving the editor deaf to programmatic writes like
+    // "Try an example", Clear and Swap.
+    effect(() => {
+      const value = this.value();
+      this.handle?.setValue(value);
+    });
+    effect(() => {
+      const language = this.language();
+      void this.handle?.setLanguage(language);
+    });
+    effect(() => {
+      const readOnly = this.readOnly();
+      this.handle?.setReadOnly(readOnly);
+    });
   }
 
   ngOnDestroy(): void {
