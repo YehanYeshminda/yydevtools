@@ -1,0 +1,112 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">
+      <ng-icon name="matChevronRightOutline" />
+    </li>
+    <li aria-current="page">Word Counter</li>
+  </ol>
+</nav>
+
+<header class="head">
+  <div class="head__icon" aria-hidden="true">
+    <ng-icon name="matSubjectOutline" />
+  </div>
+  <div>
+    <h1 class="head__title">Word & Character Counter</h1>
+    <p class="head__sub">
+      Count words, characters, sentences and paragraphs as you type, with reading time and keyword
+      density. Nothing you paste leaves your browser.
+    </p>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="wc-input">Your text</label>
+    <textarea
+      id="wc-input"
+      class="field__input wc-input"
+      rows="12"
+      spellcheck="false"
+      placeholder="Type or paste your text here…"
+      [value]="text()"
+      (input)="onInput($event)"
+    ></textarea>
+  </div>
+
+  <div class="actions">
+    <button matButton="filled" (click)="copySummary()" [disabled]="!hasText()">
+      <ng-icon name="matContentCopyOutline" />
+      Copy summary
+    </button>
+    <button matButton (click)="clear()" [disabled]="!text()">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+    <app-try-example (loadExample)="loadExample()" />
+    <app-share-link [state]="shared" />
+  </div>
+
+  <!-- Summary ---------------------------------------------------------- -->
+  <section aria-label="Counts">
+    <h2 class="section__title">Counts</h2>
+    <ul class="stats" aria-live="polite">
+      @for (stat of summary(); track stat.key) {
+        <li class="stat">
+          <span class="stat__value">{{ stat.value }}</span>
+          <span class="stat__label">{{ stat.label }}</span>
+          @if (stat.detail) {
+            <span class="stat__detail">{{ stat.detail }}</span>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+
+  <!-- Keyword density -------------------------------------------------- -->
+  @if (keywords().length) {
+    <section aria-label="Keyword density">
+      <div class="keywords__head">
+        <h2 class="section__title">Most used words</h2>
+        <div class="chips" role="group" aria-label="Word filtering">
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="ignoreCommon()"
+            [attr.aria-pressed]="ignoreCommon()"
+            (click)="toggleIgnoreCommon()"
+          >
+            <ng-icon
+              aria-hidden="true"
+              [name]="ignoreCommon() ? 'matCheckOutline' : 'matAddOutline'"
+            />
+            Hide common words
+          </button>
+        </div>
+      </div>
+
+      <ol class="keywords">
+        @for (keyword of keywords(); track keyword.word) {
+          <li class="keyword">
+            <span class="keyword__word">{{ keyword.word }}</span>
+            <span class="keyword__bar" aria-hidden="true">
+              <span class="keyword__fill" [style.width.%]="keyword.density * 100"></span>
+            </span>
+            <span class="keyword__count">
+              {{ keyword.count }}<span class="keyword__density">· {{ percent(keyword.density) }}</span>
+            </span>
+          </li>
+        }
+      </ol>
+    </section>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Words and sentences are found with your browser's Unicode segmentation, so scripts written
+    without spaces — Chinese, Japanese, Thai — are counted properly rather than as one long word.
+  </p>
+</div>
+
+<app-tool-content slug="word-counter" />

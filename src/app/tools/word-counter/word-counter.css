@@ -1,0 +1,121 @@
+.wc-input {
+  min-height: 16rem;
+  font-family: inherit;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+/* Summary grid ----------------------------------------------------------- */
+/* Auto-fit rather than a fixed count: the eight figures settle into 4 / 3 / 2
+   columns as the shell narrows, with no breakpoint to keep in sync. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+}
+
+.stat__value {
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--on);
+  /* Tabular figures stop the numbers jittering sideways as they change. */
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-var);
+}
+
+.stat__detail {
+  font-size: 12px;
+  color: var(--on-var);
+  opacity: 0.85;
+}
+
+/* Keyword density -------------------------------------------------------- */
+.keywords__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.keywords {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.keyword {
+  display: grid;
+  grid-template-columns: minmax(6rem, 12rem) 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.keyword__word {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--on);
+  overflow-wrap: anywhere;
+}
+
+.keyword__bar {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--on-var) 16%, transparent);
+  overflow: hidden;
+}
+
+.keyword__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+
+.keyword__count {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--on-var);
+  white-space: nowrap;
+}
+
+.keyword__density {
+  margin-left: 6px;
+  opacity: 0.8;
+}
+
+@media (max-width: 560px) {
+  /* The bar is the first thing worth losing on a phone — the word and its
+     count carry the information; the bar only ranks them. */
+  .keyword {
+    grid-template-columns: 1fr auto;
+  }
+
+  .keyword__bar {
+    display: none;
+  }
+}

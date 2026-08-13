@@ -46,6 +46,7 @@ the homepage grid, search, command palette and this table all come from it.
 
 | Tool | Description |
 | --- | --- |
+| **Word & Character Counter** | Count words, characters, sentences and paragraphs live, with reading time and keyword density. |
 | **Markdown Editor** | Write Markdown with a live, side-by-side preview. |
 | **Image ↔ PDF** | Combine JPG/PNG/WebP images into one PDF, or turn every PDF page back into an image. |
 | **PDF Convert** | Turn a PDF into an editable Word or rich-text file. *(hosted)* |

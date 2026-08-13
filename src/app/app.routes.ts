@@ -82,6 +82,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/word-counter',
+    loadComponent: () => import('./tools/word-counter/word-counter').then((m) => m.WordCounterTool),
+    title: 'Word Counter — Count Words & Characters Online — YYDevTools',
+    data: {
+      description:
+        'Count words, characters, sentences and paragraphs as you type, with reading time and ' +
+        'keyword density. Free, runs in your browser, nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/markdown-editor',
     loadComponent: () =>
       import('./tools/markdown-editor/markdown-editor').then((m) => m.MarkdownEditorTool),

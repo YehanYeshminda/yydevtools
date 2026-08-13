@@ -1047,9 +1047,34 @@ in the ranked list above are cross-referenced, not repeated.
 - [x] **Password / passphrase generator** *(+ strength checker)* — see #3 above.
       *(done 2026-08-12)* Massive search volume, the crypto primitives already
       exist in the hash/UUID tools, and it is the privacy argument in miniature.
-- [ ] **Word & character counter** *(+ reading time, keyword density)* — one of
-      the highest-traffic utility keywords that exists. Writers, students, SEO,
-      social. All in-browser.
+- [x] **Word & character counter** *(+ reading time, keyword density)*
+      *(done 2026-08-13)* The 28th tool, at `tools/word-counter/`. Live counts
+      for words, characters (with and without spaces), sentences, paragraphs and
+      lines, plus reading time (238 wpm) and speaking time (140 wpm), and a
+      keyword-density table with a common-word filter.
+
+      The one real decision was how to count a word. Splitting on whitespace —
+      what most competing counters do — gets English roughly right and Chinese,
+      Japanese and Thai completely wrong, reporting a 500-word article as **1**
+      because those scripts put no spaces between words. `text-stats.ts` uses
+      `Intl.Segmenter` for both word and sentence boundaries, so segmentation
+      follows the Unicode rules for the text's own script, with a whitespace
+      fallback for platforms without it. Sentence segmentation also stops
+      abbreviations and decimals from each ending a sentence. Characters are
+      counted in code points, so an emoji is 1 rather than 2.
+
+      Pure logic lives in `text-stats.ts` (`analyse`, `keywordDensity`,
+      `tokenize`, `formatDuration`) with **26 unit tests**. Verified in-browser:
+      the example gives 127 words / 729 chars / 599 without spaces / 8 sentences
+      / 3 paragraphs / 5 lines with reading time 32 sec (127 ÷ 238 × 60 = 32.0);
+      `今日は良い天気ですね` counts as **6** words, not 1; "Hello world 🚀" is 13
+      characters and 2 words; the common-word toggle adds and removes "the" and
+      "and"; Clear resets every figure to zero. Responsive: the stats grid is
+      auto-fit (6 columns at 1280px, 2 at 375px) and the density bar drops on
+      phones, with zero horizontal overflow at 375px. Registered in
+      `tools.data.ts`, routed with SEO title/description, and given a full
+      `TOOL_CONTENT` entry whose 8 FAQ items were confirmed in the prerendered
+      HTML alongside the SoftwareApplication node.
 - [ ] **Unit converter** — length / weight / temperature / volume / speed. The
       broadest possible non-dev audience; pure client-side.
 - [ ] **Text cleaner / line tools** — sort lines, remove duplicates, trim

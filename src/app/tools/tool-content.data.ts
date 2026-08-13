@@ -1159,4 +1159,60 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['pdf-organizer', 'image-compressor', 'pdf-merge'],
   },
+  'word-counter': {
+    slug: 'word-counter',
+    intro: [
+      'The Word & Character Counter tells you how long a piece of writing is, and it updates as you type. It counts words, characters with and without spaces, sentences, paragraphs and lines, and turns the word count into an estimated reading time and speaking time — the two numbers you actually need when a piece has to fit a word limit, a meta description, or a five-minute slot.',
+      'It also shows which words you lean on most. The density table ranks the words that appear most often and shows each one as a share of the total, which is useful for spotting unintentional repetition in an essay and for checking that a page about a topic actually mentions that topic. Everything runs on your own device, so drafts, cover letters, student work and unpublished writing are never uploaded anywhere.',
+    ],
+    steps: [
+      'Type or paste your text into the box — the counts update immediately.',
+      'Read the summary for words, characters, sentences, paragraphs, lines, reading time and speaking time.',
+      'Scroll to “Most used words” to see which words you repeat, and how often.',
+      'Turn off “Hide common words” if you want words like “the” and “and” included in that table.',
+      'Use Copy summary to put the whole set of counts on your clipboard.',
+    ],
+    features: [
+      'Live counts for words, characters, characters without spaces, sentences, paragraphs and lines.',
+      'Reading time at 238 words per minute and speaking time at 140, so you can size a page or a talk.',
+      'Keyword density with a common-word filter, ranked and shown as a percentage.',
+      'Correct counting for Chinese, Japanese and Thai, which are written without spaces between words.',
+      'Runs entirely in your browser — nothing you paste is uploaded.',
+    ],
+    faq: [
+      {
+        q: 'Is my text uploaded anywhere?',
+        a: 'No. Every count is calculated locally in your browser as you type. Nothing you paste is sent to a server, which is why it is safe to use on unpublished drafts, coursework and confidential documents.',
+      },
+      {
+        q: 'How is reading time calculated?',
+        a: 'Reading time is the word count divided by 238 words per minute, a widely cited average for silent reading of ordinary prose. Speaking time uses 140 words per minute, which is a comfortable pace for reading aloud. Both are estimates — dense or technical writing is read more slowly.',
+      },
+      {
+        q: 'Does the character count include spaces?',
+        a: 'Both numbers are shown. The headline figure includes spaces, punctuation and line breaks; underneath it you get the count without any whitespace. Social posts and meta descriptions are normally measured with spaces included.',
+      },
+      {
+        q: 'How are words counted in Chinese or Japanese?',
+        a: 'Correctly, which most counters do not manage. Those scripts do not put spaces between words, so a tool that splits on spaces reports a whole article as one word. This one uses your browser’s Unicode segmentation to find real word boundaries in the text’s own script.',
+      },
+      {
+        q: 'What counts as a sentence?',
+        a: 'Sentence boundaries come from your browser’s Unicode segmentation rather than a simple full-stop count, so common abbreviations and decimal numbers do not each end a sentence. It is still an estimate: unusual punctuation can shift the number by one or two.',
+      },
+      {
+        q: 'What is keyword density and what should it be?',
+        a: 'It is how often a word appears as a share of all the words counted. There is no target worth chasing: search engines have not rewarded a particular density for many years. It is most useful for catching a word you have accidentally used ten times in three paragraphs.',
+      },
+      {
+        q: 'Why are “the” and “and” missing from the most-used words?',
+        a: 'They are filtered out by default, because otherwise they would take every top slot in every text. Turn off “Hide common words” to include them.',
+      },
+      {
+        q: 'How does it count emoji and accented letters?',
+        a: 'An emoji or an accented letter counts as one character rather than the two units it may occupy internally, which matches what you see on screen.',
+      },
+    ],
+    related: ['case-converter', 'markdown-editor', 'text-diff'],
+  },
 };

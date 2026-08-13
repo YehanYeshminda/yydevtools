@@ -157,6 +157,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'word-counter',
+    name: 'Word & Character Counter',
+    description:
+      'Count words, characters, sentences and paragraphs live, with reading time and keyword density.',
+    icon: 'matSubjectOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'markdown-editor',
     name: 'Markdown Editor',
     description: 'Write Markdown with a live, side-by-side preview.',
