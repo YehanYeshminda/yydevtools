@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
-import { RouterLink } from '@angular/router';
 import { format, type KeywordCase, type SqlLanguage } from 'sql-formatter';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -48,7 +48,7 @@ const SAMPLE =
 
 @Component({
   selector: 'app-sql-formatter',
-  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, CodeEditor, ShareLink, MatButtonModule, NgIcon],
   templateUrl: './sql-formatter.html',
   styleUrls: ['../tool-shell.css', './sql-formatter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

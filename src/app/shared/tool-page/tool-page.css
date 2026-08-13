@@ -1,0 +1,149 @@
+/* The breadcrumb and masthead rules used to live in `tools/tool-shell.css`,
+   where every tool re-declared the markup they styled. They belong with the
+   component that now owns that markup — view encapsulation means the tool's
+   own stylesheet cannot reach in here anyway. */
+
+:host {
+  display: block;
+}
+
+/* Breadcrumb ------------------------------------------------------------ */
+.crumbs {
+  margin-bottom: 1rem;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumb a {
+  color: var(--mat-sys-primary);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb__sep {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.breadcrumb__sep ng-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.breadcrumb [aria-current='page'] {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Head ------------------------------------------------------------------ */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.head__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 14px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  flex: none;
+}
+
+/* Lets the title wrap instead of forcing the row wider than its container. */
+.head__text {
+  min-width: 0;
+}
+
+.head__title {
+  margin: 0;
+  font: var(--mat-sys-headline-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.head__sub {
+  margin: 0.25rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Favourite toggle ------------------------------------------------------ */
+.head__fav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 40px square keeps it clear of the WCAG 2.5.8 minimum target size. */
+  width: 40px;
+  height: 40px;
+  margin-left: auto;
+  flex: none;
+  padding: 0;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--mat-sys-on-surface-variant);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.head__fav ng-icon {
+  font-size: 1.35rem;
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.head__fav:hover {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+}
+
+.head__fav:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+/* Starred: the amber reads as "kept" without needing the label to be visible. */
+.head__fav--on {
+  color: var(--star);
+}
+
+.head__fav--on:hover {
+  color: var(--star);
+}
+
+@media (max-width: 560px) {
+  .head {
+    /* The icon, title and star stay on one row; the description drops below,
+       so a long name does not squeeze the star off the edge. */
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .head__text {
+    order: 3;
+    flex-basis: 100%;
+  }
+}

@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
-import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { SignResult, signJwt } from './jwt-sign';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { TryExample } from '../../shared/try-example/try-example';
 
@@ -30,7 +30,7 @@ function keyKindFor(alg: string | null): 'hmac' | 'pem' | 'none' | null {
 
 @Component({
   selector: 'app-jwt-editor',
-  imports: [ToolContent, TryExample, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, TryExample, MatButtonModule, NgIcon],
   templateUrl: './jwt-editor.html',
   styleUrl: './jwt-editor.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

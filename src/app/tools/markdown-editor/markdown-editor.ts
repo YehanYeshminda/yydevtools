@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
-import { RouterLink } from '@angular/router';
 import { marked } from 'marked';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { downloadText } from '../../core/download';
 import { syncToolState } from '../../core/tool-state';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -37,7 +37,7 @@ const greet = (name: string) => \`Hello, \${name}!\`;
 
 @Component({
   selector: 'app-markdown-editor',
-  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, CodeEditor, ShareLink, MatButtonModule, NgIcon],
   templateUrl: './markdown-editor.html',
   styleUrl: './markdown-editor.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

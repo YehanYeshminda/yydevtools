@@ -11,9 +11,9 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
 import QRCode, { type QRCodeErrorCorrectionLevel } from 'qrcode';
 import { syncToolState } from '../../core/tool-state';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { EMPTY_FIELDS, buildPayload, type QrFields, type QrKind } from './qr-payload';
 
@@ -83,7 +83,7 @@ function group<T extends object>(value: T | undefined): Partial<T> {
 
 @Component({
   selector: 'app-qr-generator',
-  imports: [ToolContent, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, MatButtonModule, NgIcon],
   templateUrl: './qr-generator.html',
   styleUrls: ['../tool-shell.css', './qr-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

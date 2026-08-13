@@ -1,25 +1,7 @@
-<nav class="crumbs" aria-label="Breadcrumb">
-  <ol class="breadcrumb">
-    <li><a routerLink="/">All tools</a></li>
-    <li class="breadcrumb__sep" aria-hidden="true">
-      <ng-icon name="matChevronRightOutline" />
-    </li>
-    <li aria-current="page">PDF Organizer</li>
-  </ol>
-</nav>
-
-<header class="head">
-  <div class="head__icon" aria-hidden="true">
-    <ng-icon name="matDashboardCustomizeOutline" />
-  </div>
-  <div>
-    <h1 class="head__title">PDF Organizer</h1>
-    <p class="head__sub">
-      See every page, then reorder, rotate, delete and combine them — and save the result as one
-      PDF. Everything runs in your browser; your files never leave your device.
-    </p>
-  </div>
-</header>
+<app-tool-page slug="pdf-organizer">
+  See every page, then reorder, rotate, delete and combine them — and save the result as one
+  PDF. Everything runs in your browser; your files never leave your device.
+</app-tool-page>
 
 <div class="panel">
   @if (!hasPages()) {

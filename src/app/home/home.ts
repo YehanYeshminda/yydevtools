@@ -1,19 +1,22 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
+  DestroyRef,
   ElementRef,
+  afterNextRender,
+  computed,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
 
 import { FavoritesService } from '../core/favorites.service';
 import { GUIDES } from '../guides/guides.data';
 import { AdSlot } from '../shared/ad-slot/ad-slot';
-import { Tool, ToolCategory } from '../tools/tool.model';
+import { CATEGORY_META, Tool, ToolCategory } from '../tools/tool.model';
 import { TOOLS, TOOL_CATEGORIES } from '../tools/tools.data';
 
 type CategoryFilter = ToolCategory | 'All';
@@ -37,12 +40,6 @@ interface ToolGroup {
   tools: CardTool[];
 }
 
-const CATEGORY_META: Record<ToolCategory, { accent: string; icon: string }> = {
-  Developer: { accent: 'dev', icon: 'matTerminalOutline' },
-  Converter: { accent: 'conv', icon: 'matSyncAltOutline' },
-  Document: { accent: 'doc', icon: 'matDescriptionOutline' },
-};
-
 @Component({
   selector: 'app-home',
   imports: [RouterLink, NgIcon, AdSlot],
@@ -65,6 +62,31 @@ export class Home {
   protected readonly category = signal<CategoryFilter>('All');
 
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
+    // `?category=` makes a filtered view linkable, which is what lets the
+    // header's Browse menu point at one.
+    //
+    // Read after the first render, never during it: this page is prerendered
+    // with every category showing, so applying the filter while hydrating would
+    // produce a DOM that disagrees with the served HTML. Same reason the
+    // favourites row starts empty.
+    afterNextRender(() => {
+      this.route.queryParamMap
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((params) => {
+          const requested = params.get('category');
+          const match = this.categories.find(
+            (category) => category.toLowerCase() === requested?.toLowerCase(),
+          );
+          this.category.set(match ?? 'All');
+        });
+    });
+  }
 
   private readonly matches = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -133,13 +155,26 @@ export class Home {
     this.query.set((event.target as HTMLInputElement).value);
   }
 
+  /**
+   * Push the choice through the URL rather than setting the signal directly, so
+   * the address bar, the Browse menu and the chips can never disagree — the
+   * subscription above is the single place the signal is written.
+   *
+   * `replaceUrl` because flipping through four filters should not cost four
+   * presses of the back button to escape.
+   */
   protected selectCategory(category: CategoryFilter): void {
-    this.category.set(category);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { category: category === 'All' ? null : category },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   protected clearSearch(): void {
     this.query.set('');
-    this.category.set('All');
+    this.selectCategory('All');
     this.focusSearch();
   }
 

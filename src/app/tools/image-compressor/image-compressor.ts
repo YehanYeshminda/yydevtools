@@ -15,11 +15,11 @@ import { NgIcon } from '@ng-icons/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
 
 import { downloadBlob, fileStem } from '../../core/download';
 import { formatBytes } from '../../core/format';
 import { downloadZip, type ZipEntry } from '../../core/zip';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { Spinner } from '../../shared/spinner/spinner';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -83,10 +83,9 @@ const SIZE_PRESETS: ReadonlyArray<{ value: number; label: string }> = [
 
 @Component({
   selector: 'app-image-compressor',
-  imports: [
+  imports: [ToolPage, 
     Dropzone,
     ToolContent,
-    RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
     MatFormFieldModule,

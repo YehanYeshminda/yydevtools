@@ -22,6 +22,13 @@
         [routerLinkActiveOptions]="{ exact: true }"
         >Tools</a
       >
+      <!-- Twenty-eight tools is past the point where a single grid is a way to
+           browse; this is the shortcut to a category, and to the visitor's own
+           starred and recent tools from anywhere on the site. -->
+      <button type="button" class="nav__link nav__link--menu" [cdkMenuTriggerFor]="browseMenu">
+        Browse
+        <ng-icon class="nav__caret" aria-hidden="true" name="matExpandMoreOutline" />
+      </button>
       <a class="nav__link" routerLink="/guides" routerLinkActive="nav__link--active">Guides</a>
       <a class="nav__link" routerLink="/news" routerLinkActive="nav__link--active">News</a>
       <a class="nav__link" routerLink="/about" routerLinkActive="nav__link--active">About</a>
@@ -107,6 +114,12 @@
           [routerLinkActiveOptions]="{ exact: true }"
           >Tools</a
         >
+        <!-- The same panel as the bar's Browse button, opened here as a submenu:
+             one template, two triggers, so the two can never drift apart. -->
+        <button type="button" class="nav-menu__item" cdkMenuItem [cdkMenuTriggerFor]="browseMenu">
+          Browse
+          <ng-icon class="nav-menu__caret" aria-hidden="true" name="matChevronRightOutline" />
+        </button>
         <a class="nav-menu__item" cdkMenuItem routerLink="/guides" routerLinkActive="nav-menu__item--active">Guides</a>
         <a class="nav-menu__item" cdkMenuItem routerLink="/news" routerLinkActive="nav-menu__item--active">News</a>
         <a class="nav-menu__item" cdkMenuItem routerLink="/about" routerLinkActive="nav-menu__item--active">About</a>
@@ -120,6 +133,67 @@
           GitHub
           <ng-icon class="nav__ext" aria-hidden="true" name="matOpenInNewOutline" />
         </a>
+      </div>
+    </ng-template>
+
+    <!-- Shared by the bar's Browse button and the hamburger's Browse item. Both
+         groups above the categories come from localStorage, so they are absent
+         from the prerendered HTML and appear only once the services have read
+         storage — never a hydration mismatch, because the panel itself is only
+         built when a trigger opens it.
+
+         The section headings are aria-hidden and each group carries the same
+         text as its `aria-label`: a role="menu" may only contain menu items,
+         groups and separators, so a stray heading would be an invalid child. -->
+    <ng-template #browseMenu>
+      <div class="browse-menu" cdkMenu aria-label="Browse tools">
+        @if (favoriteTools().length) {
+          <div class="browse-menu__group" cdkMenuGroup aria-label="Favorites">
+            <p class="browse-menu__label" aria-hidden="true">Favorites</p>
+            @for (tool of favoriteTools(); track tool.slug) {
+              <a class="browse-menu__item" cdkMenuItem [routerLink]="['/tools', tool.slug]">
+                <ng-icon class="browse-menu__icon" aria-hidden="true" [name]="tool.icon" />
+                <span class="browse-menu__name">{{ tool.name }}</span>
+              </a>
+            }
+          </div>
+          <div class="browse-menu__sep" role="separator"></div>
+        }
+
+        @if (recentTools().length) {
+          <div class="browse-menu__group" cdkMenuGroup aria-label="Recently used">
+            <p class="browse-menu__label" aria-hidden="true">Recently used</p>
+            @for (tool of recentTools(); track tool.slug) {
+              <a class="browse-menu__item" cdkMenuItem [routerLink]="['/tools', tool.slug]">
+                <ng-icon class="browse-menu__icon" aria-hidden="true" [name]="tool.icon" />
+                <span class="browse-menu__name">{{ tool.name }}</span>
+              </a>
+            }
+          </div>
+          <div class="browse-menu__sep" role="separator"></div>
+        }
+
+        <div class="browse-menu__group" cdkMenuGroup aria-label="Categories">
+          <p class="browse-menu__label" aria-hidden="true">Categories</p>
+          @for (category of categoryLinks; track category.name) {
+            <a
+              class="browse-menu__item"
+              cdkMenuItem
+              routerLink="/"
+              [queryParams]="{ category: category.name }"
+            >
+              <ng-icon class="browse-menu__icon" aria-hidden="true" [name]="category.icon" />
+              <span class="browse-menu__name">{{ category.name }}</span>
+              <span class="browse-menu__count">{{ category.count }}</span>
+            </a>
+          }
+          <!-- No `category` param at all, which is how the homepage spells "All". -->
+          <a class="browse-menu__item" cdkMenuItem routerLink="/">
+            <ng-icon class="browse-menu__icon" aria-hidden="true" name="matAppsOutline" />
+            <span class="browse-menu__name">All tools</span>
+            <span class="browse-menu__count">{{ toolCount }}</span>
+          </a>
+        </div>
       </div>
     </ng-template>
   </div>

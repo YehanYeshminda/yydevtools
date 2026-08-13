@@ -10,12 +10,12 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
 import { PDFDocument, degrees } from '@cantoo/pdf-lib';
 
 import { downloadBytes, fileStem } from '../../core/download';
 import { formatBytes } from '../../core/format';
 import { looksLikePdf } from '../../core/pdf-probe';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { Spinner } from '../../shared/spinner/spinner';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -55,10 +55,9 @@ const THUMB_EDGE = 260;
 
 @Component({
   selector: 'app-pdf-organizer',
-  imports: [
+  imports: [ToolPage, 
     Dropzone,
     ToolContent,
-    RouterLink,
     DragDropModule,
     MatButtonModule,
     NgIcon,

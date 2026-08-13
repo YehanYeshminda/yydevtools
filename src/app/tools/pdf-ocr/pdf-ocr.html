@@ -1,26 +1,8 @@
-<nav class="crumbs" aria-label="Breadcrumb">
-  <ol class="breadcrumb">
-    <li><a routerLink="/">All tools</a></li>
-    <li class="breadcrumb__sep" aria-hidden="true">
-      <ng-icon name="matChevronRightOutline" />
-    </li>
-    <li aria-current="page">PDF OCR</li>
-  </ol>
-</nav>
-
-<header class="head">
-  <div class="head__icon" aria-hidden="true">
-    <ng-icon name="matDocumentScannerOutline" />
-  </div>
-  <div>
-    <h1 class="head__title">PDF OCR</h1>
-    <p class="head__sub">
-      Make a scanned PDF searchable. Text recognition runs over the page images and adds an
-      invisible text layer, so you can select and search the words. Short English documents can be
-      recognised entirely in your browser, without being uploaded at all.
-    </p>
-  </div>
-</header>
+<app-tool-page slug="pdf-ocr">
+  Make a scanned PDF searchable. Text recognition runs over the page images and adds an
+  invisible text layer, so you can select and search the words. Short English documents can be
+  recognised entirely in your browser, without being uploaded at all.
+</app-tool-page>
 
 <div class="panel">
   @if (unavailable()) {

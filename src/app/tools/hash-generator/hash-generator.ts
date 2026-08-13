@@ -9,10 +9,10 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
 import { ClipboardService } from '../../core/clipboard.service';
 import { downloadText } from '../../core/download';
 import { formatBytes } from '../../core/format';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { Spinner } from '../../shared/spinner/spinner';
 import { HashWorkerClient, type Digest } from './hash-worker.client';
 import { Dropzone } from '../../shared/dropzone/dropzone';
@@ -52,7 +52,7 @@ const SAMPLE_TEXT = 'The quick brown fox jumps over the lazy dog';
 
 @Component({
   selector: 'app-hash-generator',
-  imports: [Dropzone, ToolContent, TryExample, RouterLink, MatButtonModule, NgIcon, Spinner],
+  imports: [ToolPage, Dropzone, ToolContent, TryExample, MatButtonModule, NgIcon, Spinner],
   templateUrl: './hash-generator.html',
   styleUrls: ['../tool-shell.css', './hash-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

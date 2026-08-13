@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
-import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
 import { CaseKind, convert } from './case';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
@@ -30,7 +30,7 @@ const CASES: { kind: CaseKind; label: string }[] = [
 
 @Component({
   selector: 'app-case-converter',
-  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, ShareLink, MatButtonModule, NgIcon],
   templateUrl: './case-converter.html',
   styleUrls: ['../tool-shell.css', './case-converter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

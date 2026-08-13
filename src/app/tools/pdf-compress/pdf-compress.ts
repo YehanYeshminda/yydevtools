@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 import { HostedPdfTool } from '../../core/hosted-pdf-tool';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { Spinner } from '../../shared/spinner/spinner';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -28,7 +29,7 @@ const LEVELS: LevelOption[] = [
 
 @Component({
   selector: 'app-pdf-compress',
-  imports: [Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner],
+  imports: [ToolPage, Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner],
   templateUrl: './pdf-compress.html',
   styleUrls: ['../tool-shell.css', './pdf-compress.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

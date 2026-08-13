@@ -1122,14 +1122,37 @@ everyday work" audience this expansion is for.
 
 ### UI and shell
 
-- [ ] **Category navigation in the header.** 24 tools and no browsing structure
-      outside the homepage grid.
-- [ ] **Surface favourites and recents in the shell.** `FavoritesService` and
-      `RecentToolsService` exist but appear only in `home.ts` and the command
-      palette — invisible from every tool page.
-- [ ] **A shared tool-page shell component.** `tools/tool-shell.css` exists with
-      no component behind it, so the title, description, share and favourite
-      affordances are reassembled per tool. That is where drift starts.
+- [x] **Category navigation in the header.** *(done 2026-08-13)* A **Browse**
+      menu in the appbar lists the three categories with live counts (Developer
+      15, Converter 3, Document 10) plus an "All tools 28" row. The counts are
+      derived from `TOOLS` at module load, so a new tool changes them without
+      anyone remembering to. Each row links to `/?category=<name>`, which the
+      homepage now reads: `home.ts` subscribes to `queryParamMap` in
+      `afterNextRender` (prerender-safe — the served HTML always shows every
+      category) and `selectCategory()` navigates instead of setting the signal,
+      so the chips, the address bar and the menu cannot disagree. An unknown
+      value falls back to All. One `<ng-template #browseMenu>` serves two
+      triggers — the bar button above 640px and a submenu item inside the
+      hamburger below it — so the two can never drift.
+- [x] **Surface favourites and recents in the shell.** *(done 2026-08-13)* Two
+      places now. On every tool page the new masthead carries a favourite star
+      (40px target, amber when on). In the header's Browse menu, "Favorites" and
+      "Recently used" groups list up to five tools each, with anything starred
+      filtered out of recents so no row appears twice. Both groups come from
+      localStorage and so are absent from the prerendered HTML — correct, since
+      they are per-visitor and nothing about them belongs in a cached document.
+- [x] **A shared tool-page shell component.** *(done 2026-08-13)*
+      `shared/tool-page/` is the component `tool-shell.css` never had. All 28
+      tools now open with `<app-tool-page slug="…">description</app-tool-page>`,
+      replacing ~22 lines of hand-assembled breadcrumb and header each. Name and
+      icon are derived from the catalog entry, which fixed two live divergences:
+      Code Formatter showed a different icon on its page than on its homepage
+      card, and Word Counter's breadcrumb read "Word Counter" against a catalog
+      name of "Word & Character Counter". The description stays projected — the
+      card grid wants one terse line, the page can afford a fuller sentence. The
+      crumb and head rules moved out of `tool-shell.css`, and the five tools that
+      kept private copies of that chrome (json-formatter, jwt-decoder,
+      jwt-editor, markdown-editor, pdf-merge) lost 12 dead rule blocks each.
 - [ ] **Global drag-and-drop on file tools** — drop anywhere on the page, not
       only onto the input.
 - [ ] **Skeletons for the heavy lazy chunks.** `heic-to` is 3.00 MB and

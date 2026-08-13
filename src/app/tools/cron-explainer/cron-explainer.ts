@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
-import { RouterLink } from '@angular/router';
 
 import { syncToolState } from '../../core/tool-state';
 import { explainCron } from './cron-schedule';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
@@ -26,7 +26,7 @@ const EXAMPLES: Example[] = [
 
 @Component({
   selector: 'app-cron-explainer',
-  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, ShareLink, MatButtonModule, NgIcon],
   templateUrl: './cron-explainer.html',
   styleUrls: ['../tool-shell.css', './cron-explainer.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

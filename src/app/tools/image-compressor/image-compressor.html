@@ -1,25 +1,7 @@
-<nav class="crumbs" aria-label="Breadcrumb">
-  <ol class="breadcrumb">
-    <li><a routerLink="/">All tools</a></li>
-    <li class="breadcrumb__sep" aria-hidden="true">
-      <ng-icon name="matChevronRightOutline" />
-    </li>
-    <li aria-current="page">Image Compressor</li>
-  </ol>
-</nav>
-
-<header class="head">
-  <div class="head__icon" aria-hidden="true">
-    <ng-icon name="matCompressOutline" />
-  </div>
-  <div>
-    <h1 class="head__title">Image Compressor</h1>
-    <p class="head__sub">
-      Shrink JPEG, PNG and HEIC images to JPEG or WebP with mozjpeg compression — one at a time or
-      in a batch. Everything runs on your own device; your images are never uploaded.
-    </p>
-  </div>
-</header>
+<app-tool-page slug="image-compressor">
+  Shrink JPEG, PNG and HEIC images to JPEG or WebP with mozjpeg compression — one at a time or
+  in a batch. Everything runs on your own device; your images are never uploaded.
+</app-tool-page>
 
 <div class="panel">
   @if (hasItems()) {

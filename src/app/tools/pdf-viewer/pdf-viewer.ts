@@ -2,9 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
 import { describeFile, formatBytes } from '../../core/format';
 import { looksLikePdf, readPageCount } from '../../core/pdf-probe';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -14,7 +14,7 @@ const MAX_INPUT_BYTES = 100 * 1024 * 1024;
 
 @Component({
   selector: 'app-pdf-viewer',
-  imports: [Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, PdfPreview],
+  imports: [ToolPage, Dropzone, ToolContent, MatButtonModule, NgIcon, PdfPreview],
   templateUrl: './pdf-viewer.html',
   styleUrls: ['../tool-shell.css', './pdf-viewer.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

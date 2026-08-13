@@ -7,11 +7,11 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
-import { RouterLink } from '@angular/router';
 import type { Plugin } from 'prettier';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { CodeEditor, type EditorLanguage } from '../../shared/code-editor/code-editor';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -52,7 +52,7 @@ const SAMPLE = `<section class="card"   id="hero">
 
 @Component({
   selector: 'app-code-formatter',
-  imports: [ToolContent, CodeEditor, ShareLink, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, CodeEditor, ShareLink, MatButtonModule, NgIcon],
   templateUrl: './code-formatter.html',
   styleUrls: ['../tool-shell.css', './code-formatter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

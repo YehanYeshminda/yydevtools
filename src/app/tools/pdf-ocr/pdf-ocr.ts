@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 import { HostedPdfTool } from '../../core/hosted-pdf-tool';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { Spinner } from '../../shared/spinner/spinner';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -51,7 +52,7 @@ const ENGINE_DOWNLOAD = '7 MB';
 
 @Component({
   selector: 'app-pdf-ocr',
-  imports: [Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner],
+  imports: [ToolPage, Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner],
   templateUrl: './pdf-ocr.html',
   styleUrls: ['../tool-shell.css', './pdf-ocr.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

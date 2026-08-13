@@ -4,6 +4,7 @@ import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 import { HostedPdfTool } from '../../core/hosted-pdf-tool';
 import { ExportFormat } from '../../core/pdf-services.client';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { Spinner } from '../../shared/spinner/spinner';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -21,7 +22,7 @@ const FORMATS: FormatOption[] = [
 
 @Component({
   selector: 'app-pdf-convert',
-  imports: [Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner],
+  imports: [ToolPage, Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner],
   templateUrl: './pdf-convert.html',
   styleUrls: ['../tool-shell.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
 import { PDFDocument } from '@cantoo/pdf-lib';
 import { downloadBytes } from '../../core/download';
 import { formatBytes } from '../../core/format';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 import { Spinner } from '../../shared/spinner/spinner';
@@ -25,7 +25,7 @@ const MAX_INPUT_BYTES = 100 * 1024 * 1024;
 
 @Component({
   selector: 'app-pdf-merge',
-  imports: [ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner, PdfPreview, Dropzone],
+  imports: [ToolPage, ToolContent, MatButtonModule, NgIcon, Spinner, PdfPreview, Dropzone],
   templateUrl: './pdf-merge.html',
   styleUrl: './pdf-merge.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

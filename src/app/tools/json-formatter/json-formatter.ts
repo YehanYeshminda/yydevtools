@@ -6,9 +6,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { NgIcon } from '@ng-icons/core';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { JSONPath } from 'jsonpath-plus';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
@@ -29,11 +29,10 @@ const SAMPLE_JSON =
 
 @Component({
   selector: 'app-json-formatter',
-  imports: [ToolContent,
+  imports: [ToolPage, ToolContent,
     CodeEditor,
     ShareLink,
     TryExample,
-    RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
     MatCheckboxModule,

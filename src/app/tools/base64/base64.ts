@@ -15,9 +15,9 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
-import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 import { Spinner } from '../../shared/spinner/spinner';
 import {
@@ -121,10 +121,9 @@ interface RenderedPreview {
 
 @Component({
   selector: 'app-base64',
-  imports: [
+  imports: [ToolPage, 
     Dropzone,
     ToolContent,
-    RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
     MatCheckboxModule,

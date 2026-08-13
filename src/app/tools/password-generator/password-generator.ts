@@ -8,10 +8,10 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
-import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import {
@@ -49,7 +49,7 @@ const SEPARATORS: readonly SeparatorOption[] = [
 
 @Component({
   selector: 'app-password-generator',
-  imports: [ToolContent, ShareLink, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, ShareLink, MatButtonModule, NgIcon],
   templateUrl: './password-generator.html',
   styleUrls: ['../tool-shell.css', './password-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

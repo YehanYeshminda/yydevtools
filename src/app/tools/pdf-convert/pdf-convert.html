@@ -1,25 +1,7 @@
-<nav class="crumbs" aria-label="Breadcrumb">
-  <ol class="breadcrumb">
-    <li><a routerLink="/">All tools</a></li>
-    <li class="breadcrumb__sep" aria-hidden="true">
-      <ng-icon name="matChevronRightOutline" />
-    </li>
-    <li aria-current="page">PDF Convert</li>
-  </ol>
-</nav>
-
-<header class="head">
-  <div class="head__icon" aria-hidden="true">
-    <ng-icon name="matSyncAltOutline" />
-  </div>
-  <div>
-    <h1 class="head__title">PDF Convert</h1>
-    <p class="head__sub">
-      Turn a PDF into an editable Word or rich-text file. Unlike the local PDF tools here, this one
-      needs a hosted service — your file is uploaded to be converted, then deleted.
-    </p>
-  </div>
-</header>
+<app-tool-page slug="pdf-convert">
+  Turn a PDF into an editable Word or rich-text file. Unlike the local PDF tools here, this one
+  needs a hosted service — your file is uploaded to be converted, then deleted.
+</app-tool-page>
 
 <div class="panel">
   @if (unavailable()) {

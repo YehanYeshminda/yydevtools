@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
-import { RouterLink } from '@angular/router';
 
 import { syncToolState } from '../../core/tool-state';
 import { compile, run } from './regex-match';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -46,7 +46,7 @@ const FLAGS: FlagOption[] = [
 
 @Component({
   selector: 'app-regex-tester',
-  imports: [ToolContent, CodeEditor, ShareLink, TryExample, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, CodeEditor, ShareLink, TryExample, MatButtonModule, NgIcon],
   templateUrl: './regex-tester.html',
   styleUrls: ['../tool-shell.css', './regex-tester.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

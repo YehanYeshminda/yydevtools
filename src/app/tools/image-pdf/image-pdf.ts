@@ -10,7 +10,6 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { NgIcon } from '@ng-icons/core';
-import { RouterLink } from '@angular/router';
 import { PDFDocument, type PDFImage } from '@cantoo/pdf-lib';
 
 import { downloadBlob, downloadBytes, fileStem } from '../../core/download';
@@ -18,6 +17,7 @@ import { formatBytes } from '../../core/format';
 import { looksLikePdf } from '../../core/pdf-probe';
 import { PdfDocumentRenderer } from '../../core/pdf-render';
 import { downloadZip, type ZipEntry } from '../../core/zip';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { Spinner } from '../../shared/spinner/spinner';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -82,10 +82,9 @@ const DPI_OPTIONS = [
 
 @Component({
   selector: 'app-image-pdf',
-  imports: [
+  imports: [ToolPage, 
     Dropzone,
     ToolContent,
-    RouterLink,
     DragDropModule,
     MatButtonModule,
     NgIcon,

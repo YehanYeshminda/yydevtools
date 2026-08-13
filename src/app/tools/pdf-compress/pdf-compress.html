@@ -1,25 +1,7 @@
-<nav class="crumbs" aria-label="Breadcrumb">
-  <ol class="breadcrumb">
-    <li><a routerLink="/">All tools</a></li>
-    <li class="breadcrumb__sep" aria-hidden="true">
-      <ng-icon name="matChevronRightOutline" />
-    </li>
-    <li aria-current="page">PDF Compress</li>
-  </ol>
-</nav>
-
-<header class="head">
-  <div class="head__icon" aria-hidden="true">
-    <ng-icon name="matCompressOutline" />
-  </div>
-  <div>
-    <h1 class="head__title">PDF Compress</h1>
-    <p class="head__sub">
-      Shrink a PDF by downsampling the images inside it — a real reduction, not just a re-save.
-      This needs a hosted service — your file is uploaded to be processed, then deleted.
-    </p>
-  </div>
-</header>
+<app-tool-page slug="pdf-compress">
+  Shrink a PDF by downsampling the images inside it — a real reduction, not just a re-save.
+  This needs a hosted service — your file is uploaded to be processed, then deleted.
+</app-tool-page>
 
 <div class="panel">
   @if (unavailable()) {

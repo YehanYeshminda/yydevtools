@@ -1,25 +1,7 @@
-<nav class="crumbs" aria-label="Breadcrumb">
-  <ol class="breadcrumb">
-    <li><a routerLink="/">All tools</a></li>
-    <li class="breadcrumb__sep" aria-hidden="true">
-      <ng-icon name="matChevronRightOutline" />
-    </li>
-    <li aria-current="page">PDF Viewer</li>
-  </ol>
-</nav>
-
-<header class="head">
-  <div class="head__icon" aria-hidden="true">
-    <ng-icon name="matPictureAsPdfOutline" />
-  </div>
-  <div>
-    <h1 class="head__title">PDF Viewer</h1>
-    <p class="head__sub">
-      Open a PDF and read it right here — with page thumbnails, search and zoom. Your file is
-      rendered locally in the browser and is never uploaded.
-    </p>
-  </div>
-</header>
+<app-tool-page slug="pdf-viewer">
+  Open a PDF and read it right here — with page thumbnails, search and zoom. Your file is
+  rendered locally in the browser and is never uploaded.
+</app-tool-page>
 
 <div class="panel">
   <app-dropzone accept="application/pdf,.pdf" (filesSelected)="acceptFiles($event)">

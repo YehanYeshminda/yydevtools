@@ -1,25 +1,7 @@
-<nav class="crumbs" aria-label="Breadcrumb">
-  <ol class="breadcrumb">
-    <li><a routerLink="/">All tools</a></li>
-    <li class="breadcrumb__sep" aria-hidden="true">
-      <ng-icon name="matChevronRightOutline" />
-    </li>
-    <li aria-current="page">Base64 Converter</li>
-  </ol>
-</nav>
-
-<header class="head">
-  <div class="head__icon" aria-hidden="true">
-    <ng-icon name="matSwapHorizOutline" />
-  </div>
-  <div>
-    <h1 class="head__title">Base64 Converter</h1>
-    <p class="head__sub">
-      Encode and decode text or files to and from Base64. Everything runs in your browser, on a
-      background thread — big files and long strings stay responsive.
-    </p>
-  </div>
-</header>
+<app-tool-page slug="base64-converter">
+  Encode and decode text or files to and from Base64. Everything runs in your browser, on a
+  background thread — big files and long strings stay responsive.
+</app-tool-page>
 
 <mat-tab-group [preserveContent]="true">
   <!-- --------------------------------------------------- Encode a file -->

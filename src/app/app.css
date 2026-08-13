@@ -84,6 +84,32 @@
   background: var(--surface-2);
 }
 
+/* The Browse trigger is a <button>, not an <a>: it opens a panel rather than
+   going anywhere. These reset the UA button chrome so it sits in the row as if
+   it were one of the links beside it. */
+.nav__link--menu {
+  font-family: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.nav__caret {
+  font-size: 16px;
+  transition: transform 0.15s ease;
+}
+
+/* CdkMenuTrigger flips aria-expanded, so the caret follows the panel without a
+   second piece of state to keep in sync. */
+.nav__link--menu[aria-expanded='true'] {
+  color: var(--on);
+  background: var(--surface-2);
+}
+
+.nav__link--menu[aria-expanded='true'] .nav__caret {
+  transform: rotate(180deg);
+}
+
 .nav__ext {
   font-size: 15px;
 }
@@ -279,6 +305,86 @@
   font-weight: 600;
   color: var(--on);
   background: var(--surface-2);
+}
+
+/* Pushes the submenu chevron to the trailing edge of the Browse row. */
+::ng-deep .nav-menu__caret {
+  margin-left: auto;
+  font-size: 18px;
+}
+
+/* Browse menu ----------------------------------------------------------- */
+
+/* Same overlay treatment as the two panels above. Wider than they are because
+   the rows carry a tool name and a count rather than a single word, and capped
+   so a long name wraps rather than stretching the panel past the viewport. */
+::ng-deep .browse-menu {
+  min-width: 244px;
+  max-width: min(300px, calc(100vw - 24px));
+  padding: 6px;
+  color: var(--on);
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 12%);
+}
+
+::ng-deep .browse-menu__label {
+  margin: 0;
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--on-var);
+}
+
+::ng-deep .browse-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  /* 36px tall with the 13.5px line box, clear of the WCAG 2.5.8 minimum. */
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--on-var);
+  text-decoration: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+::ng-deep .browse-menu__item:hover,
+::ng-deep .browse-menu__item:focus-visible {
+  color: var(--on);
+  background: var(--surface-2);
+}
+
+::ng-deep .browse-menu__icon {
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+::ng-deep .browse-menu__name {
+  margin-right: auto;
+}
+
+/* Tabular figures so the counts line up down the column. */
+::ng-deep .browse-menu__count {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--on-var);
+  background: var(--surface-2);
+  border-radius: 999px;
+}
+
+::ng-deep .browse-menu__sep {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--outline);
 }
 
 /* Below 640px the inline row cannot fit beside the trailing buttons, so it gives

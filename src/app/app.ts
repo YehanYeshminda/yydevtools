@@ -9,13 +9,20 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { CdkMenu, CdkMenuItem, CdkMenuItemRadio, CdkMenuTrigger } from '@angular/cdk/menu';
+import {
+  CdkMenu,
+  CdkMenuGroup,
+  CdkMenuItem,
+  CdkMenuItemRadio,
+  CdkMenuTrigger,
+} from '@angular/cdk/menu';
 import { ConnectedPosition } from '@angular/cdk/overlay';
 import { NgIcon } from '@ng-icons/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 
 import { ConsentService } from './core/consent.service';
+import { FavoritesService } from './core/favorites.service';
 import { registerServiceWorker } from './core/pwa';
 import { RecentToolsService } from './core/recent-tools.service';
 import { SeoService } from './core/seo.service';
@@ -23,9 +30,31 @@ import { ThemePreference, ThemeService } from './core/theme.service';
 import { CommandPalette } from './shared/command-palette/command-palette';
 import { ConsentBanner } from './shared/consent-banner/consent-banner';
 import { NewsFeed } from './shared/news-feed/news-feed';
-import { TOOLS } from './tools/tools.data';
+import { CATEGORY_META, Tool } from './tools/tool.model';
+import { TOOLS, TOOL_CATEGORIES } from './tools/tools.data';
 
 const TOOL_SLUGS = new Set(TOOLS.map((tool) => tool.slug));
+const TOOLS_BY_SLUG = new Map(TOOLS.map((tool) => [tool.slug, tool]));
+
+/** One row in the Browse menu's category list. */
+interface CategoryLink {
+  name: string;
+  icon: string;
+  count: number;
+}
+
+/**
+ * Counted once at module load: the catalog is a static import, so these numbers
+ * cannot change while the app is running.
+ */
+const CATEGORY_LINKS: readonly CategoryLink[] = TOOL_CATEGORIES.map((category) => ({
+  name: category,
+  icon: CATEGORY_META[category].icon,
+  count: TOOLS.filter((tool) => tool.category === category).length,
+}));
+
+/** How many shortcuts each of the favourites and recents groups will show. */
+const MENU_ROWS = 5;
 
 interface ThemeOption {
   value: ThemePreference;
@@ -58,6 +87,7 @@ const THEME_MENU_POSITION: readonly ConnectedPosition[] = [
     RouterLinkActive,
     CdkMenuTrigger,
     CdkMenu,
+    CdkMenuGroup,
     CdkMenuItem,
     CdkMenuItemRadio,
     NgIcon,
@@ -75,6 +105,8 @@ export class App {
   protected readonly year = new Date().getFullYear();
   protected readonly themeOptions = THEME_OPTIONS;
   protected readonly themeMenuPosition = THEME_MENU_POSITION;
+  protected readonly categoryLinks = CATEGORY_LINKS;
+  protected readonly toolCount = TOOLS.length;
 
   /**
    * Drives the trigger button. On `system` this deliberately shows the neutral
@@ -94,7 +126,32 @@ export class App {
 
   private readonly router = inject(Router);
   private readonly recents = inject(RecentToolsService);
+  private readonly favorites = inject(FavoritesService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  /**
+   * Starred tools, for the Browse menu. Both services start empty and fill in
+   * after hydration, so on a prerendered page these groups simply are not in the
+   * served HTML — which is correct: they are per-visitor, and nothing about them
+   * belongs in a cached document.
+   */
+  protected readonly favoriteTools = computed(() =>
+    this.favorites.favorites().slice(0, MENU_ROWS).map(toTool).filter(isTool),
+  );
+
+  /**
+   * Recently opened tools, minus anything already starred above — the menu is
+   * short, and a tool listed twice in it wastes one of the few rows there are.
+   */
+  protected readonly recentTools = computed(() => {
+    const starred = new Set(this.favorites.favorites());
+    return this.recents
+      .recent()
+      .filter((slug) => !starred.has(slug))
+      .slice(0, MENU_ROWS)
+      .map(toTool)
+      .filter(isTool);
+  });
 
   /** The current path, tracked so the news strip can bow out where it is redundant. */
   private readonly currentPath = toSignal(
@@ -148,4 +205,13 @@ export class App {
         }
       });
   }
+}
+
+/** Slug to catalog entry; `undefined` for a slug left over from an older build. */
+function toTool(slug: string): Tool | undefined {
+  return TOOLS_BY_SLUG.get(slug);
+}
+
+function isTool(tool: Tool | undefined): tool is Tool {
+  return tool !== undefined;
 }

@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
-import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { VerifyResult, verifyJwt } from './jwt-verify';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { TryExample } from '../../shared/try-example/try-example';
 
@@ -63,7 +63,7 @@ export type DecodeResult =
 
 @Component({
   selector: 'app-jwt-decoder',
-  imports: [ToolContent, TryExample, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, TryExample, MatButtonModule, NgIcon],
   templateUrl: './jwt-decoder.html',
   styleUrl: './jwt-decoder.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

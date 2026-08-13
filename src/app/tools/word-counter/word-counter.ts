@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
-import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { TryExample } from '../../shared/try-example/try-example';
@@ -32,7 +32,7 @@ So: write badly, quickly, and without flinching. Then read it as a stranger woul
 
 @Component({
   selector: 'app-word-counter',
-  imports: [ToolContent, ShareLink, TryExample, RouterLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, ShareLink, TryExample, MatButtonModule, NgIcon],
   templateUrl: './word-counter.html',
   styleUrls: ['../tool-shell.css', './word-counter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

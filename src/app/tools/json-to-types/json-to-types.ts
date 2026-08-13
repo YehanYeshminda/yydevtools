@@ -4,11 +4,11 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { NgIcon } from '@ng-icons/core';
 import { MatInputModule } from '@angular/material/input';
-import { RouterLink } from '@angular/router';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
 import { Language, generate } from './type-generator';
+import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { TryExample } from '../../shared/try-example/try-example';
@@ -60,10 +60,9 @@ const SAMPLE = `{
 
 @Component({
   selector: 'app-json-to-types',
-  imports: [ToolContent,
+  imports: [ToolPage, ToolContent,
     ShareLink,
     TryExample,
-    RouterLink,
     MatButtonModule,
     MatButtonToggleModule,
     MatFormFieldModule,
