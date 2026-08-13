@@ -2,18 +2,42 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  InjectionToken,
   OnDestroy,
   afterNextRender,
   effect,
+  inject,
   input,
   model,
   signal,
   viewChild,
 } from '@angular/core';
 
-import { createEditor, type EditorHandle, type EditorLanguage } from './code-editor.engine';
+import {
+  createEditor,
+  type EditorHandle,
+  type EditorLanguage,
+  type EditorOptions,
+} from './code-editor.engine';
 
 export type { EditorLanguage };
+
+/**
+ * How this component obtains an editor.
+ *
+ * Injected rather than called directly so a test can substitute a handle that
+ * simply records what it was told. That seam is not decorative: CodeMirror does
+ * not re-render under jsdom (it has no layout to measure), so its DOM cannot be
+ * used to assert that a write arrived — and `vi.mock` is unsupported for
+ * relative imports under the Angular test system. Production resolves to the
+ * real engine via the default factory below.
+ */
+export const CODE_EDITOR_ENGINE = new InjectionToken<
+  (options: EditorOptions) => Promise<EditorHandle>
+>('CODE_EDITOR_ENGINE', {
+  providedIn: 'root',
+  factory: () => createEditor,
+});
 
 /**
  * The text box the tools type into: a CodeMirror 6 editor with line numbers,
@@ -119,6 +143,8 @@ export class CodeEditor implements OnDestroy {
 
   protected readonly upgraded = signal(false);
 
+  private readonly createEditor = inject(CODE_EDITOR_ENGINE);
+
   private readonly host = viewChild.required<ElementRef<HTMLElement>>('host');
   private readonly fallback = viewChild<ElementRef<HTMLTextAreaElement>>('fallback');
 
@@ -171,7 +197,7 @@ export class CodeEditor implements OnDestroy {
     const hadFocus = this.fallback()?.nativeElement === document.activeElement;
 
     try {
-      this.handle = await createEditor({
+      this.handle = await this.createEditor({
         parent: this.host().nativeElement,
         value: this.value(),
         language: this.language(),

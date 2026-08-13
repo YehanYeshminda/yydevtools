@@ -986,6 +986,28 @@ evidence, and they are worth re-checking before starting, since they will drift.
       pane's language switch) was silently dead once CodeMirror mounted. Fixed
       by reading each signal into a local before the optional call; verified
       Clear now empties the live editor too.
+- [x] **Close out the code-editor regression.** *(done 2026-08-13)* Clear was
+      click-verified on all five editor-backed tools that write programmatically
+      — json-formatter, text-diff, sql-formatter, code-formatter and
+      markdown-editor — each emptying the live CodeMirror document and falling
+      back to its placeholder. Added `code-editor.spec.ts`, the repo's **first
+      component spec**, proven to fail (3 tests) against the old
+      `handle?.setValue(value())` form and pass against the fix.
+
+      Two things had to be settled to get there. **The runner:** bare
+      `npx vitest run` has no DOM and no initialised `TestBed`, which is why
+      every prior spec tested pure functions. `npm test` (Angular's
+      `@angular/build:unit-test`) provides both and runs the whole suite, so it
+      is now the documented command. It also forbids `vi.mock` on relative
+      imports. **The oracle:** mounting the real CodeMirror under jsdom does not
+      work — jsdom has no layout, so `Range.getClientRects` is missing (the
+      editor throws in its measure pass) and, once stubbed, it still never
+      re-renders after a transaction: the document state updates while
+      `.cm-content` keeps showing the first render. Asserting on that DOM would
+      fail whether or not the component worked. So `CODE_EDITOR_ENGINE`, an
+      injection token defaulting to the real `createEditor`, now supplies the
+      engine; the spec swaps in a handle that records what it is told. That is
+      the exact boundary the bug broke, and it needs no DOM at all.
 
 ### New tools, ranked by fit with what already exists
 

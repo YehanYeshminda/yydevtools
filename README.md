@@ -75,8 +75,13 @@ Then open `http://localhost:4200/`.
 Run the unit tests with:
 
 ```bash
-npx vitest run
+npm test
 ```
+
+That is Angular's unit-test builder on top of vitest. It is the runner to use:
+it compiles components, provides a DOM and initialises `TestBed`, which the
+component specs need. Bare `npx vitest run` still executes the pure-logic specs,
+but skips none of them silently — it fails outright on anything using `TestBed`.
 
 ## Building
 
