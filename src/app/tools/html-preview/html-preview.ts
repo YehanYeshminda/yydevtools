@@ -20,6 +20,12 @@ import { ToolPage } from '../../shared/tool-page/tool-page';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
+import {
+  CONSOLE_MESSAGE_SOURCE,
+  injectConsoleBridge,
+  isLogLevel,
+  type LogLevel,
+} from './console-bridge';
 import { EXAMPLES, type ExampleId } from './examples';
 
 /** How long typing must pause before the preview reloads, in milliseconds. */
@@ -32,6 +38,16 @@ const PREVIEW_WIDTHS = {
   full: '100%',
 } as const;
 type PreviewWidth = keyof typeof PREVIEW_WIDTHS;
+
+/** A single captured line from the preview's console. */
+interface ConsoleEntry {
+  id: number;
+  level: LogLevel;
+  text: string;
+}
+
+/** The most recent console lines kept, so a chatty page cannot grow unbounded. */
+const MAX_LOG_ENTRIES = 200;
 
 @Component({
   selector: 'app-html-preview',
@@ -55,7 +71,19 @@ export class HtmlPreviewTool {
 
   protected readonly examples = EXAMPLES;
 
+  /** Console output and uncaught errors captured from the previewed page. */
+  protected readonly logs = signal<ConsoleEntry[]>([]);
+  /** Whether the console panel is expanded. */
+  protected readonly consoleOpen = signal(false);
+  protected readonly errorCount = computed(
+    () => this.logs().filter((entry) => entry.level === 'error').length,
+  );
+
   private readonly frameHost = viewChild<ElementRef<HTMLElement>>('frameHost');
+
+  /** The live preview frame, so incoming messages can be checked against it. */
+  private currentFrame: HTMLIFrameElement | null = null;
+  private logSeq = 0;
 
   /**
    * Everything needed to reopen the same preview from a shared link — the markup
@@ -145,7 +173,14 @@ export class HtmlPreviewTool {
         iframe.style.cssText =
           'display:block; width:var(--preview-w,100%); max-width:100%; height:100%;' +
           'margin-inline:auto; border:0; background:var(--preview-bg,#fff);';
-        iframe.srcdoc = html;
+        // With scripts on, inject the console bridge so the page's logs and
+        // uncaught errors reach the panel below. With scripts off nothing runs,
+        // so the markup is previewed exactly as written.
+        iframe.srcdoc = scripts ? injectConsoleBridge(html) : html;
+        // A fresh run starts with a clean console, and messages are only trusted
+        // from this exact frame.
+        this.logs.set([]);
+        this.currentFrame = iframe;
         host.replaceChildren(iframe);
       };
       // First paint immediate; later edits debounced so fast typing does not tear
@@ -178,10 +213,55 @@ export class HtmlPreviewTool {
         document.body.style.overflow = previousOverflow;
       });
     });
+
+    // Listen once for the console bridge's messages. This effect reads no
+    // signals, so it runs a single time; its cleanup removes the listener when
+    // the component is destroyed.
+    effect((onCleanup) => {
+      if (!this.isBrowser) {
+        return;
+      }
+      const handler = (event: MessageEvent) => this.onFrameMessage(event);
+      window.addEventListener('message', handler);
+      onCleanup(() => window.removeEventListener('message', handler));
+    });
+  }
+
+  /**
+   * Record a line from the preview's console. Every message is checked twice
+   * before it is trusted: it must carry the bridge's marker, and — because the
+   * frame is a null origin whose messages any script could try to spoof — it
+   * must have come from the exact frame currently on screen.
+   */
+  private onFrameMessage(event: MessageEvent): void {
+    const data = event.data as { source?: unknown; level?: unknown; text?: unknown } | null;
+    if (!data || data.source !== CONSOLE_MESSAGE_SOURCE) {
+      return;
+    }
+    if (!this.currentFrame || event.source !== this.currentFrame.contentWindow) {
+      return;
+    }
+    if (!isLogLevel(data.level)) {
+      return;
+    }
+    const text = typeof data.text === 'string' ? data.text : '';
+    const entry: ConsoleEntry = { id: this.logSeq++, level: data.level, text };
+    this.logs.update((list) => {
+      const next = [...list, entry];
+      return next.length > MAX_LOG_ENTRIES ? next.slice(next.length - MAX_LOG_ENTRIES) : next;
+    });
   }
 
   protected toggleScripts(): void {
     this.runScripts.update((value) => !value);
+  }
+
+  protected toggleConsole(): void {
+    this.consoleOpen.update((value) => !value);
+  }
+
+  protected clearLogs(): void {
+    this.logs.set([]);
   }
 
   protected toggleWrap(): void {

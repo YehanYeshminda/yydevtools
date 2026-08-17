@@ -1112,6 +1112,18 @@ in the ranked list above are cross-referenced, not repeated.
     its state. The Wrap toggle drove a new `setWrap` on the shared editor handle,
     reconfiguring the existing `wrapSlot` compartment (all editors gain runtime
     line-wrap control). All 335 unit tests pass; build prerenders 43 routes.
+  - *(console capture, 2026-08-17)* A collapsible console panel below the
+    preview, shown only when scripts are on. A small bootstrap script is
+    injected at the top of `<head>` (falling back to before `<body>`, inside
+    `<html>`, then the front — never ahead of the doctype, which would drop the
+    preview into quirks mode) so it wraps `console.*` before the page's own code
+    runs, and reports `error` and `unhandledrejection`. Output crosses to the
+    parent by `postMessage`, the only channel a null-origin frame has; the
+    sandbox is unchanged (still no `allow-same-origin`). The parent trusts a
+    message only if it carries the bridge marker AND `event.source` is the exact
+    live frame — verified a well-formed spoof posted from the top window is
+    ignored. Logs are capped at 200 entries and cleared on every re-render.
+    8 new specs cover the injection points; 343 tests pass.
 
 **Tier 2 — solid follow-ups, still fully in-browser:**
 

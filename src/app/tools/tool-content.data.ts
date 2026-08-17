@@ -872,6 +872,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Phone, tablet and full-width preview, with a full-screen mode.',
       'A one-click Format button that beautifies the markup with Prettier.',
       'A light or dark backdrop, so transparent pages read either way.',
+      'A console panel that captures the page\'s console output and uncaught errors.',
       'A sandboxed, separate-origin frame that cannot touch this page.',
       'Scripts are off by default and opt-in, never same-origin.',
       'Runs entirely in your browser — nothing is uploaded.',
@@ -884,6 +885,10 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       {
         q: 'Why does JavaScript in my HTML not run?',
         a: 'Scripts are off by default so pasted markup cannot do anything unexpected. Turn on the "Run scripts" toggle to let the page\'s own JavaScript run. Even then the preview stays a separate, sandboxed origin, so it cannot read this site\'s cookies or storage.',
+      },
+      {
+        q: 'Can I see console output and errors from my script?',
+        a: 'Yes. With "Run scripts" on, a console panel appears below the preview and captures everything the page logs — console.log, warnings, errors — along with any uncaught exception or rejected promise, so a snippet that fails silently tells you why. It works by forwarding the output from the sandboxed frame; the frame still cannot reach this page.',
       },
       {
         q: 'Can I preview a fragment, or does it need to be a full page?',

@@ -144,6 +144,50 @@
   </section>
 </div>
 
+@if (runScripts()) {
+  <section class="console" [class.console--open]="consoleOpen()" aria-label="Preview console">
+    <div class="console__bar">
+      <button
+        type="button"
+        class="console__toggle"
+        (click)="toggleConsole()"
+        [attr.aria-expanded]="consoleOpen()"
+      >
+        <ng-icon
+          class="console__chevron"
+          aria-hidden="true"
+          name="matExpandMoreOutline"
+        />
+        <ng-icon aria-hidden="true" name="matTerminalOutline" />
+        <span class="console__title">Console</span>
+        @if (logs().length) {
+          <span class="console__count">{{ logs().length }}</span>
+        }
+        @if (errorCount()) {
+          <span class="console__count console__count--err">{{ errorCount() }} error{{ errorCount() === 1 ? '' : 's' }}</span>
+        }
+      </button>
+      @if (logs().length) {
+        <button type="button" class="console__clear" (click)="clearLogs()">Clear</button>
+      }
+    </div>
+    @if (consoleOpen()) {
+      <ol class="console__list">
+        @for (entry of logs(); track entry.id) {
+          <li class="console__row" [class]="'console__row--' + entry.level">
+            <span class="console__level">{{ entry.level }}</span>
+            <span class="console__text">{{ entry.text }}</span>
+          </li>
+        } @empty {
+          <li class="console__empty">
+            No output yet — anything the page logs, or any error it throws, shows up here.
+          </li>
+        }
+      </ol>
+    }
+  </section>
+}
+
 <div class="actions">
   <button matButton (click)="download()" [disabled]="!hasSource()">
     <ng-icon name="matDownloadOutline" />

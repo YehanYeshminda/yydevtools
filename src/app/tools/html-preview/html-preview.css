@@ -155,6 +155,157 @@
   outline-offset: 2px;
 }
 
+/* Console panel ---------------------------------------------------------- */
+.console {
+  margin-bottom: 1rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.console__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-right: 0.5rem;
+  background: var(--surface-1);
+}
+
+.console__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  padding: 0.5rem 0.85rem;
+  border: none;
+  background: transparent;
+  color: var(--on);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.console__toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+/* The single chevron points down when collapsed, up when open — no second icon
+   needed, and the rotation animates. */
+.console__chevron {
+  font-size: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  transition: transform 0.15s ease;
+}
+
+.console--open .console__chevron {
+  transform: rotate(180deg);
+}
+
+.console__count {
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--on-var);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.console__count--err {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.console__clear {
+  flex: none;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--on-var);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.console__clear:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.console__clear:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.console__list {
+  max-height: 16rem;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  border-top: 1px solid var(--outline-2);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+}
+
+.console__row {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.4rem 0.85rem;
+  border-bottom: 1px solid var(--outline-2);
+}
+
+.console__row:last-child {
+  border-bottom: none;
+}
+
+.console__level {
+  flex: none;
+  width: 3.25rem;
+  color: var(--on-var);
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  padding-top: 0.1rem;
+}
+
+.console__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--on);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.console__row--warn {
+  background: color-mix(in srgb, var(--star) 12%, transparent);
+}
+
+.console__row--warn .console__level {
+  color: var(--star);
+}
+
+.console__row--error {
+  background: var(--mat-sys-error-container);
+}
+
+.console__row--error .console__level,
+.console__row--error .console__text {
+  color: var(--mat-sys-on-error-container);
+}
+
+.console__empty {
+  padding: 0.75rem 0.85rem;
+  color: var(--on-var);
+  font-family: var(--font);
+  font-size: 0.85rem;
+}
+
 /* Examples row ----------------------------------------------------------- */
 .examples {
   display: flex;
