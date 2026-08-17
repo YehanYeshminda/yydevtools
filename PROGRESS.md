@@ -1088,8 +1088,18 @@ in the ranked list above are cross-referenced, not repeated.
       the spreadsheet crowd; needs no new dependency.
 - [x] **URL / query-string encoder-decoder** — *(done 2026-08-13, see #4 above)*
       live at `/tools/url-encoder`.
-- [ ] **Image resizer / format converter** *(PNG ↔ JPG ↔ WebP, resize, crop)* —
-      see #2 above. The `heic-to` codec already ships, so this is half-built.
+- [x] **HTML Preview / live HTML viewer** — *(done 2026-08-13)* at
+      `/tools/html-preview`. Write or paste HTML, rendered live in a sandboxed
+      iframe with a scripts-off-by-default toggle. Built on the stack already
+      here — the shared CodeMirror editor for input, the browser's own sandboxed
+      iframe for rendering — rather than a new dependency, because nothing a
+      library offers beats a native sandboxed frame for this. The iframe is
+      created imperatively in the browser: Angular blocks binding the
+      security-sensitive `sandbox` attribute (NG0910), an `<iframe>` in
+      prerendered HTML trips the hydration walker (NG0500), and effects run
+      during prerender where there is no `document` — all three are sidestepped
+      by building a fresh element client-side and fixing its sandbox at creation
+      (`""` off, `allow-scripts` on, never `allow-same-origin`).
 
 **Tier 2 — solid follow-ups, still fully in-browser:**
 

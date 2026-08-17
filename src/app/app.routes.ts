@@ -113,6 +113,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/html-preview',
+    loadComponent: () => import('./tools/html-preview/html-preview').then((m) => m.HtmlPreviewTool),
+    title: 'HTML Preview — Live HTML Editor & Viewer — YYDevTools',
+    data: {
+      description:
+        'Write or paste HTML and see it rendered live in a sandboxed frame, with an ' +
+        'optional scripts toggle. Runs in your browser — nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/jwt-decoder',
     loadComponent: () => import('./tools/jwt-decoder/jwt-decoder').then((m) => m.JwtDecoderTool),
     title: 'JWT Decoder & Signature Verifier — YYDevTools',

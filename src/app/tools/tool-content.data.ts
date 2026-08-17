@@ -854,6 +854,50 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['code-formatter', 'text-diff', 'json-formatter'],
   },
 
+  'html-preview': {
+    slug: 'html-preview',
+    intro: [
+      'Write or paste HTML on the left and see it rendered live on the right. It is the quickest way to check what a snippet actually looks like — a marketing email, a chunk of markup copied from a page, a hand-written layout — without creating a file, opening an editor and refreshing a browser tab. The preview updates as you type, and it understands full documents and loose fragments alike, along with any inline CSS.',
+      'The preview renders inside a sandboxed frame with its own separate origin, so the page you are previewing cannot reach this site, its cookies or its storage. JavaScript is switched off until you choose to turn it on, which keeps pasted markup from doing anything unexpected. Everything happens on your own device — the HTML is never uploaded.',
+    ],
+    steps: [
+      'Type or paste your HTML into the editor pane.',
+      'Watch it render live in the preview pane beside it.',
+      'Turn on "Run scripts" if your HTML includes JavaScript you want to run.',
+      'Download the result as an .html file, or copy a share link to reopen it later.',
+    ],
+    features: [
+      'Live preview as you type, for whole documents or bare fragments.',
+      'Inline CSS is applied exactly as a browser would.',
+      'A sandboxed, separate-origin frame that cannot touch this page.',
+      'Scripts are off by default and opt-in, never same-origin.',
+      'Runs entirely in your browser — nothing is uploaded.',
+    ],
+    faq: [
+      {
+        q: 'Is my HTML uploaded anywhere?',
+        a: 'No. The editor and the preview both run in your browser, so the markup you write or paste never leaves your device. That is also why a share link carries the HTML in the part of the URL after the # — the fragment, which browsers never send to a server.',
+      },
+      {
+        q: 'Why does JavaScript in my HTML not run?',
+        a: 'Scripts are off by default so pasted markup cannot do anything unexpected. Turn on the "Run scripts" toggle to let the page\'s own JavaScript run. Even then the preview stays a separate, sandboxed origin, so it cannot read this site\'s cookies or storage.',
+      },
+      {
+        q: 'Can I preview a fragment, or does it need to be a full page?',
+        a: 'Either works. You can paste a complete document starting with <!doctype html>, or just a loose fragment like a <div> with some inline styles — the browser renders both.',
+      },
+      {
+        q: 'Do external stylesheets, images and fonts load?',
+        a: 'Anything referenced by an absolute URL that allows it will load, just as it would in a normal page. Relative paths have nothing to resolve against in the preview, so use absolute URLs for external resources.',
+      },
+      {
+        q: 'Is this an HTML validator?',
+        a: 'No — it shows you how the browser renders your HTML, which is the most honest test of what a visitor would see, but it does not check the markup against the HTML specification or flag standards violations.',
+      },
+    ],
+    related: ['code-formatter', 'markdown-editor', 'url-encoder'],
+  },
+
   'pdf-convert': {
     slug: 'pdf-convert',
     intro: [

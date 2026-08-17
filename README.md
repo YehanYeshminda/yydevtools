@@ -30,6 +30,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Case Converter** | Convert text between camelCase, snake_case, kebab-case, PascalCase and a slug. |
 | **SQL Formatter** | Format and beautify SQL for a dozen dialects. |
 | **Code Formatter** | Beautify HTML, CSS, JS, TypeScript, JSON, Markdown, YAML, GraphQL and XML. |
+| **HTML Preview** | Write or paste HTML and see it rendered live in a sandboxed preview. |
 | **UUID Generator** | Random v4 or time-ordered v7 UUIDs in bulk. |
 | **Password Generator** | Strong random passwords or EFF passphrases, with a strength and crack-time check. |
 | **Color Converter** | Convert HEX, RGB, HSL, OKLCH and LAB, generate palettes and check WCAG contrast. |

@@ -1,0 +1,67 @@
+/* Breadcrumb, head, actions, chips and the note come from ../tool-shell.css.
+   Only the split editor and its preview frame live here. The page width comes
+   from tool-shell's :host, so every tool shares the same column. */
+
+/* Editor split ---------------------------------------------------------- */
+.editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 720px) {
+  .editor {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 30rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.pane__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.85rem;
+  border-bottom: 1px solid var(--outline-2);
+  background: var(--surface-1);
+}
+
+.pane__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--on);
+}
+
+/* The editor fills the pane below its bar; `min-height: 0` is what lets a flex
+   child actually shrink instead of being pinned to its content height. */
+.pane__input {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Holds the imperatively-built preview iframe. White so a fragment with no
+   background of its own reads like a real page rather than picking up the app's
+   surface colour, and so the pane is not empty before the first paint. */
+.frame-host {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #fff;
+}
+
+/* The Run scripts toggle sits in the preview bar, a touch smaller than the
+   chips in a controls row so it does not crowd the slim bar. */
+.pane__bar .chip {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}

@@ -107,6 +107,14 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'html-preview',
+    name: 'HTML Preview',
+    description: 'Write or paste HTML and see it rendered live in a sandboxed preview.',
+    icon: 'matVisibilityOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'uuid-generator',
     name: 'UUID Generator',
     description: 'Generate random v4 or time-ordered v7 UUIDs in bulk.',

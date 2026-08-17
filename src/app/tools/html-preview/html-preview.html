@@ -1,0 +1,66 @@
+<app-tool-page slug="html-preview">
+  Write or paste HTML and see it rendered live in a sandboxed frame. Everything runs in your
+  browser — nothing is uploaded.
+</app-tool-page>
+
+<div class="editor">
+  <section class="pane" aria-label="HTML source">
+    <div class="pane__bar">
+      <span class="pane__label">HTML</span>
+    </div>
+    <app-code-editor
+      class="pane__input"
+      label="HTML source"
+      language="html"
+      placeholder="Write or paste HTML here…"
+      minHeight="0"
+      height="100%"
+      [frameless]="true"
+      [(value)]="source"
+    />
+  </section>
+
+  <section class="pane" aria-label="Preview">
+    <div class="pane__bar">
+      <span class="pane__label">Preview</span>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="runScripts()"
+        [attr.aria-pressed]="runScripts()"
+        (click)="toggleScripts()"
+      >
+        <ng-icon aria-hidden="true" [name]="runScripts() ? 'matCheckOutline' : 'matCodeOutline'" />
+        Run scripts
+      </button>
+    </div>
+    <!-- A plain host; the component builds the preview iframe inside it, in the
+         browser only. Doing it imperatively (rather than an <iframe> in the
+         template) is deliberate: Angular forbids binding the security-sensitive
+         `sandbox` attribute (NG0910), and an iframe in prerendered HTML trips
+         the hydration walker (NG0500). A fresh element sidesteps both, and lets
+         the sandbox be fixed at creation — the only safe time to set it. -->
+    <div #frameHost class="frame-host"></div>
+  </section>
+</div>
+
+<div class="actions">
+  <button matButton (click)="download()" [disabled]="!hasSource()">
+    <ng-icon name="matDownloadOutline" />
+    Download .html
+  </button>
+  <button matButton (click)="clear()" [disabled]="!hasSource()">
+    <ng-icon name="matClearOutline" />
+    Clear
+  </button>
+  <app-try-example (loadExample)="loadExample()" />
+  <app-share-link [state]="shared" />
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+  The preview runs in a sandboxed frame with a separate origin, so it can't reach this page. Scripts
+  are off until you turn them on, and even then the page can't read your cookies or storage.
+</p>
+
+<app-tool-content slug="html-preview" />
