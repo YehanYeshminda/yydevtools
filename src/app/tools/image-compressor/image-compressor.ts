@@ -20,6 +20,7 @@ import { downloadBlob, fileStem } from '../../core/download';
 import { formatBytes } from '../../core/format';
 import { downloadZip, type ZipEntry } from '../../core/zip';
 import { ToolPage } from '../../shared/tool-page/tool-page';
+import { Skeleton } from '../../shared/skeleton/skeleton';
 import { Spinner } from '../../shared/spinner/spinner';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -93,6 +94,7 @@ const SIZE_PRESETS: ReadonlyArray<{ value: number; label: string }> = [
     MatSelectModule,
     MatSliderModule,
     Spinner,
+    Skeleton,
   ],
   templateUrl: './image-compressor.html',
   styleUrls: ['../tool-shell.css', './image-compressor.css'],
@@ -123,8 +125,20 @@ export class ImageCompressorTool implements OnDestroy {
   /** Split position of the before/after comparison, as a percentage. */
   protected readonly comparePosition = signal(50);
 
+  /**
+   * How many dropped files are being opened right now. Opening a HEIC pulls in
+   * the ~3 MB decoder before the file can join the queue, so without this the UI
+   * would sit unchanged for seconds after a drop. The template shows a skeleton
+   * placeholder while it is above zero.
+   */
+  protected readonly preparing = signal(0);
+
   protected readonly qualityPercent = computed(() => Math.round(this.quality() * 100));
   protected readonly hasItems = computed(() => this.items().length > 0);
+  /** Bars to draw in the "preparing" placeholder, capped so a big drop stays tidy. */
+  protected readonly preparingRange = computed(() =>
+    Array.from({ length: Math.min(this.preparing(), 3) }, (_, index) => index),
+  );
   protected readonly busy = computed(() => this.items().some((item) => item.working));
 
   protected readonly selected = computed(
@@ -232,11 +246,17 @@ export class ImageCompressorTool implements OnDestroy {
 
       const id = `img-${this.nextId++}`;
       let opened;
+      // Count this file as "preparing" across the open() await — for HEIC that
+      // await is where the 3 MB decoder downloads, and the skeleton keyed off
+      // this is the only sign of life until the item lands in the queue.
+      this.preparing.update((count) => count + 1);
       try {
         opened = await this.codec.open(id, file);
       } catch {
         this.showError(`"${file.name}" could not be read. It may be corrupt or unsupported.`);
         continue;
+      } finally {
+        this.preparing.update((count) => count - 1);
       }
 
       const item: Item = {

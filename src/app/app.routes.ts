@@ -58,6 +58,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/url-encoder',
+    loadComponent: () => import('./tools/url-encoder/url-encoder').then((m) => m.UrlEncoderTool),
+    title: 'URL Encoder / Decoder — YYDevTools',
+    data: {
+      description:
+        'Percent-encode or decode URLs and query values, and break any URL into its ' +
+        'protocol, host, path and parameters. Runs in your browser — nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/json-formatter',
     loadComponent: () =>
       import('./tools/json-formatter/json-formatter').then((m) => m.JsonFormatterTool),

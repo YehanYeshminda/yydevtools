@@ -25,3 +25,13 @@
   gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
+
+/* Frames the loading skeleton like the read-only editor it stands in for, so
+   the output area does not jump when the real formatted code replaces it. */
+.output-skeleton {
+  min-height: 15rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+}

@@ -5,6 +5,16 @@
   gap: 1.25rem;
 }
 
+/* Below this width the split view is unreadable — two monospace columns at
+   ~155px each — so text-diff.ts forces the unified view. Hide the now-inert
+   split/unified toggle to match. The rule is scoped to this component by view
+   encapsulation, so the shared `.tabs` class is untouched elsewhere. */
+@media (max-width: 560px) {
+  .tabs {
+    display: none;
+  }
+}
+
 
 /* Controls -------------------------------------------------------------- */
 .controls {

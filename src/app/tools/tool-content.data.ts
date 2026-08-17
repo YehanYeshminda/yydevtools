@@ -677,6 +677,51 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['hash-generator', 'jwt-decoder', 'image-compressor'],
   },
 
+  'url-encoder': {
+    slug: 'url-encoder',
+    intro: [
+      'A URL can only carry a limited set of characters, so anything else — a space, an ampersand, an accented letter, a slash inside a value — has to be written as a percent-escape like %20. This tool does that conversion both ways: encode text into the %XX form that is safe to drop into a link or query string, or decode a percent-encoded string back into the plain text it stands for.',
+      'It also parses a complete URL into its parts — protocol, host, port, path, fragment and every query parameter — with the parameter values already decoded, so you can read at a glance what a long tracking link actually contains. Encoding uses UTF-8, matching exactly what a browser produces, and all of it runs on your device, so the URLs you paste are never uploaded.',
+    ],
+    steps: [
+      'Choose Encode or Decode.',
+      'Pick the scope: Component escapes everything for a single value, while Whole URL keeps the : / ? & = delimiters intact.',
+      'Paste your text or URL into the input.',
+      'Copy the result, or press Swap to feed it back in and convert the other way.',
+      'If the input is a complete URL, read its parts and query parameters in the breakdown below.',
+    ],
+    features: [
+      'Encode and decode at either component or whole-URL scope.',
+      'A breakdown of any absolute URL, with query values already decoded.',
+      'UTF-8 encoding that matches what browsers generate.',
+      'Clear errors for malformed percent-encoding instead of silent mangling.',
+      'Runs entirely in your browser — nothing is uploaded.',
+    ],
+    faq: [
+      {
+        q: 'What is the difference between encoding a component and a whole URL?',
+        a: 'Encoding a component (with encodeURIComponent) escapes every reserved character, including / ? : & =, because the text is a single value such as one query parameter. Encoding a whole URL (with encodeURI) leaves those delimiters alone so the address still works — it only escapes characters that are never allowed, like spaces.',
+      },
+      {
+        q: 'Why did my accented characters turn into several % codes?',
+        a: 'Percent-encoding works on bytes, and non-ASCII characters are stored as multiple UTF-8 bytes. The letter é, for example, is two bytes and becomes %C3%A9. This is the same output a browser produces, so it will decode correctly everywhere.',
+      },
+      {
+        q: 'Why do I get an error when decoding?',
+        a: 'Decoding fails when the input is not valid percent-encoding — usually a lone % that is not followed by two hex digits, or an incomplete sequence like %E0%A4%A. Fix or remove the stray % and it will decode.',
+      },
+      {
+        q: 'Is a space encoded as %20 or +?',
+        a: 'This tool uses %20, which is valid anywhere in a URL. The + shorthand for a space is only valid in the query string of form submissions (application/x-www-form-urlencoded); using %20 avoids that ambiguity.',
+      },
+      {
+        q: 'Is percent-encoding a form of security?',
+        a: 'No. It is a transport format, not encryption — it is fully reversible, as the decode direction shows. It keeps data intact as it travels through a URL; it does not hide or protect it.',
+      },
+    ],
+    related: ['base64-converter', 'json-formatter', 'timestamp-converter'],
+  },
+
   'image-compressor': {
     slug: 'image-compressor',
     intro: [

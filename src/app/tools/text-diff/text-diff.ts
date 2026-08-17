@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 
@@ -69,6 +77,35 @@ export class TextDiffTool {
   protected readonly view = signal<ViewMode>('split');
   protected readonly ignoreCase = signal(false);
   protected readonly ignoreWhitespace = signal(false);
+
+  private readonly destroyRef = inject(DestroyRef);
+
+  /**
+   * True on phone-width screens. Split view puts two monospace columns
+   * side by side; below ~560px each is too narrow to read a line of code, so
+   * the view falls back to unified there (see {@link effectiveView}) and the
+   * split/unified toggle is hidden in CSS.
+   *
+   * Starts false to match the prerendered HTML — the diff only renders once
+   * there is input, which is always after this has been corrected, so there is
+   * nothing for hydration to disagree about.
+   */
+  private readonly narrow = signal(false);
+
+  constructor() {
+    afterNextRender(() => {
+      const query = window.matchMedia('(max-width: 560px)');
+      this.narrow.set(query.matches);
+      const onChange = (event: MediaQueryListEvent) => this.narrow.set(event.matches);
+      query.addEventListener('change', onChange);
+      this.destroyRef.onDestroy(() => query.removeEventListener('change', onChange));
+    });
+  }
+
+  /** The view actually rendered: the user's choice, or unified when too narrow to split. */
+  protected readonly effectiveView = computed<ViewMode>(() =>
+    this.narrow() ? 'unified' : this.view(),
+  );
 
   /**
    * Both sides plus the comparison options — "here is the difference I am

@@ -100,7 +100,20 @@
   </div>
 
   <!-- Output ---------------------------------------------------------- -->
-  @if (error()) {
+  @if (busy()) {
+    <!-- On first use of a language the Prettier engine and its plugin download
+         here (TypeScript's is ~900 kB), which can take a moment on a slow link.
+         The skeleton stands in for the formatted code so the wait reads as work
+         in progress, not a frozen page. -->
+    <section aria-label="Formatted code">
+      <div class="output__head">
+        <h2 class="section__title">Formatted</h2>
+      </div>
+      <div class="output-skeleton" role="status" aria-label="Formatting your code…">
+        <app-skeleton [lines]="8" />
+      </div>
+    </section>
+  } @else if (error()) {
     <p class="status status--err" role="alert">
       <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
       {{ error() }}

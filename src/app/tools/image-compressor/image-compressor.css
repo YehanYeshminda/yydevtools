@@ -364,6 +364,40 @@
   background: var(--surface-2);
 }
 
+/* Preparing placeholders ------------------------------------------------ */
+/* Shown while dropped files are being opened — for a HEIC that means the 3 MB
+   decoder is downloading before the file can join the queue. */
+.preparing {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .preparing {
+    grid-template-columns: 1fr;
+  }
+}
+
+.preparing__preview {
+  height: 18rem;
+}
+
+.preparing__side {
+  padding-top: 0.5rem;
+}
+
+.queue__item--loading {
+  gap: 0.7rem;
+  padding: 0.4rem 0.5rem;
+}
+
+.queue__item--loading .queue__text {
+  flex: 1 1 auto;
+  gap: 0.4rem;
+}
+
 .queue__text {
   display: flex;
   flex-direction: column;

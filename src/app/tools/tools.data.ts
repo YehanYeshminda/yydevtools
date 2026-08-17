@@ -140,6 +140,14 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'url-encoder',
+    name: 'URL Encoder / Decoder',
+    description: 'Percent-encode or decode URLs and query values, and break a URL into its parts.',
+    icon: 'matLinkOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'image-compressor',
     name: 'Image Compressor',
     description:

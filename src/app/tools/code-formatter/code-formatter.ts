@@ -14,6 +14,7 @@ import { syncToolState } from '../../core/tool-state';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { CodeEditor, type EditorLanguage } from '../../shared/code-editor/code-editor';
 import { ShareLink } from '../../shared/share-link/share-link';
+import { Skeleton } from '../../shared/skeleton/skeleton';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
 interface Lang {
@@ -52,7 +53,7 @@ const SAMPLE = `<section class="card"   id="hero">
 
 @Component({
   selector: 'app-code-formatter',
-  imports: [ToolPage, ToolContent, CodeEditor, ShareLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, CodeEditor, ShareLink, Skeleton, MatButtonModule, NgIcon],
   templateUrl: './code-formatter.html',
   styleUrls: ['../tool-shell.css', './code-formatter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

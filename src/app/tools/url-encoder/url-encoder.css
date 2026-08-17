@@ -1,0 +1,131 @@
+/* Direction tabs and scope chips share a row, wrapping on narrow screens. */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.scope-hint {
+  margin: 0 0 1rem;
+}
+
+.scope-hint code {
+  font-family: var(--mono);
+}
+
+/* Output ---------------------------------------------------------------- */
+.output-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* An <output> styled like the input box, but read-only: it wraps long encoded
+   strings instead of scrolling, and its height follows the content. */
+.output-box {
+  display: block;
+  min-height: 3rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--mat-sys-surface-container-low);
+}
+
+/* URL breakdown --------------------------------------------------------- */
+.parts {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.parts__title {
+  margin: 0 0 0.85rem;
+  font: var(--mat-sys-title-medium);
+  color: var(--mat-sys-on-surface);
+}
+
+.parts__subtitle {
+  margin: 1.25rem 0 0.6rem;
+  font: var(--mat-sys-title-small);
+  color: var(--mat-sys-on-surface);
+}
+
+.parts__grid {
+  display: grid;
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+
+.parts__row {
+  display: grid;
+  grid-template-columns: 6rem 1fr;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+}
+
+.parts__row dt {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.parts__row dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  color: var(--mat-sys-on-surface);
+  overflow-wrap: anywhere;
+}
+
+/* Query parameters ------------------------------------------------------ */
+.params {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.param {
+  display: grid;
+  grid-template-columns: minmax(6rem, 12rem) 1fr auto;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  padding: 0.4rem 0.5rem 0.4rem 0.75rem;
+  border-radius: 8px;
+  background: var(--mat-sys-surface);
+}
+
+.param__key {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--mat-sys-primary);
+  overflow-wrap: anywhere;
+}
+
+.param__value {
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  color: var(--mat-sys-on-surface);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .parts__row {
+    grid-template-columns: 5rem 1fr;
+  }
+
+  /* Key over value, with the copy button pinned to the top-right. */
+  .param {
+    grid-template-columns: 1fr auto;
+  }
+
+  .param__value {
+    grid-column: 1 / -1;
+  }
+}

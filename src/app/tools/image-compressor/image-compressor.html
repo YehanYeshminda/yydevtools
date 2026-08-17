@@ -327,6 +327,18 @@
                 </div>
               </li>
             }
+            <!-- Files still being opened (e.g. a HEIC whose decoder is loading)
+                 are not in items() yet; show a placeholder row for each. -->
+            @for (row of preparingRange(); track row) {
+              <li>
+                <div class="queue__item queue__item--loading" role="status" aria-label="Preparing image…">
+                  <app-skeleton class="queue__thumb" />
+                  <span class="queue__text">
+                    <app-skeleton [lines]="2" />
+                  </span>
+                </div>
+              </li>
+            }
           </ul>
 
           <label class="queue__add">
@@ -341,6 +353,15 @@
             Add more images
           </label>
         </section>
+      </div>
+    </div>
+  } @else if (preparing()) {
+    <!-- First drop, still opening: for a HEIC the decoder is downloading, which
+         takes a moment. Stand in for the workspace so the drop clearly landed. -->
+    <div class="preparing" role="status" aria-label="Preparing your images…">
+      <app-skeleton class="preparing__preview" />
+      <div class="preparing__side">
+        <app-skeleton [lines]="4" />
       </div>
     </div>
   } @else {

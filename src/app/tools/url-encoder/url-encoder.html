@@ -1,0 +1,178 @@
+<app-tool-page slug="url-encoder">
+  Percent-encode or decode URLs and query values, and break any URL into its parts. Everything
+  runs in your browser.
+</app-tool-page>
+
+<div class="panel">
+  <!-- Direction and scope --------------------------------------------- -->
+  <div class="controls">
+    <div class="tabs" role="group" aria-label="Direction">
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="mode() === 'encode'"
+        [attr.aria-pressed]="mode() === 'encode'"
+        (click)="setMode('encode')"
+      >
+        <ng-icon aria-hidden="true" name="matLockOutline" />
+        Encode
+      </button>
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="mode() === 'decode'"
+        [attr.aria-pressed]="mode() === 'decode'"
+        (click)="setMode('decode')"
+      >
+        <ng-icon aria-hidden="true" name="matLockOpenOutline" />
+        Decode
+      </button>
+    </div>
+
+    <div class="chips">
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="scope() === 'component'"
+        [attr.aria-pressed]="scope() === 'component'"
+        (click)="setScope('component')"
+      >
+        <ng-icon aria-hidden="true" [name]="scope() === 'component' ? 'matCheckOutline' : 'matAddOutline'" />
+        Component
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="scope() === 'full'"
+        [attr.aria-pressed]="scope() === 'full'"
+        (click)="setScope('full')"
+      >
+        <ng-icon aria-hidden="true" [name]="scope() === 'full' ? 'matCheckOutline' : 'matAddOutline'" />
+        Whole URL
+      </button>
+    </div>
+  </div>
+
+  <p class="field__hint scope-hint">
+    @if (scope() === 'component') {
+      Component: escapes everything, including <code>/ ? : &#64; &amp; =</code> — for a single query
+      value or path segment.
+    } @else {
+      Whole URL: keeps the <code>/ ? : &#64; &amp; =</code> delimiters intact so the address stays
+      usable.
+    }
+  </p>
+
+  <!-- Input ----------------------------------------------------------- -->
+  <div class="field">
+    <label class="field__label" for="url-input">
+      {{ mode() === 'encode' ? 'Text to encode' : 'Text to decode' }}
+    </label>
+    <textarea
+      id="url-input"
+      class="field__input"
+      spellcheck="false"
+      autocomplete="off"
+      autocapitalize="off"
+      rows="3"
+      [placeholder]="mode() === 'encode' ? 'Paste a URL or a value to encode…' : 'Paste percent-encoded text to decode…'"
+      [value]="input()"
+      (input)="onInput($event)"
+    ></textarea>
+  </div>
+
+  <div class="actions">
+    <button matButton (click)="swap()">
+      <ng-icon name="matSwapVertOutline" />
+      Swap
+    </button>
+    <button matButton (click)="clear()">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+    <app-try-example (loadExample)="loadExample()" />
+    <app-share-link [state]="shared" />
+  </div>
+
+  <!-- Output ---------------------------------------------------------- -->
+  @if (hasInput()) {
+    @if (result().error; as error) {
+      <p class="status status--err" role="status">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        {{ error }}
+      </p>
+    } @else {
+      <div class="field">
+        <div class="output-head">
+          <span class="field__label">Result</span>
+          <button matButton (click)="copyOutput()">
+            <ng-icon name="matContentCopyOutline" />
+            Copy
+          </button>
+        </div>
+        <output class="field__input output-box">{{ result().output }}</output>
+      </div>
+    }
+  }
+
+  <!-- URL breakdown --------------------------------------------------- -->
+  @if (parts(); as parts) {
+    <section class="parts" aria-label="URL parts">
+      <h2 class="parts__title">URL breakdown</h2>
+      <dl class="parts__grid">
+        <div class="parts__row">
+          <dt>Protocol</dt>
+          <dd>{{ parts.protocol }}</dd>
+        </div>
+        <div class="parts__row">
+          <dt>Host</dt>
+          <dd>{{ parts.host }}</dd>
+        </div>
+        @if (parts.port) {
+          <div class="parts__row">
+            <dt>Port</dt>
+            <dd>{{ parts.port }}</dd>
+          </div>
+        }
+        <div class="parts__row">
+          <dt>Path</dt>
+          <dd>{{ parts.path }}</dd>
+        </div>
+        @if (parts.fragment) {
+          <div class="parts__row">
+            <dt>Fragment</dt>
+            <dd>{{ parts.fragment }}</dd>
+          </div>
+        }
+      </dl>
+
+      @if (parts.params.length) {
+        <h3 class="parts__subtitle">Query parameters</h3>
+        <ul class="params">
+          @for (param of parts.params; track $index) {
+            <li class="param">
+              <span class="param__key">{{ param.key }}</span>
+              <span class="param__value">{{ param.value }}</span>
+              <button
+                type="button"
+                matIconButton
+                (click)="copy(param.value, param.key)"
+                [attr.aria-label]="'Copy value of ' + param.key"
+              >
+                <ng-icon name="matContentCopyOutline" />
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Encoding uses UTF-8, so accented and non-Latin characters become the same <code>%XX</code>
+    sequences a browser produces. The breakdown appears whenever the input is a complete URL.
+  </p>
+</div>
+
+<app-tool-content slug="url-encoder" />

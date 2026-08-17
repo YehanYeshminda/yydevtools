@@ -110,7 +110,7 @@
 
   <!-- Diff ------------------------------------------------------------ -->
   @if (hasInput() && !identical()) {
-    @if (view() === 'split') {
+    @if (effectiveView() === 'split') {
       <div class="diff diff--split" role="table" aria-label="Split diff">
         @for (pair of splitRows(); track $index) {
           <div class="diff__pair" role="row">

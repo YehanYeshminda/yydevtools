@@ -39,6 +39,7 @@ the homepage grid, search, command palette and this table all come from it.
 | Tool | Description |
 | --- | --- |
 | **Base64 Converter** | Encode and decode text or files to and from Base64. |
+| **URL Encoder / Decoder** | Percent-encode or decode URLs and query values, and break a URL into its parts. |
 | **Image Compressor** | Shrink JPEG, PNG and HEIC images in bulk — by quality or to a target size, with Exif control. |
 | **Timestamp Converter** | Convert between Unix timestamps and human-readable dates. |
 

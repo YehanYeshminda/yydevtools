@@ -1023,8 +1023,12 @@ evidence, and they are worth re-checking before starting, since they will drift.
 - [x] **3. Password / passphrase generator.** *(done 2026-08-12)* Small, heavily
       searched, and the most on-brand tool on this list — a password generator
       that provably never phones home is the entire privacy argument in miniature.
-- [ ] **4. URL and query-string encoder/decoder.** A conspicuous gap beside the
-      Base64 converter.
+- [x] **4. URL and query-string encoder/decoder.** *(done 2026-08-13)* Shipped
+      at `/tools/url-encoder`. Encode/decode at component (`encodeURIComponent`)
+      or whole-URL (`encodeURI`) scope, a Swap that round-trips, clear errors on
+      malformed percent-encoding, and — the value beyond a bare box — a live
+      breakdown of any absolute URL into protocol, host, port, path, fragment
+      and decoded query parameters. Pure logic in `url-codec.ts`, 13 unit tests.
 - [ ] **5. JSON ↔ CSV.** Common, and needs no dependency that is not already here.
 - [ ] **6. Favicon / app-icon generator.** Image codecs plus `zip.ts`, and
       `scripts/generate-icons.mjs` means the resizing logic has been written once
@@ -1082,8 +1086,8 @@ in the ranked list above are cross-referenced, not repeated.
       to build, heavily searched, serves office + data + dev.
 - [ ] **CSV ↔ JSON** *(+ a CSV viewer)* — see #5 above. Bridges the dev tools to
       the spreadsheet crowd; needs no new dependency.
-- [ ] **URL / query-string encoder-decoder** — see #4 above. Conspicuous gap
-      beside the Base64 converter.
+- [x] **URL / query-string encoder-decoder** — *(done 2026-08-13, see #4 above)*
+      live at `/tools/url-encoder`.
 - [ ] **Image resizer / format converter** *(PNG ↔ JPG ↔ WebP, resize, crop)* —
       see #2 above. The `heic-to` codec already ships, so this is half-built.
 
@@ -1155,10 +1159,24 @@ everyday work" audience this expansion is for.
       jwt-editor, markdown-editor, pdf-merge) lost 12 dead rule blocks each.
 - [ ] **Global drag-and-drop on file tools** — drop anywhere on the page, not
       only onto the input.
-- [ ] **Skeletons for the heavy lazy chunks.** `heic-to` is 3.00 MB and
-      `typescript` 900 kB; today both load behind an inert UI.
-- [ ] **Mobile audit of the split-pane tools** — Text Diff and Markdown Editor
-      are side-by-side layouts on a phone.
+- [x] **Skeletons for the heavy lazy chunks.** *(done 2026-08-13)* A shared
+      `shared/skeleton` shimmer component (line-bars or a filling block, quiet
+      under `prefers-reduced-motion`). Wired into the two tools that pulled a
+      multi-MB chunk behind an inert UI: the **Code Formatter** shows a
+      code-shaped skeleton in the output pane while Prettier's engine and the
+      chosen plugin download (TypeScript's is ~900 kB), and the **Image
+      Compressor** shows a preview + queue placeholder while a dropped file is
+      opened — for HEIC that await is where the ~3 MB decoder downloads, before
+      the item can even join the queue, so previously a HEIC drop showed nothing
+      for seconds. A `preparing` counter drives it.
+- [x] **Mobile audit of the split-pane tools.** *(done 2026-08-13)* Text Diff
+      forced its split view — two ~155px monospace columns at 375px, unusable —
+      so below 560px it now renders the purpose-built unified view and hides the
+      (inert) view toggle, via a `matchMedia` `narrow` signal set in
+      `afterNextRender`. Markdown Editor already stacked correctly at ≤720px.
+      Swept the other editor tools (json-formatter, code-formatter,
+      regex-tester, jwt-editor, jwt-decoder, color-converter) at 375px — no
+      horizontal overflow anywhere.
 - [ ] **Undo (or a toast) in the PDF Organizer.** Deleting a page currently has
       no way back.
 - [ ] **A `?` shortcut sheet**, once per-tool shortcuts exist.
