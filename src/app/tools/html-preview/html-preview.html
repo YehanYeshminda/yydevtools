@@ -7,6 +7,29 @@
   <section class="pane" aria-label="HTML source">
     <div class="pane__bar">
       <span class="pane__label">HTML</span>
+      <div class="pane__controls">
+        <button
+          type="button"
+          class="chip"
+          (click)="format()"
+          [disabled]="!hasSource() || formatting()"
+          title="Tidy the markup with Prettier"
+        >
+          <ng-icon aria-hidden="true" name="matFormatIndentIncreaseOutline" />
+          {{ formatting() ? 'Formatting…' : 'Format' }}
+        </button>
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="wrapSource()"
+          [attr.aria-pressed]="wrapSource()"
+          (click)="toggleWrap()"
+          title="Soft-wrap long lines"
+        >
+          <ng-icon aria-hidden="true" name="matWrapTextOutline" />
+          Wrap
+        </button>
+      </div>
     </div>
     <app-code-editor
       class="pane__input"
@@ -16,31 +39,108 @@
       minHeight="0"
       height="100%"
       [frameless]="true"
+      [wrap]="wrapSource()"
       [(value)]="source"
     />
   </section>
 
-  <section class="pane pane--preview" aria-label="Preview">
+  @if (formatError(); as message) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      {{ message }}
+    </p>
+  }
+
+  <section
+    class="pane pane--preview"
+    [class.pane--fullscreen]="expanded()"
+    aria-label="Preview"
+  >
     <div class="pane__bar">
-      <span class="pane__label">Preview</span>
-      <button
-        type="button"
-        class="chip"
-        [class.chip--on]="runScripts()"
-        [attr.aria-pressed]="runScripts()"
-        (click)="toggleScripts()"
-      >
-        <ng-icon aria-hidden="true" [name]="runScripts() ? 'matCheckOutline' : 'matCodeOutline'" />
-        Run scripts
-      </button>
+      <span class="pane__label">
+        Preview
+        @if (hasSource()) {
+          <span class="pane__size">{{ sizeLabel() }}</span>
+        }
+      </span>
+      <div class="pane__controls">
+        <div class="seg" role="group" aria-label="Preview width">
+          <button
+            type="button"
+            class="seg__btn"
+            [class.seg__btn--on]="width() === 'phone'"
+            [attr.aria-pressed]="width() === 'phone'"
+            (click)="setWidth('phone')"
+          >
+            Phone
+          </button>
+          <button
+            type="button"
+            class="seg__btn"
+            [class.seg__btn--on]="width() === 'tablet'"
+            [attr.aria-pressed]="width() === 'tablet'"
+            (click)="setWidth('tablet')"
+          >
+            Tablet
+          </button>
+          <button
+            type="button"
+            class="seg__btn"
+            [class.seg__btn--on]="width() === 'full'"
+            [attr.aria-pressed]="width() === 'full'"
+            (click)="setWidth('full')"
+          >
+            Full
+          </button>
+        </div>
+        <button
+          type="button"
+          class="chip chip--icon"
+          [class.chip--on]="dark()"
+          [attr.aria-pressed]="dark()"
+          (click)="toggleDark()"
+          [attr.title]="dark() ? 'Preview on a light background' : 'Preview on a dark background'"
+        >
+          <ng-icon aria-hidden="true" [name]="dark() ? 'matLightModeOutline' : 'matDarkModeOutline'" />
+        </button>
+        <button
+          type="button"
+          class="chip chip--icon"
+          (click)="toggleExpanded()"
+          [attr.aria-pressed]="expanded()"
+          [attr.title]="expanded() ? 'Exit full screen (Esc)' : 'Full screen preview'"
+        >
+          <ng-icon
+            aria-hidden="true"
+            [name]="expanded() ? 'matFullscreenExitOutline' : 'matFullscreenOutline'"
+          />
+        </button>
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="runScripts()"
+          [attr.aria-pressed]="runScripts()"
+          (click)="toggleScripts()"
+        >
+          <ng-icon aria-hidden="true" [name]="runScripts() ? 'matCheckOutline' : 'matCodeOutline'" />
+          Run scripts
+        </button>
+      </div>
     </div>
     <!-- A plain host; the component builds the preview iframe inside it, in the
          browser only. Doing it imperatively (rather than an <iframe> in the
          template) is deliberate: Angular forbids binding the security-sensitive
          `sandbox` attribute (NG0910), and an iframe in prerendered HTML trips
          the hydration walker (NG0500). A fresh element sidesteps both, and lets
-         the sandbox be fixed at creation — the only safe time to set it. -->
-    <div #frameHost class="frame-host"></div>
+         the sandbox be fixed at creation — the only safe time to set it.
+         `--preview-w` and `--preview-bg` inherit into that frame, so the width
+         selector and the dark toggle restyle it without a reload. -->
+    <div
+      #frameHost
+      class="frame-host"
+      [style.--preview-w]="widthValue()"
+      [style.--preview-bg]="backdrop()"
+    ></div>
   </section>
 </div>
 
@@ -53,8 +153,16 @@
     <ng-icon name="matClearOutline" />
     Clear
   </button>
-  <app-try-example (loadExample)="loadExample()" />
   <app-share-link [state]="shared" />
+</div>
+
+<div class="examples">
+  <span class="examples__label">Examples</span>
+  @for (example of examples; track example.id) {
+    <button type="button" class="chip" (click)="loadExample(example.id)">
+      {{ example.label }}
+    </button>
+  }
 </div>
 
 <p class="note">

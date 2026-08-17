@@ -31,20 +31,57 @@
   height: 34rem;
 }
 
+/* Full screen: the same pane, blown up to fill the viewport. Because it is the
+   same element, the live iframe keeps its document and any running script — no
+   reparenting, no reload. */
+.pane--fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  height: 100dvh;
+  width: 100vw;
+  border-radius: 0;
+  border: none;
+}
+
 .pane__bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  flex-wrap: wrap;
   padding: 0.4rem 0.5rem 0.4rem 0.85rem;
   border-bottom: 1px solid var(--outline-2);
   background: var(--surface-1);
 }
 
 .pane__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--on);
+}
+
+/* The byte-size readout — muted, so it reads as metadata next to the label. */
+.pane__size {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--on-var);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+/* The cluster of controls on the right of each bar. Wraps under the label on a
+   narrow pane rather than overflowing the slim bar. */
+.pane__controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
 /* The editor fills the pane below its bar; `min-height: 0` is what lets a flex
@@ -54,19 +91,81 @@
   min-height: 0;
 }
 
-/* Holds the imperatively-built preview iframe. White so a fragment with no
-   background of its own reads like a real page rather than picking up the app's
-   surface colour, and so the pane is not empty before the first paint. */
+/* Holds the imperatively-built preview iframe. The gutter is a muted surface so
+   a phone- or tablet-width frame reads as a device centred on a backdrop; at
+   full width the frame covers it. */
 .frame-host {
-  display: flex;
   flex: 1 1 auto;
   min-height: 0;
-  background: #fff;
+  overflow: auto;
+  background: var(--surface-2);
 }
 
-/* The Run scripts toggle sits in the preview bar, a touch smaller than the
-   chips in a controls row so it does not crowd the slim bar. */
+/* The toggles in each bar are a touch smaller than the chips in a controls row
+   so they do not crowd the slim bar. */
 .pane__bar .chip {
   padding: 0.3rem 0.6rem;
   font-size: 0.8rem;
+}
+
+/* Icon-only chips stay square. */
+.pane__bar .chip--icon {
+  padding: 0.3rem;
+}
+
+.chip--icon ng-icon {
+  font-size: 1.05rem;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+/* Segmented width control ------------------------------------------------ */
+.seg {
+  display: inline-flex;
+  padding: 0.15rem;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.seg__btn {
+  padding: 0.25rem 0.65rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--on-var);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.seg__btn:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.seg__btn--on,
+.seg__btn--on:hover {
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+
+.seg__btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Examples row ----------------------------------------------------------- */
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.examples__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--on-var);
 }

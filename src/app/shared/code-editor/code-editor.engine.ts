@@ -30,6 +30,7 @@ export interface EditorHandle {
   setValue(text: string): void;
   setLanguage(language: EditorLanguage): Promise<void>;
   setReadOnly(readOnly: boolean): void;
+  setWrap(wrap: boolean): void;
   focus(): void;
   destroy(): void;
 }
@@ -224,6 +225,9 @@ export async function createEditor(options: EditorOptions): Promise<EditorHandle
     setLanguage,
     setReadOnly(readOnly: boolean): void {
       editor.dispatch({ effects: readOnlySlot.reconfigure(EditorState.readOnly.of(readOnly)) });
+    },
+    setWrap(wrap: boolean): void {
+      editor.dispatch({ effects: wrapSlot.reconfigure(wrap ? EditorView.lineWrapping : []) });
     },
     focus: () => editor.focus(),
     destroy: () => editor.destroy(),

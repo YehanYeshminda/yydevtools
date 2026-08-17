@@ -861,14 +861,17 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'The preview renders inside a sandboxed frame with its own separate origin, so the page you are previewing cannot reach this site, its cookies or its storage. JavaScript is switched off until you choose to turn it on, which keeps pasted markup from doing anything unexpected. Everything happens on your own device — the HTML is never uploaded.',
     ],
     steps: [
-      'Type or paste your HTML into the editor pane.',
-      'Watch it render live in the preview pane beside it.',
+      'Type or paste your HTML into the editor pane, or load one of the examples.',
+      'Watch it render live in the preview below — press Format to tidy the markup first.',
+      'Switch the preview between phone, tablet and full width to check a responsive layout.',
       'Turn on "Run scripts" if your HTML includes JavaScript you want to run.',
-      'Download the result as an .html file, or copy a share link to reopen it later.',
+      'Expand to full screen, then download the result as an .html file or copy a share link.',
     ],
     features: [
       'Live preview as you type, for whole documents or bare fragments.',
-      'Inline CSS is applied exactly as a browser would.',
+      'Phone, tablet and full-width preview, with a full-screen mode.',
+      'A one-click Format button that beautifies the markup with Prettier.',
+      'A light or dark backdrop, so transparent pages read either way.',
       'A sandboxed, separate-origin frame that cannot touch this page.',
       'Scripts are off by default and opt-in, never same-origin.',
       'Runs entirely in your browser — nothing is uploaded.',
@@ -885,6 +888,10 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       {
         q: 'Can I preview a fragment, or does it need to be a full page?',
         a: 'Either works. You can paste a complete document starting with <!doctype html>, or just a loose fragment like a <div> with some inline styles — the browser renders both.',
+      },
+      {
+        q: 'How accurate is the phone and tablet width preview?',
+        a: 'The width buttons pin the preview frame to a phone (390px) or tablet (768px) width so your CSS media queries and responsive layout react exactly as they would on a device of that size. It is a real narrowing of the viewport, not a scaled-down picture, so what you see is what a browser at that width renders.',
       },
       {
         q: 'Do external stylesheets, images and fonts load?',

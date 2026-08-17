@@ -171,6 +171,10 @@ export class CodeEditor implements OnDestroy {
       const readOnly = this.readOnly();
       this.handle?.setReadOnly(readOnly);
     });
+    effect(() => {
+      const wrap = this.wrap();
+      this.handle?.setWrap(wrap);
+    });
   }
 
   ngOnDestroy(): void {

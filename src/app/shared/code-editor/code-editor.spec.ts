@@ -49,6 +49,7 @@ async function mount(initial = 'first'): Promise<Harness> {
           setValue: (text: string) => recorder.values.push(text),
           setLanguage: async (language: EditorLanguage) => void recorder.languages.push(language),
           setReadOnly: (readOnly: boolean) => recorder.readOnly.push(readOnly),
+          setWrap: () => {},
           focus: () => {},
           destroy: () => {},
         }),

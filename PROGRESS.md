@@ -1100,6 +1100,18 @@ in the ranked list above are cross-referenced, not repeated.
       during prerender where there is no `document` — all three are sidestepped
       by building a fresh element client-side and fixing its sandbox at creation
       (`""` off, `allow-scripts` on, never `allow-same-origin`).
+  - *(extended 2026-08-17)* Responsive width selector (phone 390 / tablet 768 /
+    full), a full-screen mode (Escape to exit, body scroll-locked), a Prettier
+    **Format** button, a light/dark preview backdrop, a UTF-8 byte-size badge, a
+    source-editor **Wrap** toggle, and a three-item example gallery (Card,
+    Newsletter, Form). Width and backdrop are inherited CSS custom properties
+    (`--preview-w`, `--preview-bg`) on the frame host, so the selector and the
+    dark toggle restyle the live frame without tearing it down and reloading —
+    verified the iframe node is unchanged across a width switch. Full screen is
+    the same pane blown up with `position: fixed`, so the running document keeps
+    its state. The Wrap toggle drove a new `setWrap` on the shared editor handle,
+    reconfiguring the existing `wrapSlot` compartment (all editors gain runtime
+    line-wrap control). All 335 unit tests pass; build prerenders 43 routes.
 
 **Tier 2 — solid follow-ups, still fully in-browser:**
 
