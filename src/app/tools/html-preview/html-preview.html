@@ -44,13 +44,6 @@
     />
   </section>
 
-  @if (formatError(); as message) {
-    <p class="status status--err" role="alert">
-      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
-      {{ message }}
-    </p>
-  }
-
   <section
     class="pane pane--preview"
     [class.pane--fullscreen]="expanded()"
@@ -144,8 +137,8 @@
   </section>
 </div>
 
-@if (runScripts()) {
-  <section class="console" [class.console--open]="consoleOpen()" aria-label="Preview console">
+@if (showPanel()) {
+  <section class="console" [class.console--open]="consoleOpen()" aria-label="Preview diagnostics">
     <div class="console__bar">
       <button
         type="button"
@@ -159,28 +152,46 @@
           name="matExpandMoreOutline"
         />
         <ng-icon aria-hidden="true" name="matTerminalOutline" />
-        <span class="console__title">Console</span>
-        @if (logs().length) {
+        <span class="console__title">{{ panelTitle() }}</span>
+        @if (problems().length) {
+          <span class="console__count console__count--warn">
+            {{ problems().length }} problem{{ problems().length === 1 ? '' : 's' }}
+          </span>
+        }
+        @if (runScripts() && errorCount()) {
+          <span class="console__count console__count--err">
+            {{ errorCount() }} error{{ errorCount() === 1 ? '' : 's' }}
+          </span>
+        }
+        @if (runScripts() && logs().length) {
           <span class="console__count">{{ logs().length }}</span>
         }
-        @if (errorCount()) {
-          <span class="console__count console__count--err">{{ errorCount() }} error{{ errorCount() === 1 ? '' : 's' }}</span>
-        }
       </button>
-      @if (logs().length) {
+      @if (runScripts() && logs().length) {
         <button type="button" class="console__clear" (click)="clearLogs()">Clear</button>
       }
     </div>
     @if (consoleOpen()) {
       <ol class="console__list">
+        @for (problem of problems(); track $index) {
+          <li class="console__row console__row--problem">
+            <span class="console__level">html</span>
+            <span class="console__text">{{ problem.message }}</span>
+          </li>
+        }
         @for (entry of logs(); track entry.id) {
           <li class="console__row" [class]="'console__row--' + entry.level">
             <span class="console__level">{{ entry.level }}</span>
             <span class="console__text">{{ entry.text }}</span>
           </li>
-        } @empty {
+        }
+        @if (!problems().length && !logs().length) {
           <li class="console__empty">
-            No output yet — anything the page logs, or any error it throws, shows up here.
+            @if (runScripts()) {
+              No output yet — anything the page logs, or any error it throws, shows up here.
+            } @else {
+              No problems found in the markup.
+            }
           </li>
         }
       </ol>

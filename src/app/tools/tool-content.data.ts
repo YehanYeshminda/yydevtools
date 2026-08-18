@@ -891,6 +891,10 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Yes. With "Run scripts" on, a console panel appears below the preview and captures everything the page logs — console.log, warnings, errors — along with any uncaught exception or rejected promise, so a snippet that fails silently tells you why. It works by forwarding the output from the sandboxed frame; the frame still cannot reach this page.',
       },
       {
+        q: 'My layout looks wrong but nothing errors — why?',
+        a: 'A browser silently recovers from malformed HTML — an unterminated tag, a stray bracket — and never reports it, which is why a broken layout can look like "nothing happened". The panel below the preview flags these structural problems with a line and column as you type, even with scripts off. Pressing Format runs the same check and reports the first issue it hits.',
+      },
+      {
         q: 'Can I preview a fragment, or does it need to be a full page?',
         a: 'Either works. You can paste a complete document starting with <!doctype html>, or just a loose fragment like a <div> with some inline styles — the browser renders both.',
       },

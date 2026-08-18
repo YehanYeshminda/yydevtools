@@ -1112,6 +1112,17 @@ in the ranked list above are cross-referenced, not repeated.
     its state. The Wrap toggle drove a new `setWrap` on the shared editor handle,
     reconfiguring the existing `wrapSlot` compartment (all editors gain runtime
     line-wrap control). All 335 unit tests pass; build prerenders 43 routes.
+  - *(extended 2026-08-18)* A diagnostics panel below the preview. With scripts
+    on it captures the page's `console.*` output and uncaught errors/rejections
+    via a tiny bridge injected into the sandboxed `srcdoc` that `postMessage`s to
+    the parent — the frame keeps its null origin, and the parent trusts a message
+    only if it carries the bridge marker AND came from the live frame's
+    `contentWindow` (spoof-tested). Independently, a debounced passive re-check
+    parses the markup with Prettier (shared, memoised load) and flags structural
+    problems a browser swallows silently — the exact "unterminated tag" case that
+    made a layout look broken with no error. Problems show with a line:column even
+    when scripts are off; Format routes its failure into the same panel. 343 unit
+    tests pass (added console-bridge injection spec).
   - *(console capture, 2026-08-17)* A collapsible console panel below the
     preview, shown only when scripts are on. A small bootstrap script is
     injected at the top of `<head>` (falling back to before `<body>`, inside

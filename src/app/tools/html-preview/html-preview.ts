@@ -49,6 +49,19 @@ interface ConsoleEntry {
 /** The most recent console lines kept, so a chatty page cannot grow unbounded. */
 const MAX_LOG_ENTRIES = 200;
 
+/**
+ * A structural issue found in the markup — an unterminated tag, a stray token —
+ * that a browser recovers from silently but the author probably did not intend.
+ */
+interface Problem {
+  message: string;
+  line?: number;
+  column?: number;
+}
+
+/** How long typing must pause before the markup is re-checked, in milliseconds. */
+const VALIDATE_DEBOUNCE = 450;
+
 @Component({
   selector: 'app-html-preview',
   imports: [ToolPage, ToolContent, CodeEditor, ShareLink, MatButtonModule, NgIcon],
@@ -127,9 +140,18 @@ export class HtmlPreviewTool {
   /** A human-readable size for the current markup, e.g. "1.4 KB". */
   protected readonly sizeLabel = computed(() => formatBytes(byteLength(this.source())));
 
-  /** Beautify state — Prettier runs on demand, so surface progress and errors. */
+  /** Beautify runs Prettier on demand; surface whether it is in flight. */
   protected readonly formatting = signal(false);
-  protected readonly formatError = signal<string | null>(null);
+
+  /** Structural problems in the markup, found by the passive re-check. */
+  protected readonly problems = signal<Problem[]>([]);
+
+  /** The bottom panel is shown when there is anything to report in it. */
+  protected readonly showPanel = computed(
+    () => this.runScripts() || this.problems().length > 0,
+  );
+  /** With scripts on the panel is a console; with them off it is only problems. */
+  protected readonly panelTitle = computed(() => (this.runScripts() ? 'Console' : 'Problems'));
 
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -225,6 +247,44 @@ export class HtmlPreviewTool {
       window.addEventListener('message', handler);
       onCleanup(() => window.removeEventListener('message', handler));
     });
+
+    // Passively re-check the markup for structural problems as it changes,
+    // debounced so it does not run on every keystroke. This is browser-only and
+    // independent of the scripts switch — a malformed tag is worth flagging even
+    // with scripts off, and HTML parsers recover from it silently, so nothing
+    // else would surface it. The check reuses Prettier's parser (already loaded
+    // for the Format button), which is why it also reports the precise line.
+    effect((onCleanup) => {
+      const html = this.source();
+      if (!this.isBrowser) {
+        return;
+      }
+      if (html.trim() === '') {
+        this.problems.set([]);
+        return;
+      }
+      const timer = setTimeout(() => void this.validate(html), VALIDATE_DEBOUNCE);
+      onCleanup(() => clearTimeout(timer));
+    });
+  }
+
+  /**
+   * Parse the markup with Prettier and record the first structural problem it
+   * finds, if any. Only applied when the source has not changed since the parse
+   * started, so a stale result from slow typing cannot overwrite a newer one.
+   */
+  private async validate(html: string): Promise<void> {
+    try {
+      const { format, plugins } = await loadPrettierHtml();
+      await format(html, { parser: 'html', plugins, tabWidth: 2 });
+      if (this.source() === html) {
+        this.problems.set([]);
+      }
+    } catch (error) {
+      if (this.source() === html) {
+        this.problems.set([toProblem(error)]);
+      }
+    }
   }
 
   /**
@@ -287,12 +347,11 @@ export class HtmlPreviewTool {
     }
     this.source.set(example.html);
     this.runScripts.set(example.scripts);
-    this.formatError.set(null);
   }
 
   protected clear(): void {
     this.source.set('');
-    this.formatError.set(null);
+    this.problems.set([]);
   }
 
   protected download(): void {
@@ -301,8 +360,10 @@ export class HtmlPreviewTool {
 
   /**
    * Tidy the markup in place with Prettier. The engine and its HTML plugins are
-   * ~1 MB, so they are dynamically imported here — nothing loads until the user
-   * actually formats.
+   * ~1 MB but load only once (shared with the passive re-check), so nothing is
+   * fetched until the markup is first checked or formatted. A failure is the
+   * same kind of thing the Problems panel already shows, so it is routed there
+   * and the panel is opened rather than shown as a one-off message.
    */
   protected async format(): Promise<void> {
     const source = this.source();
@@ -310,28 +371,53 @@ export class HtmlPreviewTool {
       return;
     }
     this.formatting.set(true);
-    this.formatError.set(null);
     try {
-      const [{ format }, html, postcss, babel, estree] = await Promise.all([
-        import('prettier/standalone'),
-        import('prettier/plugins/html'),
-        import('prettier/plugins/postcss'),
-        import('prettier/plugins/babel'),
-        import('prettier/plugins/estree'),
-      ]);
-      const result = await format(source, {
-        parser: 'html',
-        // HTML can embed CSS and JS, so their plugins ride along.
-        plugins: [html, postcss, babel, estree] as unknown as Plugin[],
-        tabWidth: 2,
-      });
+      const { format, plugins } = await loadPrettierHtml();
+      const result = await format(source, { parser: 'html', plugins, tabWidth: 2 });
       this.source.set(result.replace(/\n$/, ''));
+      this.problems.set([]);
     } catch (error) {
-      this.formatError.set(formatError(error));
+      this.problems.set([toProblem(error)]);
+      this.consoleOpen.set(true);
     } finally {
       this.formatting.set(false);
     }
   }
+}
+
+/**
+ * Load Prettier's standalone engine plus the HTML parser and the plugins for the
+ * CSS and JavaScript it can embed. Memoised, so the ~1 MB of chunks is fetched
+ * at most once and shared by the Format button and the passive re-check.
+ */
+let prettierHtml: Promise<{ format: PrettierFormat; plugins: Plugin[] }> | null = null;
+function loadPrettierHtml(): Promise<{ format: PrettierFormat; plugins: Plugin[] }> {
+  prettierHtml ??= Promise.all([
+    import('prettier/standalone'),
+    import('prettier/plugins/html'),
+    import('prettier/plugins/postcss'),
+    import('prettier/plugins/babel'),
+    import('prettier/plugins/estree'),
+  ]).then(([{ format }, html, postcss, babel, estree]) => ({
+    format,
+    plugins: [html, postcss, babel, estree] as unknown as Plugin[],
+  }));
+  return prettierHtml;
+}
+
+type PrettierFormat = (typeof import('prettier/standalone'))['format'];
+
+/** Turn a Prettier parse error into a Problem, keeping its location. */
+function toProblem(error: unknown): Problem {
+  if (error instanceof Error) {
+    const loc = (error as { loc?: { start?: { line?: number; column?: number } } }).loc?.start;
+    // Prettier's message carries a helpful "(line:column)"; keep the first line
+    // and drop the "For more info see <url>" clause some messages append, which
+    // only bloats the row without adding anything actionable.
+    const firstLine = error.message.split(/\r?\n/)[0].replace(/\s*For more info see \S+/, '');
+    return { message: firstLine, line: loc?.line, column: loc?.column };
+  }
+  return { message: 'The markup could not be parsed.' };
 }
 
 /** UTF-8 byte length. `TextEncoder` exists in both the browser and prerender. */
@@ -348,12 +434,4 @@ function formatBytes(bytes: number): string {
     return `${kb.toFixed(kb < 10 ? 1 : 0)} KB`;
   }
   return `${(kb / 1024).toFixed(1)} MB`;
-}
-
-function formatError(error: unknown): string {
-  if (error instanceof Error) {
-    // Prettier's syntax errors carry a helpful location; keep the first line.
-    return error.message.split('\n')[0];
-  }
-  return 'Could not format that HTML.';
 }

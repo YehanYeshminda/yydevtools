@@ -221,6 +221,11 @@
   color: var(--mat-sys-on-error-container);
 }
 
+.console__count--warn {
+  background: color-mix(in srgb, var(--star) 22%, transparent);
+  color: var(--on);
+}
+
 .console__clear {
   flex: none;
   padding: 0.3rem 0.7rem;
@@ -287,6 +292,14 @@
 }
 
 .console__row--warn .console__level {
+  color: var(--star);
+}
+
+.console__row--problem {
+  background: color-mix(in srgb, var(--star) 14%, transparent);
+}
+
+.console__row--problem .console__level {
   color: var(--star);
 }
 
