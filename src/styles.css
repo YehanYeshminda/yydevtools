@@ -65,6 +65,27 @@ html {
   --cm-selection: #cfe0ff;
   --cm-active-line: #f3f6fc;
 
+  /* Page geometry ------------------------------------------------------
+     Three widths, one per page archetype, so no file has to hand-type a
+     number and every page of a kind lines up with the others.
+
+     `--page-wide` is the shell column the header and footer align to, and
+     which every top-level page — home, guides, news, about, articles —
+     spans. `--page-app` is narrower because a tool is UI rather than prose.
+     `--page-measure` is the reading width for flowing text inside a wide
+     page: full-width paragraphs would be a wall, so text is held to a
+     comfortable line while the card grids beside it span everything.
+
+     Pages sit inside `.content`, which already supplies the horizontal
+     gutter. A page that adds `padding-inline` of its own therefore indents
+     twice and drifts out of line with the header — which is exactly how the
+     guide article ended up 240px inboard of everything else. */
+  --page-wide: 1240px;
+  --page-app: 1000px;
+  --page-narrow: 760px;
+  --page-measure: 68ch;
+  --page-gutter: clamp(16px, 4vw, 28px);
+
   --r-card: 12px;
   --r-field: 10px;
   --r-btn: 10px;

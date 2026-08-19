@@ -1,9 +1,12 @@
+/* This tool is self-contained — it does not pull in ../tool-shell.css — so it
+   carries its own page geometry. The width is the shared token, and the
+   horizontal gutter comes from the shell's `.content`, not from here. */
 :host {
   display: block;
   width: 100%;
-  max-width: 1000px;
+  max-width: var(--page-app);
   margin-inline: auto;
-  padding: 1.5rem clamp(1rem, 4vw, 2rem) 4rem;
+  padding-block: 1.5rem 4rem;
   box-sizing: border-box;
 }
 

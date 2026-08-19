@@ -3,7 +3,7 @@
 
 :host {
   /* The grid needs more room than the standard tool column. */
-  max-width: 1240px;
+  max-width: var(--page-wide);
 }
 
 /* Toolbar --------------------------------------------------------------- */

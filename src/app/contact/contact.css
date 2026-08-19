@@ -1,9 +1,12 @@
+/* A short, single-column page: it keeps its own narrow column rather than
+   spanning the shell, but the horizontal gutter comes from `.content` — adding
+   one here as well indented the page twice. */
 :host {
   display: block;
   width: 100%;
-  max-width: 760px;
+  max-width: var(--page-narrow);
   margin-inline: auto;
-  padding: 24px clamp(16px, 4vw, 28px) 56px;
+  padding-block: 24px 56px;
 }
 
 /* Breadcrumb ------------------------------------------------------------ */

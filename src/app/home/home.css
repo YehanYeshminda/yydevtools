@@ -5,7 +5,7 @@
 
 /* Hero ------------------------------------------------------------------ */
 .hero {
-  max-width: 760px;
+  max-width: var(--page-narrow);
   margin-bottom: 22px;
 }
 

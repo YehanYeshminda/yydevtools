@@ -1,4 +1,4 @@
 /* The viewer benefits from more room than the standard tool column allows. */
 :host {
-  max-width: 1200px;
+  max-width: var(--page-wide);
 }

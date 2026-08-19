@@ -12,7 +12,7 @@
 .about__lead,
 .section__text,
 .prose {
-  max-width: 68ch;
+  max-width: var(--page-measure);
 }
 
 /* Breadcrumb ------------------------------------------------------------ */

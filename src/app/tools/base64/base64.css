@@ -1,7 +1,7 @@
 /* Wider than the default tool shell so the decode input and its preview fit
    side by side without either one being cramped. */
 :host {
-  max-width: 1180px;
+  max-width: var(--page-wide);
 }
 
 /* Material makes the active tab body scroll (`overflow: hidden auto`), which shows

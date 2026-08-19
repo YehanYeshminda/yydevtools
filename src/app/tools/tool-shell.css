@@ -6,12 +6,16 @@
  *   styleUrls: ['../tool-shell.css', './my-tool.css']
  */
 
+/* A tool is UI rather than prose, so it sits in its own column — narrower than
+   the shell the header and the reading pages use, but centred inside it. The
+   horizontal gutter comes from `.content`; adding one here as well would indent
+   every tool twice and pull it out of line with the rest of the site. */
 :host {
   display: block;
   width: 100%;
-  max-width: 1000px;
+  max-width: var(--page-app);
   margin-inline: auto;
-  padding: 1.5rem clamp(1rem, 4vw, 2rem) 4rem;
+  padding-block: 1.5rem 4rem;
   box-sizing: border-box;
 }
 

@@ -1,9 +1,11 @@
+/* Width and inline padding come from the app shell's `.content`, exactly as on
+   the guides index this is reached from, and on the homepage, news and about.
+   Setting a narrower column here as well used to indent the article twice over,
+   so its breadcrumb sat 240px inboard of the header's and of the index's — the
+   two pages a reader moves between. Only the vertical rhythm is set here. */
 :host {
   display: block;
-  width: 100%;
-  max-width: 760px;
-  margin-inline: auto;
-  padding: 24px clamp(16px, 4vw, 28px) 64px;
+  padding-block: 24px 64px;
 }
 
 /* Breadcrumb ------------------------------------------------------------ */
@@ -82,7 +84,12 @@
 }
 
 /* Body ------------------------------------------------------------------ */
+/* The article now spans the shell's wide column, so the flowing text is held to
+   a reading measure — a 1200px line is a wall, and the eye loses its place
+   coming back to the start of the next one. The title and the card sections
+   below deliberately span the full column instead. */
 .doc__body {
+  max-width: var(--page-measure);
   font-size: 16.5px;
   line-height: 1.72;
   color: var(--on);

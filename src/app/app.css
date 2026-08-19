@@ -9,9 +9,9 @@
 .content,
 .footer__inner {
   width: 100%;
-  max-width: 1240px;
+  max-width: var(--page-wide);
   margin-inline: auto;
-  padding-inline: clamp(16px, 4vw, 28px);
+  padding-inline: var(--page-gutter);
 }
 
 /* Header ---------------------------------------------------------------- */

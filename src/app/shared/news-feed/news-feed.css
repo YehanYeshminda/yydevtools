@@ -7,10 +7,10 @@
   /* Constrained to the content column, like the guides teaser, with its own
      top rule so it reads as one more section rather than part of the footer. */
   width: 100%;
-  max-width: 1240px;
+  max-width: var(--page-wide);
   margin-inline: auto;
   margin-top: 8px;
-  padding: 28px clamp(16px, 4vw, 28px) 4px;
+  padding: 28px var(--page-gutter) 4px;
   border-top: 1px solid var(--outline);
 }
 
