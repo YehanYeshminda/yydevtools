@@ -39,6 +39,16 @@ export interface MetadataReport {
   groups: MetadataGroup[];
   /** Total fields across every group. */
   count: number;
+  /**
+   * Fields that say something about *you* — the camera, the place, the moment,
+   * the author — as opposed to how the file is encoded.
+   *
+   * The distinction carries the whole verdict. A JPEG straight out of an image
+   * editor typically reports two dozen JFIF and ICC-profile fields, none of
+   * which reveal anything; counting those as "metadata found" would tell
+   * someone their scan is exposing them when it is not.
+   */
+  identifying: number;
   /** True when the file records where the photo was taken. */
   hasLocation: boolean;
   /** Decimal coordinates, when present, for display and a map link. */
@@ -184,6 +194,34 @@ const GROUPS: { name: string; sensitive: boolean; match: (tag: string) => boolea
         'Source',
       ].includes(tag),
   },
+  {
+    /**
+     * How the file is encoded and what colour space it uses. Never identifying,
+     * and voluminous — a single JPEG can carry twenty ICC-profile fields — so it
+     * gets its own section instead of swamping "Other".
+     */
+    name: 'Colour profile & encoding',
+    sensitive: false,
+    match: (tag) => {
+      const key = tag.toLowerCase();
+      return (
+        key.startsWith('icc') ||
+        key.startsWith('profile') ||
+        key.startsWith('jfif') ||
+        key.includes('cmm') ||
+        [
+          'connectionspace',
+          'primaryplatform',
+          'devicemanufacturer',
+          'devicemodelnumber',
+          'renderingintent',
+          'colorcomponents',
+          'subsampling',
+          'encoding',
+        ].includes(key)
+      );
+    },
+  },
 ];
 
 /**
@@ -260,6 +298,11 @@ export function report(tags: Tags): MetadataReport {
     if (value === null) {
       continue;
     }
+    // An absent JFIF thumbnail still reports its dimensions, as zero. Listing
+    // "0px" twice is noise that makes a clean file look busier than it is.
+    if (/thumbnail/i.test(name) && /^0(px)?$/.test(value)) {
+      continue;
+    }
     const group = GROUPS.find((candidate) => candidate.match(normalise(name)));
     const field = { label: humanise(name), value };
     if (group) {
@@ -282,10 +325,14 @@ export function report(tags: Tags): MetadataReport {
 
   const location = coordinates(tags);
   const count = groups.reduce((total, group) => total + group.fields.length, 0);
+  const identifying = groups
+    .filter((group) => group.sensitive)
+    .reduce((total, group) => total + group.fields.length, 0);
 
   return {
     groups,
     count,
+    identifying,
     hasLocation: location !== null,
     location,
     warnings: warningsFor(tags, location !== null),

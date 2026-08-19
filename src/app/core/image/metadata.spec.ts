@@ -237,6 +237,42 @@ describe('report', () => {
     expect(exposure?.sensitive).toBe(false);
   });
 
+  it('counts identifying fields apart from technical ones', () => {
+    // A JPEG straight out of an editor: lots of fields, none of them personal.
+    const result = report({
+      'JFIF version': tag('1.1'),
+      'Color components': tag(3),
+      'ICC description': tag('sRGB'),
+      'Profile version': tag('2.1.0'),
+      'Image Width': tag('829px'),
+    });
+
+    expect(result.count).toBe(5);
+    expect(result.identifying).toBe(0);
+    expect(result.groups.some((group) => group.name === 'Other')).toBe(false);
+  });
+
+  it('counts camera, location and authoring fields as identifying', () => {
+    const result = report({
+      'JFIF version': tag('1.1'),
+      Make: tag('Apple'),
+      Artist: tag('Ada Lovelace'),
+    });
+
+    expect(result.count).toBe(3);
+    expect(result.identifying).toBe(2);
+  });
+
+  it('drops the dimensions of an absent JFIF thumbnail', () => {
+    const result = report({
+      'JFIF thumbnail width': tag('0px'),
+      'JFIF thumbnail height': tag('0px'),
+      'JFIF version': tag('1.1'),
+    });
+
+    expect(result.count).toBe(1);
+  });
+
   it('returns an empty report for a file with no metadata', () => {
     const result = report({});
     expect(result).toMatchObject({ count: 0, hasLocation: false, location: null });

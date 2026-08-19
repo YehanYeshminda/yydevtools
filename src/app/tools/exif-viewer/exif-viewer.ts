@@ -66,6 +66,8 @@ export class ExifViewerTool implements OnDestroy {
 
   protected readonly hasFile = computed(() => this.name() !== '');
   protected readonly hasMetadata = computed(() => (this.report()?.count ?? 0) > 0);
+  /** Fields that reveal something personal, as opposed to how the file is encoded. */
+  protected readonly identifying = computed(() => this.report()?.identifying ?? 0);
   protected readonly location = computed(() => this.report()?.location ?? null);
 
   private currentBytes: Uint8Array | null = null;
@@ -213,9 +215,11 @@ export class ExifViewerTool implements OnDestroy {
     void import('../../core/image/metadata').then(({ stripMetadata }) => {
       const clean = stripMetadata(bytes);
       if (!clean) {
-        // Nothing removable: either the file is already clean, or it is a
-        // container this does not edit. Only the latter is worth reporting.
-        this.stripUnsupported.set(this.hasMetadata());
+        // Nothing removable. Only worth reporting when there is something a
+        // person would actually want gone: a file carrying nothing but colour
+        // profile and encoding fields has no problem to solve, and offering to
+        // fix one would be alarming for no reason.
+        this.stripUnsupported.set(this.identifying() > 0);
         return;
       }
       const extension = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.') + 1) : 'jpg';

@@ -63,6 +63,18 @@
             place is stored in it.
           </p>
         } @else {
+          <!-- The verdict, which is the answer people actually came for.
+               A file can hold two dozen colour-profile fields and still reveal
+               nothing personal, so this reads the identifying count rather than
+               the total. -->
+          @if (!identifying()) {
+            <p class="status status--ok" role="status">
+              <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
+              Nothing identifying in this image. It records no camera, no location, no author and
+              no timestamp — only technical detail about how the file is encoded, listed below.
+            </p>
+          }
+
           <!-- What it gives away ---------------------------------------- -->
           @if (report()?.warnings?.length) {
             <section class="risk" [class.risk--located]="report()?.hasLocation">
@@ -113,10 +125,16 @@
             } @else if (stripUnsupported()) {
               <p class="note">
                 <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
-                This file's metadata can be read but not removed without re-compressing the image,
-                which would visibly degrade it. Convert it to JPEG or PNG first — the
-                <a routerLink="/tools/image-converter">Image Converter</a> does that — then strip it
-                here.
+                <!-- The text is one element on purpose. `.note` is a flex
+                     container, so a bare sentence containing a link would be
+                     split into separate flex items — icon, text, link, text —
+                     and laid out as columns instead of a paragraph. -->
+                <span class="note__text">
+                  There is nothing here that can be removed without re-compressing the image, which
+                  would visibly degrade it. To strip it losslessly, convert the file to JPEG or PNG
+                  first with the <a routerLink="/tools/image-converter">Image Converter</a>, then
+                  bring it back here.
+                </span>
               </p>
             }
           </section>

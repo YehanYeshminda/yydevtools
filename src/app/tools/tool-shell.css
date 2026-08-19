@@ -307,6 +307,15 @@
   margin-top: 0.1rem;
 }
 
+/* Wrapper for a note whose text contains inline markup — a link, <strong>, a
+   <code> span. `.note` is a flex container, so such a note written as bare text
+   would have each run and each element become its own flex item, turning one
+   sentence into a row of columns. Wrapping the text keeps it a single item. */
+.note__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* Monthly allowance line, for the tools that call the hosted service ----- */
 .quota {
   display: flex;
