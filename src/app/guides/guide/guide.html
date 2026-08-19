@@ -20,7 +20,8 @@
       </p>
     </header>
 
-    <div class="doc__body">
+    <div class="doc__main">
+      <div class="doc__body">
       @for (paragraph of g.intro; track $index) {
         <p class="doc__lead">{{ paragraph }}</p>
       }
@@ -84,6 +85,32 @@
             }
           }
         }
+      }
+      </div>
+
+      <!-- Contents, in the space beside the reading column. It is the last
+           child in the DOM but painted alongside the article, so a screen
+           reader or a narrow viewport meets the prose first and the navigation
+           after, rather than wading through a link list to reach the text. -->
+      @if (showToc()) {
+        <aside class="toc">
+          <nav class="toc__inner" aria-labelledby="toc-heading">
+            <h2 class="toc__title" id="toc-heading">On this page</h2>
+            <ol class="toc__list">
+              @for (heading of headings(); track heading.id) {
+                <li class="toc__item" [class.toc__item--sub]="heading.sub">
+                  <a
+                    class="toc__link"
+                    [class.toc__link--active]="activeId() === heading.id"
+                    [attr.aria-current]="activeId() === heading.id ? 'location' : null"
+                    [href]="'#' + heading.id"
+                    >{{ heading.text }}</a
+                  >
+                </li>
+              }
+            </ol>
+          </nav>
+        </aside>
       }
     </div>
 

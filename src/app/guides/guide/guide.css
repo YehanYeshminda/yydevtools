@@ -84,15 +84,97 @@
 }
 
 /* Body ------------------------------------------------------------------ */
-/* The article now spans the shell's wide column, so the flowing text is held to
-   a reading measure — a 1200px line is a wall, and the eye loses its place
-   coming back to the start of the next one. The title and the card sections
-   below deliberately span the full column instead. */
+/* The article spans the shell's wide column, so the flowing text is held to a
+   reading measure — a 1200px line is a wall, and the eye loses its place coming
+   back to the start of the next one. The room that leaves beside it carries the
+   contents list; the title and the card sections below span the full column. */
+.doc__main {
+  display: grid;
+  grid-template-columns: minmax(0, var(--page-measure)) minmax(0, 1fr);
+  gap: 0 clamp(32px, 4vw, 64px);
+  align-items: start;
+  /* `ch` resolves against *this* element's font size, so it has to match the
+     body's for the reading column to be exactly the measure the prose is set
+     to. Every child sets its own size, so nothing else is affected. */
+  font-size: 16.5px;
+}
+
+/* One column below the point where a sidebar would squeeze the prose. The
+   contents list goes rather than stacking: it would push the article down the
+   page, and on a phone the browser's own find-in-page serves better. */
+@media (max-width: 1080px) {
+  .doc__main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toc {
+    display: none;
+  }
+}
+
 .doc__body {
   max-width: var(--page-measure);
   font-size: 16.5px;
   line-height: 1.72;
   color: var(--on);
+}
+
+/* Contents -------------------------------------------------------------- */
+.toc__inner {
+  position: sticky;
+  /* Clears the sticky app bar, matching the headings' scroll-margin. */
+  top: 88px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  max-width: 20rem;
+  padding-left: 16px;
+  border-left: 1px solid var(--outline);
+}
+
+.toc__title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--on-var);
+}
+
+.toc__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toc__item--sub {
+  padding-left: 14px;
+}
+
+.toc__link {
+  display: block;
+  padding: 4px 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--on-var);
+  text-decoration: none;
+}
+
+.toc__link:hover {
+  color: var(--on);
+}
+
+.toc__link--active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.toc__link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .doc__lead {
@@ -108,7 +190,7 @@
   font-weight: 680;
   line-height: 1.25;
   letter-spacing: -0.02em;
-  scroll-margin-top: 24px;
+  scroll-margin-top: 88px;
   color: var(--on);
 }
 
@@ -118,7 +200,7 @@
   font-weight: 650;
   line-height: 1.3;
   letter-spacing: -0.015em;
-  scroll-margin-top: 24px;
+  scroll-margin-top: 88px;
   color: var(--on);
 }
 
