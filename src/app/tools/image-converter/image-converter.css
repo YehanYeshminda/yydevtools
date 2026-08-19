@@ -1,0 +1,184 @@
+/* Panel, chips, actions, dropzone and notes come from ../tool-shell.css.
+   Only the controls column and the result cards live here. */
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(16rem, 20rem) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 14px;
+  background: var(--surface-1);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.quality {
+  width: 100%;
+}
+
+.summary {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--on-var);
+}
+
+/* Size-change badges ----------------------------------------------------- */
+.delta {
+  font-weight: 600;
+}
+
+.delta--good {
+  color: var(--mat-sys-primary);
+}
+
+.delta--bad {
+  color: var(--mat-sys-error);
+}
+
+/* Queue ------------------------------------------------------------------ */
+.queue {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.queue__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.6rem 0.6rem 0.6rem 0.75rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 12px;
+  background: var(--surface-container-low, var(--surface-1));
+}
+
+/* A fixed box so a portrait and a landscape thumbnail leave rows the same
+   height — a ragged left edge makes a queue much harder to scan. */
+.card__thumb {
+  flex: none;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface-3);
+}
+
+.card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.card__name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--on);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card__meta,
+.card__status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--on-var);
+  overflow-wrap: anywhere;
+}
+
+.card__status ng-icon,
+.card__meta ng-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+
+.card__status--err {
+  color: var(--mat-sys-error);
+}
+
+.card__actions {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.tag {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--surface-3);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+}
+
+.card--loading {
+  pointer-events: none;
+}
+
+.preparing {
+  padding: 1.5rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 14px;
+  background: var(--surface-1);
+}
+
+/* "Add more images", styled as a quiet secondary affordance. */
+.queue__add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  padding: 0.5rem 0.9rem;
+  border: 1px dashed var(--outline);
+  border-radius: 999px;
+  color: var(--on-var);
+  font: var(--mat-sys-label-large);
+  cursor: pointer;
+}
+
+.queue__add:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.queue__add:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

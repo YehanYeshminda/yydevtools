@@ -42,6 +42,8 @@ the homepage grid, search, command palette and this table all come from it.
 | **Base64 Converter** | Encode and decode text or files to and from Base64. |
 | **URL Encoder / Decoder** | Percent-encode or decode URLs and query values, and break a URL into its parts. |
 | **Image Compressor** | Shrink JPEG, PNG and HEIC images in bulk — by quality or to a target size, with Exif control. |
+| **Image Converter** | Convert between HEIC, JPEG, PNG, WebP and AVIF in bulk — iPhone photos included — without uploading them. |
+| **EXIF Viewer** | See the camera, timestamp and GPS location hidden in a photo, then strip it out without re-compressing. |
 | **Timestamp Converter** | Convert between Unix timestamps and human-readable dates. |
 
 ### Documents

@@ -23,8 +23,17 @@ import { simd } from 'wasm-feature-detect';
 
 import { extractExifSegment, insertExifSegment } from './exif';
 
-/** Output types the tool offers. Both are lossy and widely supported. */
-export type CodecFormat = 'image/jpeg' | 'image/webp';
+/**
+ * Output types the image tools offer.
+ *
+ * JPEG and WebP have WebAssembly encoders bundled (mozjpeg, libwebp) and beat
+ * the browser at any given quality. PNG and AVIF go through the canvas instead:
+ * PNG because it is lossless either way, so a wasm encoder would only shave
+ * bytes off an already-correct file, and AVIF because shipping a second ~2 MB
+ * binary to serve one format is not a trade worth making. AVIF is therefore
+ * only offered where the browser can encode it — see `supports`.
+ */
+export type CodecFormat = 'image/jpeg' | 'image/webp' | 'image/png' | 'image/avif';
 
 /** Which encoder produced a result, so the UI can say when it fell back. */
 export type Codec = 'wasm' | 'canvas';
@@ -189,6 +198,31 @@ const api = {
     return transfer(encoded, [encoded.buffer]);
   },
 
+  /**
+   * Whether this browser can actually produce `format`.
+   *
+   * JPEG, WebP and PNG are universal — the first two additionally have their own
+   * encoders bundled. AVIF is the only real question, and it is answered by
+   * encoding a single pixel and seeing what type comes back, which is the only
+   * honest test: `convertToBlob` silently substitutes PNG rather than failing.
+   */
+  async supports(format: CodecFormat): Promise<boolean> {
+    if (format !== 'image/avif') {
+      return true;
+    }
+    try {
+      const canvas = new OffscreenCanvas(1, 1);
+      const context = canvas.getContext('2d');
+      if (!context) {
+        return false;
+      }
+      const blob = await canvas.convertToBlob({ type: format, quality: 0.5 });
+      return blob.type === format;
+    } catch {
+      return false;
+    }
+  },
+
   async close(): Promise<void> {
     cached?.bitmap.close();
     cached = null;
@@ -225,24 +259,51 @@ async function encodeOnce(
   format: CodecFormat,
   quality: number,
 ): Promise<Attempt> {
-  try {
-    const buffer =
-      format === 'image/jpeg'
-        ? await encodeJpeg(pixels, quality)
-        : await encodeWebp(pixels, quality);
-    return { buffer, codec: 'wasm', quality, targetMissed: false };
-  } catch {
-    // The codec could not be loaded or ran out of memory. The browser's own
-    // encoder is always there.
-    const canvas = new OffscreenCanvas(pixels.width, pixels.height);
-    const context = canvas.getContext('2d');
-    if (!context) {
-      throw new Error('This browser could not open a drawing surface for the image.');
+  if (format === 'image/jpeg' || format === 'image/webp') {
+    try {
+      const buffer =
+        format === 'image/jpeg'
+          ? await encodeJpeg(pixels, quality)
+          : await encodeWebp(pixels, quality);
+      return { buffer, codec: 'wasm', quality, targetMissed: false };
+    } catch {
+      // The codec could not be loaded or ran out of memory. The browser's own
+      // encoder is always there.
     }
-    context.putImageData(pixels, 0, 0);
-    const blob = await canvas.convertToBlob({ type: format, quality: quality / 100 });
-    return { buffer: await blob.arrayBuffer(), codec: 'canvas', quality, targetMissed: false };
   }
+  const buffer = await encodeViaCanvas(pixels, format, quality);
+  return { buffer, codec: 'canvas', quality, targetMissed: false };
+}
+
+/**
+ * Encodes through the browser's own encoder.
+ *
+ * The returned type is checked rather than trusted. `convertToBlob` is specified
+ * to fall back to PNG for any type it cannot produce, so on a browser without
+ * AVIF encoding this would otherwise hand back a PNG in a file named `.avif` —
+ * a corrupt-looking download and a lie about what the tool did.
+ */
+async function encodeViaCanvas(
+  pixels: ImageData,
+  format: CodecFormat,
+  quality: number,
+): Promise<ArrayBuffer> {
+  const canvas = new OffscreenCanvas(pixels.width, pixels.height);
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('This browser could not open a drawing surface for the image.');
+  }
+  context.putImageData(pixels, 0, 0);
+  const blob = await canvas.convertToBlob({ type: format, quality: quality / 100 });
+  if (blob.type !== format) {
+    throw new Error(`This browser cannot save ${label(format)} images.`);
+  }
+  return blob.arrayBuffer();
+}
+
+/** Human-readable format name, for messages people actually read. */
+function label(format: CodecFormat): string {
+  return format.replace('image/', '').toUpperCase();
 }
 
 /**

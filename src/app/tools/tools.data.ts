@@ -165,6 +165,24 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'image-converter',
+    name: 'Image Converter',
+    description:
+      'Convert images between HEIC, JPEG, PNG, WebP and AVIF in bulk, without uploading them.',
+    icon: 'matSyncAltOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
+    slug: 'exif-viewer',
+    name: 'EXIF Viewer',
+    description:
+      'See the camera, timestamp and GPS location hidden in a photo, then strip it out losslessly.',
+    icon: 'matLocationOnOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'timestamp-converter',
     name: 'Timestamp Converter',
     description: 'Convert between Unix timestamps and human-readable dates.',

@@ -1,0 +1,262 @@
+/* Panel, dropzone, actions, status lines and notes come from ../tool-shell.css.
+   Only the inspector layout lives here. */
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Preview column --------------------------------------------------------- */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+@media (max-width: 800px) {
+  .side {
+    position: static;
+  }
+}
+
+/* `contain` rather than `cover`: this is evidence about a specific file, so
+   cropping it to fit a box would be the wrong call. */
+.side__preview {
+  display: block;
+  width: 100%;
+  max-height: 18rem;
+  object-fit: contain;
+  border: 1px solid var(--outline-2);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+}
+
+.fact dt {
+  flex: none;
+  width: 5.5rem;
+  color: var(--on-var);
+}
+
+.fact dd {
+  margin: 0;
+  color: var(--on);
+  min-width: 0;
+}
+
+.fact__name {
+  overflow-wrap: anywhere;
+}
+
+/* Findings column -------------------------------------------------------- */
+.findings {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.findings__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* The risk card — the headline of the whole tool ------------------------- */
+.risk {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--outline);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--star) 12%, transparent);
+}
+
+/* A file that pins down where you were is a different order of exposure from
+   one that only names a camera, so it gets the error palette rather than the
+   warning one. */
+.risk--located {
+  border-color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.risk__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font: var(--mat-sys-title-small);
+}
+
+.risk__title ng-icon {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.risk__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.coords {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+
+.coords__value {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.coords__note {
+  margin: 0;
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+
+/* Strip row -------------------------------------------------------------- */
+.strip__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 14px;
+  background: var(--surface-1);
+}
+
+.strip__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 12rem;
+  flex: 1 1 20rem;
+}
+
+.strip__title {
+  font-size: 0.98rem;
+  color: var(--on);
+}
+
+.strip__hint {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--on-var);
+}
+
+/* Grouped tag tables ----------------------------------------------------- */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.group__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.group__flag {
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mat-sys-error) 16%, transparent);
+  color: var(--mat-sys-error);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.group__rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border: 1px solid var(--outline-2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.group__row {
+  display: flex;
+  gap: 1rem;
+  padding: 0.5rem 0.85rem;
+  border-bottom: 1px solid var(--outline-2);
+  font-size: 0.87rem;
+}
+
+.group__row:last-child {
+  border-bottom: none;
+}
+
+.group__row:nth-child(odd) {
+  background: var(--surface-1);
+}
+
+.group__row dt {
+  flex: none;
+  width: 11rem;
+  color: var(--on-var);
+}
+
+.group__row dd {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--on);
+  font-family: var(--mono);
+  font-size: 0.83rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .group__row {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .group__row dt {
+    width: auto;
+  }
+}

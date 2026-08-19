@@ -722,6 +722,103 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['base64-converter', 'json-formatter', 'timestamp-converter'],
   },
 
+  'image-converter': {
+    slug: 'image-converter',
+    intro: [
+      'Convert images from one format to another — HEIC to JPEG, PNG to WebP, anything to AVIF — a whole batch at a time. The most common reason to need this is an iPhone: photos come off it as HEIC, which saves space on the phone but which plenty of websites, form uploads and older programs simply refuse to open. Converting them to JPEG makes them work everywhere again.',
+      'What makes this different from most converters is where the work happens. Your photos are decoded and re-encoded by WebAssembly codecs running inside this browser tab, so no image is ever sent to a server. That matters more than it sounds: a photo is not just a picture, it is also a record of the camera that took it and, very often, the exact coordinates it was taken at. Uploading holiday pictures to an unknown converter hands all of that to a stranger.',
+    ],
+    steps: [
+      'Drop your images in, or click to choose them — up to 30 at a time.',
+      'Pick the format you want out: JPEG, PNG, WebP or AVIF.',
+      'Adjust the quality if the format is a lossy one, and watch the new size update.',
+      'Download the results one by one, or all together as a zip.',
+    ],
+    features: [
+      'Reads HEIC and HEIF straight off an iPhone, plus JPEG, PNG, WebP, AVIF and GIF.',
+      'Writes JPEG and WebP with the mozjpeg and libwebp encoders, which beat the browser at any given quality.',
+      'Writes PNG losslessly, and AVIF wherever the browser supports it.',
+      'Batch conversion with a single zip download.',
+      'Runs entirely on your device — no upload, no account, no watermark.',
+    ],
+    faq: [
+      {
+        q: 'How do I convert HEIC photos from my iPhone to JPEG?',
+        a: 'Drop the .heic files in and choose JPEG as the output format. The photos are decoded in your browser and converted straight away, then you can download them individually or as a zip. Nothing is uploaded, which is worth caring about given how much personal information a phone photo carries.',
+      },
+      {
+        q: 'Which format should I choose?',
+        a: 'JPEG if the image has to work everywhere — email attachments, older software, upload forms that reject anything unusual. WebP if it is going on a website, since it is roughly 30% smaller than JPEG at the same visual quality and every current browser reads it. PNG when you need transparency or a pixel-exact copy. AVIF gives the smallest files of all but is slower to make and not yet readable everywhere.',
+      },
+      {
+        q: 'Does converting lose quality?',
+        a: 'Converting to PNG does not — it is lossless, so every pixel survives exactly. JPEG, WebP and AVIF are lossy formats, so some detail is discarded to save space; the quality slider controls how much. Converting a JPEG to another lossy format re-compresses it, so going back and forth repeatedly will slowly degrade an image. Convert from the original whenever you can.',
+      },
+      {
+        q: 'Why is AVIF sometimes missing from the list?',
+        a: 'AVIF is only offered when your browser can actually create AVIF files, which is checked by encoding a test pixel when the page loads. Rather than show an option that would fail, the tool hides it. Chrome and Edge can generally write AVIF; some other browsers can display it but not produce it.',
+      },
+      {
+        q: 'Is the metadata kept when I convert?',
+        a: 'Where the target format can hold it, yes — converting is a format change, not a clean-up, so the Exif is carried across into JPEG output. If you want it gone, the EXIF Viewer tool shows you exactly what is in there and removes it without re-compressing the picture.',
+      },
+      {
+        q: 'Are my images uploaded anywhere?',
+        a: 'No. The decoding and encoding both run in your browser using WebAssembly, so the files never leave your device. You can confirm it by opening this page, disconnecting from the internet, and converting an image anyway — it still works.',
+      },
+    ],
+    related: ['image-compressor', 'exif-viewer', 'image-pdf'],
+  },
+
+  'exif-viewer': {
+    slug: 'exif-viewer',
+    intro: [
+      'Every photo carries more than the picture. Cameras and phones quietly write a block of metadata into the file — the make and model that took it, the lens, the exposure, the exact second the shutter opened and, if location services were on, the precise coordinates you were standing at. This tool reads all of it back out and shows it to you, grouped so it can actually be read rather than dumped as a wall of tag names.',
+      'Then it removes it. The usual way to strip metadata is to open the photo and re-save it, which works but re-compresses the image and leaves it visibly worse than the original. This tool edits the file container instead — a JPEG loses its Exif segment, a PNG loses its text chunks — and copies the compressed image data across byte for byte. The clean copy you download is pixel-identical to the one you put in.',
+    ],
+    steps: [
+      'Drop in a photo — JPEG, PNG, HEIC, WebP, AVIF or TIFF.',
+      'Read the summary of what the file gives away, including any GPS coordinates.',
+      'Scroll the grouped tables to see every field the file contains.',
+      'Download a clean copy with the metadata removed, or copy the details out as text.',
+    ],
+    features: [
+      'Shows every readable field, grouped into camera, exposure, location, dates and authoring.',
+      'Flags the identifying parts explicitly: location, serial numbers, author names and timestamps.',
+      'Converts GPS tags into real decimal coordinates, signed for the southern and western hemispheres.',
+      'Strips JPEG and PNG metadata losslessly — no re-compression, no quality loss.',
+      'Reads HEIC photos straight from an iPhone.',
+      'Runs entirely on your device — the file, and the location inside it, are never uploaded.',
+    ],
+    faq: [
+      {
+        q: 'What is EXIF data?',
+        a: 'EXIF (Exchangeable Image File Format) is a block of information a camera writes into a photo alongside the image itself. It typically records the camera make and model, the lens, the shutter speed, aperture and ISO, the orientation, the date and time to the second, and — if the device had location services enabled — the GPS coordinates where the photo was taken.',
+      },
+      {
+        q: 'Does a photo really contain my location?',
+        a: 'Often, yes. Phones embed GPS coordinates by default unless you have turned location off for the camera. The coordinates are precise enough to identify a specific building, so a photo taken at home and posted publicly can reveal where you live. This tool shows you the exact coordinates if they are present, so you can see for yourself before sharing.',
+      },
+      {
+        q: 'Do social networks remove EXIF for me?',
+        a: 'Most large platforms do strip metadata when they re-encode an upload, but you should not rely on it. It varies by platform and by how the file was sent — a photo attached to an email, uploaded to a file-sharing service, posted to a smaller site, or sent as a "document" rather than a photo in a chat app frequently keeps everything intact.',
+      },
+      {
+        q: 'Will removing the metadata damage my photo?',
+        a: 'No. The image data is copied across untouched — only the metadata sections of the file are dropped — so the clean copy is pixel-identical to the original. That is different from tools that re-save the image, which decompress and recompress it and leave visible artefacts.',
+      },
+      {
+        q: 'Why can it not strip metadata from every format?',
+        a: 'Lossless stripping means editing the file container directly, which this does for JPEG and PNG. WebP, AVIF and HEIC store metadata differently, and removing it there without re-encoding the image is not something the tool will fake. For those, convert the image to JPEG or PNG first, then strip it here.',
+      },
+      {
+        q: 'Are the GPS coordinates sent to a map service?',
+        a: 'No. The coordinates are shown on this page and can be copied to your clipboard, but they are never sent anywhere — deliberately, because embedding a map would mean handing the exact place your photo was taken to a third party, which is the opposite of what this tool is for.',
+      },
+    ],
+    related: ['image-converter', 'image-compressor', 'pdf-viewer'],
+  },
+
   'image-compressor': {
     slug: 'image-compressor',
     intro: [

@@ -1136,6 +1136,37 @@ in the ranked list above are cross-referenced, not repeated.
     ignored. Logs are capped at 200 entries and cleared on every re-render.
     8 new specs cover the injection points; 343 tests pass.
 
+- [x] **Image Converter** — *(done 2026-08-19)* at `/tools/image-converter`.
+      Converts between HEIC, JPEG, PNG, WebP and AVIF in bulk. Deliberately a
+      *differentiating* tool rather than another commodity one: every competitor
+      uploads your photos to convert HEIC, which hands a stranger the GPS
+      coordinates inside them. Built on codecs already shipped for the
+      compressor — mozjpeg and libwebp for JPEG/WebP, the canvas for PNG
+      (lossless anyway) and AVIF. AVIF is feature-detected by encoding a test
+      pixel, because `convertToBlob` silently substitutes PNG for a type it
+      cannot write, which would otherwise hand back a PNG named `.avif`; the
+      encoder verifies `blob.type` for the same reason. Verified in-browser that
+      JPEG/PNG/WebP outputs carry genuinely correct magic bytes.
+
+- [x] **EXIF Viewer & metadata remover** — *(done 2026-08-19)* at
+      `/tools/exif-viewer`. Shows every readable field grouped into Camera,
+      Exposure, Location, Date & time and Authoring, flags what identifies you
+      (GPS, serial numbers, author names, timestamps), and turns GPS tags into
+      real signed decimal coordinates. The differentiator is the removal: it
+      edits the container — dropping the JPEG APP1 segment or the PNG
+      text/eXIf chunks — rather than re-encoding, so the clean copy is
+      pixel-identical to the original. Verified in-browser by decoding both
+      files and comparing every pixel, and by the stripped file landing at
+      exactly the pristine original's byte count. Coordinates are deliberately
+      never sent to a map service.
+
+  - Shared groundwork: `image-codec.{client,worker}.ts` and `exif.ts` moved from
+    `tools/image-compressor/` to `core/image/`, so all three image tools share
+    one codec pipeline. New `core/image/metadata.ts` (22 specs) does the full
+    tag grouping and the lossless PNG chunk strip. Group matching normalises
+    spaces because exifreader names PNG fields "Image Width" and Exif fields
+    "ImageWidth" — without that every PNG field fell into "Other".
+
 **Tier 2 — solid follow-ups, still fully in-browser:**
 
 - [x] **Images → PDF, PDF → Images** — see #1 above (the strongest single

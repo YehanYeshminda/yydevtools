@@ -5,7 +5,7 @@
  * prerender has no `Worker`. There is no fallback: without a worker there is no
  * encoder either, so the caller is told plainly instead.
  */
-import { WorkerProxy, workersAvailable } from '../../core/worker-proxy';
+import { WorkerProxy, workersAvailable } from '../worker-proxy';
 import type {
   Codec,
   CodecFormat,
@@ -64,6 +64,11 @@ export class ImageCodecClient {
       targetMissed: result.targetMissed,
       keptMetadata: result.keptMetadata,
     };
+  }
+
+  /** Whether this browser can encode `format` at all — only AVIF is in doubt. */
+  supports(format: CodecFormat): Promise<boolean> {
+    return this.proxy.call((api) => api.supports(format));
   }
 
   /** Releases the cached image without tearing down the worker. */

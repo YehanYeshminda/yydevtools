@@ -24,8 +24,8 @@ import { Skeleton } from '../../shared/skeleton/skeleton';
 import { Spinner } from '../../shared/spinner/spinner';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
-import type { Metadata } from './exif';
-import { ImageCodecClient, type CodecFormat } from './image-codec.client';
+import type { Metadata } from '../../core/image/exif';
+import { ImageCodecClient, type CodecFormat } from '../../core/image/image-codec.client';
 
 /** How the output size is chosen. */
 export type SizeMode = 'quality' | 'target';
@@ -299,7 +299,7 @@ export class ImageCompressorTool implements OnDestroy {
     try {
       const [{ load }, { summarise }] = await Promise.all([
         import('exifreader'),
-        import('./exif'),
+        import('../../core/image/exif'),
       ]);
       const tags = await load(item.file, { async: true, expanded: false });
       const metadata = summarise(tags as never);

@@ -1,0 +1,165 @@
+<app-tool-page slug="exif-viewer">
+  See every piece of metadata hidden inside a photo — the camera, the timestamp, and very often
+  the exact place it was taken — then strip it out without re-compressing the image.
+</app-tool-page>
+
+<div class="panel">
+  @if (!hasFile()) {
+    <app-dropzone accept="image/*,.heic,.heif" (filesSelected)="inspect($event)">
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matSearchOutline" />
+      <span class="dropzone__title">Drop a photo here, or click to choose</span>
+      <span class="dropzone__hint">
+        JPEG, PNG, HEIC, WebP, AVIF and TIFF — nothing is uploaded
+      </span>
+    </app-dropzone>
+  } @else {
+    <div class="workspace">
+      <!-- Preview + file facts ---------------------------------------- -->
+      <aside class="side">
+        @if (previewUrl(); as url) {
+          <img class="side__preview" [src]="url" [alt]="'Preview of ' + name()" />
+        } @else {
+          <app-skeleton class="side__preview" />
+        }
+
+        <dl class="facts">
+          <div class="fact">
+            <dt>File</dt>
+            <dd class="fact__name">{{ name() }}</dd>
+          </div>
+          <div class="fact">
+            <dt>Size</dt>
+            <dd>{{ formatBytes(size()) }}</dd>
+          </div>
+          @if (width()) {
+            <div class="fact">
+              <dt>Dimensions</dt>
+              <dd>{{ width() }} × {{ height() }}</dd>
+            </div>
+          }
+        </dl>
+
+        <div class="actions">
+          <button matButton (click)="reset()">
+            <ng-icon name="matRefreshOutline" />
+            Choose another
+          </button>
+        </div>
+      </aside>
+
+      <!-- Findings ---------------------------------------------------- -->
+      <div class="findings">
+        @if (loading()) {
+          <app-skeleton [lines]="6" />
+        } @else if (error(); as message) {
+          <p class="status status--err" role="alert">
+            <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+            {{ message }}
+          </p>
+        } @else if (!hasMetadata()) {
+          <p class="status status--ok" role="status">
+            <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
+            This image carries no readable metadata — nothing about the camera, the time or the
+            place is stored in it.
+          </p>
+        } @else {
+          <!-- What it gives away ---------------------------------------- -->
+          @if (report()?.warnings?.length) {
+            <section class="risk" [class.risk--located]="report()?.hasLocation">
+              <h2 class="risk__title">
+                <ng-icon
+                  aria-hidden="true"
+                  [name]="report()?.hasLocation ? 'matLocationOnOutline' : 'matWarningOutline'"
+                />
+                What this file gives away
+              </h2>
+              <ul class="risk__list">
+                @for (warning of report()?.warnings; track warning) {
+                  <li>{{ warning }}</li>
+                }
+              </ul>
+
+              @if (location(); as place) {
+                <div class="coords">
+                  <span class="coords__value">{{ place.text }}</span>
+                  <button matButton (click)="copyLocation()">
+                    <ng-icon name="matContentCopyOutline" />
+                    Copy coordinates
+                  </button>
+                </div>
+                <p class="coords__note">
+                  Shown here only — the coordinates are not sent to a map service or anywhere else.
+                </p>
+              }
+            </section>
+          }
+
+          <!-- Remove it ------------------------------------------------- -->
+          <section class="strip">
+            @if (stripped(); as clean) {
+              <div class="strip__row">
+                <div class="strip__text">
+                  <strong class="strip__title">Remove all of it</strong>
+                  <span class="strip__hint">
+                    Deletes {{ formatBytes(clean.saved) }} of metadata by editing the container —
+                    the image itself is copied across untouched, so nothing is re-compressed.
+                  </span>
+                </div>
+                <button matButton="filled" (click)="downloadClean()">
+                  <ng-icon name="matDownloadOutline" />
+                  Download clean copy
+                </button>
+              </div>
+            } @else if (stripUnsupported()) {
+              <p class="note">
+                <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+                This file's metadata can be read but not removed without re-compressing the image,
+                which would visibly degrade it. Convert it to JPEG or PNG first — the
+                <a routerLink="/tools/image-converter">Image Converter</a> does that — then strip it
+                here.
+              </p>
+            }
+          </section>
+
+          <!-- Everything, grouped --------------------------------------- -->
+          <div class="findings__head">
+            <h2 class="section__title">
+              {{ report()?.count }} field{{ report()?.count === 1 ? '' : 's' }} found
+            </h2>
+            <button matButton (click)="copyAll()">
+              <ng-icon name="matContentCopyOutline" />
+              Copy all
+            </button>
+          </div>
+
+          @for (group of report()?.groups; track group.name) {
+            <section class="group">
+              <h3 class="group__title">
+                {{ group.name }}
+                @if (group.sensitive) {
+                  <span class="group__flag">identifying</span>
+                }
+              </h3>
+              <dl class="group__rows">
+                @for (field of group.fields; track field.label) {
+                  <div class="group__row">
+                    <dt>{{ field.label }}</dt>
+                    <dd>{{ field.value }}</dd>
+                  </div>
+                }
+              </dl>
+            </section>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+  The file is read inside this tab and never uploaded — which matters more here than anywhere else
+  on this site, because the whole point of the tool is the sensitive data your photos carry.
+</p>
+
+<app-tool-content slug="exif-viewer" />

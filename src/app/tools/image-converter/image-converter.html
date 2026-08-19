@@ -1,0 +1,181 @@
+<app-tool-page slug="image-converter">
+  Convert images between JPEG, PNG, WebP and AVIF — including HEIC photos straight from an
+  iPhone. Everything runs on your own device; your images are never uploaded.
+</app-tool-page>
+
+<div class="panel">
+  @if (hasItems()) {
+    <div class="workspace">
+      <!-- Controls ---------------------------------------------------- -->
+      <div class="controls">
+        <div class="control">
+          <span class="control__label" id="format-label">Convert to</span>
+          <div class="chips" role="group" aria-labelledby="format-label">
+            @for (option of available(); track option.value) {
+              <button
+                type="button"
+                class="chip"
+                [class.chip--on]="format() === option.value"
+                [attr.aria-pressed]="format() === option.value"
+                (click)="setFormat(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+          <span class="field__hint">{{ current().hint }}</span>
+        </div>
+
+        @if (showQuality()) {
+          <div class="control">
+            <label class="control__label" for="quality-slider">
+              Quality — {{ qualityPercent() }}%
+            </label>
+            <mat-slider min="0.1" max="1" step="0.02" class="quality">
+              <input
+                matSliderThumb
+                id="quality-slider"
+                [value]="quality()"
+                (valueChange)="onQualityChange($event)"
+                aria-label="Encoding quality"
+              />
+            </mat-slider>
+          </div>
+        } @else {
+          <p class="note">
+            <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+            PNG is lossless, so there is no quality to choose — every pixel is kept exactly.
+          </p>
+        }
+
+        <div class="actions">
+          <button matButton="filled" (click)="downloadAll()" [disabled]="totals().count === 0 || busy()">
+            <ng-icon name="matDownloadOutline" />
+            @if (totals().count > 1) {
+              Download all ({{ totals().count }}) as .zip
+            } @else {
+              Download
+            }
+          </button>
+          <button matButton (click)="reset()">
+            <ng-icon name="matRefreshOutline" />
+            Start over
+          </button>
+        </div>
+
+        @if (totals().count > 1) {
+          <p class="summary" role="status">
+            {{ formatBytes(totals().original) }} → {{ formatBytes(totals().converted) }}
+            @if (totals().percent < 0) {
+              <span class="delta delta--good">({{ -totals().percent }}% smaller)</span>
+            } @else if (totals().percent > 0) {
+              <span class="delta delta--bad">({{ totals().percent }}% larger)</span>
+            }
+          </p>
+        }
+      </div>
+
+      <!-- Queue ------------------------------------------------------- -->
+      <section class="queue" aria-label="Image queue">
+        <ul class="queue__list">
+          @for (item of items(); track item.id) {
+            <li class="card">
+              <img class="card__thumb" [src]="item.previewUrl" alt="" />
+              <div class="card__body">
+                <span class="card__name">{{ item.name }}</span>
+                <span class="card__meta">
+                  {{ item.width }} × {{ item.height }} · {{ formatBytes(item.size) }}
+                  @if (item.heic) {
+                    <span class="tag">HEIC</span>
+                  }
+                </span>
+
+                @if (item.working) {
+                  <span class="card__status">
+                    <app-spinner [size]="16" />
+                    Converting…
+                  </span>
+                } @else if (item.error) {
+                  <span class="card__status card__status--err">
+                    <ng-icon aria-hidden="true" name="matErrorOutline" />
+                    {{ item.error }}
+                  </span>
+                } @else if (item.output) {
+                  <span class="card__status">
+                    <ng-icon aria-hidden="true" name="matArrowForwardOutline" />
+                    {{ item.output.name }} · {{ formatBytes(item.output.size) }}
+                    @if (changePercent(item) < 0) {
+                      <span class="delta delta--good">−{{ -changePercent(item) }}%</span>
+                    } @else if (changePercent(item) > 0) {
+                      <span class="delta delta--bad">+{{ changePercent(item) }}%</span>
+                    }
+                  </span>
+                }
+              </div>
+
+              <div class="card__actions">
+                <button
+                  matIconButton
+                  [disabled]="!item.output"
+                  [attr.aria-label]="'Download ' + item.name"
+                  (click)="download(item)"
+                >
+                  <ng-icon name="matDownloadOutline" />
+                </button>
+                <button
+                  matIconButton
+                  [attr.aria-label]="'Remove ' + item.name"
+                  (click)="remove(item.id)"
+                >
+                  <ng-icon name="matCloseOutline" />
+                </button>
+              </div>
+            </li>
+          }
+
+          <!-- Files still opening — for a HEIC this is the decoder downloading. -->
+          @for (row of preparingRange(); track row) {
+            <li class="card card--loading" role="status" aria-label="Preparing image…">
+              <app-skeleton class="card__thumb" />
+              <div class="card__body">
+                <app-skeleton [lines]="2" />
+              </div>
+            </li>
+          }
+        </ul>
+
+        <label class="queue__add">
+          <input
+            type="file"
+            accept="image/*,.heic,.heif"
+            multiple
+            class="dropzone__input"
+            (change)="onFileSelected($event)"
+          />
+          <ng-icon aria-hidden="true" name="matAddOutline" />
+          Add more images
+        </label>
+      </section>
+    </div>
+  } @else if (preparing()) {
+    <div class="preparing" role="status" aria-label="Preparing your images…">
+      <app-skeleton [lines]="3" />
+    </div>
+  } @else {
+    <app-dropzone accept="image/*,.heic,.heif" [multiple]="true" (filesSelected)="addFiles($event)">
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matSyncAltOutline" />
+      <span class="dropzone__title">Drop images here, or click to choose</span>
+      <span class="dropzone__hint">
+        HEIC, JPEG, PNG, WebP, AVIF and GIF — up to {{ maxFiles }} files, 20 MB each
+      </span>
+    </app-dropzone>
+  }
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+  Conversion happens entirely in this tab using WebAssembly codecs. Nothing is uploaded, so your
+  photos — and the location data inside them — never leave your device.
+</p>
+
+<app-tool-content slug="image-converter" />

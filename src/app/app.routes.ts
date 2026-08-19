@@ -145,6 +145,27 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/image-converter',
+    loadComponent: () =>
+      import('./tools/image-converter/image-converter').then((m) => m.ImageConverterTool),
+    title: 'Image Converter — HEIC, JPEG, PNG, WebP & AVIF — YYDevTools',
+    data: {
+      description:
+        'Convert images between HEIC, JPEG, PNG, WebP and AVIF in bulk. Runs entirely in your ' +
+        'browser — your photos are never uploaded. Free, with no sign-up.',
+    },
+  },
+  {
+    path: 'tools/exif-viewer',
+    loadComponent: () => import('./tools/exif-viewer/exif-viewer').then((m) => m.ExifViewerTool),
+    title: 'EXIF Viewer & Metadata Remover — YYDevTools',
+    data: {
+      description:
+        'See the hidden metadata in a photo — camera, timestamp and GPS location — then remove ' +
+        'it without re-compressing the image. Nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/image-compressor',
     loadComponent: () =>
       import('./tools/image-compressor/image-compressor').then((m) => m.ImageCompressorTool),
