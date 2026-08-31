@@ -48,7 +48,9 @@
   margin-bottom: 0;
 }
 
-/* FAQ — native <details> so the answers are in the HTML and work without JS. */
+/* FAQ — answers are rendered open rather than behind a disclosure widget, so
+   the writing is on the page for the reader who scrolled to it rather than only
+   for the one who thinks to click. */
 .tc__faq {
   display: flex;
   flex-direction: column;
@@ -63,41 +65,12 @@
 }
 
 .tc__q {
-  padding: 0.9rem 1rem;
+  margin: 0;
+  padding: 0.9rem 1rem 0.35rem;
   font-size: 1rem;
   font-weight: 600;
+  line-height: 1.4;
   color: var(--mat-sys-on-surface);
-  cursor: pointer;
-  list-style: none;
-  position: relative;
-  padding-right: 2.5rem;
-}
-
-/* Swap the default disclosure triangle for a rotating chevron. */
-.tc__q::-webkit-details-marker {
-  display: none;
-}
-
-.tc__q::after {
-  content: '';
-  position: absolute;
-  right: 1.1rem;
-  top: 50%;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-right: 2px solid var(--mat-sys-on-surface-variant);
-  border-bottom: 2px solid var(--mat-sys-on-surface-variant);
-  transform: translateY(-70%) rotate(45deg);
-  transition: transform 0.15s ease;
-}
-
-.tc__faqitem[open] .tc__q::after {
-  transform: translateY(-30%) rotate(225deg);
-}
-
-.tc__q:focus-visible {
-  outline: 2px solid var(--mat-sys-primary);
-  outline-offset: -2px;
 }
 
 .tc__a {

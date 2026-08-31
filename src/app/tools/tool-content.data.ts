@@ -26,6 +26,30 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'JSONPath queries for pulling matching nodes out of large documents.',
       'Everything runs in your browser, so sensitive payloads never leave your machine.',
     ],
+    sections: [
+      {
+        heading: 'The JSON rules that catch people out',
+        body: [
+          'JSON is small enough to describe in a paragraph, which makes its strictness surprising. Keys must be double-quoted strings — single quotes are not JSON, and neither are bare keys, however much they look like JavaScript. Trailing commas are invalid. Comments do not exist. `NaN`, `Infinity` and `undefined` are not values. Numbers cannot have leading zeros or a trailing decimal point.',
+          'Most "invalid JSON" errors are one of those, and most come from the same root cause: JSON looks like a JavaScript object literal but is a strictly smaller language. Something pasted from code will often be rejected for a comma or a quote that JavaScript would have accepted.',
+          'The other classic is duplicate keys. The specification does not forbid them, and parsers generally keep the last occurrence silently — so a document can be technically valid and still lose data on the way in.',
+        ],
+      },
+      {
+        heading: 'Formatting, minifying, and what neither changes',
+        body: [
+          'Formatting and minifying only move whitespace. They do not alter a single value, and the parsed result is identical either way — which is worth remembering when a formatted file looks different enough to feel changed. Minified JSON is for transmission, where every byte is paid for on every request; formatted JSON is for reading and for diffing, because a one-property change to a minified file is a change to the only line in it.',
+          'One genuine caveat: neither operation preserves key order as a guarantee. JSON objects are unordered by definition, and while most parsers happen to preserve insertion order, nothing in the format requires it. Code that depends on key order is depending on an implementation detail.',
+        ],
+      },
+      {
+        heading: 'The number problem nobody warns you about',
+        body: [
+          'JSON numbers have no size limit in the specification, but JavaScript parses them as IEEE 754 doubles, which hold integers exactly only up to 2^53 − 1. Beyond that, precision is silently lost — a 64-bit database identifier or a Twitter-style snowflake ID can come back as a different number than was sent, with no error anywhere.',
+          'The symptom is a record that cannot be found by the ID you just received, off by one or two at the end. The fix is on the producing side: send large identifiers as strings. If you are consuming an API that does not, you need a parser that handles big integers rather than the built-in one.',
+        ],
+      },
+    ],
     faq: [
       {
         q: 'Is my JSON uploaded anywhere?',
@@ -70,6 +94,23 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Optional and nullable fields are inferred from what varies across the sample.',
       'Runs entirely in your browser — your JSON never leaves the page.',
     ],
+    sections: [
+      {
+        heading: 'What can and cannot be inferred from a sample',
+        body: [
+          'Generating types from JSON is inference from evidence, and it is worth being clear about what the evidence supports. A sample proves that a field can hold a given kind of value. It cannot prove that the field is always present, that a string is always a date, that an empty array is an array of objects, or that a number is an integer rather than a float that happened to land on a round value.',
+          'This is why the quality of your output depends almost entirely on the quality of your sample. One record produces types that describe one record. Paste an array of many records and the generator can see which fields vary, which are sometimes absent, and which are sometimes null — turning guesses into optional and nullable markers that actually reflect the API.',
+          'The fields most often wrong are the ones that were null in your sample. Null tells you nothing about what the field holds when it is populated, so the generated type will be as vague as the evidence. Those are worth fixing by hand against the API documentation.',
+        ],
+      },
+      {
+        heading: 'Types are a claim, not a check',
+        body: [
+          'A TypeScript interface describing an API response is erased at compile time. It makes the compiler help you and does nothing at runtime — if the server returns a shape that contradicts it, nothing objects, and you get an undefined several layers deeper with no indication of where the assumption broke.',
+          'This is the honest limitation of generated types, and the reason JSON Schema is also offered here. A schema is data rather than syntax, so it can be validated at runtime, shared with consumers in other languages, and used to reject a bad payload at the boundary. The pragmatic combination is generated types for the editor and a runtime check at the edge where data enters your system.',
+        ],
+      },
+    ],
     faq: [
       {
         q: 'Which languages and schemas can it generate?',
@@ -108,6 +149,31 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Verifies HS256/384/512 with a secret, and RS/PS/ES256/384/512 with a PEM public key.',
       'Uses the browser Web Crypto API — no library and no network request.',
       'Tokens and keys never leave your browser.',
+    ],
+    sections: [
+      {
+        heading: 'Decoding is not verifying',
+        body: [
+          'This is the distinction that matters most about JWTs, and the one that produces real vulnerabilities. Decoding a token means Base64-decoding two of its three parts to read the header and the claims. Anyone can do it, to any token, without a key — the payload is not encrypted and was never intended to be.',
+          'Verifying means recomputing the signature over the header and payload with the correct key and confirming it matches. Only that step tells you the token was issued by who it claims and has not been altered. Reading a `role` claim from a decoded token and trusting it, without verifying the signature, means anyone can edit that claim to whatever they like and be believed.',
+          'The practical rule: decode freely for debugging, but never let a decoded claim influence a decision on the server until the signature has been checked.',
+        ],
+      },
+      {
+        heading: 'The attacks worth knowing about',
+        body: [
+          'The `alg: none` downgrade is the classic. The header names its own algorithm, so an attacker rewrites it to `none`, strips the signature and sends the token. A verifier that trusts the header rather than its own configuration accepts it. The fix is to decide the expected algorithm server-side and reject anything else, rather than asking the token what to do.',
+          'RS256-to-HS256 confusion is subtler and more dangerous. RS256 verifies with a public key; HS256 verifies with a shared secret. If a verifier takes the algorithm from the header and the key from configuration, an attacker can switch the header to HS256 and sign the token using the RSA public key as the HMAC secret — and the public key, being public, is something they already have. Again, pinning the algorithm defeats it.',
+          'Beyond signatures, verification is not complete without checking claims: `exp` for expiry, and `iss` and `aud` to confirm the token was issued by your provider for your service. A perfectly valid token from a different application is still not a token for yours.',
+        ],
+      },
+      {
+        heading: 'What does not belong in a token',
+        body: [
+          'Because the payload is readable by anyone holding the token, it should carry no secrets — no passwords, no keys, no personal data beyond what the client is entitled to see. A token that travels through browsers, proxy logs and error reports should be assumed to be visible.',
+          'Size is the other constraint people meet late. Tokens are sent on every request, usually in a header, and headers have limits — stuffing a long list of permissions into a JWT eventually produces requests that a proxy rejects. Keep tokens small, reference data by identifier, and remember that a JWT cannot be revoked before it expires unless you maintain a deny-list, which is why short lifetimes and refresh tokens exist.',
+        ],
+      },
     ],
     faq: [
       {
@@ -238,6 +304,29 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Line counts for additions, removals and unchanged lines.',
       'Runs entirely in your browser; nothing you compare is uploaded.',
     ],
+    sections: [
+      {
+        heading: 'How a diff decides what changed',
+        body: [
+          'A diff is not comparing the two texts position by position. It is solving a specific problem: find the longest sequence of lines that appears in both documents in the same order. Everything in that sequence is unchanged; everything else is an insertion or a deletion. A modified line is simply a deletion and an insertion that happen to sit next to each other — which is why diffs describe changes in terms of added and removed lines rather than edited ones.',
+          'This framing explains a result that often looks wrong. When you insert a line near others that look similar, the algorithm may attribute the change differently than a human would, marking a later line as added rather than the one you actually typed. Both descriptions produce the same final document, and the algorithm chose the shorter one. It is optimising for the smallest set of changes, not for matching your intent.',
+        ],
+      },
+      {
+        heading: 'Split or unified, and when each is easier',
+        body: [
+          'The split view puts the two versions side by side and is best for reading — you can see both states of a line at once, which suits reviewing prose, configuration or anything where the old value matters as much as the new one.',
+          'The unified view interleaves both into one column with additions and removals marked. It is the format Git and code review tools use, it survives being pasted into a ticket or a chat message, and it is far easier to read on a narrow screen. That is why this tool switches to unified automatically on phones: two columns of monospace text at 375 pixels wide are roughly 25 characters each, which is unreadable.',
+        ],
+      },
+      {
+        heading: 'Whitespace, line endings and false differences',
+        body: [
+          'A surprising share of "everything changed" diffs are not real changes. The usual cause is line endings: Windows ends lines with a carriage return and a newline, Unix and macOS with a newline alone. Open a file on the wrong platform, save it, and every line differs by an invisible character — the content is identical and the diff is total.',
+          'Trailing whitespace and tabs-versus-spaces cause the same effect in miniature, which is why editors that strip trailing spaces on save can turn a one-line change into a fifty-line diff. If a diff looks impossibly large, suspect an invisible difference before assuming the file was rewritten.',
+        ],
+      },
+    ],
     faq: [
       {
         q: 'What is the difference between the split and unified views?',
@@ -277,6 +366,31 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Per-match capture group breakdown, with named groups labelled by name.',
       'Safe against zero-width and runaway matches; everything runs in your browser.',
     ],
+    sections: [
+      {
+        heading: 'Greedy, lazy, and why your match is too long',
+        body: [
+          'The single most common regex surprise is a pattern matching far more than intended. Quantifiers are greedy by default: `.*` takes as much as it possibly can, then gives characters back one at a time until the rest of the pattern fits. Run `<.*>` against `<b>bold</b>` and it matches the entire string, because the last `>` in the input satisfies the pattern just as well as the first.',
+          'Adding `?` makes a quantifier lazy — `<.*?>` stops at the first `>` and matches only `<b>`. Better still is to be specific about what you will accept: `<[^>]*>` says "anything that is not a closing bracket", which cannot overrun by construction and does not rely on backtracking to correct itself.',
+          'That last form is usually the right instinct. Most regex bugs come from `.` being permitted where something narrower was meant.',
+        ],
+      },
+      {
+        heading: 'Anchors, boundaries and the flags that change everything',
+        body: [
+          '`^` and `$` mean start and end of input — until you add the multiline flag, at which point they mean start and end of each line. That single flag changes the meaning of a great many patterns, and forgetting it is why a pattern that works on one line fails on a block of text.',
+          'The dotall flag matters for the opposite reason: `.` does not match a newline by default, so a pattern intended to span lines silently fails on multi-line input. Word boundaries (`\\b`) are the other place people trip, because "word" means letters, digits and underscore, so a boundary sits in the middle of "don\'t" and beside a hyphen.',
+          'The global flag has a subtler catch in JavaScript specifically: a global regex object keeps a lastIndex between calls, so reusing one across separate tests gives alternating results. If a pattern seems to work every other time, that is why.',
+        ],
+      },
+      {
+        heading: 'Catastrophic backtracking, and the limits of regex',
+        body: [
+          'Nested quantifiers over overlapping alternatives — the classic shape is `(a+)+b` — can make the engine explore exponentially many ways to split the input before concluding there is no match. On a short string it is instant; add thirty characters and it can hang for minutes. When such a pattern is applied to user input, that is a denial-of-service vector rather than merely a bug, which is why this tester bounds execution instead of letting the tab freeze.',
+          'It is also worth knowing where regex is the wrong tool entirely. HTML and other nested structures cannot be parsed by regular expressions, because matching arbitrarily nested tags requires counting and a regular language cannot count. You can match a specific known snippet, but any pattern claiming to parse HTML in general is wrong on some input. The same applies to nested JSON, and to email addresses, where the fully correct pattern is thousands of characters long and still not what you want — sending a confirmation message tests deliverability, which a pattern never can.',
+        ],
+      },
+    ],
     faq: [
       {
         q: 'Which regex flavour does this use?',
@@ -315,6 +429,30 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'A preview of the next scheduled run times.',
       'Local and UTC display, so the times match your deployment.',
       'Runs in your browser with no account needed.',
+    ],
+    sections: [
+      {
+        heading: 'Reading the five fields',
+        body: [
+          'A cron expression is five fields separated by spaces: minute, hour, day of month, month, day of week. Each accepts a number, a list ("1,15"), a range ("9-17"), a step ("*/15"), or an asterisk meaning every value. The whole expression fires when all fields match the current time, which is the key to reading one — it is an AND across fields, not a sequence of instructions.',
+          'That single rule explains most of what looks arbitrary. "0 9 * * 1-5" reads as: minute is 0, hour is 9, any day of the month, any month, and the weekday is Monday to Friday — nine in the morning on weekdays. "*/15 * * * *" is every minute divisible by 15, so four times an hour on the quarter hours, not "fifteen minutes after whenever it last ran".',
+        ],
+      },
+      {
+        heading: 'The day-of-month and day-of-week trap',
+        body: [
+          'There is one genuine irregularity in cron, and almost everyone meets it eventually. If both the day-of-month and day-of-week fields are restricted, cron treats them as OR rather than AND. So "0 0 13 * 5" does not mean "Friday the 13th" — it means midnight on the 13th of every month, and also midnight every Friday.',
+          'Expressing "Friday the 13th" in cron alone is not possible. The usual approach is to run daily and check the date inside the job. This is worth knowing before you rely on a schedule that quietly fires far more often than intended.',
+        ],
+      },
+      {
+        heading: 'Time zones, drift and the missing hour',
+        body: [
+          'Cron has no notion of a time zone; it fires on whatever clock the machine is set to. Most servers run on UTC, which is why a job scheduled for "9am" often runs at a time that surprises whoever wrote it. This tool shows the next runs in both your local time and UTC precisely so that mismatch is visible before deployment rather than after.',
+          'Daylight saving is the sharper edge. On a machine running local time, the spring transition skips an hour entirely — a job scheduled inside it may not run at all that day — and the autumn transition repeats an hour, so a job may run twice. Anything where a duplicate run would be harmful should either be scheduled in UTC or made idempotent, so that running twice does the same thing as running once.',
+          'Finally, cron guarantees when a job starts, not that it finished. If a job scheduled every five minutes takes seven, you will eventually have several copies running at once unless the job takes a lock.',
+        ],
+      },
     ],
     faq: [
       {
@@ -404,6 +542,23 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'One-click copy for each result.',
       'Runs in your browser with no sign-up.',
     ],
+    sections: [
+      {
+        heading: 'The conventions, and where each one belongs',
+        body: [
+          'Naming conventions are not decoration; each exists because some language or system needed a way to join words where spaces were not allowed. camelCase and PascalCase came from case-sensitive languages that wanted names to read as prose. snake_case came from environments where case was unreliable — early filesystems, SQL identifiers, C libraries — so an underscore was the only dependable separator. kebab-case belongs where the text ends up in a URL or a CSS selector, where underscores are awkward to type and easy to lose beneath an underline.',
+          'Which to use is usually decided for you by convention rather than taste. JavaScript and Java use camelCase for variables and PascalCase for types and classes. Python and Ruby use snake_case for functions and variables. CSS classes, HTML attributes and URL slugs use kebab-case. Environment variables and constants use CONSTANT_CASE, historically because shells treated uppercase as the convention for exported values. Going against the local convention is not an error, but it makes your code look foreign in its own repository.',
+        ],
+      },
+      {
+        heading: 'Why converting case is harder than it looks',
+        body: [
+          'The difficult part is not writing the words out again — it is working out where the words are. Splitting "parseHTMLDocument" correctly means recognising that a run of capitals is an acronym, and that the last capital in the run begins the next word, giving "parse", "HTML", "Document" rather than "parse", "H", "T", "M", "L", "Document". Handle that wrongly and every acronym in your codebase turns to gravel.',
+          'Numbers are the other place tools quietly disagree. Is "utf8Decode" two words or three? Should "v2Api" become "v2-api" or "v-2-api"? There is no universal answer, only a consistent one, which is why converting the same input twice should always produce the same output.',
+          'Slugs add a further step, because they have to survive being a URL. Accented characters are folded to their nearest ASCII equivalent, punctuation is dropped rather than percent-encoded, and runs of separators collapse to one — so "Crème Brûlée: a Recipe!" becomes "creme-brulee-a-recipe" rather than a string full of escapes.',
+        ],
+      },
+    ],
     faq: [
       {
         q: 'What is the difference between camelCase and PascalCase?',
@@ -442,6 +597,30 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Configurable keyword case, indent width and tabs.',
       'Reformats live as you edit.',
       'Runs in your browser; queries are never uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Why SQL formatting is not just indentation',
+        body: [
+          'Most languages have a settled house style. SQL never did. It arrived before anyone agreed on conventions, it is written by application developers and analysts and DBAs who each learned it somewhere different, and it is often generated by ORMs that emit one enormous line. The result is that a codebase can contain the same query written five ways, and reviewing a change means reading past the formatting to find the logic.',
+          'A formatter fixes that by throwing away how the query was typed and re-emitting it from its parsed structure. That is the important part: it parses first. It is not applying regular expressions to text, which is why it can put each column of a SELECT on its own line without being confused by a comma inside a string literal, or a keyword appearing inside an identifier.',
+          'The practical payoff shows up in code review. Once every query in a repository is formatted the same way, a diff shows the clause that actually changed instead of a wall of re-wrapped lines, and a subtle edit — an AND that became an OR, a join condition that lost a predicate — stops hiding in the noise.',
+        ],
+      },
+      {
+        heading: 'Dialects are not cosmetic',
+        body: [
+          'Choosing the right dialect matters more than it looks. SQL is a family of languages that agree on the middle and disagree at the edges, and the disagreements are exactly where a formatter can go wrong. T-SQL uses square brackets for identifiers; MySQL uses backticks; PostgreSQL uses double quotes. PostgreSQL has dollar-quoted strings, where $$ opens a literal that runs until the matching $$ and may contain anything at all. A formatter that does not know it is reading PostgreSQL will treat the contents of that block as code and mangle it.',
+          'The same applies to functions and operators that only exist in one dialect — PostgreSQL casts with ::, Oracle has CONNECT BY, BigQuery has array and struct syntax that looks like nothing else. Picking the dialect you actually use is the difference between a formatter that tidies your query and one that quietly breaks it.',
+        ],
+      },
+      {
+        heading: 'What a formatter will not tell you',
+        body: [
+          'Formatting is not validation, and this is worth being clear about. A query can be beautifully laid out and still be wrong: it can reference a table that does not exist, join on the wrong key, or return a Cartesian product because a condition was forgotten. The formatter only knows the shape of the language, not the shape of your database.',
+          'It also will not make a slow query fast. Nothing here changes the execution plan, and re-indenting a query has no effect on how the database runs it. If a query is slow, formatting it is a good first step only because a readable query is far easier to reason about — the formatter makes the problem visible, not absent.',
+        ],
+      },
     ],
     faq: [
       {
@@ -482,6 +661,30 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Options for indent width, tabs, semicolons and quote style.',
       'Plugins load on demand and formatting runs locally — nothing is uploaded.',
     ],
+    sections: [
+      {
+        heading: 'What an opinionated formatter is for',
+        body: [
+          'Prettier, which powers this tool, is deliberately opinionated: it offers very few options and makes most decisions for you. That sounds like a limitation and is in fact the entire point. A formatter with a hundred settings simply relocates the argument — instead of debating where the brace goes, a team debates the config file.',
+          'The mechanism is worth understanding, because it explains what the tool will and will not preserve. Prettier parses your code into a syntax tree, throws your formatting away entirely, and prints the tree back out according to its own rules, breaking lines to fit the print width. It is not adjusting your whitespace; it is regenerating the text from the structure. Your code\'s meaning is preserved exactly, its appearance is not preserved at all.',
+          'That is also why formatting is safe in a way that find-and-replace is not. Because the input must parse before anything is printed, a formatter cannot silently corrupt a string literal or a comment — and if the code does not parse, you get a syntax error with a position rather than a mangled file.',
+        ],
+      },
+      {
+        heading: 'The one setting that matters, and the one that does not',
+        body: [
+          'Print width is the setting worth thinking about. It is not a hard maximum; it is the width Prettier tries to stay within when deciding whether an expression fits on one line or should be broken across several. Raising it produces longer lines and fewer breaks, lowering it produces more vertical code. Eighty is a common default inherited from terminals; many teams now prefer 100 or 120 on wide screens.',
+          'Tabs versus spaces, by contrast, is the argument least worth having. Both work, neither is measurably better for correctness, and the only real consideration is that tabs let readers choose their own indent width, which matters to people using large text for accessibility. Pick one, apply it everywhere, and move on.',
+        ],
+      },
+      {
+        heading: 'Formatting is not linting',
+        body: [
+          'These get conflated constantly and they solve different problems. A formatter cares only about appearance: line breaks, indentation, quote style, trailing commas. A linter cares about substance: an unused variable, a missing await, a comparison that is always true, a dependency array that will cause a re-render loop.',
+          'Running a formatter will not find a single bug. What it does is remove formatting from the set of things anyone has to think about or comment on in review, which leaves attention available for the things a linter and a human reviewer are actually good at.',
+        ],
+      },
+    ],
     faq: [
       {
         q: 'Which languages can it format?',
@@ -519,6 +722,31 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Single or bulk generation.',
       'Backed by the browser cryptographic random source.',
       'Runs locally; no request is made to any server.',
+    ],
+    sections: [
+      {
+        heading: 'Why v4 is random and why that is enough',
+        body: [
+          'A version 4 UUID is 122 bits of randomness with six bits spent on version and variant markers. It contains no timestamp, no machine identifier and no counter — nothing that could collide by coincidence of two machines doing the same thing at the same moment, because nothing about the machine or the moment goes into it.',
+          'People reasonably ask whether random values can collide. They can, in principle. The useful way to hold the number is this: you would need to generate roughly a billion UUIDs per second for about 85 years before reaching a 50% chance of a single duplicate. Every practical system will fail in a dozen other ways long before that becomes the problem.',
+          'The one caveat that matters is the source of randomness. A v4 UUID is only as unpredictable as the generator behind it, which is why these are produced with the browser\'s crypto.getRandomValues rather than Math.random. Math.random is fast, deterministic in structure and predictable enough that values derived from it should never be treated as unguessable.',
+        ],
+      },
+      {
+        heading: 'What v7 fixes, and when to prefer it',
+        body: [
+          'Version 7 puts a millisecond timestamp in the leading bits and fills the rest with randomness. The result still looks like a UUID and is still effectively unique, but it sorts chronologically: sort v7 identifiers as text and you get them in creation order.',
+          'That property solves a real and expensive database problem. A B-tree index keyed on random values scatters every insert across the whole index, so pages are constantly split and the working set that must stay in memory is the entire index. Keys that increase over time append to the same region instead, which keeps inserts cheap and the hot pages few. On a large, write-heavy table the difference is substantial rather than theoretical.',
+          'The trade-off is that v7 leaks the creation time of the record. That is usually harmless and occasionally not — if identifiers are public and knowing when a row was created reveals something, v4 is the safer choice. As a rule: v7 for database primary keys, v4 for anything exposed where unpredictability matters.',
+        ],
+      },
+      {
+        heading: 'A UUID is not a secret',
+        body: [
+          'This is the mistake worth avoiding. A UUID is unique, which is not the same as unguessable in the sense security requires. A v4 UUID does have enough entropy to resist guessing, but UUIDs travel in URLs, appear in logs, get copied into support tickets and sit in browser history — so treating one as an access token means your access control is "whoever has seen this link".',
+          'Version 1 UUIDs are worse still: they encode the timestamp and historically the network MAC address of the machine that created them, which makes them both predictable and identifying. If you need a secret, generate a secret; a UUID is a name, not a password.',
+        ],
+      },
     ],
     faq: [
       {
@@ -617,6 +845,29 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Complementary, analogous and triadic harmonies.',
       'WCAG contrast checking; everything runs in your browser.',
     ],
+    sections: [
+      {
+        heading: 'Why HSL is easier to think in than HEX',
+        body: [
+          'HEX and RGB describe a colour by how much red, green and blue light to mix. That matches how a screen works and matches how people think about colour not at all — given #3A7BD5, almost nobody can say whether it is light or dark, or what a slightly lighter version would be.',
+          'HSL rearranges the same information into hue, saturation and lightness. Hue is the position on the colour wheel in degrees, saturation is how vivid it is, lightness is how close to white or black. Now the questions become answerable: a lighter version is the same hue and saturation with higher lightness, and a colour scheme is a set of hues at consistent saturation and lightness. This is why design systems are usually authored in HSL even when they ship as HEX.',
+        ],
+      },
+      {
+        heading: 'What OKLCH fixes',
+        body: [
+          'HSL has a real flaw: its lightness does not match perceived brightness. Pure yellow and pure blue at the same HSL lightness look nothing alike — the yellow appears far brighter, because human vision is much more sensitive to green-yellow wavelengths. Build a palette by holding HSL lightness constant and the colours will not feel like they belong to one family.',
+          'OKLCH is built on a model of human perception rather than on display hardware. Its lightness value corresponds to what the eye actually reports, so two colours with the same L genuinely look equally bright. That makes it possible to generate a set of accent colours that feel consistent, or to darken a colour for a hover state without it also appearing to change hue. It also reaches colours outside the sRGB range for modern wide-gamut displays, which HEX cannot express at all.',
+        ],
+      },
+      {
+        heading: 'Contrast is a requirement, not a preference',
+        body: [
+          'WCAG AA asks for a contrast ratio of at least 4.5:1 between text and its background, or 3:1 for large text — roughly 24px, or 19px bold. AAA raises that to 7:1. The ratio is computed from relative luminance, which weights the channels according to the eye\'s sensitivity, so it is not something you can judge reliably by looking, particularly on a bright screen.',
+          'Two things are worth knowing. Light grey text on white is the most common accessibility failure on the web, and it is almost always introduced deliberately in the name of a softer look. And contrast requirements apply to interface components too — a form field border or a focus ring below 3:1 against its surroundings is a failure even if the text inside is fine.',
+        ],
+      },
+    ],
     faq: [
       {
         q: 'Why use OKLCH or LAB instead of HSL?',
@@ -655,6 +906,31 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Live preview of decoded images, PDFs and text.',
       'Handles large inputs on a background thread so the page stays responsive.',
       'Runs entirely in your browser — nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'What Base64 is for, and the 33% you pay for it',
+        body: [
+          'Base64 solves one problem: moving binary data through a channel that only reliably carries text. Email bodies, JSON string values, URLs, HTTP headers, XML documents and source files all expect readable characters, and many will mangle or reject arbitrary bytes. Base64 re-expresses any byte sequence using 64 characters that survive all of them.',
+          'The mechanism explains the cost. Three bytes — 24 bits — are regrouped into four 6-bit chunks, and each chunk becomes one character. Four characters for every three bytes is a 33% increase in size, always, plus padding. That is the price of passing through a text-only pipe, and it is why Base64 is the right answer for a small icon inlined in a stylesheet and the wrong one for a 20 MB video.',
+          'The `=` characters at the end are padding, present only to round the output to a multiple of four. One `=` means the final group held two bytes, two means it held one.',
+        ],
+      },
+      {
+        heading: 'Base64 is not encryption, and this matters',
+        body: [
+          'This is the single most consequential misunderstanding about the format, and it appears in real systems regularly. Base64 is an encoding, not a cipher. There is no key, nothing is secret, and reversing it requires no more than a decoder — this page will do it instantly. Anything you can Base64-encode, anyone else can read.',
+          'The confusion is understandable, because encoded text looks scrambled. But scrambled-looking is not protection. Credentials placed in a config file "encoded for safety", or a JWT payload assumed to be private because it is Base64, are exposed to anyone who copies the string. A JWT\'s signature proves the token was not tampered with; it does nothing to hide the claims inside, which are readable by design.',
+          'If the goal is confidentiality, you need encryption. Encoding and encrypting are answers to different questions: encoding asks "will this survive the journey", encryption asks "can anyone else read it".',
+        ],
+      },
+      {
+        heading: 'URL-safe Base64, and the padding question',
+        body: [
+          'Standard Base64 uses `+` and `/`, both of which have meaning in a URL — `+` may be read as a space in query strings and `/` as a path separator. The URL-safe variant substitutes `-` and `_`, and usually drops the padding, because `=` needs escaping too. This is the form used by JWTs and by most APIs that pass encoded values in a path or query.',
+          'The variants are not interchangeable: feeding standard Base64 to a decoder expecting the URL-safe alphabet produces an error or garbage. If a token decodes everywhere except in one system, mismatched alphabets is the first thing to check.',
+        ],
+      },
     ],
     faq: [
       {
@@ -696,6 +972,29 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'UTF-8 encoding that matches what browsers generate.',
       'Clear errors for malformed percent-encoding instead of silent mangling.',
       'Runs entirely in your browser — nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Encoding a whole URL versus encoding one value',
+        body: [
+          'This is the distinction the two modes exist for, and getting it wrong is the source of most URL bugs. Encoding a component escapes everything that has structural meaning — `/`, `?`, `&`, `=`, `:` and `#` all become percent sequences, because inside a single parameter value those characters are data, not syntax. Encoding a full URL leaves them alone, because there they are doing their job.',
+          'Use component encoding on each value you place into a query string, and full-URL encoding only when you have a complete address containing spaces or non-ASCII characters that you need to make safe. Encoding a whole URL as a component gives you `https%3A%2F%2F…`, which is correct precisely when that URL is itself a parameter — a redirect target, for instance — and wrong everywhere else.',
+        ],
+      },
+      {
+        heading: 'The plus-sign problem',
+        body: [
+          'A space can be encoded two ways, and the two are not interchangeable. In a query string, the historical HTML form encoding writes a space as `+`. In a URL path, and under the modern percent-encoding rules, a space is `%20` and a `+` means a literal plus character.',
+          'The consequence bites real systems: an email address like `user+tag@example.com` sent through a query string may arrive as `user tag@example.com`, because something decoded the plus as a space. Encoding the plus as `%2B` is what prevents it. If addresses with tags mysteriously fail to match, this is almost always why.',
+        ],
+      },
+      {
+        heading: 'Double encoding, and reading a URL that has been through the wringer',
+        body: [
+          'Because `%` is itself escaped as `%25`, encoding an already-encoded string produces `%2520` where `%20` was meant. Decode that once and you get `%20` rather than a space, which is the signature of double encoding — and it usually means two layers of code each helpfully encoded the same value.',
+          'The rule that avoids it: encode exactly once, at the point where a value is placed into a URL, and never on a string that already came out of one. When debugging, decoding repeatedly until the output stops changing tells you how many layers were applied.',
+        ],
+      },
     ],
     faq: [
       {
@@ -891,6 +1190,29 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Handles both seconds and milliseconds.',
       'Runs in your browser with no sign-up.',
     ],
+    sections: [
+      {
+        heading: 'What a Unix timestamp really counts',
+        body: [
+          'A Unix timestamp is the number of seconds since midnight UTC on 1 January 1970. Its appeal is that it is a single integer with no time zone, no locale and no formatting — two timestamps can be compared, subtracted and sorted arithmetically, which is why nearly every system stores time this way and formats it only at the edges.',
+          'One detail is genuinely strange and worth knowing: Unix time pretends leap seconds do not exist. Every day is defined as exactly 86,400 seconds, so when a leap second is inserted the same timestamp value is used twice. This means the difference between two timestamps is not quite the number of seconds that physically elapsed. For essentially all software this is the right trade — it keeps the arithmetic simple — but it does mean Unix time is not a true count of elapsed seconds.',
+        ],
+      },
+      {
+        heading: 'Seconds or milliseconds, and how to tell',
+        body: [
+          'The most common bug in this area is a factor of a thousand. Unix time is defined in seconds, and most languages follow that — but JavaScript\'s Date.now(), and therefore a great deal of web code, works in milliseconds. Mixing the two puts a date in 1970 or somewhere in the year 56000.',
+          'The quick way to tell them apart is length. A current timestamp in seconds is 10 digits; in milliseconds it is 13. If a date comes out as 1970-01-01 you almost certainly passed milliseconds to something expecting seconds; if it lands tens of thousands of years in the future, you did the reverse. This tool accepts both and tells you which it detected.',
+        ],
+      },
+      {
+        heading: 'The 2038 problem, and storing time properly',
+        body: [
+          'Systems that store Unix time in a signed 32-bit integer run out of room at 03:14:07 UTC on 19 January 2038, when the value overflows and wraps to a negative number — a date in 1901. This is not hypothetical: embedded devices, older file formats and legacy database columns still carry 32-bit time fields. Modern systems use 64-bit values, which push the limit far beyond any horizon worth worrying about.',
+          'The related everyday mistake is storing local time instead of an instant. A timestamp is unambiguous; "2026-03-29 01:30" is not, because in some time zones that moment happened twice and in others it never happened at all. Store instants in UTC, keep the user\'s time zone as separate data if you need to display or schedule in it, and convert only when showing the value to a person.',
+        ],
+      },
+    ],
     faq: [
       {
         q: 'What is a Unix timestamp?',
@@ -929,6 +1251,24 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Supports the common Markdown syntax you use for READMEs and issues.',
       'Distraction-free, no account needed.',
       'Runs in your browser; your writing is never uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Why Markdown won',
+        body: [
+          'Markdown was written in 2004 on a simple premise: a plain-text document should be readable as plain text. Every other lightweight markup language of the era asked you to learn syntax that looked like markup. Markdown borrowed what people were already doing in email — asterisks around emphasis, hyphens for bullets, a blank line between paragraphs — and made those the language.',
+          'That decision is why it ended up everywhere. Your notes stay readable in a terminal, a diff, a chat window or a text editor from 1985. Because it is plain text it works with version control properly: a change to one sentence is a change to one line, reviewable in a pull request, unlike a binary word-processor file where the whole document is one opaque blob.',
+          'The cost is that Markdown was never fully specified, so dialects diverged. Tables, footnotes, task lists and fenced code blocks are not in the original — they come from later extensions such as GitHub Flavored Markdown. This is why a document can render perfectly in one tool and imperfectly in another, and why it is worth knowing which flavour your destination speaks.',
+        ],
+      },
+      {
+        heading: 'The syntax that actually trips people up',
+        body: [
+          'Three things account for most Markdown confusion. The first is that a single newline does not start a new paragraph — Markdown joins consecutive lines into one, which is deliberate, so that you can hard-wrap your source without affecting output. A blank line is the paragraph separator; two trailing spaces force a line break within one.',
+          'The second is indentation inside lists. Continuation text and nested content have to line up with the parent item\'s text, not its bullet, and getting this wrong is the usual reason a nested list flattens or a code block escapes its bullet.',
+          'The third is that Markdown permits raw HTML, which is a strength and a trap. It means you can drop in a table or an anchor when the syntax cannot express what you need. It also means that a stray < in your prose may be read as the start of a tag, which is why comparisons and generics sometimes vanish from rendered output.',
+        ],
+      },
     ],
     faq: [
       {
@@ -1029,6 +1369,30 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'A monthly free allowance, with no account needed.',
       'Files are processed over HTTPS and deleted after conversion.',
     ],
+    sections: [
+      {
+        heading: 'Why converting a PDF back is genuinely hard',
+        body: [
+          'A PDF does not store a document in the sense a word processor does. It stores the finished appearance: this glyph at this coordinate, in this font, at this size. The paragraph that produced those glyphs is gone. There are no paragraphs in the file, no headings, often not even spaces — word gaps are frequently just horizontal position changes between characters.',
+          'Converting back means reconstructing structure that was thrown away. The converter has to look at glyph positions and infer that this run of characters is a word, these words are a line, these lines are a paragraph, this larger bold line is a heading, and these aligned columns of text are a table rather than six unrelated paragraphs. It is inference, and inference is sometimes wrong.',
+          'This is why results vary so much by document. A PDF exported cleanly from Word converts back almost perfectly, because the structure it is being asked to rebuild is exactly the structure that produced it. A magazine layout with text in irregular columns over images converts badly, because there is no clean reading order to recover.',
+        ],
+      },
+      {
+        heading: 'Why this one is not done in your browser',
+        body: [
+          'Nearly every other tool on this site runs entirely on your device, and this is one of three that does not. The honest reason is that faithful conversion needs a full office-document engine — LibreOffice, in this case — which is hundreds of megabytes of software and far outside what a browser tab can reasonably load.',
+          'So this tool is explicit about the trade: your file is sent over HTTPS to a self-hosted service, converted, returned, and deleted straight afterwards. It is not passed to a third-party API. If a document is sensitive enough that this is unacceptable, the right answer is to convert it locally in LibreOffice yourself, and the tool would rather tell you that than pretend the upload is not happening.',
+        ],
+      },
+      {
+        heading: 'Getting a better result',
+        body: [
+          'Two things predict conversion quality more than anything else. First, whether the PDF has a real text layer: if you cannot select text in the PDF Viewer, the file is a scan, and conversion will produce a document containing a picture of your text rather than editable words. Run it through OCR first.',
+          'Second, how the PDF was produced. Files exported from a word processor carry more recoverable structure than files produced by a design tool or a print driver. Where a choice exists, converting from the original source document beats converting from the PDF every time — this tool is for when the original is gone.',
+        ],
+      },
+    ],
     faq: [
       {
         q: 'Which formats can I convert to?',
@@ -1117,6 +1481,24 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Keeps the document readable and intact.',
       'A monthly free allowance; files are deleted after processing.',
     ],
+    sections: [
+      {
+        heading: 'Where the size in a PDF actually comes from',
+        body: [
+          'Before compressing anything it is worth knowing what is heavy. In almost every oversized PDF, the answer is images. Text is astonishingly cheap — a hundred pages of prose is a few hundred kilobytes, because the file stores characters and font outlines rather than pixels. A single photograph at full camera resolution can outweigh all of it.',
+          'The usual culprit is a scanner or a phone app producing 300 or 600 dpi images of pages that will only ever be read on a screen at roughly 100 dpi, or a report where someone dropped in press-resolution photographs and let the layout tool shrink them on the page. The picture is displayed two inches wide and stored at 4000 pixels across.',
+          'That is why compression here works by downsampling images rather than by squeezing the whole file. Reducing a 600 dpi scan to 150 dpi removes three quarters of the pixels and is invisible on screen, while the text layer is left completely alone — it stays sharp and selectable at any zoom, because it was never an image to begin with.',
+        ],
+      },
+      {
+        heading: 'Choosing a level, and when compression will not help',
+        body: [
+          'The presets map to how the document will be used. The lightest setting targets around 300 dpi and is for something that may still be printed. The middle setting targets roughly 150 dpi, which is the right default for a document meant to be read on screen or emailed. The strongest targets about 72 dpi, small enough for an upload limit, at the cost of visible softness if anyone zooms in.',
+          'Compression cannot help every file, and it is better to know why in advance. A text-only PDF is already small and will barely shrink, because there are no images to downsample. A file that has already been compressed once will not shrink much again — the pixels are gone and cannot be removed twice. And a PDF that is large because it embeds full font families rather than subsets needs a different fix entirely.',
+          'If a file refuses to get smaller, the honest answer is usually that its size is not where you think it is.',
+        ],
+      },
+    ],
     faq: [
       {
         q: 'How does PDF compression work here?',
@@ -1155,6 +1537,30 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Full-text search within the document.',
       'Zoom for close reading.',
       'The file is rendered locally and never uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'What a PDF viewer is actually doing',
+        body: [
+          'Opening a PDF is closer to running a program than to opening a photograph. The file describes a page as a sequence of drawing instructions — move here, set this font, show this text, fill this path — and a viewer executes them onto a canvas. That is why the same document looks identical everywhere, and also why a PDF can take a moment to appear: the page is being drawn, not decoded.',
+          'This viewer is Mozilla\'s pdf.js, the same engine built into Firefox, running here in your browser. It brings its own toolbar, text selection, search, thumbnail sidebar, rotation and zoom, because it is the full viewer rather than a minimal render of the first page.',
+          'One consequence worth knowing: because the page is drawn from instructions, text in a normal PDF is real text. You can select it, copy it and search it. If you cannot, the document is almost certainly a scan — a photograph of a page wrapped in a PDF container, with no text layer at all. That is what the OCR tool is for.',
+        ],
+      },
+      {
+        heading: 'Fonts, and why a document sometimes looks wrong elsewhere',
+        body: [
+          'A PDF can either embed the fonts it uses or merely name them and hope the reader has them. Embedding is what makes the format dependable, and most well-made PDFs embed a subset — only the characters actually used — which is why a document using one obscure typeface does not carry the entire font.',
+          'When a PDF only names its fonts, the viewer substitutes something metrically similar, and that is when a document opens with subtly wrong spacing, overlapping text or the wrong characters entirely. If a file looks correct on the machine that made it and wrong everywhere else, unembedded fonts are the usual culprit, and the fix belongs in whatever produced the PDF rather than in the viewer.',
+        ],
+      },
+      {
+        heading: 'Reading a document without handing it over',
+        body: [
+          'The reason to read a PDF in a tool like this rather than an upload-based one is the same reason people are careful with these files in the first place: PDFs are what contracts, payslips, medical results, tax returns and identity documents arrive as. Opening one on a website that uploads it means giving a copy of it to a stranger.',
+          'Here the bytes are handed to pdf.js inside the page through a blob URL that never leaves the browser. Nothing is transmitted, and the viewer keeps working with the network disconnected once the page has loaded.',
+        ],
+      },
     ],
     faq: [
       {
@@ -1245,6 +1651,31 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Runs entirely in your browser — nothing is uploaded.',
       'Free, with no account.',
     ],
+    sections: [
+      {
+        heading: 'What merging actually does to your files',
+        body: [
+          'A PDF is not really one flowing document. It is a collection of page objects plus a catalogue that says what order they come in, and a pile of shared resources — fonts, embedded images, colour profiles — that the pages point at. Merging copies the page objects out of each source file, rewrites the internal references so they still point at the right resources, and builds one new catalogue listing everything in the order you chose.',
+          'That matters because it means merging is not a re-rendering. Nothing is converted to an image, nothing is re-compressed, and no text is redrawn. A page that arrives as crisp vector text leaves as crisp vector text, selectable and searchable exactly as it was. This is the difference between a tool that merges PDFs and one that prints them to a new PDF: the second flattens everything and quietly destroys the text layer.',
+          'It also explains the one surprise people hit: the merged file is usually a little smaller than the sum of its parts, because fonts and images shared between the sources get stored once instead of several times. Occasionally it is slightly larger, when the sources had nothing in common and each brought its own font subsets along.',
+        ],
+      },
+      {
+        heading: 'What survives the merge, and what does not',
+        body: [
+          'Page content, text, vector graphics, images, page sizes and rotation all carry across untouched. Pages of different dimensions stay at their own dimensions — merging an A4 report with a US Letter invoice gives you a document with both sizes in it, rather than stretching either to match.',
+          'Some things do not survive, and it is better to know before you need them. Form fields, digital signatures, embedded attachments and document-level JavaScript are dropped. Signatures in particular cannot be preserved by definition: a signature attests to one specific file, so the moment its pages are combined with others the signature no longer describes what you are holding, and keeping it would be a lie about the document. Bookmarks and internal links pointing between pages may not survive either, since the page numbers they refer to have changed.',
+          'If you need any of those preserved, merge first and then re-apply them to the finished document, rather than expecting them to come through.',
+        ],
+      },
+      {
+        heading: 'Why doing this in the browser matters',
+        body: [
+          'Merging is the operation people most often reach for with documents they should not be uploading: signed contracts, medical letters, bank statements, scans of passports and ID. The usual online merger takes all of that onto a server owned by someone you have never heard of, in a jurisdiction you did not choose, and asks you to trust a promise about deletion that you cannot verify.',
+          'This tool never sends the files anywhere. The merge runs inside the browser tab using the pdf-lib library, which is why the whole thing still works if you disconnect from the internet after the page has loaded — a test worth trying once, because it settles the question far better than any privacy policy can.',
+        ],
+      },
+    ],
     faq: [
       {
         q: 'Are my files uploaded to merge them?',
@@ -1283,6 +1714,30 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Runs entirely in your browser; the PDF is never uploaded.',
       'Keeps confidential documents private.',
       'Free, with no sign-up.',
+    ],
+    sections: [
+      {
+        heading: 'Splitting is extraction, not deletion',
+        body: [
+          'It helps to think of splitting as building a new document rather than cutting up the old one. The tool reads the pages you asked for, copies those page objects along with the fonts and images they depend on, and writes them into a fresh PDF. Your original file is never modified — it is still sitting there, complete, whatever you do here.',
+          'That framing explains a question people often ask: why is a five-page extract from a 200-page report not exactly one fortieth of the size? Because each page drags its dependencies with it. Pull out five pages that all use the same embedded font and you carry one copy of that font into the new file. Pull out five pages that each contain a full-page scan and you carry five large images. Size follows what is on the pages, not how many there are.',
+        ],
+      },
+      {
+        heading: 'Choosing pages without getting the ranges wrong',
+        body: [
+          'Page ranges are one-based and inclusive, which is to say they work the way people count rather than the way arrays do. "1-5" gives you five pages including both the first and the fifth. "3" on its own gives you a single page. Combining them with commas — "1-3, 7, 12-14" — builds one document from several stretches, in the order you wrote them.',
+          'The order genuinely is the order you wrote. Asking for "5, 1, 3" gives you a three-page document beginning with page five, which is occasionally exactly what you want and occasionally a surprise. If you meant to reorder a whole document rather than extract from it, the PDF Organizer is the better tool: it shows you every page as a thumbnail and lets you drag them.',
+          'Splitting into one file per page is the other common need — usually because a scanner produced a single PDF containing twenty unrelated receipts, or because a system on the other end will only accept one document at a time. Every page comes back as its own numbered file in a zip.',
+        ],
+      },
+      {
+        heading: 'A note on what splitting cannot do',
+        body: [
+          'Extracting pages does not remove information from the pages you keep. If page four contains a name you wanted gone, splitting it out of the document does not redact it — the name is still on page four, now in a smaller file. Genuine redaction means removing the underlying content, not covering it, and a black rectangle drawn over text in most editors leaves the text sitting underneath it, selectable and copyable.',
+          'Likewise, splitting does not decrypt. A password-protected PDF has to be unlocked before any tool can read its pages, this one included.',
+        ],
+      },
     ],
     faq: [
       {

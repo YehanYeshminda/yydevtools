@@ -23,14 +23,28 @@
       </ul>
     }
 
+    @if (c.sections; as sections) {
+      @for (section of sections; track section.heading) {
+        <h2 class="tc__heading">{{ section.heading }}</h2>
+        @for (paragraph of section.body; track $index) {
+          <p class="tc__p">{{ paragraph }}</p>
+        }
+      }
+    }
+
+    <!-- Answers are rendered open rather than inside <details>. Collapsed, the
+         bulk of each page's writing was invisible on load: on the thinnest tool
+         page a visitor saw about 304 words including the nav and footer, with
+         89 words of answers hidden behind a click. An FAQ nobody expands is an
+         FAQ that helps nobody, and it reads as a far thinner page than it is. -->
     @if (c.faq.length) {
       <h2 class="tc__heading">Frequently asked questions</h2>
       <div class="tc__faq">
         @for (item of c.faq; track item.q) {
-          <details class="tc__faqitem">
-            <summary class="tc__q">{{ item.q }}</summary>
+          <div class="tc__faqitem">
+            <h3 class="tc__q">{{ item.q }}</h3>
             <p class="tc__a">{{ item.a }}</p>
-          </details>
+          </div>
         }
       </div>
     }
