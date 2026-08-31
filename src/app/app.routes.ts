@@ -474,6 +474,50 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'guides/password-storage-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'How passwords should be stored — YYDevTools',
+    data: {
+      slug: 'password-storage-explained',
+      description:
+        'Why passwords are hashed rather than encrypted, what a salt prevents, why bcrypt and ' +
+        'Argon2 are deliberately slow, and how to read what a breach announcement really says.',
+    },
+  },
+  {
+    path: 'guides/https-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'What actually happens when you load an HTTPS page — YYDevTools',
+    data: {
+      slug: 'https-explained',
+      description:
+        'The TLS handshake in plain English: how a browser and server agree on keys in public, ' +
+        'what certificates prove, and what the padlock does and does not tell you.',
+    },
+  },
+  {
+    path: 'guides/image-formats-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'JPEG, PNG, WebP, AVIF and HEIC compared — YYDevTools',
+    data: {
+      slug: 'image-formats-explained',
+      description:
+        'What each image format throws away and when to use it: how JPEG decides what to discard, ' +
+        'why PNG is huge for photos, what WebP and AVIF changed, and why iPhones produce HEIC.',
+    },
+  },
+  {
+    path: 'guides/photo-metadata-privacy',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'What your photos reveal: EXIF metadata and GPS — YYDevTools',
+    data: {
+      slug: 'photo-metadata-privacy',
+      description:
+        'Photos record the camera, the exact time and often the coordinates where they were taken. ' +
+        'What is in there, when sharing strips it, and how to remove it without degrading the image.',
+    },
+  },
+  {
     path: 'news',
     loadComponent: () => import('./news/news').then((m) => m.News),
     title: 'Tech News — YYDevTools',

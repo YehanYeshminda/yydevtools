@@ -544,7 +544,365 @@ export const GUIDES: Guide[] = [
       },
     ],
     related: ['image-compressor', 'pdf-compress', 'color-converter'],
-    relatedGuides: [],
+    relatedGuides: ['image-formats-explained'],
+  },
+
+  {
+    slug: 'password-storage-explained',
+    title: 'How passwords should be stored: hashing, salting, and why encryption is the wrong tool',
+    description:
+      'Why passwords are hashed rather than encrypted, what a salt actually prevents, why bcrypt and Argon2 are deliberately slow, and how to read a breach announcement.',
+    category: 'Security',
+    readingMinutes: 10,
+    updated: '2026-08-31',
+    published: '2026-08-31',
+    intro: [
+      'Every few months a company announces that its user database has been taken, and the announcement contains one sentence that decides how bad it really is — something about how the passwords were stored. “Encrypted” sounds reassuring and is usually the worst answer. “Hashed and salted with bcrypt” sounds like jargon and is the one you want to read.',
+      'This guide explains what those words mean, why the right answer is counter-intuitive, and how to tell a serious password system from one that merely looks careful.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Why you never store the password' },
+      {
+        kind: 'p',
+        text: 'A login system does not need to know your password. It only needs to answer one question: is the string this person just typed the same as the one they chose earlier? That is a narrower requirement than it first appears, and the entire design follows from taking it literally.',
+      },
+      {
+        kind: 'p',
+        text: 'A hash function turns any input into a fixed-length value, and it is one-way: trivial to compute forwards, infeasible to reverse. So the server stores the hash of your password, never the password. At login it hashes what you typed and compares the two hashes. If they match, you knew the password. If the database is stolen, the attacker has a pile of hashes rather than a pile of passwords.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'This is why a well-built site cannot email you your password when you forget it — it genuinely does not have it. A site that can send you your existing password has told you something important about how it stores them.',
+      },
+      { kind: 'tool', lead: 'See what a hash looks like for any input:', slug: 'hash-generator' },
+      { kind: 'h2', text: 'Why encryption is the wrong tool here' },
+      {
+        kind: 'p',
+        text: 'Encryption is reversible by design — that is the point of it. Encrypted data can be decrypted with the key, which means an encrypted password database is only as safe as the key sitting somewhere on the same infrastructure. An attacker who got the database very often gets the key too, and then holds every password in plain text.',
+      },
+      {
+        kind: 'p',
+        text: 'Hashing has no key and no way back. There is nothing an attacker can steal that turns the hashes back into passwords. The trade is that you lose the ability to recover a password, which for authentication is not a loss at all — you never wanted that ability, and password reset gives users a safer route to the same outcome.',
+      },
+      { kind: 'h2', text: 'What a salt actually prevents' },
+      {
+        kind: 'p',
+        text: 'Plain hashing has a weakness that is easy to miss: it is deterministic. The same password always produces the same hash, so identical hashes in a stolen database reveal that those users chose the same password. Worse, an attacker can precompute hashes for millions of common passwords once and then look up every stolen hash instantly. Those precomputed tables are why unsalted hashes are effectively no protection at all for a common password.',
+      },
+      {
+        kind: 'p',
+        text: 'A salt is a random value, different for every user, mixed into the password before hashing and stored alongside the result. It does not need to be secret. What it changes is economics: because every user has a different salt, a precomputed table is useless, and the attacker must attack each password separately rather than all of them at once. Two users with the identical password now have completely different stored hashes.',
+      },
+      { kind: 'h2', text: 'Why the good algorithms are deliberately slow' },
+      {
+        kind: 'p',
+        text: 'Here is the part that surprises people. SHA-256 is an excellent hash function and a poor password hash, precisely because it is fast. Modern hardware computes billions of SHA-256 hashes per second, so an attacker with a stolen database and a graphics card can try every word in a dictionary, every common password, and every short combination, in a very short time. Speed is a virtue everywhere else and a liability here.',
+      },
+      {
+        kind: 'p',
+        text: 'Password hashing functions — bcrypt, scrypt and Argon2 — are built to be slow and adjustable. They take a cost factor that controls how much work each hash requires, and it can be raised as hardware gets faster. Argon2 and scrypt additionally demand a configurable amount of memory, which blunts the advantage of specialised cracking hardware that can parallelise computation far more easily than it can parallelise memory.',
+      },
+      {
+        kind: 'p',
+        text: 'The target is usually a few hundred milliseconds per hash. Imperceptible when you log in once; ruinous for an attacker trying to work through a hundred million candidates.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'This is why “we hashed the passwords with SHA-256” in a breach notice is not the reassurance it sounds like. Without a salt and a deliberate work factor, common passwords in that database are recoverable.',
+      },
+      { kind: 'h2', text: 'What this means for you as a user' },
+      {
+        kind: 'p',
+        text: 'You cannot choose how a site stores your password, which is exactly why the advice about reuse matters so much. If you use one password everywhere, its safety is set by the least careful site you ever signed up to — and you will not know which that is until the breach is announced. A unique password per site turns a total compromise into a single-site inconvenience.',
+      },
+      {
+        kind: 'p',
+        text: 'Length beats complexity. The substitutions people make to satisfy complexity rules — an @ for an a, a 3 for an e — are exactly what cracking tools try first, because everyone makes the same ones. A long passphrase of unrelated words is both far stronger and far easier to remember than a short string of punctuation.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Generate a strong password or passphrase, entirely in your browser:',
+        slug: 'password-generator',
+      },
+      { kind: 'h2', text: 'Reading a breach announcement' },
+      {
+        kind: 'ul',
+        items: [
+          '“Hashed and salted with bcrypt, scrypt or Argon2” — the best case. Change your password anyway, but strong passwords are very likely still safe.',
+          '“Hashed with SHA-256” with no mention of a salt — weak. Common and short passwords should be treated as exposed.',
+          '“Encrypted” — ambiguous at best, and often means the key was recoverable. Treat the passwords as exposed.',
+          '“Stored in plain text” — every password in that database is known. Change it anywhere you reused it, immediately.',
+          'No mention of storage at all — assume the worst, because a company that did it well says so.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'The underlying idea is worth carrying beyond passwords: good security design assumes the database will eventually be stolen and asks what the attacker gets when it is. Hashing is what makes the answer “not very much”.',
+      },
+    ],
+    related: ['hash-generator', 'password-generator', 'jwt-decoder'],
+    relatedGuides: ['hashing-vs-encryption-vs-encoding', 'https-explained'],
+  },
+
+  {
+    slug: 'https-explained',
+    title: 'What actually happens when you load an HTTPS page',
+    description:
+      'The TLS handshake in plain English: how a browser and server agree on keys, what the padlock does and does not prove, and why certificates need an authority behind them.',
+    category: 'Security',
+    readingMinutes: 10,
+    updated: '2026-08-31',
+    published: '2026-08-31',
+    intro: [
+      'Between typing an address and seeing a page, your browser and a server you have never contacted before agree on a shared secret in full view of anyone watching the wire, prove to each other who they are, and start encrypting — usually in well under a tenth of a second. It is one of the most quietly impressive things computers do routinely.',
+      'This guide walks through what happens in that gap, in the order it happens, and what the padlock in the address bar actually certifies — which is less than most people assume.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'The problem being solved' },
+      {
+        kind: 'p',
+        text: 'Data sent over the internet passes through equipment you do not control: your router, your internet provider, whatever networks sit between you and the server. Without protection, all of it is readable and, worse, modifiable in transit. HTTPS has to provide three things at once — confidentiality, so nobody can read it; integrity, so nobody can change it undetected; and authenticity, so you are talking to the site you think you are.',
+      },
+      {
+        kind: 'p',
+        text: 'The third is the hard one. Encryption alone is not enough: an attacker who sits in the middle can happily encrypt a conversation with you while pretending to be your bank. Without a way to verify identity, you would have a perfectly private conversation with the wrong party.',
+      },
+      { kind: 'h2', text: 'Agreeing on a key in public' },
+      {
+        kind: 'p',
+        text: 'The first puzzle is that encryption needs a shared key, but the two sides have never met and everything they send is visible. The answer is a key exchange, and the intuition is easier than the mathematics. Both sides start from a public value, each mixes in a private secret of their own, and they swap results. Each then mixes their own secret into what the other sent. Because of how the underlying maths works, both arrive at the same final value — while an observer, who saw only the exchanged intermediate values, cannot reconstruct it.',
+      },
+      {
+        kind: 'p',
+        text: 'Modern TLS uses an elliptic-curve version of this, and it is ephemeral: fresh secrets for every connection, discarded afterwards. That property is called forward secrecy, and it is why recording an encrypted session today is not made readable by stealing the server key tomorrow — the key that protected that session no longer exists anywhere.',
+      },
+      { kind: 'h2', text: 'Proving who you are' },
+      {
+        kind: 'p',
+        text: 'The key exchange gives both sides a shared secret but says nothing about identity. That is the certificate\'s job. The server sends a certificate containing its public key, the hostnames it is valid for, an expiry date, and a signature from a certificate authority. The browser checks that the certificate covers the hostname it asked for, that it has not expired, and that the signature chains up to an authority it already trusts.',
+      },
+      {
+        kind: 'p',
+        text: 'That trust is not infinite regress: your browser and operating system ship with a set of root certificates built in, and the chain must terminate in one of them. The server also proves it holds the private key matching the certificate — otherwise anyone could copy a public certificate and impersonate the site.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'The padlock means the connection is encrypted and the certificate matches the domain. It does not mean the site is honest, safe or who you think. A phishing site can obtain a valid certificate for its own lookalike domain in minutes, and it will show a padlock too. The padlock certifies the pipe, not the person at the other end.',
+      },
+      { kind: 'h2', text: 'What the handshake looks like in order' },
+      {
+        kind: 'ol',
+        items: [
+          'The browser says hello, listing the TLS versions and cipher suites it supports, and — in TLS 1.3 — already includes its key-exchange contribution to save a round trip.',
+          'The server replies with its chosen cipher, its own key-exchange contribution and its certificate chain.',
+          'The browser validates the chain against its trusted roots, checks the hostname and the expiry, and confirms the server holds the matching private key.',
+          'Both sides derive the same session keys from the exchange, and switch to fast symmetric encryption for everything that follows.',
+          'The encrypted HTTP request finally goes out — and only now does the server learn which page you asked for.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'TLS 1.3 completes this in a single round trip, and can resume a previous session in zero. This is why HTTPS stopped being something sites avoided for performance reasons: the cost is now close to negligible.',
+      },
+      { kind: 'h2', text: 'What is still visible' },
+      {
+        kind: 'p',
+        text: 'HTTPS hides the contents of your request — the path, the headers, the body, the response. It does not hide who you are talking to. The domain name is visible to your network provider, both from the DNS lookup that preceded the connection and, historically, from the certificate exchange itself. Packet sizes and timing are visible too, and can be surprisingly revealing.',
+      },
+      {
+        kind: 'p',
+        text: 'So HTTPS means your provider knows you visited a particular site, but not which page or what you sent. That distinction matters when reasoning about privacy: encryption in transit is not anonymity.',
+      },
+      { kind: 'h2', text: 'Where this leaves you' },
+      {
+        kind: 'p',
+        text: 'The practical takeaways are small but worth holding. A padlock is necessary and not sufficient — read the domain, not the icon. A certificate warning is worth stopping for, because it means the identity check failed, which is exactly the situation the whole system exists to catch. And a page delivered over HTTPS can still do anything it likes with what you type into it, which is the reason tools that keep your data on your own device are a different kind of guarantee from tools that merely transmit it securely.',
+      },
+    ],
+    related: ['jwt-decoder', 'hash-generator', 'base64-converter'],
+    relatedGuides: ['password-storage-explained', 'hashing-vs-encryption-vs-encoding'],
+  },
+
+  {
+    slug: 'image-formats-explained',
+    title: 'JPEG, PNG, WebP, AVIF and HEIC: what each format throws away, and when to use it',
+    description:
+      'How lossy compression actually decides what to discard, why PNG is huge for photographs, what WebP and AVIF changed, and why iPhone photos arrive as HEIC.',
+    category: 'Images',
+    readingMinutes: 11,
+    updated: '2026-08-31',
+    published: '2026-08-31',
+    intro: [
+      'Every image format is an argument about what you are willing to lose. Some lose nothing and pay in size. Some discard detail your eye was never going to notice. Understanding which is which turns format choice from guesswork into a decision you can justify.',
+      'This guide covers what each of the common formats actually does to your pixels, why the same photograph can be 8 MB or 200 KB with no visible difference, and how to choose without simply defaulting to JPEG forever.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Lossless and lossy are two different promises' },
+      {
+        kind: 'p',
+        text: 'A lossless format guarantees that the pixels you get back are exactly the pixels you put in. PNG works this way: it finds patterns and repetition and stores them compactly, in much the same spirit as zipping a file. Decompress it and every pixel is bit-for-bit identical.',
+      },
+      {
+        kind: 'p',
+        text: 'A lossy format makes no such promise. It discards information permanently in exchange for a much smaller file, and the craft is in discarding things human vision is bad at noticing. JPEG, WebP and AVIF are lossy by default. The result is not the image you put in — it is an image your eye struggles to distinguish from it, which for a photograph is usually the better trade by a wide margin.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Lossy compression is not idempotent. Every time you open a JPEG and re-save it, it is decoded and re-compressed, and a little more is thrown away. Editing the same JPEG repeatedly visibly degrades it — always keep an original and export from that.',
+      },
+      { kind: 'h2', text: 'What JPEG actually discards' },
+      {
+        kind: 'p',
+        text: 'JPEG exploits two facts about human vision. The first is that we perceive brightness far more precisely than colour, so JPEG separates the two and stores colour information at lower resolution — often a quarter of the pixels. This is chroma subsampling, and it is nearly invisible on photographs while removing a large fraction of the data immediately.',
+      },
+      {
+        kind: 'p',
+        text: 'The second is that we notice broad shapes more than fine high-frequency detail. JPEG divides the image into 8×8 blocks and expresses each as a combination of frequency patterns, then rounds away the high-frequency components most aggressively. The quality slider is essentially controlling how coarsely that rounding happens.',
+      },
+      {
+        kind: 'p',
+        text: 'This explains JPEG\'s characteristic failures. Push quality too low and the 8×8 blocks become visible as squares. Sharp edges — text, logos, line art — acquire a shimmer around them, because a hard edge is exactly the high-frequency content JPEG is designed to discard. That is why a screenshot saved as JPEG looks muddy while a photograph looks fine.',
+      },
+      { kind: 'h2', text: 'Why PNG is enormous for photographs' },
+      {
+        kind: 'p',
+        text: 'PNG compresses by finding predictable structure — runs of identical pixels, rows that resemble the row above. A screenshot, a logo or a diagram is full of that structure, so PNG compresses it beautifully and losslessly.',
+      },
+      {
+        kind: 'p',
+        text: 'A photograph has almost none. Every pixel differs slightly from its neighbours because of sensor noise and natural texture, so there is little for the algorithm to exploit, and PNG ends up storing something close to the raw data. This is why the same photo can be 12 MB as PNG and 400 KB as a high-quality JPEG that looks identical.',
+      },
+      {
+        kind: 'p',
+        text: 'PNG\'s real advantage is transparency, which it handles properly with a full alpha channel — the reason it remains the right choice for logos and interface assets.',
+      },
+      { kind: 'h2', text: 'What WebP and AVIF changed' },
+      {
+        kind: 'p',
+        text: 'JPEG dates from 1992. WebP and AVIF apply three decades of research since, borrowing techniques from video compression — where the same problem has had far more money spent on it. Both predict blocks from their neighbours in more sophisticated ways and use variable block sizes rather than a fixed 8×8 grid.',
+      },
+      {
+        kind: 'p',
+        text: 'In practice WebP produces files roughly 25–35% smaller than JPEG at comparable quality, and AVIF often 50% smaller than JPEG. Both also support transparency and lossless modes, so they can replace PNG as well. The costs are encoding time — AVIF is markedly slower to produce — and support, which for WebP is now universal in current browsers and for AVIF is good but not yet total.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Convert between all of these in your browser, without uploading anything:',
+        slug: 'image-converter',
+      },
+      { kind: 'h2', text: 'Why your phone gives you HEIC' },
+      {
+        kind: 'p',
+        text: 'HEIC is what Apple devices produce by default, and it exists for the same reason AVIF does: it wraps a modern video codec around still images, roughly halving the size of an equivalent JPEG. On a phone, that is an enormous saving across thousands of photos.',
+      },
+      {
+        kind: 'p',
+        text: 'The friction is everywhere else. Support outside the Apple ecosystem remains patchy, so HEIC files are routinely rejected by upload forms, refused by older software and unopenable on a colleague\'s machine. Converting to JPEG is the usual fix, and it is worth remembering that this is a lossy-to-lossy conversion — you are decoding one lossy image and re-encoding it as another, so keep quality high.',
+      },
+      { kind: 'h2', text: 'Choosing, briefly' },
+      {
+        kind: 'ul',
+        items: [
+          'Photograph on a website — WebP, with a JPEG fallback if you must support very old clients.',
+          'Photograph that has to work absolutely everywhere, including old software and email — JPEG.',
+          'Screenshot, logo, diagram, or anything with text or sharp edges — PNG, or WebP lossless.',
+          'Anything needing transparency — PNG, WebP or AVIF; never JPEG, which has no alpha channel at all.',
+          'Smallest possible file and you control the audience — AVIF.',
+          'An iPhone photo you need to send someone — convert to JPEG.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'One last point that outweighs format choice more often than people expect: resize before you compress. A 4000-pixel-wide photograph displayed in a 800-pixel column is carrying five times the pixels it needs, and no amount of clever compression fixes that. Reducing the dimensions is the single largest saving available, and it costs nothing visible.',
+      },
+    ],
+    related: ['image-converter', 'image-compressor', 'exif-viewer'],
+    relatedGuides: ['compress-images-for-web', 'photo-metadata-privacy'],
+  },
+
+  {
+    slug: 'photo-metadata-privacy',
+    title: 'What your photos reveal: EXIF metadata, GPS coordinates and how to strip them',
+    description:
+      'Photos carry the camera, the exact time and often the precise coordinates where they were taken. What is in there, who can read it, and how to remove it without ruining the image.',
+    category: 'Privacy',
+    readingMinutes: 9,
+    updated: '2026-08-31',
+    published: '2026-08-31',
+    intro: [
+      'A photograph is not only a picture. Tucked into the file, invisible unless you go looking, is a record of the device that took it, the settings it used, the second the shutter opened and — if location services were on — the coordinates of the spot you were standing.',
+      'None of this is sinister by design; it is genuinely useful for organising a photo library. It becomes a problem the moment a photo leaves your control, which is most of the time. This guide covers what is actually in there, when it survives sharing, and how to remove it properly.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'What is actually stored' },
+      {
+        kind: 'p',
+        text: 'The standard is called EXIF — Exchangeable Image File Format — and it is a block of structured data written into the file alongside the image itself. A typical phone photo contains the make and model of the device, the lens, the exposure time, aperture and ISO, the orientation, the software version, and a timestamp accurate to the second.',
+      },
+      {
+        kind: 'p',
+        text: 'If location services were enabled for the camera, it also contains GPS coordinates, often with altitude and sometimes a compass bearing. Those coordinates are precise to a few metres — enough to identify a specific building, not a general area.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'The combination is what matters. A single photo gives a place and a moment. A set of photos gives a pattern: where you live, where you work, when you are usually at each, and when you were away.',
+      },
+      { kind: 'tool', lead: 'See exactly what one of your own photos contains:', slug: 'exif-viewer' },
+      { kind: 'h2', text: 'Serial numbers and the quiet identifier' },
+      {
+        kind: 'p',
+        text: 'Less well known is that many cameras write a body serial number, and sometimes a lens serial number, into every photo. It is a stable identifier that links every image from that device, across every account and pseudonym you have ever posted under. Photos shared anonymously in one place and under your name in another can be tied together by nothing more than that field.',
+      },
+      {
+        kind: 'p',
+        text: 'Editing software adds its own traces too — the application and version, and occasionally an author or copyright field populated from whatever name the software was registered with, which is not always a name you meant to publish.',
+      },
+      { kind: 'h2', text: 'Does sharing strip it? Sometimes' },
+      {
+        kind: 'p',
+        text: 'The large social platforms generally do remove metadata, because they re-encode every upload for their own purposes and the metadata does not survive. That has led to a widespread assumption that sharing is safe, and the assumption is where people get caught.',
+      },
+      {
+        kind: 'p',
+        text: 'Metadata routinely survives when a photo is emailed as an attachment, uploaded to a file-sharing service, sent through a chat app as a document rather than as a photo, posted to a smaller site that stores the original, or handed over on a USB drive. It also survives most cloud backup and sync. The rule of thumb is that anything preserving your original file preserves everything in it.',
+      },
+      { kind: 'h2', text: 'Removing it without wrecking the photo' },
+      {
+        kind: 'p',
+        text: 'The obvious approach — open the photo in an editor and save a copy — does work, and it has a hidden cost. Saving a JPEG re-encodes it, which means another round of lossy compression and a slightly worse image than the one you started with. Do it a few times and the degradation becomes visible.',
+      },
+      {
+        kind: 'p',
+        text: 'The better approach is to edit the container rather than the image: remove the metadata sections of the file and copy the compressed image data across untouched. For a JPEG that means dropping the segment the metadata lives in; for a PNG, the text and metadata chunks. The result is pixel-for-pixel identical to the original, just smaller by however many bytes the metadata occupied. That is what this site\'s EXIF tool does, and it is worth preferring wherever it is available.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'One caveat: removing metadata does not remove anything visible in the photograph itself. A street sign, a house number, a reflection or a screen in the background is content, not metadata, and no stripping tool will touch it.',
+      },
+      { kind: 'h2', text: 'Sensible habits' },
+      {
+        kind: 'ul',
+        items: [
+          'Turn off location for the camera app if you do not need it. This is the single most effective step, because metadata never written cannot leak.',
+          'Strip metadata before sharing photos of your home, your children, or anywhere you spend time regularly.',
+          'Be especially careful with photos sent as email attachments or as chat “documents”, which preserve the original file.',
+          'Check before you post rather than after. Once a file is uploaded you cannot retrieve the copy someone else already has.',
+          'Remember that screenshots carry metadata too, including the device and sometimes the software.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'The honest framing is not that metadata is dangerous — it is that it is invisible. People make sensible decisions about what a photo shows and no decision at all about what it records, because they have never been shown. Looking at one of your own photos once tends to change how you handle all of them.',
+      },
+    ],
+    related: ['exif-viewer', 'image-converter', 'image-compressor'],
+    relatedGuides: ['image-formats-explained', 'compress-images-for-web'],
   },
 ];
 
