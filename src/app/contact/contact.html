@@ -70,4 +70,59 @@
       fixable.
     </p>
   </section>
+
+  <section class="section" aria-labelledby="c-who">
+    <h2 id="c-who" class="section__title">Who runs this site</h2>
+    <p class="section__text">
+      YYDevTools is built and maintained by Yehan Yeshminda, a software developer. It started as a
+      set of utilities I kept needing and kept not trusting the existing versions of — the sort of
+      thing where you want to decode a token or strip the location data out of a photo, search for a
+      tool, and then think better of pasting the contents into a stranger's server.
+    </p>
+    <p class="section__text">
+      That reservation is the whole design brief. Nearly every tool here runs entirely inside your
+      browser, which is a verifiable claim rather than a promise: load a page, disconnect from the
+      internet, and the tool still works. Three PDF operations genuinely cannot run in a browser and
+      are sent to a self-hosted service instead; those are the only ones, they are labelled as
+      hosted wherever they appear, and the
+      <a class="link" routerLink="/privacy">Privacy Policy</a> names them individually rather than
+      hiding behind a general disclaimer.
+    </p>
+    <p class="section__text">
+      The whole thing is open source, so none of this has to be taken on trust — the code that runs
+      in your browser is the code in the repository, and you are welcome to read it.
+    </p>
+  </section>
+
+  <section class="section" aria-labelledby="c-goodreport">
+    <h2 id="c-goodreport" class="section__title">How to write a report I can act on</h2>
+    <p class="section__text">
+      Most bug reports that go nowhere fail for the same reason: the problem cannot be reproduced.
+      Because these tools run on your device, in your browser, with your file, a description like
+      "the PDF tool is broken" gives nothing to work from — the same tool is working for someone
+      else on the next machine.
+    </p>
+    <p class="section__text">
+      What helps, roughly in order of usefulness: which tool and what you were trying to do; what
+      happened instead, including the exact wording of any error; your browser and version; and the
+      kind of file involved — its format, rough size, and where it came from, since a PDF from a
+      scanner behaves very differently from one exported by a word processor.
+    </p>
+    <p class="section__text">
+      Please do not send the file itself unless you are certain it holds nothing private. A
+      description of the file is almost always enough, and if it genuinely is not, I would rather
+      ask you for a redacted example than receive somebody's contract or medical record by email.
+    </p>
+  </section>
+
+  <section class="section" aria-labelledby="c-security">
+    <h2 id="c-security" class="section__title">Reporting a security issue</h2>
+    <p class="section__text">
+      If you have found a security problem — a way to make a tool leak data off the device, a flaw
+      in how the sandboxed HTML preview is isolated, or anything affecting the hosted PDF services —
+      please email it rather than opening a public issue, so it can be fixed before it is
+      advertised. Include the steps to reproduce it and what you were able to achieve. Reports are
+      taken seriously and answered, and credit is given to anyone who wants it.
+    </p>
+  </section>
 </article>

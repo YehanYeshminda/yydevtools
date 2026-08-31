@@ -13,8 +13,12 @@ import { join, relative, sep } from 'node:path';
 const SITE_URL = 'https://yydevtools.com';
 const OUT_DIR = 'dist/yydevtools/browser';
 
-/** Prerendered but deliberately not indexed. */
-const EXCLUDED = new Set(['/404']);
+/**
+ * Prerendered but deliberately not indexed, so they must not be advertised in
+ * the sitemap either — a sitemap that lists a `noindex` page sends a crawler a
+ * contradiction. Keep this in step with the `noindex: true` route data.
+ */
+const EXCLUDED = new Set(['/404', '/news']);
 
 /** Home first, then tools, then the rest — purely for a readable file. */
 function priorityFor(path) {

@@ -481,6 +481,14 @@ export const routes: Routes = [
       description:
         'Today’s technology news, gathered from many independent publishers for a spread of ' +
         'perspectives on software, hardware, security and the wider tech industry. Free, no sign-up.',
+      // Deliberately not indexed, for two reasons that both point the same way.
+      // The headlines are fetched after hydration, so what a crawler receives is
+      // a loading shell of about 90 words — a thin page by any measure. And the
+      // content, once it arrives, is other publishers' headlines and summaries;
+      // an aggregation of someone else's writing is exactly what search quality
+      // guidelines mean by scraped content with little added value. It stays for
+      // readers, who get a useful digest; it just is not offered for indexing.
+      noindex: true,
     },
   },
   {

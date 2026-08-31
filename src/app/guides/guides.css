@@ -148,3 +148,40 @@
   transform: translateX(3px);
   color: var(--primary);
 }
+
+/* Closing prose below the list — explains what the section is for, and gives the
+   index a reason to exist as a page rather than only as a set of links. */
+.about {
+  margin-top: 44px;
+  padding-top: 28px;
+  border-top: 1px solid var(--outline);
+  max-width: var(--page-measure);
+}
+
+.about__title {
+  margin: 0 0 10px;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--on);
+}
+
+.about__title:not(:first-child) {
+  margin-top: 28px;
+}
+
+.about__p {
+  margin: 0 0 14px;
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--on-var);
+}
+
+.about__link {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.about__link:hover {
+  text-decoration: underline;
+}

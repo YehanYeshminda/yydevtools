@@ -30,3 +30,38 @@
     </li>
   }
 </ul>
+
+<section class="about" aria-labelledby="about-guides">
+  <h2 id="about-guides" class="about__title">Why these guides exist</h2>
+  <p class="about__p">
+    A tool can show you an answer without ever telling you what it means. You can decode a JWT and
+    still not know that decoding proves nothing about who issued it. You can Base64-encode a
+    password and come away believing you protected it. You can write a cron expression for the
+    thirteenth of the month, land on a schedule that also fires every Friday, and not find out for
+    weeks. Every one of those is a mistake made by someone who used the right tool correctly and
+    had the wrong model in their head.
+  </p>
+  <p class="about__p">
+    These guides are for the model. Each one takes a single idea that developers meet constantly
+    and rarely have explained — what is actually inside a token, why encoding and encryption are
+    different things, where the size of an image really comes from — and walks through it in plain
+    language, with the specific misunderstandings that cause real bugs called out where they
+    belong.
+  </p>
+  <p class="about__p">
+    They are written to be read on their own rather than as documentation for a tool. Where trying
+    something makes the idea concrete, a guide links to the tool that does it, and the tool pages
+    link back. Nothing here is generated or reworded from somewhere else: each guide is written
+    from scratch, and is revised when something changes or an explanation turns out not to land.
+  </p>
+
+  <h2 class="about__title">What is coming</h2>
+  <p class="about__p">
+    The set grows as the tools do. Subjects being written next include certificates and the chain
+    of trust, what actually happens when a browser makes an HTTPS connection, the difference
+    between hashing a password and encrypting it, and how image formats decide what to throw away.
+    If there is something you have always half-understood and would like written up properly,
+    <a class="about__link" routerLink="/contact">say so</a> — several of these started as exactly
+    that kind of question.
+  </p>
+</section>
