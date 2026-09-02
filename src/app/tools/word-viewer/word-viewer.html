@@ -45,30 +45,66 @@
       }
     </div>
 
-    <div class="actions">
-      <button matButton (click)="copyText()">
-        <ng-icon name="matContentCopyOutline" />
-        Copy text
-      </button>
-      <button matButton (click)="downloadText()">
-        <ng-icon name="matDownloadOutline" />
-        Download as .txt
-      </button>
-      <button matButton (click)="print()">
-        <ng-icon name="matDescriptionOutline" />
-        Print
-      </button>
-      <button matButton (click)="reset()">
-        <ng-icon name="matRefreshOutline" />
-        Open another
-      </button>
+    <div class="toolbar">
+      <div class="actions">
+        <button matButton (click)="copyText()">
+          <ng-icon name="matContentCopyOutline" />
+          Copy text
+        </button>
+        <button matButton (click)="downloadText()">
+          <ng-icon name="matDownloadOutline" />
+          Download as .txt
+        </button>
+        <button matButton (click)="print()">
+          <ng-icon name="matDescriptionOutline" />
+          Print
+        </button>
+        <button matButton (click)="reset()">
+          <ng-icon name="matRefreshOutline" />
+          Open another
+        </button>
+      </div>
+
+      <!-- Zoom, not reflow: the page keeps its real proportions and its real
+           line breaks, and simply gets smaller. -->
+      <div class="zoom" role="group" aria-label="Zoom">
+        <button
+          type="button"
+          class="chip zoom__step"
+          [disabled]="!canZoomOut()"
+          aria-label="Zoom out"
+          (click)="zoomOut()"
+        >
+          <ng-icon aria-hidden="true" name="matZoomOutOutline" />
+        </button>
+        <span class="zoom__level" aria-live="polite">{{ zoomPercent() }}%</span>
+        <button
+          type="button"
+          class="chip zoom__step"
+          [disabled]="!canZoomIn()"
+          aria-label="Zoom in"
+          (click)="zoomIn()"
+        >
+          <ng-icon aria-hidden="true" name="matZoomInOutline" />
+        </button>
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="zoom() === 'fit'"
+          [attr.aria-pressed]="zoom() === 'fit'"
+          (click)="fitWidth()"
+        >
+          <ng-icon aria-hidden="true" name="matFitScreenOutline" />
+          Fit width
+        </button>
+      </div>
     </div>
   }
 
   <!-- The document is rendered into a shadow root attached to this element, so
        the stylesheet docx-preview builds from the file's own styles cannot
        escape and restyle the rest of the page. -->
-  <div class="page" [class.page--empty]="!hasDocument()">
+  <div #surface class="page" [class.page--empty]="!hasDocument()">
     <div #renderHost class="page__host"></div>
   </div>
 </div>

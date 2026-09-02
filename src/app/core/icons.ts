@@ -50,6 +50,7 @@ import {
   matExploreOffOutline,
   matFindReplaceOutline,
   matFingerprintOutline,
+  matFitScreenOutline,
   matFormatAlignLeftOutline,
   matFormatIndentIncreaseOutline,
   matFormatQuoteOutline,
@@ -118,6 +119,8 @@ import {
   matWarningOutline,
   matWifiOutline,
   matWrapTextOutline,
+  matZoomInOutline,
+  matZoomOutOutline,
 } from '@ng-icons/material-icons/outline';
 
 export const APP_ICONS = {
@@ -166,6 +169,7 @@ export const APP_ICONS = {
   matExploreOffOutline,
   matFindReplaceOutline,
   matFingerprintOutline,
+  matFitScreenOutline,
   matFormatAlignLeftOutline,
   matFormatIndentIncreaseOutline,
   matFormatQuoteOutline,
@@ -234,4 +238,6 @@ export const APP_ICONS = {
   matWarningOutline,
   matWifiOutline,
   matWrapTextOutline,
+  matZoomInOutline,
+  matZoomOutOutline,
 };

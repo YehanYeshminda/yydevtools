@@ -1106,6 +1106,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     steps: [
       'Drop a .docx file onto the page, or click to choose one.',
       'Read it in place — pages, tables and images are rendered as they appear in Word.',
+      'Zoom in or out, or leave it on Fit width, which sizes the page to the space available.',
       'Copy the text out, or download it as a plain .txt file.',
       'Use Print if you want a paper copy or a PDF, which prints the document alone rather than the page around it.',
     ],
@@ -1113,6 +1114,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Renders .docx with its real layout: headings, tables, lists, images, headers and footers.',
       'Page, word and paragraph counts for the document.',
       'Copy the whole text, or download it as .txt.',
+      'Zoom from 25% to 300%, or fit the page to the width of the window.',
       'Print the document on its own, without the site around it.',
       'Runs entirely in your browser — the file is unzipped and rendered in the tab, never uploaded.',
     ],
@@ -1131,6 +1133,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
           'A viewer reproduces a Word document; it does not run Word. The gap shows up in a few predictable places, and knowing them saves confusion.',
           'Fonts are the biggest one. A .docx usually names its fonts rather than embedding them, so if the document was written in a typeface your device does not have, the browser substitutes something else — and different letter widths mean different line breaks, which can shift where pages divide. Complex floating layouts, text boxes anchored to particular positions, and drawings built from Office shapes are also approximated rather than reproduced exactly.',
           'Anything requiring Word to compute a value will not update either: field codes, automatic cross-references and page-number fields render as whatever value was last saved into the file. For reading a document, none of this matters much. For checking that a layout is exactly right before printing, open it in a word processor.',
+          'Width is handled deliberately rather than by cropping. A Word page is a fixed size, and the column it is being read in usually is not, so the whole page is scaled to fit rather than reflowed: the same words break on the same lines, on the same pages, and the zoom controls change nothing but the size. Tables wider than the page they sit on are common in exported reports, and those are drawn in full, with the sheet grown to hold them, rather than trimmed off at the edge of the paper.',
         ],
       },
       {

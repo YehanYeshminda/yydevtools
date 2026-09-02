@@ -1,5 +1,5 @@
-/* Panel, dropzone, actions, status lines and notes come from ../tool-shell.css.
-   Only the document surface is particular to this tool. */
+/* Panel, dropzone, actions, chips, status lines and notes come from
+   ../tool-shell.css. Only the document surface is particular to this tool. */
 
 .loading {
   display: flex;
@@ -52,10 +52,55 @@
   color: var(--on-var);
 }
 
+/* Toolbar ---------------------------------------------------------------- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.zoom__step {
+  padding: 0.35rem 0.5rem;
+}
+
+.zoom__step:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.zoom__step:disabled:hover {
+  background: transparent;
+}
+
+/* Fixed width, so stepping through 50 → 100 → 125 does not shuffle the
+   buttons either side of the readout. */
+.zoom__level {
+  min-width: 3.5rem;
+  text-align: center;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--on-var);
+}
+
 /* Document surface ------------------------------------------------------- */
-/* A neutral grey ground, so the white pages docx-preview emits read as sheets
-   of paper rather than as part of the interface. */
+/* A neutral ground, so the white pages read as sheets of paper rather than as
+   part of the interface. `safe center` centres a page that fits and quietly
+   falls back to left-aligned when one does not — plain centring would push the
+   left edge of an oversized page outside the scroll container, where no amount
+   of scrolling can reach it. */
 .page {
+  display: flex;
+  justify-content: flex-start;
+  justify-content: safe center;
+  padding: 1rem;
   overflow: auto;
   border-radius: 12px;
   background: var(--surface-2);
@@ -65,34 +110,33 @@
   display: none;
 }
 
+/* Sized in JS to the scaled document: a transform leaves layout untouched, so
+   the host has to be told what the result measures. */
 .page__host {
   display: block;
-  padding: 1rem 0;
-}
-
-/* Word documents are laid out at a fixed page width, so on a narrow screen the
-   pages would otherwise overflow the column. Scrolling the container is the
-   honest fix: scaling the page down would misrepresent the document, which is
-   the one thing a viewer must not do. */
-@media (max-width: 900px) {
-  .page {
-    /* Let the fixed-width pages scroll horizontally rather than clip. */
-    overflow-x: auto;
-  }
+  flex: none;
 }
 
 @media print {
-  /* Printing should produce the document, not the site around it. */
+  /* Printing should produce the document, not the site around it — and at its
+     true size, whatever the viewer is zoomed to. */
   app-tool-page,
   .bar,
-  .actions,
+  .toolbar,
   .note,
   app-tool-content {
     display: none !important;
   }
 
   .page {
+    display: block;
+    padding: 0;
     background: none;
     overflow: visible;
+  }
+
+  .page__host {
+    width: auto !important;
+    height: auto !important;
   }
 }
