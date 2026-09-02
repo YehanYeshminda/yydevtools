@@ -91,7 +91,8 @@
                                                                                                                             "@xml-tools/parser",
                                                                                                                             "secure-random-password",
                                                                                                                             "secure-random-password/lib/random",
-              "jszip"
+              "jszip",
+              "papaparse"
                                                                                                                         ],
                                                                                         "server":  "src/main.server.ts",
                                                                                         "outputMode":  "static",

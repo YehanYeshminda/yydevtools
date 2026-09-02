@@ -1021,6 +1021,82 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['base64-converter', 'json-formatter', 'timestamp-converter'],
   },
 
+  'csv-viewer': {
+    slug: 'csv-viewer',
+    intro: [
+      'Open a CSV and read it as an actual table rather than a wall of commas. The delimiter is detected for you, the first row becomes column headings unless you say otherwise, every cell is searchable, and each column is labelled with what it appears to hold — number, date, boolean or text. When you want the data somewhere else, it exports as JSON.',
+      'This is the tool for the moment a spreadsheet mangles an export, or when you want to look at a file without opening Excel and being asked about formatting. It runs entirely in your browser, which matters because a CSV export is almost always customer records, transactions or an account extract.',
+    ],
+    steps: [
+      'Drop a CSV or TSV file onto the page, or click to choose one.',
+      'Read the summary: row and column counts, and which delimiter was detected.',
+      'Search across every cell to narrow the table down.',
+      'Turn off "First row is a header" if the file begins with data instead.',
+      'Copy the result as JSON, or download it.',
+    ],
+    features: [
+      'Automatic delimiter detection — comma, semicolon, tab or pipe.',
+      'Correct handling of quoted fields, embedded commas and newlines inside values.',
+      'A search that looks in every cell, not just one column.',
+      'Per-column type labels, and a count of blank cells.',
+      'Warnings when rows have the wrong number of cells, which usually means an unquoted delimiter.',
+      'Export to JSON, respecting the current search.',
+      'Runs entirely in your browser — the file is never uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Why CSV is harder than it looks',
+        body: [
+          'CSV appears to be the simplest format imaginable — values, commas, newlines — which is why so much code splits it on commas and is wrong. The complications are real. A value may itself contain a comma, so it is wrapped in quotes. A value may contain a quote, which is then doubled. A value may contain a newline, so a single record can span several lines of the file. Splitting on commas breaks all three.',
+          'There is also no standard. RFC 4180 describes one common dialect, but plenty of software ignores it: European locales frequently use semicolons, because the comma is their decimal separator; some exports use tabs; some quote every field, others only the ones that need it. A parser has to work out which dialect it is looking at before it can read a single row, which is why this tool tells you the delimiter it found.',
+        ],
+      },
+      {
+        heading: 'The mistakes a spreadsheet makes for you',
+        body: [
+          'Opening a CSV in Excel or Sheets is the usual move, and it is where data quietly gets damaged. Leading zeros vanish, because a postcode or an account number that begins with a zero is read as a number: 01234 becomes 1234. Long identifiers get converted to scientific notation. Values that look like dates get rewritten into whatever the local date format is, which is how an American CSV opened in Europe ends up with the day and month swapped in some rows and not others.',
+          'That last one is worth dwelling on, because it is silent. A date column with values above the twelfth of the month is unambiguous and passes through; values below it get transposed. The result is a file that is mostly right, which is far worse than one that is obviously broken.',
+          'Everything here is kept as text, exactly as it appears in the file. Column types are labelled for your information and never applied, so nothing is converted, rounded or reformatted behind your back.',
+        ],
+      },
+      {
+        heading: 'When a row has the wrong number of cells',
+        body: [
+          'The most common corruption in a real CSV is a row with too many fields, and it nearly always has the same cause: a value containing the delimiter that was never quoted. A single "Smith, John" written without quotes turns one field into two, shifting every value after it one column to the left for that row alone.',
+          'This is nasty precisely because the file still opens. The header count and most rows are fine; a handful are misaligned, so a name lands in the country column and a total lands in the date. This tool reports rows whose length does not match the rest, which is usually enough to find the offending line and fix it at the source.',
+          'The fix belongs upstream, in whatever produced the file — quoting every field containing a delimiter, a quote or a newline. Repairing it by hand afterwards works for one file and not for the next export.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is my CSV uploaded anywhere?',
+        a: 'No. The file is read with the browser\'s file API and parsed in the page. Nothing is transmitted, which you can check by loading the page, going offline and opening a file anyway. Given that CSV exports are usually customer lists, transactions or account extracts, this is the whole reason to use a local tool.',
+      },
+      {
+        q: 'Does it handle semicolons and tabs?',
+        a: 'Yes. The delimiter is detected from the file rather than assumed, and comma, semicolon, tab and pipe are all recognised. The summary line tells you which one was found, which is often the answer when a file looks wrong in one program and fine in another.',
+      },
+      {
+        q: 'Will it mangle my leading zeros or dates like Excel does?',
+        a: 'No. Every value is kept as the text it is in the file. Column types are shown as labels so you can see what a column appears to hold, but no conversion is applied — postcodes keep their leading zeros, long ids stay as digits rather than becoming scientific notation, and dates are never reformatted.',
+      },
+      {
+        q: 'Why does it warn that a row has the wrong number of cells?',
+        a: 'Because it almost always means a value containing the delimiter was not quoted, which shifts every field after it in that row. The file still opens, so the damage is easy to miss — the warning points at the rows worth checking.',
+      },
+      {
+        q: 'How large a file can it open?',
+        a: 'Up to 25 MB. The whole file is parsed and held in memory, but only the first 500 matching rows are drawn at a time, because rendering tens of thousands of table rows is what actually makes a page unusable. Searching narrows the set, and exporting includes every matching row rather than only the visible ones.',
+      },
+      {
+        q: 'Can I edit the data here?',
+        a: 'No — this is a viewer. It reads, searches and exports, but does not write CSV files. Export to JSON and edit there, or fix the data in whatever system produced it.',
+      },
+    ],
+    related: ['json-formatter', 'json-to-types', 'word-counter'],
+  },
+
   'word-viewer': {
     slug: 'word-viewer',
     intro: [

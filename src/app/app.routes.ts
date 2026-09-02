@@ -253,6 +253,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/csv-viewer',
+    loadComponent: () => import('./tools/csv-viewer/csv-viewer').then((m) => m.CsvViewerTool),
+    title: 'CSV Viewer — Open and search CSV files online — YYDevTools',
+    data: {
+      description:
+        'Open a CSV as a searchable table with the delimiter detected automatically, see what ' +
+        'each column holds, and export to JSON. Nothing is uploaded. Free, no sign-up.',
+    },
+  },
+  {
     path: 'tools/word-viewer',
     loadComponent: () => import('./tools/word-viewer/word-viewer').then((m) => m.WordViewerTool),
     title: 'Word Viewer — Open DOCX in your browser — YYDevTools',

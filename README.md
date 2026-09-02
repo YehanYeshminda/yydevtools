@@ -57,6 +57,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **PDF Convert** | Turn a PDF into an editable Word or rich-text file. *(hosted)* |
 | **PDF OCR** | Make a scanned PDF searchable — short English files entirely in the browser. *(long files hosted)* |
 | **PDF Compress** | Shrink a PDF by downsampling the images inside it. *(hosted)* |
+| **CSV Viewer** | Open a CSV as a searchable table with the delimiter detected, and export it as JSON. |
 | **Word Viewer** | Open and read a .docx with its layout, tables and images intact, and copy the text out. |
 | **PDF Viewer** | Open and read a PDF with thumbnails, search and zoom. |
 | **PDF Organizer** | Reorder, rotate and delete PDF pages visually, and combine files. |

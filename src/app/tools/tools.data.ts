@@ -251,6 +251,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'csv-viewer',
+    name: 'CSV Viewer',
+    description:
+      'Open a CSV as a searchable table, see what each column holds, and export it as JSON.',
+    icon: 'matStorageOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'word-viewer',
     name: 'Word Viewer',
     description:

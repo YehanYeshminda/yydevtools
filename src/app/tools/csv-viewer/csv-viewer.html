@@ -1,0 +1,145 @@
+<app-tool-page slug="csv-viewer">
+  Open a CSV and read it as a real table — with the delimiter detected for you, a search across
+  every cell, and a look at what each column holds. Nothing is uploaded.
+</app-tool-page>
+
+<div class="panel">
+  @if (!loaded()) {
+    <app-dropzone accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values" (filesSelected)="open($event)">
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matStorageOutline" />
+      <span class="dropzone__title">Drop a CSV file here, or click to choose</span>
+      <span class="dropzone__hint">CSV, TSV or delimited text — up to 25 MB, never uploaded</span>
+    </app-dropzone>
+
+    <div class="actions">
+      <app-try-example (loadExample)="loadExample()" />
+    </div>
+  }
+
+  @if (loaded()) {
+    <!-- Summary bar -------------------------------------------------- -->
+    <div class="bar">
+      <div class="bar__file">
+        <ng-icon class="bar__icon" aria-hidden="true" name="matStorageOutline" />
+        <span class="bar__name">{{ name() }}</span>
+      </div>
+      <span class="bar__meta">
+        {{ rows().length }} row{{ rows().length === 1 ? '' : 's' }} ·
+        {{ headers().length }} column{{ headers().length === 1 ? '' : 's' }} ·
+        {{ delimiterName() }}-separated ·
+        {{ formatBytes(size()) }}
+      </span>
+    </div>
+
+    @if (problems().length) {
+      <div class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matWarningOutline" />
+        <span class="note__text">
+          <strong>The file is not perfectly regular.</strong>
+          A row with the wrong number of cells usually means a delimiter inside a field that was
+          never quoted, which shifts every value after it.
+          <br />
+          @for (problem of problems(); track $index) {
+            <span class="problem">{{ problem }}</span>
+          }
+        </span>
+      </div>
+    }
+
+    <!-- Controls ----------------------------------------------------- -->
+    <div class="controls">
+      <label class="controls__search">
+        <span class="sr-only">Search every cell</span>
+        <input
+          type="search"
+          class="field__input"
+          placeholder="Search every cell…"
+          [value]="filter()"
+          (input)="onFilterInput($event)"
+        />
+      </label>
+
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="firstRowIsHeader()"
+        [attr.aria-pressed]="firstRowIsHeader()"
+        (click)="toggleHeader()"
+      >
+        <ng-icon aria-hidden="true" [name]="firstRowIsHeader() ? 'matCheckOutline' : 'matCloseOutline'" />
+        First row is a header
+      </button>
+    </div>
+
+    @if (filtering()) {
+      <p class="explore__count">
+        {{ visible().length }} of {{ rows().length }} rows match
+      </p>
+    }
+
+    <!-- Table -------------------------------------------------------- -->
+    <div class="tablewrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th class="grid__num" scope="col"><span class="sr-only">Row number</span>#</th>
+            @for (column of columns(); track $index) {
+              <th scope="col">
+                <span class="grid__name">{{ column.name }}</span>
+                <span class="grid__type">{{ column.type }}</span>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of shown(); track $index) {
+            <tr>
+              <td class="grid__num">{{ $index + 1 }}</td>
+              @for (cell of row; track $index) {
+                <td [class.grid__blank]="cell.trim() === ''">{{ cell }}</td>
+              }
+            </tr>
+          } @empty {
+            <tr>
+              <td class="grid__none" [attr.colspan]="headers().length + 1">
+                Nothing matches that search.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (truncated()) {
+      <p class="field__hint">
+        Showing the first {{ renderLimit }} of {{ visible().length }} rows. Search to narrow it
+        down — the whole file is still loaded, and export includes every matching row.
+      </p>
+    }
+
+    <div class="actions">
+      <button matButton (click)="copyJson()">
+        <ng-icon name="matContentCopyOutline" />
+        Copy as JSON
+      </button>
+      <button matButton (click)="downloadJson()">
+        <ng-icon name="matDownloadOutline" />
+        Download .json
+      </button>
+      <button matButton (click)="reset()">
+        <ng-icon name="matRefreshOutline" />
+        Open another
+      </button>
+    </div>
+  }
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+  <span class="note__text">
+    The file is parsed in this tab and never uploaded — worth having, because a CSV export is
+    usually customer records, transactions or an account extract.
+  </span>
+</p>
+
+<app-tool-content slug="csv-viewer" />
