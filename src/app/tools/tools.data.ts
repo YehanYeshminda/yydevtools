@@ -251,6 +251,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'word-viewer',
+    name: 'Word Viewer',
+    description:
+      'Open and read a .docx document with its layout intact, and copy the text out.',
+    icon: 'matDescriptionOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'pdf-viewer',
     name: 'PDF Viewer',
     description: 'Open and read a PDF with thumbnails, search and zoom — no upload.',

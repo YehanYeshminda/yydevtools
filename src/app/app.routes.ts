@@ -253,6 +253,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/word-viewer',
+    loadComponent: () => import('./tools/word-viewer/word-viewer').then((m) => m.WordViewerTool),
+    title: 'Word Viewer — Open DOCX in your browser — YYDevTools',
+    data: {
+      description:
+        'Open and read a Word .docx document in your browser with its layout, tables and images ' +
+        'intact, and copy the text out. The file is never uploaded. Free, no sign-up.',
+    },
+  },
+  {
     path: 'tools/pdf-viewer',
     loadComponent: () => import('./tools/pdf-viewer/pdf-viewer').then((m) => m.PdfViewerTool),
     title: 'PDF Viewer — YYDevTools',

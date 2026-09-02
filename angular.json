@@ -90,7 +90,8 @@
                                                                                                                             "yaml",
                                                                                                                             "@xml-tools/parser",
                                                                                                                             "secure-random-password",
-                                                                                                                            "secure-random-password/lib/random"
+                                                                                                                            "secure-random-password/lib/random",
+              "jszip"
                                                                                                                         ],
                                                                                         "server":  "src/main.server.ts",
                                                                                         "outputMode":  "static",

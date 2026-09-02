@@ -1,0 +1,98 @@
+/* Panel, dropzone, actions, status lines and notes come from ../tool-shell.css.
+   Only the document surface is particular to this tool. */
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  justify-content: center;
+  color: var(--on-var);
+}
+
+/* File bar --------------------------------------------------------------- */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 12px;
+  background: var(--surface-1);
+}
+
+.bar__file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.bar__icon {
+  flex: none;
+  font-size: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  color: var(--primary);
+}
+
+.bar__name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--on);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar__meta {
+  font-size: 0.82rem;
+  color: var(--on-var);
+}
+
+/* Document surface ------------------------------------------------------- */
+/* A neutral grey ground, so the white pages docx-preview emits read as sheets
+   of paper rather than as part of the interface. */
+.page {
+  overflow: auto;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.page--empty {
+  display: none;
+}
+
+.page__host {
+  display: block;
+  padding: 1rem 0;
+}
+
+/* Word documents are laid out at a fixed page width, so on a narrow screen the
+   pages would otherwise overflow the column. Scrolling the container is the
+   honest fix: scaling the page down would misrepresent the document, which is
+   the one thing a viewer must not do. */
+@media (max-width: 900px) {
+  .page {
+    /* Let the fixed-width pages scroll horizontally rather than clip. */
+    overflow-x: auto;
+  }
+}
+
+@media print {
+  /* Printing should produce the document, not the site around it. */
+  app-tool-page,
+  .bar,
+  .actions,
+  .note,
+  app-tool-content {
+    display: none !important;
+  }
+
+  .page {
+    background: none;
+    overflow: visible;
+  }
+}

@@ -1021,6 +1021,80 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['base64-converter', 'json-formatter', 'timestamp-converter'],
   },
 
+  'word-viewer': {
+    slug: 'word-viewer',
+    intro: [
+      'Open a Word document and actually read it — headings, tables, lists, images, headers and footers, laid out roughly as Word would lay them out — without Word, without an account, and without uploading the file anywhere. Drop a .docx in and it renders in the page, with the text available to copy out or save as plain text.',
+      'The reason to do this in the browser rather than on a website that uploads is the same reason people are careful with these files: .docx is what contracts, invoices, CVs, medical letters and internal reports arrive as. Opening one should not mean giving a copy to a stranger.',
+    ],
+    steps: [
+      'Drop a .docx file onto the page, or click to choose one.',
+      'Read it in place — pages, tables and images are rendered as they appear in Word.',
+      'Copy the text out, or download it as a plain .txt file.',
+      'Use Print if you want a paper copy or a PDF, which prints the document alone rather than the page around it.',
+    ],
+    features: [
+      'Renders .docx with its real layout: headings, tables, lists, images, headers and footers.',
+      'Page, word and paragraph counts for the document.',
+      'Copy the whole text, or download it as .txt.',
+      'Print the document on its own, without the site around it.',
+      'Runs entirely in your browser — the file is unzipped and rendered in the tab, never uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'What a .docx file actually is',
+        body: [
+          'A .docx is a zip archive. Rename one to .zip, open it, and you will find a small filesystem inside: an XML document describing the text and its structure, separate XML parts for styles, numbering, headers, footers and footnotes, a relationships file tying them together, and a media folder holding the images verbatim.',
+          'That design is why reading one in a browser is possible at all. The work is unzipping the archive, parsing the XML, resolving the style definitions — which cascade, much like CSS — and turning the result into HTML. No Microsoft software is involved, and nothing about the file needs to leave your machine.',
+          'It also explains the difference between .docx and .doc. The older .doc is a binary format from a different era, undocumented for most of its life and genuinely difficult to parse. Browsers cannot read it and neither can this tool; converting it to .docx in Word or LibreOffice first is the only practical route.',
+        ],
+      },
+      {
+        heading: 'Why it will not look pixel-identical to Word',
+        body: [
+          'A viewer reproduces a Word document; it does not run Word. The gap shows up in a few predictable places, and knowing them saves confusion.',
+          'Fonts are the biggest one. A .docx usually names its fonts rather than embedding them, so if the document was written in a typeface your device does not have, the browser substitutes something else — and different letter widths mean different line breaks, which can shift where pages divide. Complex floating layouts, text boxes anchored to particular positions, and drawings built from Office shapes are also approximated rather than reproduced exactly.',
+          'Anything requiring Word to compute a value will not update either: field codes, automatic cross-references and page-number fields render as whatever value was last saved into the file. For reading a document, none of this matters much. For checking that a layout is exactly right before printing, open it in a word processor.',
+        ],
+      },
+      {
+        heading: 'Reading a document without handing it over',
+        body: [
+          'Word documents are unusually sensitive as a category. They are the default container for employment contracts, invoices, legal drafts, medical letters and CVs — and, unlike a photo, their whole content is text that is trivially searchable once someone else has a copy.',
+          'This tool never transmits the file. It is read with the browser\'s own file API, unzipped in memory and rendered into the page, which you can verify by loading the page, disconnecting from the internet and opening a document anyway.',
+          'One thing worth knowing about the documents themselves: .docx files carry metadata of their own — author, organisation, the time the file was created and last edited, and often revision history or tracked changes that were never accepted. A document forwarded outside your organisation may say more than its visible text does, and that is worth checking before sending rather than after.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is my document uploaded anywhere?',
+        a: 'No. The file is opened with the browser\'s file API, unzipped in memory and rendered in the page. Nothing is sent to a server, which you can confirm by disconnecting from the internet after the page loads and opening a document anyway.',
+      },
+      {
+        q: 'Why will it not open my .doc file?',
+        a: 'Because .doc is the older binary Word format, quite different from .docx, and browsers have no way to read it. Open it in Word, LibreOffice or Google Docs and save it as .docx, and it will work here.',
+      },
+      {
+        q: 'Why does it look slightly different from Word?',
+        a: 'Mostly fonts. Word documents name their fonts rather than embedding them, so if the typeface is not on your device the browser substitutes another, and the different letter widths change where lines and pages break. Floating shapes, text boxes and field codes such as automatic page references are also approximated rather than recalculated.',
+      },
+      {
+        q: 'Can I edit the document here?',
+        a: 'No — this is a viewer. It renders the document and lets you copy the text out, but it does not write .docx files. For editing you need a word processor; for pulling the content into something else, the copy and download-as-text options are usually what people actually want.',
+      },
+      {
+        q: 'Does it handle tables, images, headers and footnotes?',
+        a: 'Yes. Tables, lists, embedded images, headers, footers and footnotes all render. Tracked changes appear in their current state rather than as editable revision marks, and comments are not shown.',
+      },
+      {
+        q: 'What about a password-protected document?',
+        a: 'It cannot be opened. A protected .docx is encrypted, so there is nothing to unzip until it is decrypted with the password — remove the protection in Word first, then open the resulting file here.',
+      },
+    ],
+    related: ['pdf-convert', 'pdf-viewer', 'word-counter'],
+  },
+
   'xml-viewer': {
     slug: 'xml-viewer',
     intro: [

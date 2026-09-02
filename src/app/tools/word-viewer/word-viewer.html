@@ -1,0 +1,84 @@
+<app-tool-page slug="word-viewer">
+  Open a Word document and read it in the browser, with its layout, headings, tables and images
+  intact. The file is never uploaded — it is opened on your own device.
+</app-tool-page>
+
+<div class="panel">
+  @if (!hasDocument() && !loading()) {
+    <app-dropzone
+      accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      (filesSelected)="open($event)"
+    >
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matDescriptionOutline" />
+      <span class="dropzone__title">Drop a .docx file here, or click to choose</span>
+      <span class="dropzone__hint">Up to 25 MB · nothing is uploaded</span>
+    </app-dropzone>
+  }
+
+  @if (error(); as message) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      <span class="note__text">{{ message }}</span>
+    </p>
+  }
+
+  @if (loading()) {
+    <div class="loading" role="status">
+      <app-spinner [size]="32" />
+      <span>Opening {{ name() }}…</span>
+    </div>
+  }
+
+  @if (hasDocument() && !loading()) {
+    <div class="bar">
+      <div class="bar__file">
+        <ng-icon class="bar__icon" aria-hidden="true" name="matDescriptionOutline" />
+        <span class="bar__name">{{ name() }}</span>
+        <span class="bar__meta">{{ formatBytes(size()) }}</span>
+      </div>
+      @if (stats(); as s) {
+        <span class="bar__meta">
+          {{ s.pages }} page{{ s.pages === 1 ? '' : 's' }} ·
+          {{ s.words }} word{{ s.words === 1 ? '' : 's' }} ·
+          {{ s.paragraphs }} paragraph{{ s.paragraphs === 1 ? '' : 's' }}
+        </span>
+      }
+    </div>
+
+    <div class="actions">
+      <button matButton (click)="copyText()">
+        <ng-icon name="matContentCopyOutline" />
+        Copy text
+      </button>
+      <button matButton (click)="downloadText()">
+        <ng-icon name="matDownloadOutline" />
+        Download as .txt
+      </button>
+      <button matButton (click)="print()">
+        <ng-icon name="matDescriptionOutline" />
+        Print
+      </button>
+      <button matButton (click)="reset()">
+        <ng-icon name="matRefreshOutline" />
+        Open another
+      </button>
+    </div>
+  }
+
+  <!-- The document is rendered into a shadow root attached to this element, so
+       the stylesheet docx-preview builds from the file's own styles cannot
+       escape and restyle the rest of the page. -->
+  <div class="page" [class.page--empty]="!hasDocument()">
+    <div #renderHost class="page__host"></div>
+  </div>
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+  <span class="note__text">
+    The document is unzipped and rendered entirely in this tab — it is never uploaded, which is
+    the point, because Word files are what contracts, invoices, CVs and reports arrive as.
+  </span>
+</p>
+
+<app-tool-content slug="word-viewer" />
