@@ -58,6 +58,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/xml-viewer',
+    loadComponent: () => import('./tools/xml-viewer/xml-viewer').then((m) => m.XmlViewerTool),
+    title: 'XML Viewer, Formatter & XPath Tester — YYDevTools',
+    data: {
+      description:
+        'Format, validate and explore XML as a tree, and query it with XPath. Runs entirely in ' +
+        'your browser — nothing is uploaded. Free, with no sign-up.',
+    },
+  },
+  {
     path: 'tools/url-encoder',
     loadComponent: () => import('./tools/url-encoder/url-encoder').then((m) => m.UrlEncoderTool),
     title: 'URL Encoder / Decoder — YYDevTools',

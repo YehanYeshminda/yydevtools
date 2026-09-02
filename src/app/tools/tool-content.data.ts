@@ -1021,6 +1021,82 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['base64-converter', 'json-formatter', 'timestamp-converter'],
   },
 
+  'xml-viewer': {
+    slug: 'xml-viewer',
+    intro: [
+      'Paste or drop XML and read it properly: indented and syntax-highlighted, as a collapsible tree you can filter, or as the target of an XPath query. It tells you immediately whether the document is well-formed, and if it is not, exactly which line and column the parser gave up at — which is usually all you need to find a missing closing tag in a file of several thousand lines.',
+      'XML is what configuration files, invoices, sitemaps, RSS feeds, SVG images and exported records tend to arrive as, so it is often something you were sent rather than something you wrote. That makes reading it — quickly, and without handing it to a stranger — the actual job. Everything here runs in your browser using its own XML engine.',
+    ],
+    steps: [
+      'Paste XML into the editor, or drop an .xml file onto the page.',
+      'Read the status line: it confirms the document is well-formed, or gives the line and column where parsing failed.',
+      'Press Format to indent a minified or messy document.',
+      'Explore the tree, filtering by tag, attribute or text — or switch to XPath and query it.',
+      'Copy the result or download it as a file.',
+    ],
+    features: [
+      'Well-formedness checking with the exact line and column of the first error.',
+      'A tree view showing elements, attributes, comments and CDATA, with a live filter.',
+      'XPath queries against the parsed document, with the matches listed.',
+      'Formatting powered by Prettier, so minified XML becomes readable.',
+      'A count of elements, distinct tag names, attributes and nesting depth.',
+      'No upload and no third-party XML library — your browser already has both a parser and an XPath engine.',
+    ],
+    sections: [
+      {
+        heading: 'Well-formed and valid are two different things',
+        body: [
+          'These words get used interchangeably and mean quite different things. Well-formed means the document obeys XML\'s syntax rules: one root element, every tag closed, tags nested rather than overlapping, attributes quoted, and the handful of reserved characters escaped. Any XML parser can check this, and it is what this tool reports.',
+          'Valid means something stronger — that the document also matches a schema, an XSD or DTD saying which elements may appear, in what order, how many times, and what types their values take. A document can be perfectly well-formed and completely wrong for its purpose: an invoice with the customer inside the line items rather than beside them breaks no syntax rule at all.',
+          'The distinction matters when something rejects your file. "Not well-formed" is a typing mistake and the parser will point at it. "Invalid" means the structure is legal XML but not the shape the recipient expects, and no amount of staring at brackets will show it — you need the schema.',
+        ],
+      },
+      {
+        heading: 'The five characters that cause most XML errors',
+        body: [
+          'XML reserves a small set of characters, and almost every hand-authored breakage involves one of them. A bare `&` is the most common: XML reads it as the start of an entity, so a URL containing `?a=1&b=2` dropped into an element makes the document unparseable. It has to be written `&amp;`. The same applies to `<`, which must be `&lt;` in text — `>` is only strictly required in one edge case but is conventionally escaped as `&gt;` anyway. Inside attribute values, quotes need escaping too, as `&quot;` and `&apos;`.',
+          'This is what CDATA sections are for. Wrapping content in `<![CDATA[ … ]]>` tells the parser to take everything inside literally, which is why they are used for embedded HTML, code samples and anything with a lot of ampersands. The one thing a CDATA section cannot contain is the sequence `]]>` itself.',
+          'A second recurring problem is invisible: a byte-order mark or stray whitespace before the XML declaration. The declaration must be the very first thing in the file, so a single blank line above it makes an otherwise perfect document fail — and it looks fine on screen, which is why the reported line number can seem to point at nothing wrong.',
+        ],
+      },
+      {
+        heading: 'XPath, briefly',
+        body: [
+          'XPath is a small query language for selecting parts of a document, and a handful of patterns cover most real use. `/catalog/book` selects book elements that are direct children of the root catalog. `//title` selects every title anywhere in the document, at any depth. `//book[@id="bk101"]` filters by attribute, and `//price/@currency` selects the attributes themselves rather than the elements holding them.',
+          'Predicates in square brackets do the filtering, and they can test position as well as content: `//book[1]` is the first book, `//book[last()]` the last, and `//book[price > 9]` those whose price element exceeds nine. Note that XPath positions count from one, not zero, which trips up almost everyone arriving from a programming language.',
+          'One thing to watch: namespaces. If a document declares a default namespace — common in SVG, SOAP and Office formats — then a plain `//title` matches nothing, because the elements are not in the empty namespace your expression is implicitly asking for. That is not a bug in your query; it is the most common reason an XPath that "should obviously work" returns nothing.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is my XML uploaded anywhere?',
+        a: 'No. Parsing, validation, formatting and XPath all run in your browser — the document is never sent to a server. You can check this by loading the page, disconnecting from the internet, and using the tool anyway. That matters more than usual here, because XML files are so often invoices, exports and configuration containing real data.',
+      },
+      {
+        q: 'What does "not well-formed" actually mean?',
+        a: 'It means the file breaks XML\'s syntax rules, so no parser can read it. The usual causes are a tag that is never closed, tags that overlap instead of nesting, an unescaped & or < in text, a missing quote around an attribute value, or more than one root element. The tool reports the line and column where the parser stopped, which is where the problem was detected — occasionally a little after where it was introduced.',
+      },
+      {
+        q: 'Why does my XPath expression return nothing?',
+        a: 'The most common reason by far is namespaces. If the document declares a default namespace — as SVG, SOAP envelopes and Office files do — then an unprefixed expression like //title looks for a title in no namespace and finds nothing. Other causes are simpler: XPath is case-sensitive, and positions count from one rather than zero.',
+      },
+      {
+        q: 'Can it validate against an XSD or DTD schema?',
+        a: 'No. This checks that a document is well-formed, not that it conforms to a schema. Browsers do not ship an XSD validator, and adding one would mean a large library for a comparatively rare need. If you need schema validation, a dedicated XML editor or a command-line tool such as xmllint is the right choice.',
+      },
+      {
+        q: 'Will it handle a large file?',
+        a: 'Files up to 10 MB are accepted. Everything is held in memory and the whole tree is built at once, so a very large document will use a noticeable amount of it — and a document with hundreds of thousands of nodes will make the tree view slow to scroll, since every node becomes an element on the page.',
+      },
+      {
+        q: 'Does it work with SVG, RSS or HTML?',
+        a: 'SVG, RSS, Atom, XSD and XSL are all XML, so they parse and explore normally. HTML generally does not: browsers are deliberately forgiving about unclosed tags in HTML and strict about them in XML, so a typical HTML page is not well-formed XML. Use the HTML Preview tool for that instead. XHTML, which is HTML written to XML rules, does work here.',
+      },
+    ],
+    related: ['code-formatter', 'json-formatter', 'html-preview'],
+  },
+
   'image-converter': {
     slug: 'image-converter',
     intro: [

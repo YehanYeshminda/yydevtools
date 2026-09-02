@@ -1,0 +1,194 @@
+<app-tool-page slug="xml-viewer">
+  Format, validate and explore XML — as an indented tree or as source — with a live XPath query
+  box. Everything runs in your browser; nothing is uploaded.
+</app-tool-page>
+
+<div class="panel">
+  @if (!hasSource()) {
+    <app-dropzone accept=".xml,.xsd,.xsl,.svg,.rss,.atom,text/xml,application/xml" (filesSelected)="openFile($event)">
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matCodeOutline" />
+      <span class="dropzone__title">Drop an XML file here, or click to choose</span>
+      <span class="dropzone__hint">…or just paste into the editor below. Up to 10 MB.</span>
+    </app-dropzone>
+  }
+
+  <!-- Status ------------------------------------------------------------ -->
+  @if (error(); as e) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      <span class="note__text">
+        <strong>Not well-formed</strong>@if (e.line) {<span> — line {{ e.line }}</span>@if (e.column) {<span>, column {{ e.column }}</span>}}<span>: {{ e.message }}</span>
+      </span>
+    </p>
+  } @else if (valid()) {
+    <p class="status status--ok" role="status">
+      <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
+      <span class="note__text">
+        Well-formed — {{ stats().elements }} element{{ stats().elements === 1 ? '' : 's' }},
+        {{ stats().distinctNames }} distinct name{{ stats().distinctNames === 1 ? '' : 's' }},
+        {{ stats().attributes }} attribute{{ stats().attributes === 1 ? '' : 's' }},
+        nested {{ stats().maxDepth }} deep.
+      </span>
+    </p>
+  }
+
+  <!-- Editor ------------------------------------------------------------ -->
+  <app-code-editor
+    label="XML source"
+    language="xml"
+    placeholder="Paste XML here…"
+    minHeight="12rem"
+    [(value)]="source"
+  />
+
+  <div class="actions">
+    <button matButton (click)="format()" [disabled]="!hasSource() || formatting()">
+      <ng-icon name="matFormatIndentIncreaseOutline" />
+      {{ formatting() ? 'Formatting…' : 'Format' }}
+    </button>
+    <button matButton (click)="copy()" [disabled]="!hasSource()">
+      <ng-icon name="matContentCopyOutline" />
+      Copy
+    </button>
+    <button matButton (click)="download()" [disabled]="!hasSource()">
+      <ng-icon name="matDownloadOutline" />
+      Download .xml
+    </button>
+    <button matButton (click)="clear()" [disabled]="!hasSource()">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+    <app-try-example (loadExample)="loadExample()" />
+    <app-share-link [state]="shared" />
+  </div>
+
+  <!-- Explorer ---------------------------------------------------------- -->
+  @if (valid()) {
+    <section class="explore" aria-label="Document explorer">
+      <div class="explore__bar">
+        <div class="tabs" role="group" aria-label="View">
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="view() === 'tree'"
+            [attr.aria-pressed]="view() === 'tree'"
+            (click)="setView('tree')"
+          >
+            Tree
+          </button>
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="view() === 'source'"
+            [attr.aria-pressed]="view() === 'source'"
+            (click)="setView('source')"
+          >
+            XPath
+          </button>
+        </div>
+
+        @if (view() === 'tree') {
+          <label class="explore__search">
+            <span class="sr-only">Filter nodes</span>
+            <input
+              type="search"
+              class="field__input"
+              placeholder="Filter by tag, attribute or text…"
+              [value]="filter()"
+              (input)="onFilterInput($event)"
+            />
+          </label>
+        } @else {
+          <label class="explore__search">
+            <span class="sr-only">XPath expression</span>
+            <input
+              type="text"
+              class="field__input field__input--mono"
+              placeholder="//book/title"
+              spellcheck="false"
+              [value]="xpath()"
+              (input)="onXpathInput($event)"
+            />
+          </label>
+        }
+      </div>
+
+      @if (view() === 'tree') {
+        @if (filtered()) {
+          <p class="explore__count">
+            {{ rows().length }} matching node{{ rows().length === 1 ? '' : 's' }}
+          </p>
+        }
+        <ol class="tree">
+          @for (node of rows(); track $index) {
+            <li class="tree__row" [style.--depth]="node.depth">
+              @switch (node.kind) {
+                @case ('element') {
+                  <span class="tree__tag">&lt;{{ node.name }}</span>
+                  @for (attr of node.attributes; track attr.name) {
+                    <span class="tree__attr">{{ attr.name }}</span>
+                    <span class="tree__eq">=</span>
+                    <span class="tree__val">"{{ attr.value }}"</span>
+                  }
+                  <span class="tree__tag">&gt;</span>
+                  @if (node.value) {
+                    <span class="tree__text">{{ node.value }}</span>
+                  }
+                }
+                @case ('comment') {
+                  <span class="tree__comment">&lt;!-- {{ node.value }} --&gt;</span>
+                }
+                @case ('cdata') {
+                  <span class="tree__cdata">CDATA</span>
+                  <span class="tree__text">{{ node.value }}</span>
+                }
+                @default {
+                  <span class="tree__text">{{ node.value }}</span>
+                }
+              }
+            </li>
+          } @empty {
+            <li class="tree__none">Nothing matches that filter.</li>
+          }
+        </ol>
+      } @else {
+        @if (xpathResult(); as result) {
+          @if (result.error) {
+            <p class="status status--err" role="alert">
+              <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+              {{ result.error }}
+            </p>
+          } @else {
+            <p class="explore__count">
+              {{ result.items.length }} match{{ result.items.length === 1 ? '' : 'es' }}
+            </p>
+            <ol class="results">
+              @for (item of result.items; track $index) {
+                <li class="results__row">{{ item }}</li>
+              } @empty {
+                <li class="tree__none">No nodes matched that expression.</li>
+              }
+            </ol>
+          }
+        } @else {
+          <p class="field__hint">
+            Type an XPath expression to query the document — for example
+            <code>//book/title</code>, <code>//book[&#64;available='true']</code> or
+            <code>//price/&#64;currency</code>.
+          </p>
+        }
+      }
+    </section>
+  }
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+  <span class="note__text">
+    Parsing, validation and XPath all use your browser's own XML engine, so the document never
+    leaves your device — which matters, because XML is what configuration files, invoices and
+    exported records tend to arrive as.
+  </span>
+</p>
+
+<app-tool-content slug="xml-viewer" />

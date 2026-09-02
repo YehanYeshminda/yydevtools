@@ -148,6 +148,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'xml-viewer',
+    name: 'XML Viewer',
+    description:
+      'Format, validate and explore XML as a tree, and query it with XPath.',
+    icon: 'matCodeOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'url-encoder',
     name: 'URL Encoder / Decoder',
     description: 'Percent-encode or decode URLs and query values, and break a URL into its parts.',
