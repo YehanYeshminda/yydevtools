@@ -2,11 +2,9 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
-  OnDestroy,
   PLATFORM_ID,
+  afterNextRender,
   computed,
-  effect,
   inject,
   signal,
   viewChild,
@@ -14,55 +12,26 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { NgIcon } from '@ng-icons/core';
+import { registerLicense } from '@syncfusion/ej2-base';
+import {
+  DocumentEditorContainerComponent,
+  DocumentEditorContainerModule,
+} from '@syncfusion/ej2-angular-documenteditor';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { downloadText } from '../../core/download';
 import { formatBytes } from '../../core/format';
+import { WordServicesClient } from '../../core/word-services.client';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { Spinner } from '../../shared/spinner/spinner';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { ToolPage } from '../../shared/tool-page/tool-page';
-import { type Zoom, resolveScale, stepZoom } from './page-fit';
+import { SYNCFUSION_LICENSE_KEY } from './syncfusion-license.generated';
 
-/** Rendering holds the whole document in memory, so cap the input. */
-const MAX_INPUT_BYTES = 25 * 1024 * 1024;
+/** The conversion service caps at the same figure; fail before the upload. */
+const MAX_INPUT_BYTES = 20 * 1024 * 1024;
 
-/**
- * Overrides for the stylesheet docx-preview builds.
- *
- * Injected into the shadow root *after* the library's own styles, so equal
- * specificity resolves in this sheet's favour and no `!important` is needed.
- * Three things are being corrected here, and the first is the important one.
- *
- *  - `section.docx` ships as `overflow: hidden`, which silently deletes
- *    anything wider than the page. A table with more columns than the text
- *    column can hold — the ordinary shape of an exported report — loses its
- *    right-hand columns with nothing to say they were ever there. Drawing them
- *    is what Word does, and being able to see that content runs off the page is
- *    itself worth knowing. The section is a flex container, so it still
- *    contains its floats without needing to clip.
- *  - the wrapper's `background: gray` is hard-coded, and stacked on this app's
- *    own surface it showed as a mismatched band above the first page.
- *  - `width: max-content` keeps the pages at their true width regardless of the
- *    element they are measured in, which is what makes the zoom arithmetic
- *    stable: the scale can change without the measurement moving under it.
- */
-const OVERRIDES = `
-.docx-render { width: max-content; transform-origin: top left; }
-.docx-wrapper { background: transparent; padding: 0; width: max-content; }
-.docx-wrapper > section.docx {
-  margin: 0 0 1.25rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14), 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-.docx-wrapper > section.docx:last-child { margin-bottom: 0; }
-section.docx { overflow: visible; }
-@media print {
-  .docx-render { transform: none !important; }
-  .docx-wrapper > section.docx { margin: 0; box-shadow: none; }
-}
-`;
-
-/** Counts taken from the rendered document, for the summary line. */
+/** Counts taken from the opened document, for the summary line. */
 interface DocStats {
   words: number;
   characters: number;
@@ -70,16 +39,27 @@ interface DocStats {
   pages: number;
 }
 
+let licenseRegistered = false;
+
 @Component({
   selector: 'app-word-viewer',
-  imports: [ToolPage, ToolContent, Dropzone, Spinner, MatButtonModule, NgIcon],
+  imports: [
+    ToolPage,
+    ToolContent,
+    Dropzone,
+    Spinner,
+    MatButtonModule,
+    NgIcon,
+    DocumentEditorContainerModule,
+  ],
   templateUrl: './word-viewer.html',
   styleUrls: ['../tool-shell.css', './word-viewer.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WordViewerTool implements OnDestroy {
+export class WordViewerTool {
   private readonly snackBar = inject(MatSnackBar);
   private readonly clipboard = inject(ClipboardService);
+  private readonly wordService = inject(WordServicesClient);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly formatBytes = formatBytes;
@@ -92,73 +72,31 @@ export class WordViewerTool implements OnDestroy {
 
   protected readonly hasDocument = computed(() => this.name() !== '' && this.error() === null);
 
-  private readonly host = viewChild<ElementRef<HTMLElement>>('renderHost');
-  private readonly surface = viewChild<ElementRef<HTMLElement>>('surface');
-
-  // --- Zoom ---------------------------------------------------------------
-  protected readonly zoom = signal<Zoom>('fit');
-
-  /** The document's own width and height in CSS pixels, unscaled. */
-  private readonly contentWidth = signal(0);
-  private readonly contentHeight = signal(0);
-
-  /** The width available to show it in, tracked as the window resizes. */
-  private readonly available = signal(0);
-
-  protected readonly scale = computed(() =>
-    resolveScale(this.zoom(), this.contentWidth(), this.available()),
-  );
-  protected readonly zoomPercent = computed(() => Math.round(this.scale() * 100));
-  protected readonly canZoomIn = computed(() => stepZoom(this.scale(), 1) !== this.scale());
-  protected readonly canZoomOut = computed(() => stepZoom(this.scale(), -1) !== this.scale());
+  private readonly editor = viewChild<DocumentEditorContainerComponent>('editor');
 
   /**
-   * The shadow root the document is rendered into.
-   *
-   * docx-preview reproduces a Word document by emitting HTML *and* a stylesheet
-   * built from the document's own styles — which is the point of it, and also a
-   * problem: those rules are written for a whole page and would happily restyle
-   * the rest of this one. A shadow root contains them. An iframe would too, but
-   * it brings back the hydration and cross-document access awkwardness that the
-   * HTML Preview tool already had to work around, and there is no security
-   * boundary to be gained here: docx-preview builds DOM nodes from OOXML rather
-   * than executing anything the file supplies.
+   * Set just before `hasDocument` flips true, so it is already there by the
+   * time the `@defer`-loaded `<ejs-documenteditorcontainer>` fires `created`
+   * and asks for it. The container's own inputs have no way to hand it content
+   * directly — `documentEditor.open()` is the only path in.
    */
-  private shadow: ShadowRoot | null = null;
+  private pendingSfdt = '';
 
   constructor() {
-    // Track the space the document has to fit into.
-    effect((onCleanup) => {
-      const element = this.surface()?.nativeElement;
-      if (!element || !this.isBrowser) {
-        return;
-      }
-      // Seeded synchronously as well as observed. ResizeObserver delivers its
-      // first callback at the end of a frame, and a tab that is not being
-      // painted produces no frames — so a document opened in a background tab
-      // would otherwise stay at 100% until something resized it.
-      this.measureAvailable();
-      const observer = new ResizeObserver(([entry]) => {
-        // contentBoxSize already excludes padding, which is what a page may occupy.
-        const box = entry.contentBoxSize?.[0];
-        if (box) {
-          this.available.set(box.inlineSize);
-        } else {
-          this.measureAvailable();
+    // The Fly machine behind /api/word/import suspends when idle — see
+    // hosted-pdf-tool.ts's constructor for the full reasoning, which applies
+    // here unchanged. `registerLicense` is cheap (ej2-base, not the Document
+    // Editor chunk) and idempotent-guarded, so it runs alongside the wake
+    // rather than waiting for a file to be dropped.
+    afterNextRender(() => {
+      if (!licenseRegistered) {
+        licenseRegistered = true;
+        if (SYNCFUSION_LICENSE_KEY) {
+          registerLicense(SYNCFUSION_LICENSE_KEY);
         }
-      });
-      observer.observe(element);
-      onCleanup(() => observer.disconnect());
+      }
+      this.wordService.warm();
     });
-
-    // Scaling is applied imperatively because the elements it acts on live
-    // inside the shadow root, out of reach of the component's template and
-    // stylesheet.
-    effect(() => this.applyScale(this.scale()));
-  }
-
-  ngOnDestroy(): void {
-    this.clearShadow();
   }
 
   protected async open(files: File[]): Promise<void> {
@@ -184,58 +122,100 @@ export class WordViewerTool implements OnDestroy {
 
     this.reset();
     this.loading.set(true);
+
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const result = await this.wordService.importDocx(bytes);
+
+    if (!result.ok) {
+      this.loading.set(false);
+      this.fail(result.failure.message);
+      return;
+    }
+
+    this.pendingSfdt = result.sfdt;
     this.name.set(file.name);
     this.size.set(file.size);
+    this.loading.set(false);
+    // `hasDocument()` is now true, which mounts the `@defer` block; the rest
+    // of the load continues in onEditorCreated() once it fires `created`.
 
-    try {
-      // ~175 kB with its zip dependency, so it is fetched only when a document
-      // is actually opened rather than on every visit to the page.
-      const { renderAsync } = await import('docx-preview');
-      const target = this.prepareShadow();
-      if (!target) {
-        throw new Error('This browser could not create a container for the document.');
-      }
-
-      await renderAsync(file, target.body, target.styles, {
-        className: 'docx',
-        inWrapper: true,
-        ignoreWidth: false,
-        ignoreHeight: false,
-        breakPages: true,
-        renderHeaders: true,
-        renderFooters: true,
-        renderFootnotes: true,
-        experimental: true,
-      });
-
-      this.stats.set(measure(target.body));
-      extendPages(target.body);
-      this.measurePage(target.body);
-      // The surface was hidden until this document arrived, so whatever the
-      // observer last reported for it was the size of nothing.
-      this.measureAvailable();
-    } catch (error) {
-      this.fail(explain(error));
-    } finally {
-      this.loading.set(false);
+    // The container was already mounted from a previous document — its
+    // `created` event will not fire again, so open this one directly.
+    const existing = this.editor();
+    if (existing) {
+      this.loadPending(existing);
     }
   }
 
+  protected onEditorCreated(): void {
+    const container = this.editor();
+    if (container) {
+      this.loadPending(container);
+    }
+  }
+
+  private loadPending(container: DocumentEditorContainerComponent): void {
+    this.hideStatusBar(container);
+
+    if (!this.pendingSfdt) {
+      return;
+    }
+    const editor = container.documentEditor;
+    editor.isReadOnly = true;
+    editor.open(this.pendingSfdt);
+    this.pendingSfdt = '';
+  }
+
+  protected onDocumentChange(): void {
+    const container = this.editor();
+    const editor = container?.documentEditor;
+    if (!container || !editor) {
+      return;
+    }
+    this.hideStatusBar(container);
+    editor.selection.selectAll();
+    const text = editor.selection.text;
+    this.stats.set(measure(text, editor.pageCount));
+  }
+
+  /**
+   * Hides the container's own page-number and zoom readout, which duplicates
+   * this page's toolbar above. `enableToolbar` only turns off the ribbon, not
+   * this, and there is no input for it — only this element reference — so it
+   * has to be reached imperatively, with `!important` because the container
+   * sets `display` via its own scoped CSS rule, not an inline style, so a
+   * plain assignment here would lose on source order rather than win on
+   * specificity.
+   *
+   * Deferred, because `statusBarElement` measured as still unset — directly,
+   * not assumed — at both `created` and `documentChange`, and even a
+   * `setTimeout(…, 0)` fired from `documentChange` was still too early: the
+   * container evidently finishes building it later than one macrotask.
+   * Applied via console at a genuine delay, it stayed applied with nothing
+   * resetting it — so this is a one-time creation-order race to lose, not an
+   * ongoing fight, and 100ms cleared it reliably in testing.
+   */
+  private hideStatusBar(container: DocumentEditorContainerComponent): void {
+    setTimeout(() => {
+      container.statusBarElement?.style.setProperty('display', 'none', 'important');
+    }, 100);
+  }
+
   protected reset(): void {
-    this.clearShadow();
     this.name.set('');
     this.size.set(0);
     this.error.set(null);
     this.stats.set(null);
-    this.zoom.set('fit');
-    this.contentWidth.set(0);
-    this.contentHeight.set(0);
+    this.pendingSfdt = '';
   }
 
-  /** The document's text, read back out of what was rendered. */
   private text(): string {
-    const body = this.shadow?.querySelector('.docx-render');
-    return (body?.textContent ?? '').replace(/\n{3,}/g, '\n\n').trim();
+    const editor = this.editor()?.documentEditor;
+    if (!editor) {
+      return '';
+    }
+    editor.selection.selectAll();
+    return editor.selection.text.replace(/\r/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
   }
 
   protected copyText(): void {
@@ -253,174 +233,57 @@ export class WordViewerTool implements OnDestroy {
   }
 
   protected print(): void {
-    if (this.isBrowser) {
-      window.print();
-    }
+    this.editor()?.documentEditor?.print();
   }
 
   protected zoomIn(): void {
-    this.zoom.set(stepZoom(this.scale(), 1));
+    const editor = this.editor()?.documentEditor;
+    if (editor) {
+      editor.zoomFactor = clampZoom(editor.zoomFactor + 0.1);
+    }
   }
 
   protected zoomOut(): void {
-    this.zoom.set(stepZoom(this.scale(), -1));
+    const editor = this.editor()?.documentEditor;
+    if (editor) {
+      editor.zoomFactor = clampZoom(editor.zoomFactor - 0.1);
+    }
   }
 
   protected fitWidth(): void {
-    this.zoom.set('fit');
+    this.editor()?.documentEditor?.fitPage('FitPageWidth');
   }
 
-  // --- Layout ------------------------------------------------------------
-  /**
-   * Record how much room the rendered document actually needs.
-   *
-   * `scrollWidth` rather than `offsetWidth`, because it counts content that
-   * spills past the page edge as well as the page itself. That is what makes
-   * "fit width" show the whole of a table that is wider than its page instead
-   * of stopping at the paper.
-   */
-  private measurePage(body: HTMLElement): void {
-    this.contentWidth.set(body.scrollWidth);
-    this.contentHeight.set(body.scrollHeight);
-  }
-
-  /** The surface's content width, read straight from layout. */
-  private measureAvailable(): void {
-    const element = this.surface()?.nativeElement;
-    if (!element) {
-      return;
-    }
-    const style = getComputedStyle(element);
-    const padding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-    this.available.set(Math.max(0, element.clientWidth - padding));
-  }
-
-  /**
-   * Size the host to the scaled document.
-   *
-   * A transform does not affect layout, so without this the host would keep the
-   * document's full unscaled footprint and leave a band of empty space below
-   * and beside a shrunken page.
-   */
-  private applyScale(scale: number): void {
-    const host = this.host()?.nativeElement;
-    const body = this.shadow?.querySelector<HTMLElement>('.docx-render');
-    if (!host || !body) {
-      return;
-    }
-    const width = this.contentWidth();
-    const height = this.contentHeight();
-    body.style.transform = scale === 1 ? '' : `scale(${scale})`;
-    host.style.width = width ? `${Math.ceil(width * scale)}px` : '';
-    host.style.height = height ? `${Math.ceil(height * scale)}px` : '';
-  }
-
-  // --- Shadow root -------------------------------------------------------
-  private prepareShadow(): { body: HTMLElement; styles: HTMLElement } | null {
-    const host = this.host()?.nativeElement;
-    if (!host) {
-      return null;
-    }
-    this.clearShadow();
-    // A host can only ever be given one shadow root, so it is created once and
-    // its contents replaced on each open.
-    this.shadow = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
-
-    const styles = document.createElement('div');
-    const overrides = document.createElement('style');
-    overrides.textContent = OVERRIDES;
-    const body = document.createElement('div');
-    body.className = 'docx-render';
-    // Order matters: the overrides have to follow the library's own sheet, and
-    // docx-preview fills `styles` in place rather than appending to the root.
-    this.shadow.replaceChildren(styles, overrides, body);
-    return { body, styles };
-  }
-
-  private clearShadow(): void {
-    this.shadow?.replaceChildren();
-    const host = this.host()?.nativeElement;
-    if (host) {
-      host.style.width = '';
-      host.style.height = '';
-    }
+  protected zoomPercent(): number {
+    return Math.round((this.editor()?.documentEditor?.zoomFactor ?? 1) * 100);
   }
 
   private fail(message: string): void {
     this.error.set(message);
     this.name.set('');
     this.stats.set(null);
-    this.clearShadow();
+    this.pendingSfdt = '';
     this.snackBar.open(message, 'Dismiss', { duration: 8000 });
   }
 }
 
-/**
- * Turn a failure into something worth reading.
- *
- * The underlying errors come from the zip layer and are written for developers
- * — one of them helpfully links to the zip library's own documentation, which
- * is no use at all to somebody who has just dragged in the wrong file. Each
- * recognisable cause gets a sentence saying what to do about it instead.
- */
-function explain(error: unknown): string {
-  const detail = error instanceof Error ? error.message : '';
-  const lower = detail.toLowerCase();
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 3;
 
-  if (lower.includes('central directory') || lower.includes('zip')) {
-    return 'This is not a readable .docx file. A .docx is a zip archive, and this one could not be opened as such — it may be corrupt, incompletely downloaded, or another format that has simply been renamed.';
-  }
-  if (lower.includes('encrypt') || lower.includes('password')) {
-    return 'This document appears to be password-protected, so it cannot be opened here. Remove the protection in Word and save it again.';
-  }
-  if (lower.includes('document.xml') || lower.includes('not found')) {
-    return 'This zip archive does not contain a Word document. It may be an .xlsx or .pptx file, or a .docx that was saved incorrectly.';
-  }
-  return 'This document could not be opened. It may be corrupt, password-protected, or not a real .docx file.';
+function clampZoom(value: number): number {
+  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(value * 100) / 100));
 }
 
 /**
- * Grow each page to cover whatever hangs off it.
- *
- * A table with more columns than the text column can hold is the ordinary shape
- * of an exported report, and it gets drawn past the edge of the paper.
- * docx-preview's answer is to clip it, which loses the content outright.
- * Simply letting it draw is not enough either: it ends up stranded on the
- * workspace behind the page, where a table cell with no fill of its own has
- * nothing to be read against.
- *
- * So the sheet is widened by exactly as much as overflows it, and its right
- * padding by the same amount. Adding both leaves the content box the size it
- * already was, so not one word moves or re-wraps — the paper grows to hold what
- * was always there. Written as `calc()` over the values docx-preview set rather
- * than as recomputed pixels, because the page width is the one measurement in
- * here that decides where every line breaks, and it should survive this
- * untouched rather than approximately.
+ * Word, character, paragraph and page counts from the opened document.
+ * `pageCount` comes straight from the editor; the rest are read off the full
+ * selected text, which is the only plain-text view the client API exposes.
+ * Word documents use `\r` between paragraphs internally, which is why it is
+ * normalised to `\n` before either count is taken.
  */
-function extendPages(body: HTMLElement): void {
-  for (const section of body.querySelectorAll<HTMLElement>('section.docx')) {
-    const overflow = section.scrollWidth - section.clientWidth;
-    // No width of its own means the caller asked for `ignoreWidth`, and there
-    // is no page to extend.
-    if (overflow <= 0 || !section.style.width) {
-      continue;
-    }
-    const padding = section.style.paddingRight || '0px';
-    section.style.width = `calc(${section.style.width} + ${overflow}px)`;
-    section.style.paddingRight = `calc(${padding} + ${overflow}px)`;
-  }
-}
-
-/** Word, character, paragraph and page counts from the rendered document. */
-function measure(container: HTMLElement): DocStats {
-  const text = (container.textContent ?? '').trim();
+function measure(rawText: string, pages: number): DocStats {
+  const text = rawText.replace(/\r/g, '\n').trim();
   const words = text === '' ? 0 : text.split(/\s+/).length;
-  // docx-preview emits one section element per rendered page when breakPages is on.
-  const pages = container.querySelectorAll('section.docx').length;
-  return {
-    words,
-    characters: text.length,
-    paragraphs: container.querySelectorAll('p').length,
-    pages: Math.max(pages, 1),
-  };
+  const paragraphs = text === '' ? 0 : text.split(/\n+/).filter((line) => line.trim() !== '').length;
+  return { words, characters: text.length, paragraphs, pages: Math.max(pages, 1) };
 }

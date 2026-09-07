@@ -65,35 +65,17 @@
         </button>
       </div>
 
-      <!-- Zoom, not reflow: the page keeps its real proportions and its real
-           line breaks, and simply gets smaller. -->
+      <!-- Zoom is the editor's own — it manages real pagination, so this steps
+           its zoomFactor directly rather than scaling a rendered snapshot. -->
       <div class="zoom" role="group" aria-label="Zoom">
-        <button
-          type="button"
-          class="chip zoom__step"
-          [disabled]="!canZoomOut()"
-          aria-label="Zoom out"
-          (click)="zoomOut()"
-        >
+        <button type="button" class="chip zoom__step" aria-label="Zoom out" (click)="zoomOut()">
           <ng-icon aria-hidden="true" name="matZoomOutOutline" />
         </button>
         <span class="zoom__level" aria-live="polite">{{ zoomPercent() }}%</span>
-        <button
-          type="button"
-          class="chip zoom__step"
-          [disabled]="!canZoomIn()"
-          aria-label="Zoom in"
-          (click)="zoomIn()"
-        >
+        <button type="button" class="chip zoom__step" aria-label="Zoom in" (click)="zoomIn()">
           <ng-icon aria-hidden="true" name="matZoomInOutline" />
         </button>
-        <button
-          type="button"
-          class="chip"
-          [class.chip--on]="zoom() === 'fit'"
-          [attr.aria-pressed]="zoom() === 'fit'"
-          (click)="fitWidth()"
-        >
+        <button type="button" class="chip" (click)="fitWidth()">
           <ng-icon aria-hidden="true" name="matFitScreenOutline" />
           Fit width
         </button>
@@ -101,11 +83,16 @@
     </div>
   }
 
-  <!-- The document is rendered into a shadow root attached to this element, so
-       the stylesheet docx-preview builds from the file's own styles cannot
-       escape and restyle the rest of the page. -->
-  <div #surface class="page" [class.page--empty]="!hasDocument()">
-    <div #renderHost class="page__host"></div>
+  <div class="page" [class.page--empty]="!hasDocument()">
+    @defer (when hasDocument()) {
+      <ejs-documenteditorcontainer
+        #editor
+        [enableToolbar]="false"
+        height="100%"
+        (created)="onEditorCreated()"
+        (documentChange)="onDocumentChange()"
+      />
+    }
   </div>
 </div>
 

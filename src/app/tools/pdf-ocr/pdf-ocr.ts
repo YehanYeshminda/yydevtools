@@ -58,6 +58,15 @@ const ENGINE_DOWNLOAD = '7 MB';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PdfOcrTool extends HostedPdfTool {
+  protected readonly hostedService = 'ocr' as const;
+  /**
+   * Unlike compress and convert, this tool starts in the browser and most
+   * visitors never leave it. Waking a machine for all of them would be paying
+   * for idle time on behalf of people who will never send anything, so the wake
+   * waits until the hosted path is actually in play — see `setMode` and the
+   * point where in-browser recognition declines a document.
+   */
+  protected override readonly warmOnOpen = false;
   protected readonly languages = LANGUAGES;
   protected readonly language = signal('en-US');
   protected readonly maxLocalPages = MAX_LOCAL_PAGES;
@@ -106,6 +115,11 @@ export class PdfOcrTool extends HostedPdfTool {
   protected setMode(mode: OcrMode): void {
     this.mode.set(mode);
     this.localDeclined.set('');
+    if (mode === 'hosted') {
+      // Choosing the hosted service is the earliest honest signal that the
+      // machine will be needed, and it still lands before the file is sent.
+      this.warmHosted();
+    }
   }
 
   protected override clear(): void {
@@ -164,6 +178,8 @@ export class PdfOcrTool extends HostedPdfTool {
         // Not a failure — the hosted service is the right tool for this one.
         this.localDeclined.set(error.message);
         this.mode.set('hosted');
+        // The user is about to press the button again; get the machine moving.
+        this.warmHosted();
       } else {
         // The user gets a plain sentence and a working alternative; the detail
         // goes to the console, because "it didn't work" is not a bug report.

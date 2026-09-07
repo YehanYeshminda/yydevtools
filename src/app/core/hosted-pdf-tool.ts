@@ -1,8 +1,8 @@
-import { computed, inject, signal } from '@angular/core';
+import { afterNextRender, computed, inject, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { describeFile, formatBytes } from './format';
 import { looksLikePdf, readPageCount } from './pdf-probe';
-import { PdfServiceResult, PdfServicesClient } from './pdf-services.client';
+import { HostedService, PdfServiceResult, PdfServicesClient } from './pdf-services.client';
 
 /** Matches the Worker's own cap, so oversized files fail before the upload. */
 export const MAX_INPUT_BYTES = 20 * 1024 * 1024;
@@ -29,6 +29,39 @@ export abstract class HostedPdfTool {
   protected readonly unavailable = signal('');
 
   protected bytes: Uint8Array | null = null;
+
+  /** Which machine this tool needs woken. Set by each subclass. */
+  protected abstract readonly hostedService: HostedService;
+
+  /**
+   * Whether opening the page should wake that machine.
+   *
+   * True for the tools whose only path is the hosted one — if you are on the
+   * page at all, you are going to need the machine. A tool that usually works
+   * in the browser overrides this to false and calls `warmHosted()` at the
+   * point the hosted path actually becomes likely, so that visitors who never
+   * leave the browser never wake a machine.
+   */
+  protected readonly warmOnOpen: boolean = true;
+
+  constructor() {
+    // The machines suspend when idle, so someone has to pay for the resume.
+    // Doing it as the page opens spends it against the seconds the user takes
+    // to read the page and choose a file, instead of against their upload.
+    // `afterNextRender` keeps it out of the prerender, where there is no user
+    // and nothing to warm up for. The subclass fields are read inside the
+    // callback because they are not initialised until after this constructor.
+    afterNextRender(() => {
+      if (this.warmOnOpen) {
+        this.warmHosted();
+      }
+    });
+  }
+
+  /** Wakes this tool's machine. Repeat calls are free — the Worker dedupes them. */
+  protected warmHosted(): void {
+    this.service.warm(this.hostedService);
+  }
 
   protected readonly hasFile = computed(() => this.fileName() !== '');
   protected readonly canRun = computed(() => this.hasFile() && !this.working());

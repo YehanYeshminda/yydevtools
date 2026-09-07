@@ -12,6 +12,9 @@ import { Injectable } from '@angular/core';
 /** Export targets supported by the LibreOffice converter. */
 export type ExportFormat = 'docx' | 'rtf';
 
+/** The three operations that run on a hosted machine, as the Worker names them. */
+export type HostedService = 'compress' | 'ocr' | 'export';
+
 /**
  * `unavailable` means the hosted service could not serve this request through
  * no fault of the user's — not configured, upstream down, timed out. Callers
@@ -37,6 +40,19 @@ const FALLBACK_CODES = new Set([
 
 @Injectable({ providedIn: 'root' })
 export class PdfServicesClient {
+  /**
+   * Asks the Worker to wake the machine behind a hosted tool, so the resume
+   * happens while the user is still choosing a file rather than after.
+   *
+   * Deliberately fire-and-forget. Nothing on the page waits for it and nothing
+   * is shown if it fails — a machine that will not wake is reported properly by
+   * the upload itself, and a warning about a request the user never made would
+   * only be noise.
+   */
+  warm(service: HostedService): void {
+    void fetch(`/api/warm?service=${service}`).catch(() => undefined);
+  }
+
   exportPdf(bytes: Uint8Array, format: ExportFormat): Promise<PdfServiceResult> {
     return this.run(`/api/pdf/export?format=${format}`, bytes, 'application/pdf');
   }

@@ -28,6 +28,7 @@ const FORMATS: FormatOption[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PdfConvertTool extends HostedPdfTool {
+  protected readonly hostedService = 'export' as const;
   protected readonly formats = FORMATS;
   protected readonly format = signal<ExportFormat>('docx');
 

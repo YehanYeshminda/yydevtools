@@ -35,6 +35,7 @@ const LEVELS: LevelOption[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PdfCompressTool extends HostedPdfTool {
+  protected readonly hostedService = 'compress' as const;
   protected readonly levels = LEVELS;
   protected readonly level = signal<Level>('MEDIUM');
 

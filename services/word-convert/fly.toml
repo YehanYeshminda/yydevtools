@@ -1,0 +1,40 @@
+# Fly.io app for the Word convert (DOCX -> SFDT) service. Scale-to-zero like
+# the others.
+#
+#   fly launch --no-deploy
+#   fly secrets set WORD_CONVERT_SECRET=$(openssl rand -hex 32)
+#   fly secrets set SYNCFUSION_LICENSE_KEY=<your key>
+#   fly deploy
+
+app = "yydevtools-word-convert"
+primary_region = "iad"
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # "suspend" rather than "stop", matching pdf-compress/pdf-ocr/pdf-convert —
+  # see those fly.toml files for the measured cold-start reasoning.
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    # No external process per call here (DocIO runs in-process), so this can
+    # run more concurrent requests than the Ghostscript/LibreOffice/Tesseract
+    # services — the service's own MAX_CONCURRENT is the real backstop.
+    type = "requests"
+    hard_limit = 15
+    soft_limit = 10
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

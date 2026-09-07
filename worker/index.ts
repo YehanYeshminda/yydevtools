@@ -12,6 +12,8 @@
 import { ServiceError, serviceEndpoint, forwardToService } from './services';
 import { allowRequest } from './rate-limit';
 import { getNews } from './news';
+import { cacheControlFor } from './asset-cache';
+import { withSecurityHeaders } from './security-headers';
 
 /** Workers Rate Limiting binding (see the `ratelimits` block in wrangler.jsonc). */
 interface RateLimiter {
@@ -25,11 +27,14 @@ export interface Env {
   PDF_COMPRESS_URL?: string;
   PDF_OCR_URL?: string;
   PDF_CONVERT_URL?: string;
+  // The one non-Node service — see services/word-convert/Program.cs for why.
+  WORD_CONVERT_URL?: string;
 
   // Shared secrets, each set with `wrangler secret put <NAME>` — never vars.
   PDF_COMPRESS_SECRET?: string;
   PDF_OCR_SECRET?: string;
   PDF_CONVERT_SECRET?: string;
+  WORD_CONVERT_SECRET?: string;
 
   /** CurrentsAPI key for the news feed — a secret (`wrangler secret put CURRENTS_API_KEY`). */
   CURRENTS_API_KEY?: string;
@@ -60,6 +65,9 @@ const ROUTE_TIMEOUT_MS = {
   compress: 120_000,
   ocr: 165_000,
   export: 135_000,
+  // DocIO parses in-process — no Ghostscript/LibreOffice/Tesseract spawn to
+  // wait on — so this only has to cover a cold Fly wake, not real work time.
+  wordImport: 60_000,
 } as const;
 
 /** Seconds to tell a rate-limited caller to wait, matching the 60 s window. */
@@ -261,6 +269,84 @@ async function handleNews(request: Request, env: Env, ctx: ExecutionContext): Pr
   return response;
 }
 
+/** How long a wake is assumed to still be in effect, so repeat visits are free. */
+const WARM_TTL_SECONDS = 60;
+
+/** Long enough for a suspended machine to answer, short enough to not hang on a dead one. */
+const WARM_TIMEOUT_MS = 20_000;
+
+/** Base URL of the machine behind a hosted tool, or undefined if unknown. */
+export function warmBaseUrl(env: Env, service: string): string | undefined {
+  switch (service) {
+    case 'compress':
+      return env.PDF_COMPRESS_URL;
+    case 'ocr':
+      return env.PDF_OCR_URL;
+    case 'export':
+      return env.PDF_CONVERT_URL;
+    case 'word-import':
+      return env.WORD_CONVERT_URL;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Wakes the machine behind a hosted tool, so it is up by the time the user has
+ * chosen a file.
+ *
+ * The Fly machines run `min_machines_running = 0` and suspend when idle, so the
+ * first request after a quiet spell pays for the resume. That cost is the same
+ * whether it lands on the upload or on a page view — the difference is that a
+ * page view has ten seconds of the user reading and picking a file to hide it
+ * behind, and the upload has nothing.
+ *
+ * `/health` is the target because it is unauthenticated (Fly's own checks call
+ * it), so this route never needs to touch a secret. The response is deliberately
+ * not awaited: the page is not waiting on it, and the point is to *start* the
+ * wake. It is also cached at the edge for a minute, so a burst of visitors, or
+ * one visitor reloading, produces one wake rather than one each.
+ */
+async function handleWarm(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  if (request.method !== 'GET') {
+    return fail('NOT_FOUND', 'Unknown endpoint.');
+  }
+
+  const service = new URL(request.url).searchParams.get('service') ?? '';
+  const base = warmBaseUrl(env, service);
+  if (!base) {
+    return fail('INVALID_INPUT', `"${service}" is not a hosted service.`);
+  }
+
+  // One canonical key per service, so a query-string variation cannot bypass
+  // the dedupe and turn this into a way to hammer the machines.
+  const cache = caches.default;
+  const cacheKey = new Request(
+    new URL(`/api/warm?service=${service}`, request.url).toString(),
+    { method: 'GET' },
+  );
+  const hit = await cache.match(cacheKey);
+  if (hit) {
+    return hit;
+  }
+
+  ctx.waitUntil(
+    fetch(new URL('/health', base), { signal: AbortSignal.timeout(WARM_TIMEOUT_MS) }).then(
+      () => undefined,
+      // A machine that will not wake is not the page's problem: the upload
+      // itself reports failure properly, with the retry in services.ts.
+      () => undefined,
+    ),
+  );
+
+  const response = Response.json(
+    { warming: service },
+    { headers: { 'Cache-Control': `public, max-age=${WARM_TTL_SECONDS}` } },
+  );
+  ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  return response;
+}
+
 async function handleApi(
   request: Request,
   env: Env,
@@ -271,9 +357,14 @@ async function handleApi(
     return fail('INVALID_INPUT', 'Cross-origin requests are not accepted.');
   }
 
-  // The news feed is a cached GET, handled before the POST-only gate below.
+  // The news feed and the pre-warm are cached GETs, handled before the
+  // POST-only gate below. Neither is metered, so neither pays the per-IP
+  // limiter that guards the Fly operations.
   if (path === '/api/news') {
     return handleNews(request, env, ctx);
+  }
+  if (path === '/api/warm') {
+    return handleWarm(request, env, ctx);
   }
 
   if (request.method !== 'POST') {
@@ -337,6 +428,11 @@ async function handleApi(
     return proxy(request, endpoint, '/convert', { format }, ROUTE_TIMEOUT_MS.export);
   }
 
+  if (path === '/api/word/import') {
+    const endpoint = serviceEndpoint(env.WORD_CONVERT_URL, env.WORD_CONVERT_SECRET);
+    return proxy(request, endpoint, '/import', {}, ROUTE_TIMEOUT_MS.wordImport);
+  }
+
   // There is deliberately no /api/image/compress. Image compression moved into
   // the browser (mozjpeg and libwebp as WebAssembly), so the route would be an
   // open proxy into an image decoder that nothing calls — attack surface with no
@@ -347,35 +443,56 @@ async function handleApi(
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
-
-    // The site is canonical on the apex domain; www exists only so that anyone
-    // who types it lands somewhere instead of on a DNS error. Redirect it
-    // permanently, path and query intact, before anything else runs — serving
-    // the same pages on two hostnames would split the SEO signal and give
-    // AdSense a second, uncanonical copy of every page to crawl.
-    if (url.hostname.startsWith('www.')) {
-      url.hostname = url.hostname.slice(4);
-      return Response.redirect(url.toString(), 301);
-    }
-
-    const path = url.pathname;
-    if (path.startsWith('/api/')) {
-      return handleApi(request, env, path, ctx);
-    }
-    // Every route is prerendered to its own HTML file, so a miss is a genuine
-    // miss. Serve the prerendered 404 page, but with a 404 status — returning
-    // the homepage with 200 (the old SPA fallback) made every bad URL a soft
-    // 404 in Search Console and is a common AdSense rejection reason.
-    const response = await env.ASSETS.fetch(request);
-    if (response.status !== 404) {
-      return response;
-    }
-
-    const notFound = await env.ASSETS.fetch(new URL('/404', request.url));
-    return new Response(notFound.body, {
-      status: 404,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    });
+    // Every answer gets the security headers, including redirects and errors —
+    // an HSTS header on the www redirect is the one that matters most, since
+    // that redirect is often the first response a visitor ever sees.
+    return withSecurityHeaders(await route(request, env, ctx));
   },
 };
+
+/** Everything the site answers, before the security headers are put on top. */
+async function route(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  const url = new URL(request.url);
+
+  // The site is canonical on the apex domain; www exists only so that anyone
+  // who types it lands somewhere instead of on a DNS error. Redirect it
+  // permanently, path and query intact, before anything else runs — serving
+  // the same pages on two hostnames would split the SEO signal and give
+  // AdSense a second, uncanonical copy of every page to crawl.
+  if (url.hostname.startsWith('www.')) {
+    url.hostname = url.hostname.slice(4);
+    return Response.redirect(url.toString(), 301);
+  }
+
+  const path = url.pathname;
+  if (path.startsWith('/api/')) {
+    return handleApi(request, env, path, ctx);
+  }
+  // Every route is prerendered to its own HTML file, so a miss is a genuine
+  // miss. Serve the prerendered 404 page, but with a 404 status — returning
+  // the homepage with 200 (the old SPA fallback) made every bad URL a soft
+  // 404 in Search Console and is a common AdSense rejection reason.
+  const response = await env.ASSETS.fetch(request);
+  if (response.status !== 404) {
+    // Content-hashed bundles are safe to keep forever; everything else stays
+    // on the asset server's revalidating default. See asset-cache.ts for why
+    // this is here rather than in a `_headers` file.
+    const cacheControl = cacheControlFor(path);
+    if (cacheControl && (response.status === 200 || response.status === 304)) {
+      const headers = new Headers(response.headers);
+      headers.set('Cache-Control', cacheControl);
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+    }
+    return response;
+  }
+
+  const notFound = await env.ASSETS.fetch(new URL('/404', request.url));
+  return new Response(notFound.body, {
+    status: 404,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
+}

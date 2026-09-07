@@ -1,5 +1,24 @@
 /* Panel, dropzone, actions, chips, status lines and notes come from
-   ../tool-shell.css. Only the document surface is particular to this tool. */
+   ../tool-shell.css. Only the document surface is particular to this tool.
+
+   The Syncfusion Document Editor's own CSS is imported here rather than
+   globally (e.g. in angular.json's "styles"), so it is part of this
+   component's bundle and only reaches the page when Word Viewer is actually
+   opened — matching how docx-preview was lazy-loaded before it. Angular's
+   default view encapsulation scopes every rule in a component's resolved
+   stylesheet, `@import`ed content included, so this does not leak into the
+   rest of the site the way an unscoped global stylesheet would.
+
+   "-lite" is the variant meant for consumers who supply their own toolbar
+   chrome instead of Syncfusion's ribbon (`enableToolbar="false"` below) — it
+   pulls in only the document-editor package's own rules, not the buttons,
+   inputs, navigations, popups and dropdowns CSS the full ribbon UI needs.
+
+   At ~83 kB this is still well over the site's normal 8 kB warning /
+   12 kB error component-style budget (angular.json), which is why that
+   error ceiling is raised to 90 kB — the warning threshold is untouched, so
+   any other component that grows unexpectedly large still gets flagged. */
+@import '@syncfusion/ej2-documenteditor/styles/material-lite.css';
 
 .loading {
   display: flex;
@@ -92,51 +111,29 @@
 
 /* Document surface ------------------------------------------------------- */
 /* A neutral ground, so the white pages read as sheets of paper rather than as
-   part of the interface. `safe center` centres a page that fits and quietly
-   falls back to left-aligned when one does not — plain centring would push the
-   left edge of an oversized page outside the scroll container, where no amount
-   of scrolling can reach it. */
+   part of the interface — the container manages its own scroll and page
+   layout, unlike the old shadow-root host this replaces.
+
+   The height lives here, on the parent, rather than on
+   ejs-documenteditorcontainer itself: that element sets its own inline
+   `height: 100%; min-height: 320px` (Syncfusion's own fallback default), and
+   an inline style beats an external rule regardless of the numbers on either
+   side — measured directly, a `min-height: 640px` written here for the
+   element itself lost to Syncfusion's inline 320px. Sizing the parent instead
+   means the child's own `height: 100%` resolves against a real box, which is
+   exactly what that inline rule is already trying to do — nothing to fight. */
 .page {
-  display: flex;
-  justify-content: flex-start;
-  justify-content: safe center;
-  padding: 1rem;
-  overflow: auto;
   border-radius: 12px;
+  overflow: hidden;
   background: var(--surface-2);
+  height: 85vh;
+  min-height: 640px;
 }
 
 .page--empty {
   display: none;
 }
 
-/* Sized in JS to the scaled document: a transform leaves layout untouched, so
-   the host has to be told what the result measures. */
-.page__host {
+ejs-documenteditorcontainer {
   display: block;
-  flex: none;
-}
-
-@media print {
-  /* Printing should produce the document, not the site around it — and at its
-     true size, whatever the viewer is zoomed to. */
-  app-tool-page,
-  .bar,
-  .toolbar,
-  .note,
-  app-tool-content {
-    display: none !important;
-  }
-
-  .page {
-    display: block;
-    padding: 0;
-    background: none;
-    overflow: visible;
-  }
-
-  .page__host {
-    width: auto !important;
-    height: auto !important;
-  }
 }
