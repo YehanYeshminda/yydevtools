@@ -1,0 +1,20 @@
+/* Syncfusion's Spreadsheet stylesheet, deliberately unencapsulated.
+
+   Every rule in here is rooted at a `.e-*` class or an `#sfspreadsheet_*` id —
+   checked across all 2,313 selectors in the file, none of them bare element
+   selectors and none of them resets — and `.e-*` belongs to Syncfusion alone
+   on this site (Angular Material is `.mat-*`, ng-icons is `ng-icon`). So
+   letting it out of a component's scope costs nothing elsewhere. */
+@import '@syncfusion/ej2-spreadsheet/styles/material-lite.css';
+
+/* Our own element, so this is not a global rule in any meaningful sense.
+   `.page` sets the height; this passes it down to the spreadsheet. */
+app-spreadsheet-theme {
+  display: block;
+  height: 100%;
+}
+
+app-spreadsheet-theme ejs-spreadsheet {
+  display: block;
+  height: 100%;
+}

@@ -1,0 +1,84 @@
+/* Panel, dropzone, actions, status lines and notes come from ../tool-shell.css.
+   Only the workbook surface is particular to this tool.
+
+   Syncfusion's own stylesheet is deliberately NOT imported here — it lives in
+   shared/syncfusion/spreadsheet-theme, which is unencapsulated, because
+   scoping it stops it reaching the grid Syncfusion builds at runtime. See that
+   component for the full reasoning. It is still lazy, and it is still the
+   ~349 kB that the anyComponentStyle budget in angular.json is sized around. */
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  justify-content: center;
+  color: var(--on-var);
+}
+
+/* File bar --------------------------------------------------------------- */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 12px;
+  background: var(--surface-1);
+}
+
+.bar__file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.bar__icon {
+  flex: none;
+  font-size: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  color: var(--primary);
+}
+
+.bar__name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--on);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bar__meta {
+  font-size: 0.82rem;
+  color: var(--on-var);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Workbook surface ------------------------------------------------------- */
+/* The height lives on this wrapper, not on <ejs-spreadsheet>: the Syncfusion
+   components set their own inline height on the host element, and an inline
+   style beats an external rule whatever the values — the same trap the Word
+   Viewer's container hit. Sizing the parent lets the component fill it. */
+.page {
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface-2);
+  height: 85vh;
+  min-height: 640px;
+}
+
+.page--empty {
+  display: none;
+}

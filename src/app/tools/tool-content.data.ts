@@ -1100,8 +1100,8 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   'word-viewer': {
     slug: 'word-viewer',
     intro: [
-      'Open a Word document and actually read it — headings, tables, lists, images, headers and footers, laid out roughly as Word would lay them out — without Word, without an account, and without uploading the file anywhere. Drop a .docx in and it renders in the page, with the text available to copy out or save as plain text.',
-      'The reason to do this in the browser rather than on a website that uploads is the same reason people are careful with these files: .docx is what contracts, invoices, CVs, medical letters and internal reports arrive as. Opening one should not mean giving a copy to a stranger.',
+      'Open a Word document and actually read it — headings, tables, lists, images, headers and footers, laid out roughly as Word would lay them out — without Word and without an account. Drop a .docx in and it renders in the page, with the text available to copy out or save as plain text.',
+      'Reading a .docx in a browser takes a conversion step that browsers cannot do alone, so this is one of the few tools here that is not purely local: the file is sent over HTTPS to our own server, converted in memory, and never written to disk or kept afterwards. That is worth knowing up front, because .docx is what contracts, invoices, CVs, medical letters and internal reports arrive as.',
     ],
     steps: [
       'Drop a .docx file onto the page, or click to choose one.',
@@ -1116,7 +1116,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Copy the whole text, or download it as .txt.',
       'Zoom from 25% to 300%, or fit the page to the width of the window.',
       'Print the document on its own, without the site around it.',
-      'Runs entirely in your browser — the file is unzipped and rendered in the tab, never uploaded.',
+      'Converted on our own server rather than a third party\'s, in memory, and never stored.',
     ],
     sections: [
       {
@@ -1137,10 +1137,10 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         ],
       },
       {
-        heading: 'Reading a document without handing it over',
+        heading: 'Where your document actually goes',
         body: [
-          'Word documents are unusually sensitive as a category. They are the default container for employment contracts, invoices, legal drafts, medical letters and CVs — and, unlike a photo, their whole content is text that is trivially searchable once someone else has a copy.',
-          'This tool never transmits the file. It is read with the browser\'s own file API, unzipped in memory and rendered into the page, which you can verify by loading the page, disconnecting from the internet and opening a document anyway.',
+          'Word documents are unusually sensitive as a category. They are the default container for employment contracts, invoices, legal drafts, medical letters and CVs — and, unlike a photo, their whole content is text that is trivially searchable once someone else has a copy. So it is worth being precise about what happens here rather than vague.',
+          'Rendering a .docx faithfully means converting it into a form a browser can draw, and that conversion cannot be done in the browser itself. The file is sent over HTTPS to a small service we run, converted in memory, and the result is sent back to your tab. It is not written to disk, not logged, not kept after the request, and not passed to any third party. Most tools on this site never send anything anywhere; this one does, and saying otherwise would be untrue.',
           'One thing worth knowing about the documents themselves: .docx files carry metadata of their own — author, organisation, the time the file was created and last edited, and often revision history or tracked changes that were never accepted. A document forwarded outside your organisation may say more than its visible text does, and that is worth checking before sending rather than after.',
         ],
       },
@@ -1148,7 +1148,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     faq: [
       {
         q: 'Is my document uploaded anywhere?',
-        a: 'No. The file is opened with the browser\'s file API, unzipped in memory and rendered in the page. Nothing is sent to a server, which you can confirm by disconnecting from the internet after the page loads and opening a document anyway.',
+        a: 'Yes, and it is worth being straight about it: rendering a .docx needs a conversion step no browser can do on its own, so the file is sent over HTTPS to a small service we run ourselves. It is converted in memory, returned to your tab, and never written to disk, logged, kept afterwards or passed to a third party. Most tools on this site send nothing anywhere; this one is an exception.',
       },
       {
         q: 'Why will it not open my .doc file?',
@@ -1172,6 +1172,90 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
     ],
     related: ['pdf-convert', 'pdf-viewer', 'word-counter'],
+  },
+
+  'excel-viewer': {
+    slug: 'excel-viewer',
+    intro: [
+      'Open an Excel workbook and read it properly — every sheet, with its number formats, column widths, merged cells and cell styling intact — without Excel, without a Microsoft account, and without installing anything. Drop a .xlsx in and it renders as a real grid you can scroll and move between sheets in.',
+      'This is the tool for the spreadsheet somebody emailed you: a quote, an invoice, a budget, an export from a system you do not have a licence for. Reading one should not require buying a copy of Excel or signing into a cloud account first.',
+    ],
+    steps: [
+      'Drop a .xlsx file onto the page, or click to choose one.',
+      'Read it in place — the grid keeps the workbook\'s formatting, column widths and number formats.',
+      'Move between sheets with the tabs along the bottom.',
+      'Scroll around large sheets; the row and column headers stay put.',
+      'Use Open another to swap in a different workbook.',
+    ],
+    features: [
+      'Renders .xlsx as a real spreadsheet grid, not a flattened table.',
+      'Every sheet in the workbook, switchable from the tabs.',
+      'Keeps number formats, column widths, merged cells and cell styling.',
+      'Sheet, row and column counts for the workbook.',
+      'Read-only by design — nothing you do here can alter the file.',
+      'Converted on our own server rather than a third party\'s, in memory, and never stored.',
+    ],
+    sections: [
+      {
+        heading: 'What a .xlsx file actually is',
+        body: [
+          'Like .docx, a .xlsx is a zip archive of XML. Inside it you will find a workbook part listing the sheets, a separate XML part for each sheet\'s cells, a shared-strings table holding every distinct piece of text once — which is why spreadsheets full of repeated labels stay surprisingly small — and a styles part describing every format the workbook uses.',
+          'Cells are stored as values plus a style reference, not as what you see. The number 45292 with a date format applied is what a cell showing "1 January 2024" actually contains, and 0.07 formatted as a percentage is what "7%" is underneath. A viewer has to resolve those style references to show you what Excel would show you, which is most of the work of rendering a workbook faithfully.',
+          'The older .xls is a different thing entirely: a binary format from the same era as .doc, undocumented for most of its life. It cannot be read here — open it in Excel or LibreOffice and save it as .xlsx first.',
+        ],
+      },
+      {
+        heading: 'What a viewer shows and what it does not',
+        body: [
+          'Values and formatting come through: text, numbers, dates, currency and percentage formats, column widths, merged cells, fills and borders. Multiple sheets come through, and the tabs let you move between them as you would in Excel.',
+          'Formulas are shown as their last calculated result rather than recalculated live, which is what you want when reading someone else\'s workbook — the numbers you see are the numbers they saw when they saved it. Charts, pivot tables, macros, conditional formatting rules and data-validation dropdowns are either simplified or not rendered, because reproducing them means reproducing Excel rather than reading a file.',
+          'Fonts follow the same rule as any document viewer: a workbook names its typefaces rather than embedding them, so a font you do not have is substituted, which can change how much text fits a column.',
+        ],
+      },
+      {
+        heading: 'Where your workbook actually goes',
+        body: [
+          'Most tools on this site never send your file anywhere, and say so plainly. This one is an exception and it would be dishonest to bury that. Turning a .xlsx into something a browser can draw takes a conversion step that has to happen on a server, so the file is sent over HTTPS to a small service we run ourselves.',
+          'What happens there: it is converted in memory, the result is returned to your tab, and the file is not written to disk, not logged, not retained after the request and not handed to any third party. It is the same service the Word Viewer uses, and it is ours rather than a vendor\'s.',
+          'If the workbook is sensitive enough that sending it anywhere is the wrong trade, the CSV Viewer on this site reads plain .csv files entirely inside your browser with nothing transmitted — and most spreadsheets can be exported to CSV from Excel in a couple of clicks, at the cost of formatting and multiple sheets.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is my workbook uploaded anywhere?',
+        a: 'Yes, and it is worth being straight about it: rendering a .xlsx needs a conversion step no browser can do on its own, so the file is sent over HTTPS to a small service we run ourselves. It is converted in memory, returned to your tab, and never written to disk, logged, kept afterwards or passed to a third party. If that is not an acceptable trade for a particular file, the CSV Viewer reads .csv entirely in your browser instead.',
+      },
+      {
+        q: 'Why will it not open my .xls file?',
+        a: 'Because .xls is the older binary Excel format, quite different from .xlsx. Open it in Excel, LibreOffice or Google Sheets and save it as .xlsx, and it will work here.',
+      },
+      {
+        q: 'Can I edit the workbook or change values?',
+        a: 'No — this is a viewer, and editing is switched off deliberately. Nothing you do in the grid changes the file you dropped in, and there is no save.',
+      },
+      {
+        q: 'Do formulas work?',
+        a: 'You see the values the formulas last produced, as saved in the file, rather than a live recalculation. For reading someone else\'s workbook that is usually what you want — the figures shown are the figures they saw.',
+      },
+      {
+        q: 'Does it show every sheet?',
+        a: 'Yes. Every sheet in the workbook is loaded, and the tabs along the bottom move between them.',
+      },
+      {
+        q: 'What about charts, pivot tables and macros?',
+        a: 'Those are not rendered. Cell values, formatting and layout are what a viewer reproduces; charts and pivot tables are Excel features that need Excel, and macros are code that this tool deliberately never runs.',
+      },
+      {
+        q: 'What about a password-protected workbook?',
+        a: 'It cannot be opened. A protected .xlsx is encrypted, so there is nothing to read until it is decrypted with the password — remove the protection in Excel first, then open the resulting file here.',
+      },
+      {
+        q: 'How large a file can it handle?',
+        a: 'Up to 20 MB, which covers the overwhelming majority of real workbooks. Very large sheets will take a moment to convert and render, since the whole workbook is processed rather than streamed a page at a time.',
+      },
+    ],
+    related: ['csv-viewer', 'word-viewer', 'pdf-viewer'],
   },
 
   'xml-viewer': {

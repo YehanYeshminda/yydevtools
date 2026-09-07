@@ -1,24 +1,15 @@
 /* Panel, dropzone, actions, chips, status lines and notes come from
    ../tool-shell.css. Only the document surface is particular to this tool.
 
-   The Syncfusion Document Editor's own CSS is imported here rather than
-   globally (e.g. in angular.json's "styles"), so it is part of this
-   component's bundle and only reaches the page when Word Viewer is actually
-   opened — matching how docx-preview was lazy-loaded before it. Angular's
-   default view encapsulation scopes every rule in a component's resolved
-   stylesheet, `@import`ed content included, so this does not leak into the
-   rest of the site the way an unscoped global stylesheet would.
-
-   "-lite" is the variant meant for consumers who supply their own toolbar
-   chrome instead of Syncfusion's ribbon (`enableToolbar="false"` below) — it
-   pulls in only the document-editor package's own rules, not the buttons,
-   inputs, navigations, popups and dropdowns CSS the full ribbon UI needs.
-
-   At ~83 kB this is still well over the site's normal 8 kB warning /
-   12 kB error component-style budget (angular.json), which is why that
-   error ceiling is raised to 90 kB — the warning threshold is untouched, so
-   any other component that grows unexpectedly large still gets flagged. */
-@import '@syncfusion/ej2-documenteditor/styles/material-lite.css';
+   Syncfusion's own stylesheet is deliberately NOT imported here — it lives in
+   shared/syncfusion/document-editor-theme, which is unencapsulated, because
+   scoping it stops it reaching the DOM Syncfusion builds at runtime. See that
+   component for the full reasoning. It is still lazy, and at ~83 kB it is
+   still well over the site's normal 8 kB warning / 12 kB error
+   component-style budget (angular.json), which is why that error ceiling is
+   raised to 350 kB — sized by the far heavier Spreadsheet stylesheet. The
+   warning threshold is untouched, so any other component that grows
+   unexpectedly large still gets flagged. */
 
 .loading {
   display: flex;
@@ -132,8 +123,4 @@
 
 .page--empty {
   display: none;
-}
-
-ejs-documenteditorcontainer {
-  display: block;
 }

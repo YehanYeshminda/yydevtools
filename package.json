@@ -60,6 +60,7 @@
     "@ng-icons/material-icons": "^34.0.0",
     "@prettier/plugin-xml": "^3.4.2",
     "@syncfusion/ej2-angular-documenteditor": "^34.2.6",
+    "@syncfusion/ej2-angular-spreadsheet": "^34.2.6",
     "@tesseract.js-data/eng": "^1.0.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",

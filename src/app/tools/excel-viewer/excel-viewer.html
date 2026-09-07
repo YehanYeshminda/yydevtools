@@ -1,0 +1,103 @@
+<app-tool-page slug="excel-viewer">
+  Open an Excel workbook and read it in the browser, with its sheets, formatting and column widths
+  intact. Reading it needs a conversion step on our server — see the note below.
+</app-tool-page>
+
+<div class="panel">
+  @if (!hasWorkbook() && !loading()) {
+    <app-dropzone
+      accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      (filesSelected)="open($event)"
+    >
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matTableChartOutline" />
+      <span class="dropzone__title">Drop a .xlsx file here, or click to choose</span>
+      <span class="dropzone__hint">Up to 20 MB</span>
+    </app-dropzone>
+  }
+
+  @if (error(); as message) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      <span class="note__text">{{ message }}</span>
+    </p>
+  }
+
+  @if (loading()) {
+    <div class="loading" role="status">
+      <app-spinner [size]="32" />
+      <span>Opening {{ name() }}…</span>
+    </div>
+  }
+
+  @if (hasWorkbook() && !loading()) {
+    <div class="bar">
+      <div class="bar__file">
+        <ng-icon class="bar__icon" aria-hidden="true" name="matTableChartOutline" />
+        <span class="bar__name">{{ name() }}</span>
+        <span class="bar__meta">{{ formatBytes(size()) }}</span>
+      </div>
+      @if (stats(); as s) {
+        <span class="bar__meta">
+          {{ s.sheets }} sheet{{ s.sheets === 1 ? '' : 's' }} · {{ s.rows }} row{{
+            s.rows === 1 ? '' : 's'
+          }}
+          · {{ s.columns }} column{{ s.columns === 1 ? '' : 's' }}
+        </span>
+      }
+    </div>
+
+    <div class="toolbar">
+      <div class="actions">
+        <button matButton (click)="reset()">
+          <ng-icon name="matRefreshOutline" />
+          Open another
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="page" [class.page--empty]="!hasWorkbook()">
+    @defer (when hasWorkbook()) {
+      <!-- app-spreadsheet-theme carries Syncfusion's stylesheet unencapsulated;
+           scoped, none of it reaches the grid it builds at runtime.
+
+           The component posts the file to `openUrl` itself, which is why there
+           is no client method for the import the way Word Viewer has one. -->
+      <app-spreadsheet-theme>
+        <ejs-spreadsheet
+          #sheet
+          [openUrl]="openUrl"
+          [allowOpen]="true"
+          [allowSave]="false"
+          [allowEditing]="false"
+          [showRibbon]="false"
+          [showFormulaBar]="false"
+          [showSheetTabs]="true"
+          (created)="onCreated(sheet)"
+          (openComplete)="onOpenComplete()"
+          (openFailure)="onOpenFailure($event)"
+        >
+          <!-- One empty sheet, so the grid has something to scaffold before a
+             workbook arrives. Without it the component mounts and sizes its
+             panels but never renders a single cell — measured directly, with
+             the workbook sitting correctly in its own model the whole time. -->
+          <e-sheets>
+            <e-sheet></e-sheet>
+          </e-sheets>
+        </ejs-spreadsheet>
+      </app-spreadsheet-theme>
+    }
+  </div>
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOutline" />
+  <span class="note__text">
+    Unlike most tools here, this one is not purely local: a .xlsx has to be converted on our server
+    before it can be displayed. The file is sent over HTTPS, converted in memory and never written
+    to disk or kept afterwards. If that matters for your workbook, the CSV Viewer reads plain .csv
+    files entirely in this tab instead.
+  </span>
+</p>
+
+<app-tool-content slug="excel-viewer" />

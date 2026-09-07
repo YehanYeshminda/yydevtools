@@ -60,14 +60,14 @@
     //   npx wrangler secret put PDF_COMPRESS_SECRET
     //   npx wrangler secret put PDF_OCR_SECRET
     //   npx wrangler secret put PDF_CONVERT_SECRET
-    //   npx wrangler secret put WORD_CONVERT_SECRET
+    //   npx wrangler secret put OFFICE_CONVERT_SECRET
     "PDF_COMPRESS_URL": "https://yydevtools-pdf-compress.fly.dev",
     "PDF_OCR_URL": "https://yydevtools-pdf-ocr.fly.dev",
     "PDF_CONVERT_URL": "https://yydevtools-pdf-convert.fly.dev",
     // ASP.NET Core, not Node like its three siblings above — see
-    // services/word-convert/Program.cs for why. Turns a .docx into the SFDT
-    // JSON the Word Viewer's Syncfusion editor renders; nothing else uses it.
-    "WORD_CONVERT_URL": "https://yydevtools-word-convert.fly.dev",
+    // services/office-convert/Program.cs for why. Converts .docx to SFDT and .xlsx
+    // to workbook JSON, for the Word and Excel Viewers' Syncfusion components.
+    "OFFICE_CONVERT_URL": "https://yydevtools-office-convert.fly.dev",
     // Upstash Redis for global rate limiting AND the cached news feed. The URL
     // is safe to keep here; the token is a secret — set it with:
     //   npx wrangler secret put UPSTASH_REDIS_REST_TOKEN

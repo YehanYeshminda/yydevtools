@@ -1,0 +1,27 @@
+/* Syncfusion's Document Editor stylesheet, deliberately unencapsulated — see
+   document-editor-theme.ts, and spreadsheet-theme.css for the audit of how
+   safe letting a `.e-*` stylesheet out of scope actually is.
+
+   "-lite" is the variant meant for consumers who supply their own toolbar
+   chrome instead of Syncfusion's ribbon (`enableToolbar="false"`) — it pulls
+   in only the document-editor package's own rules, not the buttons, inputs,
+   navigations, popups and dropdowns CSS the full ribbon UI needs. */
+@import '@syncfusion/ej2-documenteditor/styles/material-lite.css';
+
+/* Our own element; `.page` sets the height, this passes it down. */
+app-document-editor-theme {
+  display: block;
+  height: 100%;
+}
+
+app-document-editor-theme ejs-documenteditorcontainer {
+  display: block;
+}
+
+/* The container's own page-number and zoom readout, which duplicates the
+   toolbar this page draws above it. `enableToolbar` turns off the ribbon but
+   not this, and there is no input for it — so it goes here, now that this
+   stylesheet actually reaches the element. */
+app-document-editor-theme .e-de-status-bar {
+  display: none;
+}

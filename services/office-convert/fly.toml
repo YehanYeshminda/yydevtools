@@ -1,12 +1,12 @@
-# Fly.io app for the Word convert (DOCX -> SFDT) service. Scale-to-zero like
-# the others.
+# Fly.io app for the Office convert service — DOCX -> SFDT for Word Viewer,
+# XLSX -> workbook JSON for Excel Viewer. Scale-to-zero like the others.
 #
 #   fly launch --no-deploy
-#   fly secrets set WORD_CONVERT_SECRET=$(openssl rand -hex 32)
+#   fly secrets set OFFICE_CONVERT_SECRET=$(openssl rand -hex 32)
 #   fly secrets set SYNCFUSION_LICENSE_KEY=<your key>
 #   fly deploy
 
-app = "yydevtools-word-convert"
+app = "yydevtools-office-convert"
 primary_region = "iad"
 
 [build]

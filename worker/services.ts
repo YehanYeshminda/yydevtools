@@ -62,20 +62,28 @@ const DEFAULT_TIMEOUT_MS = 180_000;
 /** Upstream headers worth surfacing to the browser. */
 const PASS_THROUGH = ['X-Input-Bytes', 'X-Output-Bytes', 'X-Compressed'];
 
-/** Sends `input` to `pathname` on the service and returns the processed bytes. */
+/**
+ * Sends `input` to `pathname` on the service and returns the processed bytes.
+ *
+ * `contentType` exists for the one caller that cannot use the default: the
+ * Excel Viewer's Spreadsheet component builds its own multipart request, so
+ * that body has to reach the service with its original boundary intact. The
+ * body is opaque bytes either way — only the header differs.
+ */
 export async function forwardToService(
   endpoint: ServiceEndpoint,
   pathname: string,
   query: Record<string, string>,
   input: ArrayBuffer,
   timeoutMs = DEFAULT_TIMEOUT_MS,
+  contentType = 'application/octet-stream',
 ): Promise<ForwardResult> {
   const target = new URL(pathname, endpoint.url);
   for (const [key, value] of Object.entries(query)) {
     target.searchParams.set(key, value);
   }
 
-  const response = await send(target, endpoint.secret, input, timeoutMs);
+  const response = await send(target, endpoint.secret, input, timeoutMs, contentType);
 
   if (response.ok) {
     const meta: Record<string, string> = {};
@@ -114,6 +122,7 @@ async function send(
   secret: string,
   input: ArrayBuffer,
   timeoutMs: number,
+  contentType: string,
 ): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
     try {
@@ -121,7 +130,7 @@ async function send(
         method: 'POST',
         headers: {
           Authorization: `Bearer ${secret}`,
-          'Content-Type': 'application/octet-stream',
+          'Content-Type': contentType,
         },
         body: input,
         signal: AbortSignal.timeout(timeoutMs),

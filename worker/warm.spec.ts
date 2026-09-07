@@ -6,6 +6,7 @@ const env = {
   PDF_COMPRESS_URL: 'https://compress.example',
   PDF_OCR_URL: 'https://ocr.example',
   PDF_CONVERT_URL: 'https://convert.example',
+  OFFICE_CONVERT_URL: 'https://office.example',
 } as Env;
 
 describe('warmBaseUrl', () => {
@@ -15,6 +16,8 @@ describe('warmBaseUrl', () => {
     expect(warmBaseUrl(env, 'compress')).toBe('https://compress.example');
     expect(warmBaseUrl(env, 'ocr')).toBe('https://ocr.example');
     expect(warmBaseUrl(env, 'export')).toBe('https://convert.example');
+    // One key, not one per tool: Word Viewer and Excel Viewer share a machine.
+    expect(warmBaseUrl(env, 'office')).toBe('https://office.example');
   });
 
   it('refuses anything else, so the query cannot pick the target', () => {

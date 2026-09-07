@@ -269,7 +269,17 @@ export const routes: Routes = [
     data: {
       description:
         'Open and read a Word .docx document in your browser with its layout, tables and images ' +
-        'intact, and copy the text out. The file is never uploaded. Free, no sign-up.',
+        'intact, and copy the text out. Free, no sign-up.',
+    },
+  },
+  {
+    path: 'tools/excel-viewer',
+    loadComponent: () => import('./tools/excel-viewer/excel-viewer').then((m) => m.ExcelViewerTool),
+    title: 'Excel Viewer — Open XLSX in your browser — YYDevTools',
+    data: {
+      description:
+        'Open an Excel .xlsx workbook in your browser and read every sheet, with formatting, ' +
+        'number formats and column widths intact. Free, no sign-up, no Excel needed.',
     },
   },
   {

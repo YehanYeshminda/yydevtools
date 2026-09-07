@@ -27,14 +27,14 @@ export interface Env {
   PDF_COMPRESS_URL?: string;
   PDF_OCR_URL?: string;
   PDF_CONVERT_URL?: string;
-  // The one non-Node service — see services/word-convert/Program.cs for why.
-  WORD_CONVERT_URL?: string;
+  // The one non-Node service — see services/office-convert/Program.cs for why.
+  OFFICE_CONVERT_URL?: string;
 
   // Shared secrets, each set with `wrangler secret put <NAME>` — never vars.
   PDF_COMPRESS_SECRET?: string;
   PDF_OCR_SECRET?: string;
   PDF_CONVERT_SECRET?: string;
-  WORD_CONVERT_SECRET?: string;
+  OFFICE_CONVERT_SECRET?: string;
 
   /** CurrentsAPI key for the news feed — a secret (`wrangler secret put CURRENTS_API_KEY`). */
   CURRENTS_API_KEY?: string;
@@ -65,9 +65,9 @@ const ROUTE_TIMEOUT_MS = {
   compress: 120_000,
   ocr: 165_000,
   export: 135_000,
-  // DocIO parses in-process — no Ghostscript/LibreOffice/Tesseract spawn to
-  // wait on — so this only has to cover a cold Fly wake, not real work time.
-  wordImport: 60_000,
+  // DocIO and XlsIO parse in-process — no Ghostscript/LibreOffice/Tesseract
+  // spawn to wait on — so this mostly covers a cold Fly wake, not real work.
+  officeImport: 60_000,
 } as const;
 
 /** Seconds to tell a rate-limited caller to wait, matching the 60 s window. */
@@ -194,6 +194,9 @@ async function proxy(
   pathname: string,
   query: Record<string, string>,
   timeoutMs: number,
+  // Passed only by the Excel route, whose body is a multipart form the
+  // Spreadsheet component built itself — that boundary has to survive the hop.
+  contentType?: string,
 ): Promise<Response> {
   if (!endpoint) {
     return fail('NOT_CONFIGURED', 'This tool is not configured on the server right now.');
@@ -205,7 +208,7 @@ async function proxy(
   }
 
   try {
-    const result = await forwardToService(endpoint, pathname, query, body, timeoutMs);
+    const result = await forwardToService(endpoint, pathname, query, body, timeoutMs, contentType);
     return new Response(result.body, {
       headers: {
         'Content-Type': result.contentType,
@@ -284,8 +287,8 @@ export function warmBaseUrl(env: Env, service: string): string | undefined {
       return env.PDF_OCR_URL;
     case 'export':
       return env.PDF_CONVERT_URL;
-    case 'word-import':
-      return env.WORD_CONVERT_URL;
+    case 'office':
+      return env.OFFICE_CONVERT_URL;
     default:
       return undefined;
   }
@@ -429,8 +432,25 @@ async function handleApi(
   }
 
   if (path === '/api/word/import') {
-    const endpoint = serviceEndpoint(env.WORD_CONVERT_URL, env.WORD_CONVERT_SECRET);
-    return proxy(request, endpoint, '/import', {}, ROUTE_TIMEOUT_MS.wordImport);
+    const endpoint = serviceEndpoint(env.OFFICE_CONVERT_URL, env.OFFICE_CONVERT_SECRET);
+    return proxy(request, endpoint, '/word/import', {}, ROUTE_TIMEOUT_MS.officeImport);
+  }
+
+  // Unlike every other route here, the browser rather than our own code shapes
+  // this request: the Spreadsheet component posts the file to whatever
+  // `openUrl` it was given. So the multipart body is forwarded verbatim,
+  // Content-Type and boundary intact, and the shared secret is added on this
+  // side where it belongs.
+  if (path === '/api/excel/import') {
+    const endpoint = serviceEndpoint(env.OFFICE_CONVERT_URL, env.OFFICE_CONVERT_SECRET);
+    return proxy(
+      request,
+      endpoint,
+      '/excel/import',
+      {},
+      ROUTE_TIMEOUT_MS.officeImport,
+      request.headers.get('Content-Type') ?? undefined,
+    );
   }
 
   // There is deliberately no /api/image/compress. Image compression moved into

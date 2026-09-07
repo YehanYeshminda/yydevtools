@@ -24,7 +24,7 @@
  */
 import { writeFile, readFile } from 'node:fs/promises';
 
-const OUT_FILE = 'src/app/tools/word-viewer/syncfusion-license.generated.ts';
+const OUT_FILE = 'src/app/core/syncfusion-license.generated.ts';
 
 async function readEnvLocal(name) {
   try {

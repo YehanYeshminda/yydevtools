@@ -1,6 +1,6 @@
 <app-tool-page slug="word-viewer">
   Open a Word document and read it in the browser, with its layout, headings, tables and images
-  intact. The file is never uploaded — it is opened on your own device.
+  intact. Reading it needs a conversion step on our server — see the note below.
 </app-tool-page>
 
 <div class="panel">
@@ -11,7 +11,7 @@
     >
       <ng-icon class="dropzone__icon" aria-hidden="true" name="matDescriptionOutline" />
       <span class="dropzone__title">Drop a .docx file here, or click to choose</span>
-      <span class="dropzone__hint">Up to 25 MB · nothing is uploaded</span>
+      <span class="dropzone__hint">Up to 20 MB</span>
     </app-dropzone>
   }
 
@@ -38,9 +38,10 @@
       </div>
       @if (stats(); as s) {
         <span class="bar__meta">
-          {{ s.pages }} page{{ s.pages === 1 ? '' : 's' }} ·
-          {{ s.words }} word{{ s.words === 1 ? '' : 's' }} ·
-          {{ s.paragraphs }} paragraph{{ s.paragraphs === 1 ? '' : 's' }}
+          {{ s.pages }} page{{ s.pages === 1 ? '' : 's' }} · {{ s.words }} word{{
+            s.words === 1 ? '' : 's'
+          }}
+          · {{ s.paragraphs }} paragraph{{ s.paragraphs === 1 ? '' : 's' }}
         </span>
       }
     </div>
@@ -85,22 +86,29 @@
 
   <div class="page" [class.page--empty]="!hasDocument()">
     @defer (when hasDocument()) {
-      <ejs-documenteditorcontainer
-        #editor
-        [enableToolbar]="false"
-        height="100%"
-        (created)="onEditorCreated()"
-        (documentChange)="onDocumentChange()"
-      />
+      <!-- app-document-editor-theme carries Syncfusion's stylesheet
+           unencapsulated; scoped, none of it reaches the DOM it builds at
+           runtime. -->
+      <app-document-editor-theme>
+        <ejs-documenteditorcontainer
+          #editor
+          [enableToolbar]="false"
+          height="100%"
+          (created)="onEditorCreated()"
+          (documentChange)="onDocumentChange()"
+        />
+      </app-document-editor-theme>
     }
   </div>
 </div>
 
 <p class="note">
-  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOutline" />
   <span class="note__text">
-    The document is unzipped and rendered entirely in this tab — it is never uploaded, which is
-    the point, because Word files are what contracts, invoices, CVs and reports arrive as.
+    Unlike most tools here, this one is not purely local: a .docx has to be converted on our server
+    before it can be displayed. The file is sent over HTTPS, converted in memory and never written
+    to disk or kept afterwards. Worth knowing, because Word files are what contracts, invoices, CVs
+    and reports arrive as.
   </span>
 </p>
 

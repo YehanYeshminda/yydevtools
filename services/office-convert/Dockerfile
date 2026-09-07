@@ -1,8 +1,8 @@
-# Word convert service: ASP.NET Core + Syncfusion DocIO — no external binary,
-# just the .NET runtime and the published managed assemblies.
+# Office convert service: ASP.NET Core + Syncfusion DocIO/XlsIO — no external
+# binary, just the .NET runtime and the published managed assemblies.
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY WordConvert.csproj ./
+COPY OfficeConvert.csproj ./
 RUN dotnet restore
 COPY . .
 RUN dotnet publish -c Release -o /app --no-restore
@@ -15,4 +15,4 @@ ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 USER app
 
-ENTRYPOINT ["dotnet", "WordConvert.dll"]
+ENTRYPOINT ["dotnet", "OfficeConvert.dll"]

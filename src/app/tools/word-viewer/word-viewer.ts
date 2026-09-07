@@ -1,8 +1,6 @@
-import { isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  PLATFORM_ID,
   afterNextRender,
   computed,
   inject,
@@ -21,12 +19,13 @@ import {
 import { ClipboardService } from '../../core/clipboard.service';
 import { downloadText } from '../../core/download';
 import { formatBytes } from '../../core/format';
-import { WordServicesClient } from '../../core/word-services.client';
+import { OfficeServicesClient } from '../../core/office-services.client';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { Spinner } from '../../shared/spinner/spinner';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { ToolPage } from '../../shared/tool-page/tool-page';
-import { SYNCFUSION_LICENSE_KEY } from './syncfusion-license.generated';
+import { DocumentEditorTheme } from '../../shared/syncfusion/document-editor-theme';
+import { SYNCFUSION_LICENSE_KEY } from '../../core/syncfusion-license.generated';
 
 /** The conversion service caps at the same figure; fail before the upload. */
 const MAX_INPUT_BYTES = 20 * 1024 * 1024;
@@ -51,6 +50,7 @@ let licenseRegistered = false;
     MatButtonModule,
     NgIcon,
     DocumentEditorContainerModule,
+    DocumentEditorTheme,
   ],
   templateUrl: './word-viewer.html',
   styleUrls: ['../tool-shell.css', './word-viewer.css'],
@@ -59,8 +59,7 @@ let licenseRegistered = false;
 export class WordViewerTool {
   private readonly snackBar = inject(MatSnackBar);
   private readonly clipboard = inject(ClipboardService);
-  private readonly wordService = inject(WordServicesClient);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly wordService = inject(OfficeServicesClient);
 
   protected readonly formatBytes = formatBytes;
 
@@ -155,8 +154,6 @@ export class WordViewerTool {
   }
 
   private loadPending(container: DocumentEditorContainerComponent): void {
-    this.hideStatusBar(container);
-
     if (!this.pendingSfdt) {
       return;
     }
@@ -172,33 +169,7 @@ export class WordViewerTool {
     if (!container || !editor) {
       return;
     }
-    this.hideStatusBar(container);
-    editor.selection.selectAll();
-    const text = editor.selection.text;
-    this.stats.set(measure(text, editor.pageCount));
-  }
-
-  /**
-   * Hides the container's own page-number and zoom readout, which duplicates
-   * this page's toolbar above. `enableToolbar` only turns off the ribbon, not
-   * this, and there is no input for it — only this element reference — so it
-   * has to be reached imperatively, with `!important` because the container
-   * sets `display` via its own scoped CSS rule, not an inline style, so a
-   * plain assignment here would lose on source order rather than win on
-   * specificity.
-   *
-   * Deferred, because `statusBarElement` measured as still unset — directly,
-   * not assumed — at both `created` and `documentChange`, and even a
-   * `setTimeout(…, 0)` fired from `documentChange` was still too early: the
-   * container evidently finishes building it later than one macrotask.
-   * Applied via console at a genuine delay, it stayed applied with nothing
-   * resetting it — so this is a one-time creation-order race to lose, not an
-   * ongoing fight, and 100ms cleared it reliably in testing.
-   */
-  private hideStatusBar(container: DocumentEditorContainerComponent): void {
-    setTimeout(() => {
-      container.statusBarElement?.style.setProperty('display', 'none', 'important');
-    }, 100);
+    this.stats.set(measure(selectedText(editor), editor.pageCount));
   }
 
   protected reset(): void {
@@ -214,8 +185,10 @@ export class WordViewerTool {
     if (!editor) {
       return '';
     }
-    editor.selection.selectAll();
-    return editor.selection.text.replace(/\r/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+    return selectedText(editor)
+      .replace(/\r/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
   }
 
   protected copyText(): void {
@@ -267,6 +240,23 @@ export class WordViewerTool {
   }
 }
 
+/**
+ * The document's full plain text, without leaving it looking selected.
+ *
+ * `selection.text` is the only plain-text view the client API exposes, and it
+ * reads whatever is currently selected — so getting the whole document means
+ * selecting the whole document first. Left at that, every word of it stays
+ * visibly highlighted afterwards, which on a read-only viewer reads as a
+ * rendering fault rather than a selection. Collapsing the caret back to the
+ * start puts it right, and costs nothing: nobody placed that selection.
+ */
+function selectedText(editor: DocumentEditorContainerComponent['documentEditor']): string {
+  editor.selection.selectAll();
+  const text = editor.selection.text;
+  editor.selection.moveToDocumentStart();
+  return text;
+}
+
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 3;
 
@@ -284,6 +274,7 @@ function clampZoom(value: number): number {
 function measure(rawText: string, pages: number): DocStats {
   const text = rawText.replace(/\r/g, '\n').trim();
   const words = text === '' ? 0 : text.split(/\s+/).length;
-  const paragraphs = text === '' ? 0 : text.split(/\n+/).filter((line) => line.trim() !== '').length;
+  const paragraphs =
+    text === '' ? 0 : text.split(/\n+/).filter((line) => line.trim() !== '').length;
   return { words, characters: text.length, paragraphs, pages: Math.max(pages, 1) };
 }

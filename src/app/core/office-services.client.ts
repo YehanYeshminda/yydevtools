@@ -15,11 +15,11 @@ import { Injectable } from '@angular/core';
  * `rejected` means the file itself was the problem (not a real .docx,
  * password-protected, too large).
  */
-export type WordServiceFailure =
+export type OfficeServiceFailure =
   | { kind: 'unavailable'; code: string; message: string }
   | { kind: 'rejected'; code: string; message: string };
 
-export type WordServiceResult = { ok: true; sfdt: string } | { ok: false; failure: WordServiceFailure };
+export type OfficeServiceResult = { ok: true; sfdt: string } | { ok: false; failure: OfficeServiceFailure };
 
 /** Server codes that mean "try again later", not "this file is the problem". */
 const FALLBACK_CODES = new Set([
@@ -30,17 +30,17 @@ const FALLBACK_CODES = new Set([
 ]);
 
 @Injectable({ providedIn: 'root' })
-export class WordServicesClient {
+export class OfficeServicesClient {
   /**
    * Wakes the word-convert machine while the user is still choosing a file.
    * Fire-and-forget, like the PDF tools' equivalent — see
    * `PdfServicesClient.warm` for the full reasoning.
    */
   warm(): void {
-    void fetch('/api/warm?service=word-import').catch(() => undefined);
+    void fetch('/api/warm?service=office').catch(() => undefined);
   }
 
-  async importDocx(bytes: Uint8Array): Promise<WordServiceResult> {
+  async importDocx(bytes: Uint8Array): Promise<OfficeServiceResult> {
     let response: Response;
     try {
       response = await fetch('/api/word/import', {
@@ -80,7 +80,7 @@ export class WordServicesClient {
     return { ok: false, failure: await this.readFailure(response) };
   }
 
-  private async readFailure(response: Response): Promise<WordServiceFailure> {
+  private async readFailure(response: Response): Promise<OfficeServiceFailure> {
     let code = `HTTP_${response.status}`;
     let message = 'The document could not be converted.';
 

@@ -269,6 +269,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'excel-viewer',
+    name: 'Excel Viewer',
+    description:
+      'Open an .xlsx workbook and read its sheets, with formatting and column widths intact.',
+    icon: 'matTableChartOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'pdf-viewer',
     name: 'PDF Viewer',
     description: 'Open and read a PDF with thumbnails, search and zoom — no upload.',
