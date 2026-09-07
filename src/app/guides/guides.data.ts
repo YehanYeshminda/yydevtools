@@ -148,7 +148,7 @@ export const GUIDES: Guide[] = [
       {
         kind: 'code',
         caption: 'Three bytes (24 bits) become four Base64 characters',
-        code: "Text:     M         a         n\nASCII:    77        97        110\nBits:     01001101  01100001  01101110\nRegroup:  010011  010110  000101  101110\nBase64:   T       W       F       u        →  \"TWFu\"",
+        code: 'Text:     M         a         n\nASCII:    77        97        110\nBits:     01001101  01100001  01101110\nRegroup:  010011  010110  000101  101110\nBase64:   T       W       F       u        →  "TWFu"',
       },
       {
         kind: 'p',
@@ -169,7 +169,11 @@ export const GUIDES: Guide[] = [
         kind: 'p',
         text: 'A data URI packs a whole file into a single string, so it can be embedded inline instead of fetched from a separate URL. It looks like data:image/png;base64,iVBORw0KGgo… — a MIME type, the label “base64”, and then the encoded bytes. Browsers understand these directly, which is handy for tiny images and fonts that are not worth a separate network request.',
       },
-      { kind: 'tool', lead: 'Encode or decode text, files and data URIs:', slug: 'base64-converter' },
+      {
+        kind: 'tool',
+        lead: 'Encode or decode text, files and data URIs:',
+        slug: 'base64-converter',
+      },
       { kind: 'h2', text: 'The big misconception: Base64 is not encryption' },
       {
         kind: 'p',
@@ -343,7 +347,11 @@ export const GUIDES: Guide[] = [
         kind: 'p',
         text: 'A subtle trap lives in the two “day” fields. When both day-of-month and day-of-week are restricted (neither is *), most cron implementations treat them as OR, not AND — the job runs when either matches. So “0 0 13 * 5” does not mean “Friday the 13th”; it means “every 13th of the month, and every Friday”. Getting a specific weekday-and-date combination usually needs a check inside the job itself.',
       },
-      { kind: 'tool', lead: 'Turn any expression into plain English and preview its next runs:', slug: 'cron-explainer' },
+      {
+        kind: 'tool',
+        lead: 'Turn any expression into plain English and preview its next runs:',
+        slug: 'cron-explainer',
+      },
       { kind: 'h2', text: 'The timezone gotcha' },
       {
         kind: 'p',
@@ -506,7 +514,11 @@ export const GUIDES: Guide[] = [
         kind: 'p',
         text: 'The only reliable way to set it is to look. Compress, then compare against the original at full size — a before-and-after slider is ideal — and back the quality off until you can just barely tell, then nudge it up a notch. Your eyes on your image beat any fixed number.',
       },
-      { kind: 'tool', lead: 'Compress by quality or to a target size, with a before/after slider:', slug: 'image-compressor' },
+      {
+        kind: 'tool',
+        lead: 'Compress by quality or to a target size, with a before/after slider:',
+        slug: 'image-compressor',
+      },
       { kind: 'h2', text: 'Resize before you compress' },
       {
         kind: 'p',
@@ -681,7 +693,7 @@ export const GUIDES: Guide[] = [
       { kind: 'h2', text: 'Proving who you are' },
       {
         kind: 'p',
-        text: 'The key exchange gives both sides a shared secret but says nothing about identity. That is the certificate\'s job. The server sends a certificate containing its public key, the hostnames it is valid for, an expiry date, and a signature from a certificate authority. The browser checks that the certificate covers the hostname it asked for, that it has not expired, and that the signature chains up to an authority it already trusts.',
+        text: "The key exchange gives both sides a shared secret but says nothing about identity. That is the certificate's job. The server sends a certificate containing its public key, the hostnames it is valid for, an expiry date, and a signature from a certificate authority. The browser checks that the certificate covers the hostname it asked for, that it has not expired, and that the signature chains up to an authority it already trusts.",
       },
       {
         kind: 'p',
@@ -765,7 +777,7 @@ export const GUIDES: Guide[] = [
       },
       {
         kind: 'p',
-        text: 'This explains JPEG\'s characteristic failures. Push quality too low and the 8×8 blocks become visible as squares. Sharp edges — text, logos, line art — acquire a shimmer around them, because a hard edge is exactly the high-frequency content JPEG is designed to discard. That is why a screenshot saved as JPEG looks muddy while a photograph looks fine.',
+        text: "This explains JPEG's characteristic failures. Push quality too low and the 8×8 blocks become visible as squares. Sharp edges — text, logos, line art — acquire a shimmer around them, because a hard edge is exactly the high-frequency content JPEG is designed to discard. That is why a screenshot saved as JPEG looks muddy while a photograph looks fine.",
       },
       { kind: 'h2', text: 'Why PNG is enormous for photographs' },
       {
@@ -778,7 +790,7 @@ export const GUIDES: Guide[] = [
       },
       {
         kind: 'p',
-        text: 'PNG\'s real advantage is transparency, which it handles properly with a full alpha channel — the reason it remains the right choice for logos and interface assets.',
+        text: "PNG's real advantage is transparency, which it handles properly with a full alpha channel — the reason it remains the right choice for logos and interface assets.",
       },
       { kind: 'h2', text: 'What WebP and AVIF changed' },
       {
@@ -801,7 +813,7 @@ export const GUIDES: Guide[] = [
       },
       {
         kind: 'p',
-        text: 'The friction is everywhere else. Support outside the Apple ecosystem remains patchy, so HEIC files are routinely rejected by upload forms, refused by older software and unopenable on a colleague\'s machine. Converting to JPEG is the usual fix, and it is worth remembering that this is a lossy-to-lossy conversion — you are decoding one lossy image and re-encoding it as another, so keep quality high.',
+        text: "The friction is everywhere else. Support outside the Apple ecosystem remains patchy, so HEIC files are routinely rejected by upload forms, refused by older software and unopenable on a colleague's machine. Converting to JPEG is the usual fix, and it is worth remembering that this is a lossy-to-lossy conversion — you are decoding one lossy image and re-encoding it as another, so keep quality high.",
       },
       { kind: 'h2', text: 'Choosing, briefly' },
       {
@@ -852,7 +864,11 @@ export const GUIDES: Guide[] = [
         tone: 'warn',
         text: 'The combination is what matters. A single photo gives a place and a moment. A set of photos gives a pattern: where you live, where you work, when you are usually at each, and when you were away.',
       },
-      { kind: 'tool', lead: 'See exactly what one of your own photos contains:', slug: 'exif-viewer' },
+      {
+        kind: 'tool',
+        lead: 'See exactly what one of your own photos contains:',
+        slug: 'exif-viewer',
+      },
       { kind: 'h2', text: 'Serial numbers and the quiet identifier' },
       {
         kind: 'p',
@@ -878,7 +894,7 @@ export const GUIDES: Guide[] = [
       },
       {
         kind: 'p',
-        text: 'The better approach is to edit the container rather than the image: remove the metadata sections of the file and copy the compressed image data across untouched. For a JPEG that means dropping the segment the metadata lives in; for a PNG, the text and metadata chunks. The result is pixel-for-pixel identical to the original, just smaller by however many bytes the metadata occupied. That is what this site\'s EXIF tool does, and it is worth preferring wherever it is available.',
+        text: "The better approach is to edit the container rather than the image: remove the metadata sections of the file and copy the compressed image data across untouched. For a JPEG that means dropping the segment the metadata lives in; for a PNG, the text and metadata chunks. The result is pixel-for-pixel identical to the original, just smaller by however many bytes the metadata occupied. That is what this site's EXIF tool does, and it is worth preferring wherever it is available.",
       },
       {
         kind: 'callout',
@@ -903,6 +919,366 @@ export const GUIDES: Guide[] = [
     ],
     related: ['exif-viewer', 'image-converter', 'image-compressor'],
     relatedGuides: ['image-formats-explained', 'compress-images-for-web'],
+  },
+
+  {
+    slug: 'regex-explained',
+    title: 'Regular expressions: how to read one, write one, and know when not to',
+    description:
+      'How a regex engine actually matches, why greedy and lazy quantifiers differ, the pattern shape that can hang a server, and the problems a regex should not be used on.',
+    category: 'Text',
+    readingMinutes: 11,
+    updated: '2026-09-07',
+    published: '2026-09-07',
+    intro: [
+      'A regular expression is the densest syntax most developers use regularly. Ten characters can encode a rule that would otherwise take a paragraph of English and twenty lines of code — which is exactly why they are useful, and exactly why they are hard to review.',
+      'This guide is about reading them as much as writing them: what the engine is really doing, the two or three behaviours behind most regex bugs, and the cases where reaching for a pattern is itself the mistake.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'What the engine is actually doing' },
+      {
+        kind: 'p',
+        text: 'A regex is a pattern the engine tries to match by walking the input one position at a time. At each position it attempts the whole pattern; if that fails, it shifts one character along and tries again. That “try, fail, shift, retry” loop explains most of what feels surprising later — why an unanchored pattern happily matches in the middle of a string, and why a badly shaped one can take an extraordinarily long time to decide it does not match.',
+      },
+      { kind: 'h2', text: 'The pieces worth knowing' },
+      {
+        kind: 'ul',
+        items: [
+          'Literals match themselves. Most of a useful pattern is ordinary text.',
+          'Character classes match one character from a set: [aeiou], or a range like [a-z0-9]. The shorthands \\d, \\w and \\s cover digits, word characters and whitespace.',
+          'Quantifiers repeat whatever precedes them: * is zero or more, + is one or more, ? is zero or one, and {2,4} is an explicit range.',
+          'The dot matches any character except a newline — a default that catches people out more often than it helps.',
+          'Alternation with | tries the left side, then the right.',
+          'Parentheses group, and by default also capture what they matched for later use.',
+        ],
+      },
+      {
+        kind: 'code',
+        caption: 'A few patterns, read piece by piece',
+        code: '\\d{4}-\\d{2}-\\d{2}     an ISO-style date:  2026-09-07\n[A-Za-z]+            one or more letters\n^\\s*$                a line that is empty or only whitespace\n(cat|dog)s?          cat, cats, dog or dogs',
+      },
+      {
+        kind: 'tool',
+        lead: 'Build a pattern against real input and watch what it matches:',
+        slug: 'regex-tester',
+      },
+      { kind: 'h2', text: 'Greedy by default, and what that costs' },
+      {
+        kind: 'p',
+        text: 'Quantifiers are greedy: they take as much as they possibly can, then hand characters back one at a time until the rest of the pattern fits. That is why a pattern like <.+> matched against <b>hi</b> captures the entire string rather than just the opening tag — the .+ swallows everything to the end, then backtracks just far enough to find a final closing bracket.',
+      },
+      {
+        kind: 'p',
+        text: 'Adding ? makes a quantifier lazy, so it takes as little as it can get away with. Greedy and lazy are not right and wrong; they are two different intentions. Choosing between them without noticing you are choosing is where a great many almost-correct patterns come from.',
+      },
+      {
+        kind: 'code',
+        caption: 'The same input, two quantifier moods',
+        code: 'input     <b>hi</b>\n\n<.+>      matches   <b>hi</b>      greedy: as much as possible\n<.+?>     matches   <b>            lazy:   as little as possible',
+      },
+      { kind: 'h2', text: 'Anchors, and why a validation pattern needs them' },
+      {
+        kind: 'p',
+        text: 'Without anchors, a pattern only has to match somewhere. \\d{4} finds four digits anywhere in the input, so validating a year with it will cheerfully accept “not a year, 1999, at all”. The anchors ^ and $ tie the pattern to the start and end of the input, and ^\\d{4}$ means the whole string is exactly four digits and nothing else.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'A missing anchor is one of the most common security-adjacent regex bugs. A check for an allowed domain written without a closing $ will accept example.com.attacker.net, because the pattern matched a prefix and nothing required it to reach the end.',
+      },
+      { kind: 'h2', text: 'Capturing, and naming what you captured' },
+      {
+        kind: 'p',
+        text: 'Parentheses capture. Groups are numbered left to right by their opening bracket and referred to afterwards as $1 or \\1 depending on the tool. Once a pattern has more than two of them, that numbering becomes a liability: insert a group near the front and every later reference silently shifts. Named groups — (?<year>\\d{4}) — remove the problem and document the pattern at the same time.',
+      },
+      {
+        kind: 'p',
+        text: 'When you need grouping purely for alternation or repetition and never read the captured text, (?:...) is a non-capturing group. It keeps the numbering clean, and in frequently executed code it avoids storing matches nobody will look at.',
+      },
+      { kind: 'h2', text: 'The pattern that hangs the server' },
+      {
+        kind: 'p',
+        text: 'Because the engine backtracks, some patterns have a worst case that grows exponentially with the length of the input. The classic shape is a quantifier applied to something that is itself repeatable and ambiguous — (a+)+$ is the textbook example. Given a long run of a characters followed by something that cannot match, the engine explores an enormous number of ways to divide that run before concluding the whole thing fails.',
+      },
+      {
+        kind: 'p',
+        text: 'In a browser, that freezes the tab. On a server it occupies a request thread, and a handful of crafted inputs can exhaust the pool. The vulnerability class has a name, ReDoS, and it is a genuine one rather than a curiosity — it has taken down production services at companies large enough to know better.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Be especially wary of patterns assembled from user input, and of nested quantifiers over overlapping classes such as (\\s+)+ or (\\w|\\d)*. If a pattern will run against untrusted text, test it with a long adversarial string rather than only a realistic one.',
+      },
+      { kind: 'h2', text: 'When a regex is the wrong tool' },
+      {
+        kind: 'p',
+        text: 'Regular expressions match flat patterns. They are poor at anything with nesting or a real grammar, because the structure can be arbitrarily deep and the pattern cannot follow it.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'HTML and XML — nested, with attributes, comments and entities. Use a parser; the XML Viewer here is one.',
+          'Email addresses — the specification permits far more than people expect, and the “correct” pattern is famously enormous. Check for a plausible shape, then send a confirmation message. Delivery is the real validation.',
+          'JSON, source code, and CSV with quoted fields containing commas — each has a grammar, and a parser for it already exists.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'The honest rule: a regex is excellent for finding and extracting inside text whose shape you already control, and poor as a substitute for parsing something you do not.',
+      },
+      { kind: 'h2', text: 'Writing one that survives a year' },
+      {
+        kind: 'ul',
+        items: [
+          'Anchor it if it is a validation, and let the variable name say that it is one.',
+          'Use named groups as soon as there is more than a single capture.',
+          'Use the extended or verbose flag where the language offers it, so the pattern can carry whitespace and comments.',
+          'Keep two real examples beside it as a test — one that must match, one that must not.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'A regex is code with the comments stripped out. Everything you can do to put the context back — a name, a named group, an example on either side of the line — pays for itself the first time somebody has to change it under pressure.',
+      },
+    ],
+    related: ['regex-tester', 'text-diff', 'word-counter'],
+    relatedGuides: ['cron-expressions-guide', 'base64-explained'],
+  },
+
+  {
+    slug: 'character-encoding-explained',
+    title: 'Character encoding explained: Unicode, UTF-8, and why text turns into mojibake',
+    description:
+      'Why é arrives as Ã©, what a code point is, how UTF-8 stores one, and the encoding mistakes that quietly break CSV files, URLs, database columns and string comparisons.',
+    category: 'Data formats',
+    readingMinutes: 11,
+    updated: '2026-09-07',
+    published: '2026-09-07',
+    intro: [
+      'Text looks like the simplest kind of data right up to the moment a customer’s name comes back as “Ã©”, or an emoji disappears on its way into a database. Almost every one of those failures is the same mistake made somewhere different: bytes were read using a different rule from the one used to write them.',
+      'This guide separates the layers people tend to collapse together — characters, code points and bytes — and then walks through where they get confused in practice.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Three layers, usually treated as one' },
+      {
+        kind: 'ol',
+        items: [
+          'A character is the abstract thing: the letter é, the emoji 🙂, the Arabic letter ب.',
+          'A code point is the number Unicode assigns to it. é is U+00E9 — decimal 233. Unicode is a very large numbered catalogue of characters, and nothing more than that.',
+          'An encoding is the rule for turning those numbers into bytes and back again. UTF-8 is one such rule; it is not the only one.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'Unicode says which characters exist and what number each one has. It does not say how to store them. That separation is the part most explanations skip, and treating “Unicode” and “UTF-8” as the same thing is the root of a surprising amount of confusion.',
+      },
+      { kind: 'h2', text: 'Why one byte was never going to be enough' },
+      {
+        kind: 'p',
+        text: 'ASCII assigned 128 characters — English letters, digits, punctuation and control codes — into seven bits. Everything beyond that was bolted on by reusing the upper half of a byte differently in each region: one set of extra characters for Western Europe, another for Cyrillic, another for Greek. The byte 233 meant é in one and something else entirely in another, and nothing inside the file said which.',
+      },
+      {
+        kind: 'p',
+        text: 'That is the original sin of text encoding: the bytes carried no indication of how to read them. Documents were interpreted correctly by convention, configuration and luck.',
+      },
+      { kind: 'h2', text: 'How UTF-8 works, and why it won' },
+      {
+        kind: 'p',
+        text: 'UTF-8 encodes a code point in one to four bytes. The first 128 code points — all of ASCII — encode as a single byte with the identical value, so every ASCII file is already valid UTF-8. Above that, the leading byte announces how many bytes follow, and each continuation byte is marked as a continuation.',
+      },
+      {
+        kind: 'code',
+        caption: 'One character, three ways of looking at it',
+        code: 'char   code point   UTF-8 bytes        length\nA      U+0041       41                 1 byte\né      U+00E9       C3 A9              2 bytes\n€      U+20AC       E2 82 AC           3 bytes\n🙂     U+1F642      F0 9F 99 82        4 bytes',
+      },
+      {
+        kind: 'p',
+        text: 'That design has a property worth appreciating: it is self-synchronising. Because a continuation byte is distinguishable from a leading byte, you can drop into the middle of a UTF-8 stream and find the start of the next character without reading from the beginning. Combined with being byte-identical to ASCII for the first 128 characters, that is the real reason it won.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Encode text and inspect the bytes underneath it:',
+        slug: 'base64-converter',
+      },
+      { kind: 'h2', text: 'Mojibake: the right bytes, the wrong rule' },
+      {
+        kind: 'p',
+        text: 'The garbled text has a name — mojibake — and the mechanism is always the same. Bytes written as UTF-8 are read as though they were a single-byte encoding. The two bytes C3 A9, which together mean é in UTF-8, are read individually as Ã and © in Latin-1. Hence the famous “Ã©”.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'A quick diagnostic: if you see Ã, Â or â€™ scattered through otherwise sensible text, you are almost certainly looking at UTF-8 bytes displayed as Latin-1 or Windows-1252. The stored data is usually intact and only the interpretation is wrong, which means it can often be fixed by decoding correctly rather than by retyping anything.',
+      },
+      {
+        kind: 'p',
+        text: 'The worse variant is double encoding, where already-correct text is encoded a second time. Now the corruption is baked into the stored bytes, and recovering it means reversing the exact sequence of mistakes rather than simply reading them properly.',
+      },
+      { kind: 'h2', text: 'Where it actually bites' },
+      {
+        kind: 'ul',
+        items: [
+          'CSV files opened in Excel. A UTF-8 CSV with no byte-order mark is often read using the machine’s legacy encoding, mangling every accented name in the file. This is the entire reason so many exports include a BOM they otherwise would not want.',
+          'MySQL’s utf8. The encoding historically named utf8 in MySQL stores at most three bytes per character, so it cannot hold anything outside the Basic Multilingual Plane — which includes every emoji. The one you actually want is utf8mb4.',
+          'URLs. A URL carries percent-encoded bytes, and those bytes should be UTF-8 before encoding. Percent-encoding an already-encoded string produces %25XX sequences that will not decode back to the original.',
+          'Form posts and HTTP responses where the declared charset and the actual bytes disagree — the declaration wins, and the content loses.',
+        ],
+      },
+      {
+        kind: 'tool',
+        lead: 'See exactly how a string becomes percent-encoded bytes:',
+        slug: 'url-encoder',
+      },
+      { kind: 'h2', text: 'The same text, two different byte sequences' },
+      {
+        kind: 'p',
+        text: 'Unicode allows some characters to be written more than one way. The character é can be the single code point U+00E9, or it can be a plain e followed by a combining acute accent, U+0065 U+0301. The two render identically on screen and are not equal as strings.',
+      },
+      {
+        kind: 'p',
+        text: 'Normalisation resolves this by rewriting text into a canonical form: NFC composes toward single code points, NFD decomposes toward base characters plus combining marks. It matters any time text is compared, deduplicated or used as a key. macOS historically stored filenames decomposed while Linux stored them composed, which is why two filenames could look identical and stubbornly refuse to match.',
+      },
+      { kind: 'h2', text: 'How long is a string?' },
+      {
+        kind: 'p',
+        text: 'There is no single answer, and the honest question is “in what unit”. A family emoji is one thing you can see, several code points joined by zero-width joiners, and more bytes again. The length of a string can legitimately be its byte count, its code-point count, or its count of user-perceived characters — grapheme clusters — and those three disagree constantly.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Truncating by bytes or by code points can cut through the middle of a character or split a joined emoji, producing invalid output. If a field has a limit, decide which unit that limit is in — and when the value is shown to people, truncate by grapheme clusters.',
+      },
+      { kind: 'h2', text: 'The habits that avoid all of this' },
+      {
+        kind: 'ul',
+        items: [
+          'Use UTF-8 everywhere, and declare it explicitly — in the HTTP header, the meta tag, the database column and the connection itself.',
+          'Decode bytes into text once, at the boundary where they arrive, and encode once on the way out. Keep everything in between as text, not bytes.',
+          'Never guess an encoding from content when the source is capable of telling you.',
+          'Normalise before comparing, and store the form you normalised to.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'Almost every encoding bug is a missing declaration somewhere, and the fix is nearly always to be explicit one layer earlier than felt necessary at the time.',
+      },
+    ],
+    related: ['base64-converter', 'url-encoder', 'csv-viewer'],
+    relatedGuides: ['base64-explained', 'hashing-vs-encryption-vs-encoding'],
+  },
+
+  {
+    slug: 'certificates-and-the-chain-of-trust',
+    title: 'Certificates and the chain of trust: what a certificate authority actually vouches for',
+    description:
+      'What a TLS certificate contains, why the chain has intermediates, how little a CA really verifies, and what the warnings you see actually mean.',
+    category: 'Security',
+    readingMinutes: 10,
+    updated: '2026-09-07',
+    published: '2026-09-07',
+    intro: [
+      'The HTTPS handshake ends with your browser deciding whether to trust a certificate it has never seen, presented by a server it has never contacted. That decision rests on a chain of signatures reaching back to a small set of authorities your device already trusts.',
+      'This guide is about that chain: what a certificate actually claims, who checked the claim, and what the everyday errors really mean.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'A certificate is a signed statement' },
+      {
+        kind: 'p',
+        text: 'Strip away the format and a certificate says one sentence: this public key belongs to whoever controls these hostnames, until this date — signed by somebody else. The signature is the only thing that makes it worth anything. Anyone can generate a key pair and write that sentence about themselves; that is a self-signed certificate, and it is exactly as trustworthy as the stranger who handed it to you.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'The subject: the hostnames it covers, listed in the Subject Alternative Name extension. The older Common Name field is legacy, and browsers no longer rely on it.',
+          'The public key — whose matching private key the server must separately prove it holds.',
+          'A validity window: not before, not after.',
+          'The issuer, and the issuer’s signature over everything above.',
+        ],
+      },
+      { kind: 'h2', text: 'Why there is a chain rather than one signature' },
+      {
+        kind: 'p',
+        text: 'Your browser and operating system ship with a set of root certificates. Roots are enormously valuable and effectively irreplaceable: removing one breaks every certificate beneath it, and getting a trust-store update onto billions of devices takes years. So roots are kept offline — often literally in a safe, used in ceremonies — and sign almost nothing directly.',
+      },
+      {
+        kind: 'p',
+        text: 'Intermediates do the day-to-day work. A server presents its own leaf certificate together with the intermediates needed to link it up to a root, and the browser supplies the root from its own store. If an intermediate key is ever compromised it can be revoked and replaced without disturbing the root everybody depends on.',
+      },
+      {
+        kind: 'code',
+        caption: 'The chain, from what your browser already trusts down to the site',
+        code: 'Root CA           in the browser trust store · offline · lives for decades\n  └─ Intermediate  online · signs day to day · replaceable\n       └─ Leaf     yourdomain.com · valid for weeks, not years',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'The server must send the intermediates. It should not send the root: the client already has it, and a root supplied by the server proves nothing at all — you cannot vouch for yourself by handing over your own reference.',
+      },
+      { kind: 'h2', text: 'What the authority actually checks' },
+      {
+        kind: 'p',
+        text: 'Far less than most people assume. For an ordinary certificate the authority verifies exactly one thing: that whoever asked controls the domain. That is demonstrated by publishing a specific token at a specific URL on the domain, or a specific DNS record beneath it. It is called domain validation, and it says nothing whatsoever about the company behind the site, its honesty, or whether it is safe to give it your card details.',
+      },
+      {
+        kind: 'p',
+        text: 'Organisation and extended validation certificates do involve checking company records, and once bought a green company name in the address bar. Browsers removed that indicator, because studies showed users did not notice it and its absence did not deter them — it was not preventing the fraud it existed to prevent. Today an EV certificate looks identical to any other from the visitor’s side.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'A valid certificate proves the operator controlled that domain at the moment of issue. That is the whole claim. A phishing site on a lookalike domain obtains a perfectly valid certificate in minutes — the padlock is not a safety rating, and never was.',
+      },
+      { kind: 'h2', text: 'How issuance works now' },
+      {
+        kind: 'p',
+        text: 'Certificates used to be a manual purchase with a manual renewal, which is why so many outages were somebody forgetting. The ACME protocol automated the whole exchange: a client requests a certificate, the authority issues a challenge, the client proves domain control by satisfying it, and the certificate is issued — with renewal running down the same automated path.',
+      },
+      {
+        kind: 'p',
+        text: 'That automation is why certificate lifetimes have collapsed from years to around ninety days, and are heading shorter still. Short lifetimes limit how long a stolen key stays useful, and they are only tolerable because nobody has to renew by hand any more.',
+      },
+      { kind: 'h2', text: 'Revocation, and why it is weaker than you would like' },
+      {
+        kind: 'p',
+        text: 'If a private key leaks, the certificate ought to be revoked. In practice revocation has never worked well. Revocation lists grew large and slow to distribute. OCSP asked the authority about a specific certificate in real time, which is both a privacy leak — the authority learns which sites you visit — and a hard dependency on a third party being reachable. Browsers largely treated a failed check as success, because the alternative was breaking the web on every network hiccup.',
+      },
+      {
+        kind: 'p',
+        text: 'The industry’s practical answer has been to lean on short lifetimes instead: a certificate that expires within weeks bounds the damage without needing a reliable revocation channel at all. OCSP stapling, where the server presents a recent signed assurance itself, improves matters where it is deployed.',
+      },
+      { kind: 'h2', text: 'The errors you will actually meet' },
+      {
+        kind: 'ul',
+        items: [
+          'Expired — much the commonest, and almost always a renewal job that failed quietly. Monitor expiry as a metric with an alert, not as a note in somebody’s calendar.',
+          'Name mismatch — the certificate does not cover the hostname that was requested. Often the apex domain is covered but www is not, or the reverse.',
+          'Incomplete chain — the server did not send its intermediates. This is the genuinely confusing one, and it deserves its own paragraph below.',
+          'Untrusted root — the chain terminates somewhere the client does not trust. Normal for an internal corporate CA, alarming on the public internet.',
+          'Self-signed — no authority involved at all. Fine for local development, meaningless as public assurance.',
+        ],
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'An incomplete chain often looks fine in a browser and fails everywhere else. Browsers cache intermediates they have seen before and can quietly fill the gap, while curl, a JVM, a mobile app or a payment provider cannot. “It works in my browser” is not a test of chain completeness — check from something that has never visited the site.',
+      },
+      { kind: 'h2', text: 'What to check when something breaks' },
+      {
+        kind: 'ol',
+        items: [
+          'Read the actual error rather than the icon. Expiry, hostname and chain failures look almost identical in a browser and have completely different fixes.',
+          'Test from outside a browser, so a cached intermediate cannot hide an incomplete chain from you.',
+          'Confirm the Subject Alternative Name list covers every hostname you serve, including both the apex and www if you use both.',
+          'Confirm the server sends the full chain, leaf first and intermediates after it, with the root left out.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'The system is a chain of signatures, and its weakest property is the one people most often over-read. It establishes that you are talking to the domain you asked for, over a connection nobody in between can read or alter. It says nothing at all about whether that domain deserves what you are about to send it.',
+      },
+    ],
+    related: ['hash-generator', 'jwt-decoder', 'base64-converter'],
+    relatedGuides: ['https-explained', 'password-storage-explained'],
   },
 ];
 

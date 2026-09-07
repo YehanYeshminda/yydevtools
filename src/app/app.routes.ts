@@ -556,6 +556,39 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'guides/regex-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Regular expressions explained: reading, writing and when not to — YYDevTools',
+    data: {
+      slug: 'regex-explained',
+      description:
+        'How a regex engine matches, why greedy and lazy quantifiers differ, the pattern shape ' +
+        'that can hang a server, and the problems a regex should never be used on.',
+    },
+  },
+  {
+    path: 'guides/character-encoding-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Character encoding explained: Unicode, UTF-8 and mojibake — YYDevTools',
+    data: {
+      slug: 'character-encoding-explained',
+      description:
+        'Why é arrives as Ã©, what a code point is, how UTF-8 stores one, and the encoding ' +
+        'mistakes that break CSV files, URLs, database columns and string comparisons.',
+    },
+  },
+  {
+    path: 'guides/certificates-and-the-chain-of-trust',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Certificates and the chain of trust — YYDevTools',
+    data: {
+      slug: 'certificates-and-the-chain-of-trust',
+      description:
+        'What a TLS certificate contains, why the chain has intermediates, how little a ' +
+        'certificate authority really verifies, and what the warnings you see actually mean.',
+    },
+  },
+  {
     path: 'news',
     loadComponent: () => import('./news/news').then((m) => m.News),
     title: 'Tech News — YYDevTools',
