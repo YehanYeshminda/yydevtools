@@ -257,6 +257,7 @@ export class ExcelViewerTool {
    * stayed up over a workbook the reader could already see.
    */
   private finish(sheet: SpreadsheetComponent): void {
+    dropStalePanels(sheet);
     this.loading.set(false);
     fitColumns(sheet);
     this.stats.set(measure(sheet));
@@ -309,6 +310,35 @@ function explain(detail: string | undefined): string {
   return detail?.trim()
     ? detail
     : 'This workbook could not be opened. It may be corrupt, password-protected, or not a real .xlsx file.';
+}
+
+/**
+ * Removes the grid the Spreadsheet drew before it was given a workbook.
+ *
+ * `openFromJson` builds a fresh grid and appends it, without taking down the
+ * one already there — so the empty starter grid the component renders on
+ * mount is left stacked above the real one, each with its own scrollbar. Only
+ * the last panel has a column header, which is what makes the leftover read
+ * as a broken half-rendered table.
+ *
+ * Whether it happens at all is a race, which is why it survived local
+ * testing: the panel only exists if the component finished painting before
+ * the conversion came back. Locally that took about a second and it never
+ * did; against the deployed service it took five, and it did every time.
+ *
+ * Reaching into the widget's DOM is not something to do lightly, but there is
+ * no API for it — `refresh()` tears the grid down to nothing — and the scope
+ * is small and checkable: only inside this component's own host, and only
+ * panels that are no longer the current one.
+ */
+function dropStalePanels(sheet: SpreadsheetComponent): void {
+  const panels = sheet.element?.querySelectorAll('.e-main-panel');
+  if (!panels) {
+    return;
+  }
+  for (let i = 0; i < panels.length - 1; i += 1) {
+    panels[i].remove();
+  }
 }
 
 /**

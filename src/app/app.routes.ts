@@ -243,8 +243,7 @@ export const routes: Routes = [
   },
   {
     path: 'tools/pdf-compress',
-    loadComponent: () =>
-      import('./tools/pdf-compress/pdf-compress').then((m) => m.PdfCompressTool),
+    loadComponent: () => import('./tools/pdf-compress/pdf-compress').then((m) => m.PdfCompressTool),
     title: 'PDF Compress — YYDevTools',
     data: {
       description:
@@ -278,8 +277,8 @@ export const routes: Routes = [
     title: 'Excel Viewer — Open XLSX in your browser — YYDevTools',
     data: {
       description:
-        'Open an Excel .xlsx workbook in your browser and read every sheet, with formatting, ' +
-        'number formats and column widths intact. Free, no sign-up, no Excel needed.',
+        'Open an Excel .xlsx workbook in your browser and read every sheet, with formatting ' +
+        'and number formats intact and columns widened to fit. Free, no sign-up, no Excel needed.',
     },
   },
   {
@@ -372,8 +371,7 @@ export const routes: Routes = [
   },
   {
     path: 'tools/regex-tester',
-    loadComponent: () =>
-      import('./tools/regex-tester/regex-tester').then((m) => m.RegexTesterTool),
+    loadComponent: () => import('./tools/regex-tester/regex-tester').then((m) => m.RegexTesterTool),
     title: 'Regex Tester — YYDevTools',
     data: {
       description:
