@@ -1,0 +1,14 @@
+# Build output is produced inside the image, never shipped into it.
+#
+# Without this, `COPY . .` uploads the local bin/ and obj/ — 84 MB of
+# Windows-built assemblies, and an obj/project.assets.json whose restore paths
+# point at C:\Users\..., which the Linux build then tries to use. Keeping them
+# out makes the build both smaller and reproducible.
+bin/
+obj/
+
+# Nothing here is needed to build the service, and the licensed Syncfusion
+# assemblies under bin/ are exactly what should not leave this machine.
+*.user
+.vs/
+.vscode/
