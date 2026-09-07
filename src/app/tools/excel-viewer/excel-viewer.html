@@ -1,6 +1,6 @@
 <app-tool-page slug="excel-viewer">
-  Open an Excel workbook and read it in the browser, with its sheets, formatting and column widths
-  intact. Reading it needs a conversion step on our server — see the note below.
+  Open an Excel workbook and read it in the browser, with its sheets and formatting intact and its
+  columns widened to fit. Reading it needs a conversion step on our server — see the note below.
 </app-tool-page>
 
 <div class="panel">
@@ -64,27 +64,18 @@
            The component posts the file to `openUrl` itself, which is why there
            is no client method for the import the way Word Viewer has one. -->
       <app-spreadsheet-theme>
+        <!-- No `openUrl`: the conversion is fetched by OfficeServicesClient and
+             the result handed to the grid, because the component's own
+             uploader silently drops files given to it before it is ready. -->
         <ejs-spreadsheet
           #sheet
-          [openUrl]="openUrl"
           [allowOpen]="true"
           [allowSave]="false"
           [allowEditing]="false"
           [showRibbon]="false"
           [showFormulaBar]="false"
           [showSheetTabs]="true"
-          (created)="onCreated(sheet)"
-          (openComplete)="onOpenComplete()"
-          (openFailure)="onOpenFailure($event)"
-        >
-          <!-- One empty sheet, so the grid has something to scaffold before a
-             workbook arrives. Without it the component mounts and sizes its
-             panels but never renders a single cell — measured directly, with
-             the workbook sitting correctly in its own model the whole time. -->
-          <e-sheets>
-            <e-sheet></e-sheet>
-          </e-sheets>
-        </ejs-spreadsheet>
+        ></ejs-spreadsheet>
       </app-spreadsheet-theme>
     }
   </div>

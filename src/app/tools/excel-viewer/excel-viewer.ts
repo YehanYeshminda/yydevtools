@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -14,7 +15,7 @@ import { registerLicense } from '@syncfusion/ej2-base';
 import { SpreadsheetAllModule, SpreadsheetComponent } from '@syncfusion/ej2-angular-spreadsheet';
 
 import { formatBytes } from '../../core/format';
-import { OfficeServicesClient } from '../../core/office-services.client';
+import { OfficeServicesClient, WorkbookJson } from '../../core/office-services.client';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { Spinner } from '../../shared/spinner/spinner';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -24,6 +25,20 @@ import { SYNCFUSION_LICENSE_KEY } from '../../core/syncfusion-license.generated'
 
 /** The conversion service caps at the same figure; fail before the upload. */
 const MAX_INPUT_BYTES = 20 * 1024 * 1024;
+
+/**
+ * How long to wait for a handover to show up, and how many times to repeat it
+ * before giving up; see `handOver`.
+ *
+ * The wait is deliberately generous. Handing the workbook over again is not
+ * free: each call builds its own grid and the previous one is left behind, so
+ * a workbook opened twice renders as two stacked grids — an empty one above
+ * the real one, which is exactly the fault this pacing exists to avoid.
+ * 10,741 rows took well over the 150ms this was first written with.
+ */
+const OPEN_POLL_MS = 100;
+const OPEN_POLLS_PER_ATTEMPT = 20;
+const MAX_OPEN_ATTEMPTS = 3;
 
 /** Counts read back off the opened workbook, for the summary line. */
 interface BookStats {
@@ -72,47 +87,37 @@ export class ExcelViewerTool {
   protected readonly hasWorkbook = computed(() => this.name() !== '' && this.error() === null);
 
   /**
-   * The live component, captured from its own `created` event rather than a
-   * `viewChild` query.
+   * The live grid, once the `@defer` block has rendered it.
    *
-   * The query version was measured never resolving in time inside the
-   * `@defer` block — the component mounted, sized itself and sat there while
-   * the effect below never saw it. Taking the instance straight off the
-   * template reference in the event binding sidesteps query timing entirely.
+   * Resolving this says nothing about whether the grid will accept content
+   * yet — it resolves well before that — which is why `handOver` verifies
+   * rather than assumes.
    */
-  private readonly instance = signal<SpreadsheetComponent | null>(null);
+  private readonly instance = viewChild<SpreadsheetComponent>('sheet');
 
   /**
-   * Where the Spreadsheet posts the file itself.
-   *
-   * This is the one tool that does not fetch its own conversion: the component
-   * builds and sends the request, so all we hand it is a URL. Word Viewer does
-   * the opposite — see OfficeServicesClient.importDocx — and the two shapes meet
-   * at the same machine behind /api/*.
+   * Bumped whenever the tool is reset, so a retry loop still in flight for a
+   * previous file stops instead of opening it over the reader's new one.
    */
-  protected readonly openUrl = '/api/excel/import';
+  private readonly generation = signal(0);
 
   /**
-   * The chosen file, held until the component exists to take it.
+   * The converted workbook, held until the grid exists to take it.
    *
    * A signal rather than a plain field so the effect below covers both
-   * orderings: the first workbook, where the file is set before the `@defer`
-   * block has rendered anything, and a later one, where the component is
-   * already mounted and it is the file that arrives second. Word Viewer gets
-   * away with a plain field only because its network round-trip happens to
-   * give the block time to render first.
+   * orderings: the first workbook, where this is set before the `@defer` block
+   * has rendered anything, and a later one, where the grid is already mounted
+   * and it is the workbook that arrives second.
    */
-  private readonly pendingFile = signal<File | null>(null);
+  private readonly pendingWorkbook = signal<WorkbookJson | null>(null);
 
   constructor() {
     effect(() => {
       const sheet = this.instance();
-      const file = this.pendingFile();
-      if (sheet && file) {
-        this.pendingFile.set(null);
-        // The component takes it from here: it posts to `openUrl` itself and
-        // renders whatever workbook JSON comes back.
-        sheet.open({ file });
+      const workbook = this.pendingWorkbook();
+      if (sheet && workbook) {
+        this.pendingWorkbook.set(null);
+        this.handOver(sheet, workbook, this.generation(), 0);
       }
     });
 
@@ -129,7 +134,7 @@ export class ExcelViewerTool {
     });
   }
 
-  protected open(files: File[]): void {
+  protected async open(files: File[]): Promise<void> {
     const file = files[0];
     if (!file) {
       return;
@@ -154,32 +159,116 @@ export class ExcelViewerTool {
     this.loading.set(true);
     this.name.set(file.name);
     this.size.set(file.size);
-    // `hasWorkbook()` is now true, which mounts the `@defer` block. The effect
-    // in the constructor hands the file over as soon as both exist.
-    this.pendingFile.set(file);
-  }
+    // `hasWorkbook()` is now true, which mounts the `@defer` block — so the
+    // grid loads its chunk while the conversion is in flight.
+    const generation = this.generation();
 
-  /** Captures the component the moment it exists; see `instance` above. */
-  protected onCreated(sheet: SpreadsheetComponent): void {
-    this.instance.set(sheet);
-  }
+    const result = await this.office.importXlsx(file);
 
-  protected onOpenComplete(): void {
-    this.loading.set(false);
-    const sheet = this.instance();
-    if (sheet) {
-      this.stats.set(measure(sheet));
+    // The reader moved on while this was converting.
+    if (generation !== this.generation()) {
+      return;
     }
+    if (!result.ok) {
+      this.fail(explain(result.failure.message));
+      return;
+    }
+
+    // The effect in the constructor hands this to the grid as soon as both
+    // exist; `loading` stays up until the grid confirms it opened.
+    this.pendingWorkbook.set(result.workbook);
   }
 
   /**
-   * The component surfaces its own failures here rather than throwing, which
-   * includes anything the Worker rejected — so the message the service wrote
-   * is what the reader sees, exactly as in the PDF tools.
+   * Hands the converted workbook to the grid, and makes sure it took.
+   *
+   * The Spreadsheet ignores content given to it before it has finished
+   * starting up, and says nothing when it does: no throw, no warning, and
+   * neither `openComplete` nor `openFailure`. Every readiness event was tried
+   * as a gate first — `created` and `dataBound` both fire too early — and
+   * `isOpen` is no better, because it is set optimistically the moment a call
+   * is made and stays true on calls that go nowhere.
+   *
+   * So readiness is not predicted, it is observed: hand the workbook over, and
+   * if the grid still has not taken it, hand it over again. The check is that
+   * the sheets actually changed, which is the thing we care about rather than
+   * a proxy for it. This is only affordable because the conversion already
+   * happened — a retry re-renders, it does not re-upload.
    */
-  protected onOpenFailure(args: { message?: string }): void {
+  private handOver(
+    sheet: SpreadsheetComponent,
+    workbook: WorkbookJson,
+    generation: number,
+    attempt: number,
+  ): void {
+    // The reader pressed "Open another", or moved on to a different file.
+    if (generation !== this.generation()) {
+      return;
+    }
+
+    sheet.openFromJson({ file: workbook });
+    this.awaitOpen(sheet, workbook, generation, attempt, 0);
+  }
+
+  /**
+   * Watches for the handover to take effect, and only re-issues it if the grid
+   * has shown no sign of life for a good while.
+   *
+   * Polling and re-issuing are separated on purpose. Polling often keeps the
+   * spinner honest, so it clears the moment the grid is up; re-issuing rarely
+   * keeps it correct, because a second `openFromJson` while the first is still
+   * rendering leaves two grids stacked on the page.
+   */
+  private awaitOpen(
+    sheet: SpreadsheetComponent,
+    workbook: WorkbookJson,
+    generation: number,
+    attempt: number,
+    poll: number,
+  ): void {
+    setTimeout(() => {
+      if (generation !== this.generation()) {
+        return;
+      }
+      if (this.opened(sheet)) {
+        this.finish(sheet);
+        return;
+      }
+      if (poll < OPEN_POLLS_PER_ATTEMPT) {
+        this.awaitOpen(sheet, workbook, generation, attempt, poll + 1);
+        return;
+      }
+      if (attempt >= MAX_OPEN_ATTEMPTS) {
+        this.fail(
+          'This workbook was converted, but the viewer could not display it. Reload the page and try again.',
+        );
+        return;
+      }
+      this.handOver(sheet, workbook, generation, attempt + 1);
+    }, OPEN_POLL_MS);
+  }
+
+  /**
+   * Settles the tool once the grid is showing the workbook.
+   *
+   * Called from `handOver` rather than driven by `openComplete`, because
+   * `openFromJson` does not raise that event — measured: the sheets load and
+   * render, and the event never arrives. Left waiting on it, the spinner
+   * stayed up over a workbook the reader could already see.
+   */
+  private finish(sheet: SpreadsheetComponent): void {
     this.loading.set(false);
-    this.fail(explain(args?.message));
+    fitColumns(sheet);
+    this.stats.set(measure(sheet));
+  }
+
+  /**
+   * Whether the grid is showing a real workbook rather than the empty starter
+   * sheet the template scaffolds it with.
+   */
+  private opened(sheet: SpreadsheetComponent): boolean {
+    const sheets = sheet.sheets ?? [];
+    return sheets.length > 1 || (sheets[0]?.usedRange?.rowIndex ?? 0) > 0;
   }
 
   protected reset(): void {
@@ -187,24 +276,26 @@ export class ExcelViewerTool {
     this.size.set(0);
     this.error.set(null);
     this.stats.set(null);
-    this.pendingFile.set(null);
+    this.pendingWorkbook.set(null);
+    this.generation.update((n) => n + 1);
   }
 
   private fail(message: string): void {
     this.error.set(message);
     this.name.set('');
     this.stats.set(null);
-    this.pendingFile.set(null);
+    this.pendingWorkbook.set(null);
     this.loading.set(false);
     this.snackBar.open(message, 'Dismiss', { duration: 8000 });
   }
 }
 
 /**
- * Turns the component's own failure text into something worth reading.
+ * Turns the service's failure text into something worth reading.
  *
- * Its messages are written for a developer wiring up a service — the reader
- * dropped in a file and wants to know what to do about it instead.
+ * Most of its messages are already written for the reader, but the ones that
+ * surface a conversion error are not — someone who dropped in a locked
+ * workbook wants to know what to do about it, not what threw.
  */
 function explain(detail: string | undefined): string {
   const lower = (detail ?? '').toLowerCase();
@@ -218,6 +309,50 @@ function explain(detail: string | undefined): string {
   return detail?.trim()
     ? detail
     : 'This workbook could not be opened. It may be corrupt, password-protected, or not a real .xlsx file.';
+}
+
+/**
+ * Widens the active sheet's columns to fit what is in them.
+ *
+ * A spreadsheet stores a width per column, and a cell whose text is longer
+ * than its column is simply clipped — in Excel that is survivable, because you
+ * can widen the column or read the value in the formula bar. Here there is no
+ * formula bar and the grid is read-only, so a clipped cell is unreadable full
+ * stop, and a column of long identifiers renders as a column of prefixes.
+ * Measured on a 10,741-row workbook: the ids needed 148px and were given the
+ * 64px default, so every one of them was cut off mid-value.
+ *
+ * `autoFit` is the same operation as double-clicking a column edge in Excel,
+ * and it costs ~415ms across that workbook — paid once per sheet on open,
+ * against a conversion round-trip that is already measured in seconds.
+ *
+ * The trade is fidelity: a width the author deliberately set is widened too.
+ * For a viewer that seems right — being able to read the content beats
+ * reproducing the column the author happened to leave narrow — but it is why
+ * this tool no longer claims to keep column widths exactly as they were.
+ *
+ * Only the sheet that is open gets fitted, and only when the workbook is
+ * opened. Refitting on sheet change is deliberately not wired to
+ * `actionComplete`: that event fires for the resize this function itself
+ * performs, so calling it from there is an infinite loop that locks the tab —
+ * which it duly did, once.
+ */
+function fitColumns(sheet: SpreadsheetComponent): void {
+  const active = sheet.sheets?.[sheet.activeSheetIndex ?? 0];
+  const lastColumn = active?.usedRange?.colIndex;
+  if (lastColumn === undefined || lastColumn < 0) {
+    return;
+  }
+  sheet.autoFit(`A:${columnName(lastColumn)}`);
+}
+
+/** 0 -> A, 25 -> Z, 26 -> AA — the spreadsheet's own column naming. */
+function columnName(index: number): string {
+  let name = '';
+  for (let n = index; n >= 0; n = Math.floor(n / 26) - 1) {
+    name = String.fromCharCode(65 + (n % 26)) + name;
+  }
+  return name;
 }
 
 /**

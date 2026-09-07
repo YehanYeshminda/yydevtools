@@ -150,8 +150,7 @@ export const TOOLS: Tool[] = [
   {
     slug: 'xml-viewer',
     name: 'XML Viewer',
-    description:
-      'Format, validate and explore XML as a tree, and query it with XPath.',
+    description: 'Format, validate and explore XML as a tree, and query it with XPath.',
     icon: 'matCodeOutline',
     category: 'Developer',
     ready: true,
@@ -262,8 +261,7 @@ export const TOOLS: Tool[] = [
   {
     slug: 'word-viewer',
     name: 'Word Viewer',
-    description:
-      'Open and read a .docx document with its layout intact, and copy the text out.',
+    description: 'Open and read a .docx document with its layout intact, and copy the text out.',
     icon: 'matDescriptionOutline',
     category: 'Document',
     ready: true,
@@ -272,7 +270,7 @@ export const TOOLS: Tool[] = [
     slug: 'excel-viewer',
     name: 'Excel Viewer',
     description:
-      'Open an .xlsx workbook and read its sheets, with formatting and column widths intact.',
+      'Open an .xlsx workbook and read its sheets, with formatting intact and columns widened to fit.',
     icon: 'matTableChartOutline',
     category: 'Document',
     ready: true,

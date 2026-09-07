@@ -19,7 +19,14 @@ export type OfficeServiceFailure =
   | { kind: 'unavailable'; code: string; message: string }
   | { kind: 'rejected'; code: string; message: string };
 
-export type OfficeServiceResult = { ok: true; sfdt: string } | { ok: false; failure: OfficeServiceFailure };
+export type OfficeServiceResult =
+  { ok: true; sfdt: string } | { ok: false; failure: OfficeServiceFailure };
+
+/** The Spreadsheet's own workbook shape, opaque to us — we only pass it on. */
+export type WorkbookJson = Record<string, unknown>;
+
+export type WorkbookResult =
+  { ok: true; workbook: WorkbookJson } | { ok: false; failure: OfficeServiceFailure };
 
 /** Server codes that mean "try again later", not "this file is the problem". */
 const FALLBACK_CODES = new Set([
@@ -78,6 +85,74 @@ export class OfficeServicesClient {
     }
 
     return { ok: false, failure: await this.readFailure(response) };
+  }
+
+  /**
+   * Converts a .xlsx into the Spreadsheet's workbook JSON.
+   *
+   * The Spreadsheet component can do this upload itself — you give it an
+   * `openUrl` and it posts the file — and that is how this tool started. It
+   * was replaced because that path silently drops the request when the
+   * component is asked before it is ready: `open()` reports the call accepted,
+   * no upload is ever sent, and neither completion event fires, so the tool
+   * waits on a spinner that never ends. Owning the fetch means the conversion
+   * either succeeds or produces a message, and that handing the result to the
+   * grid can be retried without re-uploading a file that already converted.
+   *
+   * Multipart rather than raw bytes, because that is the shape the service's
+   * /excel/import already speaks — it was written for the component's own
+   * uploader, and there was no reason to change the wire format too.
+   */
+  async importXlsx(file: File): Promise<WorkbookResult> {
+    const body = new FormData();
+    body.append('file', file, file.name);
+
+    let response: Response;
+    try {
+      // No Content-Type header: the browser must set it, so that the multipart
+      // boundary it generates is the one the service is told to look for.
+      response = await fetch('/api/excel/import', { method: 'POST', body });
+    } catch {
+      return {
+        ok: false,
+        failure: {
+          kind: 'unavailable',
+          code: 'NETWORK',
+          message: 'The workbook conversion service could not be reached.',
+        },
+      };
+    }
+
+    if (!response.ok) {
+      return { ok: false, failure: await this.readFailure(response) };
+    }
+
+    const type = response.headers.get('Content-Type') ?? '';
+    if (!type.includes('application/json')) {
+      // Same SPA-fallback guard as importDocx: under `ng serve` there is no
+      // Worker, so index.html comes back with a 200.
+      return {
+        ok: false,
+        failure: {
+          kind: 'unavailable',
+          code: 'NOT_DEPLOYED',
+          message: 'The workbook conversion service is not running in this environment.',
+        },
+      };
+    }
+
+    try {
+      return { ok: true, workbook: (await response.json()) as WorkbookJson };
+    } catch {
+      return {
+        ok: false,
+        failure: {
+          kind: 'unavailable',
+          code: 'BAD_RESPONSE',
+          message: 'The workbook conversion service returned something unreadable.',
+        },
+      };
+    }
   }
 
   private async readFailure(response: Response): Promise<OfficeServiceFailure> {

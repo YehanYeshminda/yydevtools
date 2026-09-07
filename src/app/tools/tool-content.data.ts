@@ -666,7 +666,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         heading: 'What an opinionated formatter is for',
         body: [
           'Prettier, which powers this tool, is deliberately opinionated: it offers very few options and makes most decisions for you. That sounds like a limitation and is in fact the entire point. A formatter with a hundred settings simply relocates the argument — instead of debating where the brace goes, a team debates the config file.',
-          'The mechanism is worth understanding, because it explains what the tool will and will not preserve. Prettier parses your code into a syntax tree, throws your formatting away entirely, and prints the tree back out according to its own rules, breaking lines to fit the print width. It is not adjusting your whitespace; it is regenerating the text from the structure. Your code\'s meaning is preserved exactly, its appearance is not preserved at all.',
+          "The mechanism is worth understanding, because it explains what the tool will and will not preserve. Prettier parses your code into a syntax tree, throws your formatting away entirely, and prints the tree back out according to its own rules, breaking lines to fit the print width. It is not adjusting your whitespace; it is regenerating the text from the structure. Your code's meaning is preserved exactly, its appearance is not preserved at all.",
           'That is also why formatting is safe in a way that find-and-replace is not. Because the input must parse before anything is printed, a formatter cannot silently corrupt a string literal or a comment — and if the code does not parse, you get a syntax error with a position rather than a mangled file.',
         ],
       },
@@ -729,7 +729,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         body: [
           'A version 4 UUID is 122 bits of randomness with six bits spent on version and variant markers. It contains no timestamp, no machine identifier and no counter — nothing that could collide by coincidence of two machines doing the same thing at the same moment, because nothing about the machine or the moment goes into it.',
           'People reasonably ask whether random values can collide. They can, in principle. The useful way to hold the number is this: you would need to generate roughly a billion UUIDs per second for about 85 years before reaching a 50% chance of a single duplicate. Every practical system will fail in a dozen other ways long before that becomes the problem.',
-          'The one caveat that matters is the source of randomness. A v4 UUID is only as unpredictable as the generator behind it, which is why these are produced with the browser\'s crypto.getRandomValues rather than Math.random. Math.random is fast, deterministic in structure and predictable enough that values derived from it should never be treated as unguessable.',
+          "The one caveat that matters is the source of randomness. A v4 UUID is only as unpredictable as the generator behind it, which is why these are produced with the browser's crypto.getRandomValues rather than Math.random. Math.random is fast, deterministic in structure and predictable enough that values derived from it should never be treated as unguessable.",
         ],
       },
       {
@@ -863,7 +863,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       {
         heading: 'Contrast is a requirement, not a preference',
         body: [
-          'WCAG AA asks for a contrast ratio of at least 4.5:1 between text and its background, or 3:1 for large text — roughly 24px, or 19px bold. AAA raises that to 7:1. The ratio is computed from relative luminance, which weights the channels according to the eye\'s sensitivity, so it is not something you can judge reliably by looking, particularly on a bright screen.',
+          "WCAG AA asks for a contrast ratio of at least 4.5:1 between text and its background, or 3:1 for large text — roughly 24px, or 19px bold. AAA raises that to 7:1. The ratio is computed from relative luminance, which weights the channels according to the eye's sensitivity, so it is not something you can judge reliably by looking, particularly on a bright screen.",
           'Two things are worth knowing. Light grey text on white is the most common accessibility failure on the web, and it is almost always introduced deliberately in the name of a softer look. And contrast requirements apply to interface components too — a form field border or a focus ring below 3:1 against its surroundings is a failure even if the text inside is fine.',
         ],
       },
@@ -1071,7 +1071,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     faq: [
       {
         q: 'Is my CSV uploaded anywhere?',
-        a: 'No. The file is read with the browser\'s file API and parsed in the page. Nothing is transmitted, which you can check by loading the page, going offline and opening a file anyway. Given that CSV exports are usually customer lists, transactions or account extracts, this is the whole reason to use a local tool.',
+        a: "No. The file is read with the browser's file API and parsed in the page. Nothing is transmitted, which you can check by loading the page, going offline and opening a file anyway. Given that CSV exports are usually customer lists, transactions or account extracts, this is the whole reason to use a local tool.",
       },
       {
         q: 'Does it handle semicolons and tabs?',
@@ -1116,7 +1116,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Copy the whole text, or download it as .txt.',
       'Zoom from 25% to 300%, or fit the page to the width of the window.',
       'Print the document on its own, without the site around it.',
-      'Converted on our own server rather than a third party\'s, in memory, and never stored.',
+      "Converted on our own server rather than a third party's, in memory, and never stored.",
     ],
     sections: [
       {
@@ -1177,12 +1177,12 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   'excel-viewer': {
     slug: 'excel-viewer',
     intro: [
-      'Open an Excel workbook and read it properly — every sheet, with its number formats, column widths, merged cells and cell styling intact — without Excel, without a Microsoft account, and without installing anything. Drop a .xlsx in and it renders as a real grid you can scroll and move between sheets in.',
+      'Open an Excel workbook and read it properly — every sheet, with its number formats, merged cells and cell styling intact, and its columns widened so nothing is cut off — without Excel, without a Microsoft account, and without installing anything. Drop a .xlsx in and it renders as a real grid you can scroll and move between sheets in.',
       'This is the tool for the spreadsheet somebody emailed you: a quote, an invoice, a budget, an export from a system you do not have a licence for. Reading one should not require buying a copy of Excel or signing into a cloud account first.',
     ],
     steps: [
       'Drop a .xlsx file onto the page, or click to choose one.',
-      'Read it in place — the grid keeps the workbook\'s formatting, column widths and number formats.',
+      "Read it in place — the grid keeps the workbook's formatting and number formats, and widens columns to fit.",
       'Move between sheets with the tabs along the bottom.',
       'Scroll around large sheets; the row and column headers stay put.',
       'Use Open another to swap in a different workbook.',
@@ -1190,16 +1190,16 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     features: [
       'Renders .xlsx as a real spreadsheet grid, not a flattened table.',
       'Every sheet in the workbook, switchable from the tabs.',
-      'Keeps number formats, column widths, merged cells and cell styling.',
+      'Keeps number formats, merged cells and cell styling; widens columns so long values stay readable.',
       'Sheet, row and column counts for the workbook.',
       'Read-only by design — nothing you do here can alter the file.',
-      'Converted on our own server rather than a third party\'s, in memory, and never stored.',
+      "Converted on our own server rather than a third party's, in memory, and never stored.",
     ],
     sections: [
       {
         heading: 'What a .xlsx file actually is',
         body: [
-          'Like .docx, a .xlsx is a zip archive of XML. Inside it you will find a workbook part listing the sheets, a separate XML part for each sheet\'s cells, a shared-strings table holding every distinct piece of text once — which is why spreadsheets full of repeated labels stay surprisingly small — and a styles part describing every format the workbook uses.',
+          "Like .docx, a .xlsx is a zip archive of XML. Inside it you will find a workbook part listing the sheets, a separate XML part for each sheet's cells, a shared-strings table holding every distinct piece of text once — which is why spreadsheets full of repeated labels stay surprisingly small — and a styles part describing every format the workbook uses.",
           'Cells are stored as values plus a style reference, not as what you see. The number 45292 with a date format applied is what a cell showing "1 January 2024" actually contains, and 0.07 formatted as a percentage is what "7%" is underneath. A viewer has to resolve those style references to show you what Excel would show you, which is most of the work of rendering a workbook faithfully.',
           'The older .xls is a different thing entirely: a binary format from the same era as .doc, undocumented for most of its life. It cannot be read here — open it in Excel or LibreOffice and save it as .xlsx first.',
         ],
@@ -1207,8 +1207,8 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       {
         heading: 'What a viewer shows and what it does not',
         body: [
-          'Values and formatting come through: text, numbers, dates, currency and percentage formats, column widths, merged cells, fills and borders. Multiple sheets come through, and the tabs let you move between them as you would in Excel.',
-          'Formulas are shown as their last calculated result rather than recalculated live, which is what you want when reading someone else\'s workbook — the numbers you see are the numbers they saw when they saved it. Charts, pivot tables, macros, conditional formatting rules and data-validation dropdowns are either simplified or not rendered, because reproducing them means reproducing Excel rather than reading a file.',
+          "Values and formatting come through: text, numbers, dates, currency and percentage formats, merged cells, fills and borders. Columns are widened to fit their contents rather than kept at the file's stored widths, so a column of long identifiers reads as the identifiers instead of a column of prefixes. Multiple sheets come through, and the tabs let you move between them as you would in Excel.",
+          "Formulas are shown as their last calculated result rather than recalculated live, which is what you want when reading someone else's workbook — the numbers you see are the numbers they saw when they saved it. Charts, pivot tables, macros, conditional formatting rules and data-validation dropdowns are either simplified or not rendered, because reproducing them means reproducing Excel rather than reading a file.",
           'Fonts follow the same rule as any document viewer: a workbook names its typefaces rather than embedding them, so a font you do not have is substituted, which can change how much text fits a column.',
         ],
       },
@@ -1216,7 +1216,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         heading: 'Where your workbook actually goes',
         body: [
           'Most tools on this site never send your file anywhere, and say so plainly. This one is an exception and it would be dishonest to bury that. Turning a .xlsx into something a browser can draw takes a conversion step that has to happen on a server, so the file is sent over HTTPS to a small service we run ourselves.',
-          'What happens there: it is converted in memory, the result is returned to your tab, and the file is not written to disk, not logged, not retained after the request and not handed to any third party. It is the same service the Word Viewer uses, and it is ours rather than a vendor\'s.',
+          "What happens there: it is converted in memory, the result is returned to your tab, and the file is not written to disk, not logged, not retained after the request and not handed to any third party. It is the same service the Word Viewer uses, and it is ours rather than a vendor's.",
           'If the workbook is sensitive enough that sending it anywhere is the wrong trade, the CSV Viewer on this site reads plain .csv files entirely inside your browser with nothing transmitted — and most spreadsheets can be exported to CSV from Excel in a couple of clicks, at the cost of formatting and multiple sheets.',
         ],
       },
@@ -1236,7 +1236,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
       {
         q: 'Do formulas work?',
-        a: 'You see the values the formulas last produced, as saved in the file, rather than a live recalculation. For reading someone else\'s workbook that is usually what you want — the figures shown are the figures they saw.',
+        a: "You see the values the formulas last produced, as saved in the file, rather than a live recalculation. For reading someone else's workbook that is usually what you want — the figures shown are the figures they saw.",
       },
       {
         q: 'Does it show every sheet?',
@@ -1283,7 +1283,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       {
         heading: 'Well-formed and valid are two different things',
         body: [
-          'These words get used interchangeably and mean quite different things. Well-formed means the document obeys XML\'s syntax rules: one root element, every tag closed, tags nested rather than overlapping, attributes quoted, and the handful of reserved characters escaped. Any XML parser can check this, and it is what this tool reports.',
+          "These words get used interchangeably and mean quite different things. Well-formed means the document obeys XML's syntax rules: one root element, every tag closed, tags nested rather than overlapping, attributes quoted, and the handful of reserved characters escaped. Any XML parser can check this, and it is what this tool reports.",
           'Valid means something stronger — that the document also matches a schema, an XSD or DTD saying which elements may appear, in what order, how many times, and what types their values take. A document can be perfectly well-formed and completely wrong for its purpose: an invoice with the customer inside the line items rather than beside them breaks no syntax rule at all.',
           'The distinction matters when something rejects your file. "Not well-formed" is a typing mistake and the parser will point at it. "Invalid" means the structure is legal XML but not the shape the recipient expects, and no amount of staring at brackets will show it — you need the schema.',
         ],
@@ -1312,7 +1312,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
       {
         q: 'What does "not well-formed" actually mean?',
-        a: 'It means the file breaks XML\'s syntax rules, so no parser can read it. The usual causes are a tag that is never closed, tags that overlap instead of nesting, an unescaped & or < in text, a missing quote around an attribute value, or more than one root element. The tool reports the line and column where the parser stopped, which is where the problem was detected — occasionally a little after where it was introduced.',
+        a: "It means the file breaks XML's syntax rules, so no parser can read it. The usual causes are a tag that is never closed, tags that overlap instead of nesting, an unescaped & or < in text, a missing quote around an attribute value, or more than one root element. The tool reports the line and column where the parser stopped, which is where the problem was detected — occasionally a little after where it was introduced.",
       },
       {
         q: 'Why does my XPath expression return nothing?',
@@ -1514,7 +1514,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       {
         heading: 'Seconds or milliseconds, and how to tell',
         body: [
-          'The most common bug in this area is a factor of a thousand. Unix time is defined in seconds, and most languages follow that — but JavaScript\'s Date.now(), and therefore a great deal of web code, works in milliseconds. Mixing the two puts a date in 1970 or somewhere in the year 56000.',
+          "The most common bug in this area is a factor of a thousand. Unix time is defined in seconds, and most languages follow that — but JavaScript's Date.now(), and therefore a great deal of web code, works in milliseconds. Mixing the two puts a date in 1970 or somewhere in the year 56000.",
           'The quick way to tell them apart is length. A current timestamp in seconds is 10 digits; in milliseconds it is 13. If a date comes out as 1970-01-01 you almost certainly passed milliseconds to something expecting seconds; if it lands tens of thousands of years in the future, you did the reverse. This tool accepts both and tells you which it detected.',
         ],
       },
@@ -1578,7 +1578,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         heading: 'The syntax that actually trips people up',
         body: [
           'Three things account for most Markdown confusion. The first is that a single newline does not start a new paragraph — Markdown joins consecutive lines into one, which is deliberate, so that you can hard-wrap your source without affecting output. A blank line is the paragraph separator; two trailing spaces force a line break within one.',
-          'The second is indentation inside lists. Continuation text and nested content have to line up with the parent item\'s text, not its bullet, and getting this wrong is the usual reason a nested list flattens or a code block escapes its bullet.',
+          "The second is indentation inside lists. Continuation text and nested content have to line up with the parent item's text, not its bullet, and getting this wrong is the usual reason a nested list flattens or a code block escapes its bullet.",
           'The third is that Markdown permits raw HTML, which is a strength and a trap. It means you can drop in a table or an anchor when the syntax cannot express what you need. It also means that a stray < in your prose may be read as the start of a tag, which is why comparisons and generics sometimes vanish from rendered output.',
         ],
       },
@@ -1622,7 +1622,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Phone, tablet and full-width preview, with a full-screen mode.',
       'A one-click Format button that beautifies the markup with Prettier.',
       'A light or dark backdrop, so transparent pages read either way.',
-      'A console panel that captures the page\'s console output and uncaught errors.',
+      "A console panel that captures the page's console output and uncaught errors.",
       'A sandboxed, separate-origin frame that cannot touch this page.',
       'Scripts are off by default and opt-in, never same-origin.',
       'Runs entirely in your browser — nothing is uploaded.',
@@ -1856,7 +1856,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         heading: 'What a PDF viewer is actually doing',
         body: [
           'Opening a PDF is closer to running a program than to opening a photograph. The file describes a page as a sequence of drawing instructions — move here, set this font, show this text, fill this path — and a viewer executes them onto a canvas. That is why the same document looks identical everywhere, and also why a PDF can take a moment to appear: the page is being drawn, not decoded.',
-          'This viewer is Mozilla\'s pdf.js, the same engine built into Firefox, running here in your browser. It brings its own toolbar, text selection, search, thumbnail sidebar, rotation and zoom, because it is the full viewer rather than a minimal render of the first page.',
+          "This viewer is Mozilla's pdf.js, the same engine built into Firefox, running here in your browser. It brings its own toolbar, text selection, search, thumbnail sidebar, rotation and zoom, because it is the full viewer rather than a minimal render of the first page.",
           'One consequence worth knowing: because the page is drawn from instructions, text in a normal PDF is real text. You can select it, copy it and search it. If you cannot, the document is almost certainly a scan — a photograph of a page wrapped in a PDF container, with no text layer at all. That is what the OCR tool is for.',
         ],
       },
