@@ -12,7 +12,11 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:worker": "vitest run worker",
-    "serve:ssr:yydevtools": "node dist/yydevtools/server/server.mjs"
+    "serve:ssr:yydevtools": "node dist/yydevtools/server/server.mjs",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report",
+    "e2e:fixtures": "node e2e/fixtures/generate.mjs"
   },
   "prettier": {
     "printWidth": 100,
@@ -98,7 +102,9 @@
     "@angular/build": "^21.1.2",
     "@angular/cli": "^21.1.2",
     "@angular/compiler-cli": "^21.1.0",
+    "@axe-core/playwright": "^4.13.0",
     "@cloudflare/workers-types": "^5.20260721.1",
+    "@playwright/test": "^1.63.0",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
     "@types/papaparse": "^5.5.2",
