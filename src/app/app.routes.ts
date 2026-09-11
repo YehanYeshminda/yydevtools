@@ -600,6 +600,28 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'guides/pdf-internals-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'What is actually inside a PDF — YYDevTools',
+    data: {
+      slug: 'pdf-internals-explained',
+      description:
+        'A PDF is drawing instructions, not a document. Why text extraction breaks, where the ' +
+        'megabytes go, and why a black rectangle does not redact anything.',
+    },
+  },
+  {
+    path: 'guides/colour-on-the-web-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Colour on the web: hex, HSL and OKLCH explained — YYDevTools',
+    data: {
+      slug: 'colour-on-the-web-explained',
+      description:
+        'What a hex code really is, why averaging colours in sRGB looks muddy, why HSL lightness ' +
+        'is not comparable across hues, and what OKLCH fixes for palettes and contrast.',
+    },
+  },
+  {
     path: 'news',
     loadComponent: () => import('./news/news').then((m) => m.News),
     title: 'Tech News — YYDevTools',

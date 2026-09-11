@@ -1280,6 +1280,206 @@ export const GUIDES: Guide[] = [
     related: ['hash-generator', 'jwt-decoder', 'base64-converter'],
     relatedGuides: ['https-explained', 'password-storage-explained'],
   },
+  {
+    slug: 'pdf-internals-explained',
+    title: 'What is actually inside a PDF, and why that explains its quirks',
+    description:
+      'A PDF is a set of drawing instructions, not a document. That single fact explains broken text extraction, why pages rearrange cheaply, where the size goes, and why black boxes do not redact.',
+    category: 'Documents',
+    readingMinutes: 11,
+    updated: '2026-09-11',
+    published: '2026-09-11',
+    intro: [
+      'Almost every complaint about PDFs — copied text arriving as gibberish, a two-page file weighing nine megabytes, a redaction that turned out not to be one — comes from the same misunderstanding. People expect a PDF to be a document, a structured thing made of words and paragraphs. It is not. It is closer to a program that describes how to paint a page.',
+      'This guide is about what is really in the file, and how each of those familiar annoyances falls out of it.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'A file of objects, not a stream of text' },
+      {
+        kind: 'p',
+        text: 'A PDF is a collection of numbered objects: dictionaries, arrays, numbers, strings and streams of compressed data. Pages are objects that point at other objects for their content, fonts and images. At the end of the file sits a cross-reference table giving the byte offset of every object, and after that a trailer saying where the catalogue begins. A reader does not read a PDF front to back — it jumps to the end, reads the table, and then seeks directly to whatever it needs.',
+      },
+      {
+        kind: 'code',
+        caption: 'A page object, pointing at everything it needs',
+        code: '3 0 obj\n<< /Type /Page\n   /Parent 2 0 R\n   /MediaBox [0 0 595 842]     % A4, in points\n   /Resources << /Font << /F1 5 0 R >> >>\n   /Contents 4 0 R            % the drawing instructions\n>>\nendobj',
+      },
+      {
+        kind: 'p',
+        text: 'That structure is why a PDF opens instantly at page 400 of 500 without reading the first 399, and it is also the root of everything below.',
+      },
+      { kind: 'h2', text: 'Why copied text so often comes out wrong' },
+      {
+        kind: 'p',
+        text: 'The content stream does not contain sentences. It contains instructions of the form "select this font, move to this coordinate, draw these glyph codes". There are no words, no lines, no paragraphs and no reading order — only marks placed at positions. What looks like a column of prose to you is, to the file, a few hundred independent placements that happen to line up.',
+      },
+      {
+        kind: 'p',
+        text: 'Extracting text therefore means reconstructing something the file never recorded. A reader groups glyphs by position, guesses where the spaces are from the gaps, and guesses the reading order from the layout — which is why text copied out of a two-column paper interleaves the columns, and why tables paste as a run of numbers.',
+      },
+      {
+        kind: 'p',
+        text: 'There is a second failure underneath that one. The glyph codes in the stream are indices into a font, not characters. A PDF can include a ToUnicode map saying which character each glyph index corresponds to, and when that map is missing or wrong — common with subsetted fonts, and with files produced by some typesetting tools — extraction produces confident nonsense. That is the origin of the classic symptom where a PDF looks perfect and copies out as garbage.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'It is worth knowing which of the two you are looking at. If text is selectable but pastes as the wrong characters, the ToUnicode map is the problem and no amount of better software will fix that file. If nothing is selectable at all, the page is an image and what you want is OCR.',
+      },
+      { kind: 'tool', lead: 'Open a PDF and see what is actually selectable:', slug: 'pdf-viewer' },
+      { kind: 'h2', text: 'Cheap to rearrange, expensive to edit' },
+      {
+        kind: 'p',
+        text: 'Because a page is an object and a document is a list of references to pages, reordering, rotating, deleting, splitting and merging are all shallow operations. Nothing about the drawing instructions changes; only the list and the cross-reference table are rewritten. This is why those operations are fast, lossless, and can run entirely in a browser.',
+      },
+      {
+        kind: 'p',
+        text: 'Editing the text on a page is the opposite. There is no paragraph to re-flow — changing a word means recomputing glyph positions, and if the replacement is wider, deciding what moves. Editors that offer it are reconstructing a layout the file never described, which is why the results are so often subtly wrong. The reliable path for real edits is to change the source document and export again.',
+      },
+      { kind: 'tool', lead: 'Reorder, rotate or delete pages without touching their content:', slug: 'pdf-organizer' },
+      { kind: 'h2', text: 'Where the megabytes actually are' },
+      {
+        kind: 'p',
+        text: 'Text is tiny. A page of prose is a few kilobytes of instructions. When a PDF is large, the weight is almost always in one of three places.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Images. A scan at 600 dpi carries roughly four times the pixels of one at 300, for no readability gain on screen. Photographs stored without JPEG compression are the single most common cause of an alarming file size.',
+          'Fonts. An embedded font can be subsetted to the glyphs actually used, or embedded whole. Whole copies of several weights of a family add up quickly, and a file that embeds fonts it never draws is not unusual.',
+          'Everything that was never removed. Duplicate copies of the same logo on every page, thumbnails, and the older revisions described below.',
+        ],
+      },
+      { kind: 'tool', lead: 'See where the size is going, and recompress what is worth recompressing:', slug: 'pdf-compress' },
+      { kind: 'h2', text: 'Incremental updates, and the redaction that is not one' },
+      {
+        kind: 'p',
+        text: 'A PDF can be modified by appending to it. The original bytes stay exactly where they were, a new set of objects is added at the end, and a new cross-reference table points at the newer versions. This is what makes signing possible — the signed bytes are still intact and verifiable — and it is also why a file can grow every time it is touched, carrying its own history with it.',
+      },
+      {
+        kind: 'p',
+        text: 'The consequence people meet the hard way concerns redaction. Drawing a black rectangle over a name adds a rectangle. It does not remove the text underneath, which is still an object in the file, still selectable, and still extractable by anyone who asks the file rather than looking at it. Genuine redaction removes the underlying content and rewrites the file without it.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'This has caused real disclosures in court filings, government releases and corporate reports — repeatedly, over many years, by organisations with lawyers. If you black something out, verify by selecting and copying the area afterwards, or by extracting the text of the finished file and searching it.',
+      },
+      { kind: 'h2', text: 'Scanned pages are pictures of documents' },
+      {
+        kind: 'p',
+        text: 'A scan produces one image per page wrapped in PDF. Nothing in it is text: it cannot be searched, selected or extracted, and its size is the size of the images. OCR addresses this by recognising the shapes and adding an invisible text layer positioned over the picture, so the page looks identical and is now searchable.',
+      },
+      {
+        kind: 'p',
+        text: 'That layer is a best guess, and it is worth treating as one. Recognition errors are invisible precisely because the visible page is unchanged — the text you search is not the text you see.',
+      },
+      { kind: 'h2', text: 'What to carry away' },
+      {
+        kind: 'ul',
+        items: [
+          'Expect page operations to be fast and faithful, and text edits to be neither.',
+          'If extraction misbehaves, work out first whether the page is text or an image; the two have completely different remedies.',
+          'Look for size in the images before anywhere else, and scan at a resolution matched to how the file will be read.',
+          'Never trust a drawn rectangle as redaction. Verify by extracting, not by looking.',
+        ],
+      },
+    ],
+    related: ['pdf-viewer', 'pdf-organizer', 'pdf-compress'],
+    relatedGuides: ['compress-images-for-web', 'image-formats-explained'],
+  },
+
+  {
+    slug: 'colour-on-the-web-explained',
+    title: 'Colour on the web: hex, HSL, OKLCH, and why blends turn muddy',
+    description:
+      'What a hex code really is, why averaging two colours in sRGB looks wrong, why HSL lightness lies across hues, and what OKLCH fixes for palettes and contrast.',
+    category: 'Design',
+    readingMinutes: 10,
+    updated: '2026-09-11',
+    published: '2026-09-11',
+    intro: [
+      'Picking colours on the web is oddly frustrating for something so visual. Two shades that should be a matched pair look unbalanced. A gradient between two bright colours sags through grey in the middle. A palette built by nudging one number produces a set where half the entries look heavier than the rest.',
+      'None of that is a lack of taste. It follows from the colour models involved, and most of it disappears once you know which model is lying to you and about what.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Hex is RGB, written differently' },
+      {
+        kind: 'p',
+        text: 'A hex code is three bytes: how much red, how much green, how much blue, each from 0 to 255. There is nothing else in it. The eight-digit form adds a fourth byte for alpha, and the three-digit shorthand simply doubles each character. So hex and rgb() are the same numbers in different clothes, and converting between them is notation, not interpretation.',
+      },
+      {
+        kind: 'code',
+        caption: 'One colour, four ways of writing it',
+        code: '#3B82F6        hex\n#3B82F6FF      hex with alpha\nrgb(59 130 246)\nhsl(217 91% 60%)   same colour, different model',
+      },
+      { kind: 'h2', text: 'sRGB is not linear, and that is why blends look wrong' },
+      {
+        kind: 'p',
+        text: 'The numbers in a hex code are not proportional to light. They are encoded with a curve, roughly a power of 2.2, which spends more of the available range on darker values because human vision discriminates better there. It is an efficient encoding, and it means arithmetic on those numbers is not arithmetic on light.',
+      },
+      {
+        kind: 'p',
+        text: 'Averaging two colours by averaging their channels therefore does not give the colour halfway between them; it gives something darker and less saturated. The familiar demonstration is a gradient from pure red to pure green, which in plain sRGB passes through a murky olive rather than a bright yellow. Interpolating in a linear or perceptual space instead fixes it — which is what modern CSS gradient interpolation and the newer colour spaces are for.',
+      },
+      { kind: 'h2', text: 'HSL made picking easier and lightness dishonest' },
+      {
+        kind: 'p',
+        text: 'HSL rearranges the same sRGB colours into hue, saturation and lightness, which is far better for humans: hue is a dial, and lighter or darker is one number. It is the reason HSL became the default way to reason about a palette.',
+      },
+      {
+        kind: 'p',
+        text: 'Its lightness, though, is a geometric construction rather than a perceptual one, and it is not comparable across hues. Yellow at 50% lightness is glaringly bright; blue at exactly the same 50% is dark. So a palette built by holding lightness constant and rotating the hue produces a set that looks wildly uneven, and a "same tone" pairing chosen this way will not read as one.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'This is the single most common source of palettes that feel off. If a row of swatches at identical HSL lightness looks like some are heavier than others, nothing is wrong with your eyes — the number means different things at different hues.',
+      },
+      { kind: 'h2', text: 'What OKLCH fixes' },
+      {
+        kind: 'p',
+        text: 'OKLCH describes a colour as perceptual lightness, chroma (how colourful) and hue. The important property is that its lightness is meant to match perception: two colours at the same L look equally light, whatever their hue. Holding L fixed and moving the hue gives a genuinely balanced set, which is what you wanted from HSL and did not get.',
+      },
+      {
+        kind: 'p',
+        text: 'It also makes systematic palettes straightforward. A ramp from a base colour becomes a series of steps in L, which stay even across every hue in the system, rather than a set of hand-tuned values that only look right for one of them. Interpolating in OKLCH keeps gradients bright through the middle for the same reason.',
+      },
+      { kind: 'tool', lead: 'Convert between hex, RGB, HSL and OKLCH, and check contrast:', slug: 'color-converter' },
+      { kind: 'h2', text: 'Contrast is a floor, not a target' },
+      {
+        kind: 'p',
+        text: 'WCAG contrast is a ratio between the relative luminance of two colours: at least 4.5 to 1 for normal text at AA, 3 to 1 for large text, 7 to 1 at AAA. It is computed from the colours alone, which makes it checkable and is exactly why it became the standard.',
+      },
+      {
+        kind: 'p',
+        text: 'It is also a blunt instrument. The formula knows nothing about font weight, size beyond the large-text threshold, or the surrounding page, so thin light text can pass while being genuinely hard to read, and some combinations that pass are unpleasant at length. Treat the ratio as the minimum you must clear rather than evidence that a pairing is good.',
+      },
+      { kind: 'h2', text: 'Beyond sRGB' },
+      {
+        kind: 'p',
+        text: 'Most screens sold now can display more saturated colours than sRGB can describe, and CSS can address them through wider spaces such as display-p3 and through OKLCH, which is not bounded by sRGB at all. A colour specified that way can be more vivid than any hex code.',
+      },
+      {
+        kind: 'p',
+        text: 'The caveat is that a colour outside a display gamut has to be mapped back into it, and different browsers and screens will not agree on exactly how. Where the precise shade matters — a brand colour — specify what you mean and provide an sRGB fallback, rather than assuming everyone sees the wide-gamut version.',
+      },
+      { kind: 'h2', text: 'Rules that save the most trouble' },
+      {
+        kind: 'ul',
+        items: [
+          'Build palettes in OKLCH and keep lightness as the thing you vary deliberately.',
+          'Do not compare HSL lightness across different hues; it is not the same quantity.',
+          'Interpolate gradients in a perceptual space when the midpoint matters.',
+          'Check contrast, then look at the result anyway — passing is necessary, not sufficient.',
+          'Hex remains perfectly good for storing and pasting a colour. It is reasoning in hex that goes wrong.',
+        ],
+      },
+    ],
+    related: ['color-converter', 'image-converter', 'image-compressor'],
+    relatedGuides: ['image-formats-explained', 'compress-images-for-web'],
+  },
+
 ];
 
 /** Fast slug → guide lookup for the detail route. */
