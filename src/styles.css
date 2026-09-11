@@ -12,138 +12,169 @@ html {
  *   2. the Material system tokens (--mat-sys-*), remapped onto layer 1 further
  *      down so Material components sit inside the same palette.
  */
+/* ============================================================
+   TOKEN LAYER — one amber accent for actions, four category
+   hues used only to tint sigils/tags/rows. Flat surfaces;
+   hairline rules do the structural work. Dark is authored
+   first in the design; light stays the :root base because the
+   prerender paints light before the inline script runs.
+   ============================================================ */
 :root {
   color-scheme: light;
 
-  --bg: #f4f6f9;
-  --surface: #ffffff;
-  --surface-1: #fbfcfe;
-  --surface-2: #eef1f6;
-  --surface-3: #e6eaf1;
-
-  --on: #171a20;
-  --on-var: #5a6474;
-  --outline: #dce1e9;
-  --outline-2: #e9edf3;
-
-  --primary: #2f68f5;
-  --on-primary: #ffffff;
-  --primary-c: #e3ebfe;
-  --on-primary-c: #0b2a83;
-  --primary-hover: #eef3ff;
-  --primary-strong: #1f4fd0;
-
-  /* One accent per tool category, used by the home directory sections. */
-  --cat-dev: #2358d8;
-  --cat-dev-bg: #e8effe;
-  --cat-conv: #0b7590;
-  --cat-conv-bg: #def2f7;
-  --cat-doc: #5f45d6;
-  --cat-doc-bg: #ece7fd;
-
-  --error: #d92d20;
-  --error-bg: #fdecea;
-  --success: #12805c;
-  --star: #b45309;
-  --star-bg: #fdf0d5;
-
-  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Shared across themes ------------------------------------------------ */
+  --font: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
 
-  /* Syntax highlighting, read by the shared code editor. Every one of these is
-     checked to at least 4.5:1 against --surface in its own theme, so
-     highlighted code stays AA-legible rather than merely decorative. */
-  --cm-comment: #6b7280;
-  --cm-keyword: #7c3aed;
-  --cm-string: #047857;
-  --cm-number: #b45309;
-  --cm-name: #2563eb;
-  --cm-type: #0e7490;
-  --cm-operator: #4b5563;
-  --cm-meta: #be123c;
-  --cm-invalid: #dc2626;
-  --cm-selection: #cfe0ff;
-  --cm-active-line: #f3f6fc;
+  /* The logo yellow — identical in both themes — is the one "click me"
+     colour: every primary button, the focus-adjacent accent, the prompt
+     glyph. It always pairs with --on-brand for text on top of it. */
+  --brand: #ffbe3d;
+  --on-brand: #1a1405;
 
-  /* Page geometry ------------------------------------------------------
-     Three widths, one per page archetype, so no file has to hand-type a
-     number and every page of a kind lines up with the others.
+  --r-card: 4px;
+  --r-field: 4px;
+  --r-btn: 4px;
+  --r-pill: 2px;
 
-     `--page-wide` is the shell column the header and footer align to, and
-     which every top-level page — home, guides, news, about, articles —
-     spans. `--page-app` is narrower because a tool is UI rather than prose.
-     `--page-measure` is the reading width for flowing text inside a wide
-     page: full-width paragraphs would be a wall, so text is held to a
-     comfortable line while the card grids beside it span everything.
-
-     Pages sit inside `.content`, which already supplies the horizontal
-     gutter. A page that adds `padding-inline` of its own therefore indents
-     twice and drifts out of line with the header — which is exactly how the
-     guide article ended up 240px inboard of everything else. */
   --page-wide: 1240px;
   --page-app: 1000px;
   --page-narrow: 760px;
   --page-measure: 68ch;
   --page-gutter: clamp(16px, 4vw, 28px);
 
-  --r-card: 12px;
-  --r-field: 10px;
-  --r-btn: 10px;
+  /* Height of the sticky app bar (52px inner + 1px border). Any element that
+     sticks to the top of the *page* must offset by at least this, or it slides
+     under the bar as you scroll — which is exactly what the home rail did. Use
+     `calc(var(--app-bar-h) + gap)` for the sticky `top`, never a bare value. */
+  --app-bar-h: 53px;
 
-  --shadow-card: 0 1px 2px rgba(18, 26, 44, 0.05);
-  --shadow-card-hover: 0 6px 20px -8px rgba(18, 26, 44, 0.22);
-  --shadow-menu: 0 10px 28px -8px rgba(18, 26, 44, 0.22), 0 3px 8px -3px rgba(18, 26, 44, 0.14);
+  /* Light — warm paper on white --------------------------------------- */
+  --bg: #f5f3ee;
+  --surface: #ffffff;
+  --surface-1: #faf8f4;
+  --surface-2: #edeae3;
+  --surface-3: #e1ddd4;
+
+  --on: #16171d;
+  --on-var: #575964;
+  /* The third text tier, for counts, eyebrows and metadata. It carries real
+     text at 9.5–11px, so it is held to the 4.5:1 AA minimum rather than the
+     3:1 that would apply to large text: 5.0:1 on --bg, 5.6:1 on --surface,
+     5.3:1 on --surface-1 and 4.6:1 on --surface-2 — the four backgrounds it is
+     ever used on. It is never paired with --surface-3. */
+  --on-dim: #66686f;
+  --outline: #dbd7cd;
+  --outline-2: #e8e5dd;
+  --rule: #e3e0d7;
+
+  /* --primary is the link / interactive *text* colour and must darken in
+     light — amber on white is ~1.7:1. --brand stays the fill. */
+  --primary: #8a5400;
+  --on-primary: #ffffff;
+  --primary-c: #ffeec6;
+  --on-primary-c: #5b3d00;
+  --primary-hover: #fbf3e2;
+  --primary-strong: #6f4300;
+
+  /* Category hues — a fill/ink pair each. Never a button, never body text:
+     they tint the tool sigil, the section tag and the selected rail row so
+     the catalogue is colour-sorted at a glance. */
+  --cat-dev: #0b57b3;
+  --cat-dev-bg: #e2ecff;
+  --cat-conv: #046b52;
+  --cat-conv-bg: #ddf3ea;
+  --cat-doc: #6b34c9;
+  --cat-doc-bg: #eee4ff;
+  --cat-guide: #a81f5e;
+  --cat-guide-bg: #ffe3ef;
+
+  --error: #b3271a;
+  --error-bg: #fdecea;
+  --success: #046b52;
+  --success-bg: #ddf3ea;
+  --star: #8a5c00;
+  --star-bg: #fff1d0;
+
+  --overlay: rgba(30, 27, 20, 0.4);
+
+  --cm-comment: #6a6b66;
+  --cm-keyword: #6b34c9;
+  --cm-string: #046b52;
+  --cm-number: #8a4b00;
+  --cm-name: #0b57b3;
+  --cm-type: #0b5f6b;
+  --cm-operator: #4a4b47;
+  --cm-meta: #a81f5e;
+  --cm-invalid: #b3271a;
+  --cm-selection: #ffe2a8;
+  --cm-active-line: #f7f5ef;
+
+  /* Shadows appear only on overlays (menus, palette, consent banner). */
+  --shadow-card: none;
+  --shadow-card-hover: none;
+  --shadow-menu: 0 18px 40px -16px rgba(30, 27, 20, 0.32), 0 3px 8px -3px rgba(30, 27, 20, 0.18);
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --bg: #0d1015;
-  --surface: #151922;
-  --surface-1: #1a1f29;
-  --surface-2: #1f2531;
-  --surface-3: #28303d;
+  /* Dark — a slight cool tint: an editor, not a void. */
+  --bg: #0e0f15;
+  --surface: #161821;
+  --surface-1: #1a1d27;
+  --surface-2: #222531;
+  --surface-3: #2c3040;
 
-  --on: #e7eaf1;
-  --on-var: #98a2b3;
-  --outline: #2b323f;
-  --outline-2: #232a35;
+  --on: #e9e9f0;
+  --on-var: #9d9fb2;
+  /* Same rule as the light theme: 6.3:1 on --bg, 5.8:1 on --surface, 5.5:1 on
+     --surface-1 and 5.0:1 on --surface-2. */
+  --on-dim: #8f93a8;
+  --outline: #2f3342;
+  --outline-2: #232734;
+  --rule: #272b38;
 
-  --primary: #7aa2ff;
-  --on-primary: #04153f;
-  --primary-c: #1c2d5f;
-  --on-primary-c: #d8e2ff;
-  --primary-hover: #1a2233;
-  --primary-strong: #9ab8ff;
+  --primary: #ffc94f;
+  --on-primary: #231a04;
+  --primary-c: #3d2f0d;
+  --on-primary-c: #ffd98a;
+  --primary-hover: #201d12;
+  --primary-strong: #ffd98a;
 
-  --cat-dev: #7aa2ff;
-  --cat-dev-bg: #18233d;
-  --cat-conv: #48c2db;
-  --cat-conv-bg: #12313a;
-  --cat-doc: #a690ff;
-  --cat-doc-bg: #251f46;
+  --cat-dev: #79c0ff;
+  --cat-dev-bg: #152744;
+  --cat-conv: #56d9b0;
+  --cat-conv-bg: #0f3229;
+  --cat-doc: #d2a8ff;
+  --cat-doc-bg: #2a1f44;
+  --cat-guide: #ff9ec2;
+  --cat-guide-bg: #3a1c2c;
 
-  --error: #ff6f62;
-  --error-bg: #3a1d1c;
-  --success: #3fce9f;
-  --star: #f5b83d;
-  --star-bg: #33280f;
+  --error: #ff7a68;
+  --error-bg: #3a1c1a;
+  --success: #56d9b0;
+  --success-bg: #0f3229;
+  --star: #ffbe3d;
+  --star-bg: #3a2c10;
 
-  --cm-comment: #8b95a7;
-  --cm-keyword: #c4a6ff;
-  --cm-string: #6ee7b7;
-  --cm-number: #fbbf24;
-  --cm-name: #7aa2ff;
-  --cm-type: #5eead4;
-  --cm-operator: #b6c0d1;
-  --cm-meta: #fda4af;
-  --cm-invalid: #ff6f62;
-  --cm-selection: #2c3f68;
-  --cm-active-line: #1b212c;
+  --overlay: rgba(8, 9, 13, 0.72);
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-card-hover: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
-  --shadow-menu: 0 12px 34px -8px rgba(0, 0, 0, 0.6), 0 3px 10px -3px rgba(0, 0, 0, 0.5);
+  --cm-comment: #8b90a4;
+  --cm-keyword: #d2a8ff;
+  --cm-string: #7ee7b8;
+  --cm-number: #ffbe3d;
+  --cm-name: #79c0ff;
+  --cm-type: #56d9b0;
+  --cm-operator: #b8bbcc;
+  --cm-meta: #ff9ec2;
+  --cm-invalid: #ff7a68;
+  --cm-selection: #33405c;
+  --cm-active-line: #1b1e28;
+
+  --shadow-card: none;
+  --shadow-card-hover: none;
+  --shadow-menu: 0 18px 40px -16px rgba(0, 0, 0, 0.6), 0 3px 10px -3px rgba(0, 0, 0, 0.5);
 }
 
 /* Material system tokens ------------------------------------------------ */
@@ -223,6 +254,81 @@ html {
   box-sizing: border-box;
 }
 
+/* Custom cursors --------------------------------------------------------
+   A technical set that matches the workbench voice: a sharp amber arrow for
+   the default, and an amber crosshair reticle for anything actionable — the
+   same "amber means click me" rule the buttons and focus ring follow.
+
+   Both are baked SVGs (source in src/assets/cursors/*.svg): amber #ffbe3d with
+   a dark #1a1405 outline, so they stay visible on light paper and dark editor
+   surfaces alike, identically in both themes. `cursor` is an inherited
+   property, so setting the arrow on :root cascades everywhere and the rules
+   below only override the exceptions.
+
+   The trailing keyword after each url() is the mandatory fallback (also what
+   Safari uses, since it does not render SVG cursors — it degrades to the native
+   arrow/pointer, which is fine). The two numbers are the hotspot: the arrow's
+   tip, and the reticle's centre. Touch devices never show a cursor, so this is
+   inert there.
+
+   Both are held as tokens so the ~35 `cursor: pointer` rules across the
+   components can resolve to the reticle by writing `cursor: var(--cursor-pointer)`
+   — component styles come after this file in source order, so without the token
+   their bare `pointer` would win the specificity tie and paint the native
+   cursor instead. */
+:root {
+  --cursor-default: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4Ij48cGF0aCBkPSJNNCAzIEw0IDIyIEw5LjQgMTYuOCBMMTIuOCAyNCBMMTUuOCAyMi42IEwxMi40IDE1LjYgTDE4LjggMTUuNiBaIiBmaWxsPSIjZmZiZTNkIiBzdHJva2U9IiMxYTE0MDUiIHN0cm9rZS13aWR0aD0iMS40IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+Cg==')
+      4 3, auto;
+  --cursor-pointer: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4Ij48ZyBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxnIHN0cm9rZT0iIzFhMTQwNSIgc3Ryb2tlLXdpZHRoPSIzLjQiIG9wYWNpdHk9IjAuNSI+PHBhdGggZD0iTTE0IDIuNVY5TTE0IDE5djYuNU0yLjUgMTRIOU0xOSAxNGg2LjUiLz48L2c+PGcgc3Ryb2tlPSIjZmZiZTNkIiBzdHJva2Utd2lkdGg9IjEuNyI+PHBhdGggZD0iTTE0IDIuNVY5TTE0IDE5djYuNU0yLjUgMTRIOU0xOSAxNGg2LjUiLz48L2c+PGNpcmNsZSBjeD0iMTQiIGN5PSIxNCIgcj0iMy4yIiBzdHJva2U9IiMxYTE0MDUiIHN0cm9rZS13aWR0aD0iMi42IiBvcGFjaXR5PSIwLjUiLz48Y2lyY2xlIGN4PSIxNCIgY3k9IjE0IiByPSIzLjIiIHN0cm9rZT0iI2ZmYmUzZCIgc3Ryb2tlLXdpZHRoPSIxLjUiLz48L2c+PGNpcmNsZSBjeD0iMTQiIGN5PSIxNCIgcj0iMSIgZmlsbD0iI2ZmYmUzZCIvPjwvc3ZnPgo=')
+      14 14, pointer;
+
+  cursor: var(--cursor-default);
+}
+
+/* Interactive elements that don't carry their own `cursor` rule. The ones that
+   do now write `cursor: var(--cursor-pointer)` and resolve to the same reticle. */
+a[href],
+button,
+summary,
+label[for],
+select,
+[role='button'],
+[role='tab'],
+[role='menuitem'],
+[role='menuitemradio'],
+[cdkMenuItem],
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'],
+input[type='submit'],
+input[type='button'] {
+  cursor: var(--cursor-pointer);
+}
+
+/* Text entry keeps the native I-beam; a reticle over a text box reads as wrong.
+   .cm-content / .cm-editor cover the CodeMirror surface the tools mount. */
+input[type='text'],
+input[type='search'],
+input[type='email'],
+input[type='url'],
+input[type='password'],
+input[type='number'],
+input[type='tel'],
+input:not([type]),
+textarea,
+[contenteditable='true'],
+.cm-content,
+.cm-editor {
+  cursor: text;
+}
+
+/* A blocked control should say so, not invite a click. */
+button:disabled,
+[disabled],
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
 /* Icons ------------------------------------------------------------------
    Inline SVG via @ng-icons, so there is no icon webfont to download and no
    window where icon names show as text before it arrives.
@@ -266,9 +372,51 @@ ng-icon {
   color: var(--on-primary-c);
 }
 
+/* The terminal-cursor blink after the wordmark. Global so it is not rewritten
+   by component style scoping. Honours reduced-motion by holding steady. */
+@keyframes cblink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand__cursor {
+    animation: none !important;
+  }
+}
+
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* Smooth scrolling -------------------------------------------------------
+   Native, not a scroll-hijacking library: `scroll-behavior: smooth` animates
+   the *programmatic* and *anchor* scrolls — the guide's "on this page" links,
+   any `scrollTo`, a jump to a fragment — into an eased glide instead of a jump.
+   Wheel and trackpad scrolling stay the OS's job, which is already smooth and
+   which a JS momentum layer only ever makes worse.
+
+   Gated on no-preference so a visitor who asked for reduced motion still gets
+   an instant jump. `scroll-padding-top` keeps a fragment target from landing
+   under the sticky app bar — set on the scroller so every anchor target clears
+   it, which is why the guide headings no longer need their own
+   `scroll-margin-top` (the two would otherwise stack into a double gap).
+   (The document is the scroller here — html/body, not a nested container.) */
+html {
+  scroll-padding-top: calc(var(--app-bar-h) + 35px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 /* Route transitions ------------------------------------------------------

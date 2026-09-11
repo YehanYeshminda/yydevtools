@@ -318,3 +318,26 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
 ];
+
+/**
+ * The tools that send a file to a service instead of doing the work in the tab.
+ *
+ * Three PDF operations genuinely cannot run client-side, and the two Office
+ * viewers convert through `office-convert`. Every other tool is local.
+ *
+ * This exists so the "N of M tools run entirely in this tab" claim on the home
+ * rail is derived rather than typed. It was typed, and it went stale: the page
+ * still said "31 of 36" after the catalog reached 37.
+ */
+export const HOSTED_SLUGS: readonly string[] = [
+  'pdf-convert',
+  'pdf-ocr',
+  'pdf-compress',
+  'word-viewer',
+  'excel-viewer',
+];
+
+/** How many tools never upload anything — the number the home rail quotes. */
+export const LOCAL_TOOL_COUNT = TOOLS.filter(
+  (tool) => !HOSTED_SLUGS.includes(tool.slug),
+).length;

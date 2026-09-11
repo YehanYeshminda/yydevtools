@@ -171,7 +171,7 @@
   border-radius: 999px;
   color: var(--on-var);
   font: var(--mat-sys-label-large);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .queue__add:hover {

@@ -235,7 +235,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--on);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .meta__summary:focus-visible {
@@ -345,7 +345,7 @@
   border-radius: 10px;
   background: transparent;
   text-align: left;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   color: inherit;
   font: inherit;
 }
@@ -432,7 +432,7 @@
   border-radius: 999px;
   color: var(--on-var);
   font-size: 0.88rem;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .queue__add:hover {

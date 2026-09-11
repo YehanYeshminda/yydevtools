@@ -1,226 +1,324 @@
-:host {
-  display: block;
-  padding-block: 40px 34px;
+/* The home page is a workbench: a sticky category rail beside a bordered
+   catalogue grid. Category hues (--cat-*) only tint sigils, section tags and
+   the selected rail row; amber (--brand) stays the one action colour.
+
+   Each `.cat--x` class hands its section and cards a local --accent trio, so a
+   card's sigil and hover tint follow its own category wherever it is listed. */
+.cat--all {
+  --accent: var(--brand);
+  --accent-bg: var(--surface-2);
+  --accent-on: var(--on);
+}
+.cat--dev {
+  --accent: var(--cat-dev);
+  --accent-bg: var(--cat-dev-bg);
+  --accent-on: var(--cat-dev);
+}
+.cat--conv {
+  --accent: var(--cat-conv);
+  --accent-bg: var(--cat-conv-bg);
+  --accent-on: var(--cat-conv);
+}
+.cat--doc {
+  --accent: var(--cat-doc);
+  --accent-bg: var(--cat-doc-bg);
+  --accent-on: var(--cat-doc);
 }
 
-/* Hero ------------------------------------------------------------------ */
-.hero {
-  max-width: var(--page-narrow);
-  margin-bottom: 22px;
+.workbench {
+  display: grid;
+  grid-template-columns: 212px minmax(0, 1fr);
 }
 
-.hero__title {
-  margin: 0 0 8px;
-  font-size: clamp(26px, 4.2vw, 34px);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.025em;
-  color: var(--on);
+/* Rail ------------------------------------------------------------------ */
+.rail {
+  position: sticky;
+  /* Clear the sticky app bar, or the filter box tucks behind it on scroll. */
+  top: calc(var(--app-bar-h) + 16px);
+  align-self: start;
+  padding: 24px 18px 24px 0;
 }
 
-.hero__sub {
-  margin: 0 0 20px;
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--on-var);
-}
-
-/* Search ---------------------------------------------------------------- */
-.search {
+.rail__search {
   display: flex;
   align-items: center;
-  height: 52px;
-  padding: 0 6px 0 14px;
+  height: 44px;
+  padding: 0 12px;
   background: var(--surface);
   border: 1px solid var(--outline);
-  border-radius: var(--r-field);
-  box-shadow: var(--shadow-card);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.search:focus-within {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-hover);
+.rail__search-icon {
+  font-size: 15px;
+  color: var(--on-dim);
 }
 
-.search__icon {
-  flex: none;
-  font-size: 22px;
-  color: var(--on-var);
-}
-
-.search__input {
-  flex: 1 1 auto;
+.rail__input {
+  flex: 1;
   min-width: 0;
-  padding: 0 12px;
-  font-family: inherit;
-  font-size: 16px;
+  padding: 0 9px;
+  font-family: var(--mono);
+  font-size: 12.5px;
   color: var(--on);
   background: transparent;
   border: 0;
   outline: none;
 }
 
-.search__input::placeholder {
-  color: var(--on-var);
+.rail__input::placeholder {
+  color: var(--on-dim);
 }
 
-/* Remove the WebKit search widget so the field matches the design. */
-.search__input::-webkit-search-cancel-button {
-  appearance: none;
-}
-
-.search__kbd {
-  flex: none;
-  padding: 4px 8px;
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--on-var);
-  background: var(--surface-1);
-  border: 1px solid var(--outline);
-  border-radius: 6px;
-}
-
-/* Filters --------------------------------------------------------------- */
-.filters {
+.rail__nav {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  margin-top: 18px;
+}
+
+.rail__heading {
+  margin: 0 0 6px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--on-dim);
+}
+
+.rail__item {
+  display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 26px;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.chip {
-  padding: 7px 13px;
-  font-family: inherit;
-  font-size: 13px;
+  padding: 7px 8px;
+  font-family: var(--font);
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--on-var);
-  background: var(--surface);
-  border: 1px solid var(--outline);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  cursor: var(--cursor-pointer);
+  transition: color 0.12s ease, background 0.12s ease;
 }
 
-.chip:hover {
+.rail__item:hover {
+  color: var(--on);
+}
+
+.rail__dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 1px;
+  background: var(--accent);
+}
+
+.rail__item-label {
+  flex: 1;
+}
+
+.rail__item-count {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--on-dim);
+}
+
+.rail__item--active {
+  font-weight: 700;
+  color: var(--accent-on);
+  background: var(--accent-bg);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.rail__fav {
+  margin-top: 22px;
+}
+
+.rail__favlink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-family: var(--font);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--on-var);
+  text-decoration: none;
+  border-radius: 2px;
+}
+
+.rail__favlink:hover {
   color: var(--on);
   background: var(--surface-2);
 }
 
-.chip--active,
-.chip--active:hover {
-  font-weight: 600;
-  color: var(--on-primary);
-  background: var(--primary);
-  border-color: var(--primary);
+.rail__favstar {
+  flex: none;
+  font-size: 14px;
+  color: var(--star);
 }
 
-.count {
-  margin: 0 0 0 auto;
-  font-size: 13px;
-  font-weight: 500;
+.rail__note {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+
+.rail__note p {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  line-height: 1.5;
   color: var(--on-var);
 }
 
-/* Category sections ----------------------------------------------------- */
-.sections {
+.rail__note strong {
+  font-weight: 600;
+  color: var(--on);
+}
+
+.rail__notelink {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.rail__notelink:hover {
+  text-decoration: underline;
+}
+
+/* Work column ----------------------------------------------------------- */
+.work {
+  min-width: 0;
+  padding: 22px 0 40px 20px;
+  border-left: 1px solid var(--rule);
+}
+
+.work__head {
   display: flex;
-  flex-direction: column;
-  gap: 26px;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
 }
 
-/* Each section carries its own accent, which the head and cards read. */
-.cat--dev {
-  --cat: var(--cat-dev);
-  --cat-bg: var(--cat-dev-bg);
+.work__title {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--on);
 }
 
-.cat--conv {
-  --cat: var(--cat-conv);
-  --cat-bg: var(--cat-conv-bg);
+.work__prompt {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--brand);
 }
 
-.cat--doc {
-  --cat: var(--cat-doc);
-  --cat-bg: var(--cat-doc-bg);
+.work__count {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--on-dim);
 }
 
-/* Only ever set on the favourites section head — its cards keep their own
-   category accent, since the row mixes categories. */
-.cat--fav {
-  --cat: var(--star);
-  --cat-bg: var(--star-bg);
+.work__lead {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--on-var);
+}
+
+/* Sections + catalogue grid --------------------------------------------- */
+.section {
+  margin-bottom: 26px;
 }
 
 .section__head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  padding-bottom: 9px;
+  border-bottom: 2px solid var(--accent);
 }
 
-.section__icon {
-  font-size: 18px;
-  color: var(--cat);
-}
-
-.section__title {
+.section__tag {
   margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  padding: 4px 9px;
+  border-radius: 3px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--on);
+  color: var(--accent-on);
+  background: var(--accent-bg);
 }
 
 .section__count {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 500;
-  color: var(--on-var);
+  color: var(--on-dim);
 }
 
-/* Cards ----------------------------------------------------------------- */
 .grid {
   display: grid;
-  /* Lands on four columns at the container's full width, as the design has it,
-     and steps down cleanly on narrower viewports. */
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-left: 1px solid var(--rule);
 }
 
 .card {
   position: relative;
   display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 13px;
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  transition: background 0.12s ease;
+}
+
+.card:hover {
+  background: var(--accent-bg);
+}
+
+.card__sig {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+.card__sig ng-icon {
+  font-size: 17px;
+}
+
+.card__body {
+  display: flex;
   flex-direction: column;
-  gap: 7px;
-  padding: 14px;
+  min-width: 0;
+  /* Leaves room for the corner star so a long name never runs under it. */
+  padding-right: 20px;
+}
+
+.card__name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--on);
-  background: var(--surface);
-  border: 1px solid var(--outline);
-  border-radius: var(--r-card);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-}
-
-.card:has(.card__link:hover) {
-  border-color: var(--cat);
-  box-shadow: var(--shadow-card-hover);
-  transform: translateY(-2px);
-}
-
-/* Keyboard focus lands on the link but should read as the whole card. */
-.card:has(.card__link:focus-visible) {
-  border-color: var(--cat);
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
 }
 
 .card__link {
@@ -228,31 +326,46 @@
   text-decoration: none;
 }
 
-.card__link:focus-visible {
-  outline: none;
-}
-
-/* Stretch the link over the card so the whole thing is clickable, while the
-   star button stays a separate target above it. */
+/* Stretches the link's hit area over the whole cell, so the card is one click
+   target. The star sits above it on its own stacking context. */
 .card__link::after {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: inherit;
 }
 
-.card__icon {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  font-size: 19px;
-  color: var(--cat);
-  background: var(--cat-bg);
-  border-radius: 9px;
+.card__desc {
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--on-var);
 }
 
-/* Favourite toggle ------------------------------------------------------ */
+.card__badge {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 2px 7px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-dim);
+  background: var(--surface-2);
+  border-radius: 2px;
+}
+
+.card--soon .card__sig {
+  opacity: 0.5;
+}
+
+.card--soon .card__name {
+  color: var(--on-var);
+}
+
+/* The favourite toggle. The mock leaves it off the cell, but it is the only
+   way to add a favourite from here, so it stays — parked in the corner, shown
+   on hover or keyboard focus and whenever the tool is starred. */
 .fav {
   position: absolute;
   top: 8px;
@@ -260,19 +373,27 @@
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   padding: 0;
-  color: var(--on-var);
+  color: var(--on-dim);
   background: transparent;
   border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
+  border-radius: 3px;
+  cursor: var(--cursor-pointer);
+  opacity: 0;
+  transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
 }
 
 .fav ng-icon {
-  font-size: 19px;
+  font-size: 16px;
+}
+
+.card:hover .fav,
+.card:focus-within .fav,
+.fav:focus-visible,
+.fav--on {
+  opacity: 1;
 }
 
 .fav:hover {
@@ -284,272 +405,216 @@
   color: var(--star);
 }
 
-.fav--on:hover {
-  background: var(--star-bg);
-}
-
-.card__name {
-  /* Leave room for the star. */
-  padding-right: 30px;
-  margin: 2px 0 0;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  color: var(--on);
-}
-
-.card__desc {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.4;
-  color: var(--on-var);
-}
-
-.card--soon {
-  background: var(--surface-1);
-}
-
-.card--soon .card__icon {
-  color: var(--on-var);
-  background: var(--surface-2);
-}
-
-.card__badge {
-  align-self: flex-start;
-  margin-top: 2px;
-  padding: 3px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  color: var(--on-var);
-  background: var(--surface-2);
-  border-radius: 999px;
-}
-
 /* Empty state ----------------------------------------------------------- */
 .empty {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 40px 24px 56px;
+  align-items: flex-start;
+  padding: 40px 0 44px;
+  border-bottom: 1px solid var(--rule);
 }
 
-.empty__icon {
-  display: grid;
-  place-items: center;
-  width: 56px;
-  height: 56px;
-  margin-bottom: 16px;
-  font-size: 30px;
-  color: var(--on-var);
-  background: var(--surface-2);
-  border-radius: 14px;
+.empty__code {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--brand);
 }
 
 .empty__title {
-  margin: 0 0 6px;
-  font-size: 17px;
+  margin: 12px 0 6px;
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   color: var(--on);
 }
 
 .empty__text {
-  max-width: 340px;
-  margin: 0 0 20px;
-  font-size: 14px;
-  line-height: 1.5;
+  max-width: 44ch;
+  margin: 0 0 18px;
+  font-size: 13px;
+  line-height: 1.55;
   color: var(--on-var);
 }
 
 .empty__actions {
   display: flex;
+  gap: 8px;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  font-family: inherit;
-  font-size: 13.5px;
+  gap: 8px;
+  height: 34px;
+  padding: 0 15px;
+  font-family: var(--mono);
+  font-size: 12px;
   font-weight: 600;
   text-decoration: none;
-  border: 1px solid transparent;
+  border: 1px solid var(--outline);
   border-radius: var(--r-btn);
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  cursor: var(--cursor-pointer);
 }
 
 .btn ng-icon {
-  font-size: 17px;
+  font-size: 15px;
 }
 
 .btn--primary {
-  color: var(--on-primary);
-  background: var(--primary);
-}
-
-.btn--primary:hover {
-  background: var(--primary-strong);
+  font-weight: 700;
+  color: var(--on-brand);
+  background: var(--brand);
+  border-color: var(--brand);
 }
 
 .btn--ghost {
   color: var(--on);
-  background: var(--surface);
-  border-color: var(--outline);
+  background: transparent;
 }
 
 .btn--ghost:hover {
-  background: var(--surface-2);
-}
-
-@media (max-width: 560px) {
-  :host {
-    padding-block: 28px 24px;
-  }
-
-  .count {
-    margin-left: 0;
-  }
+  border-color: var(--brand);
 }
 
 /* Guides teaser --------------------------------------------------------- */
 .guides-teaser {
-  margin-top: 48px;
-  padding-top: 32px;
-  border-top: 1px solid var(--outline);
+  margin-top: 26px;
+  padding-top: 6px;
 }
 
 .guides-teaser__head {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.guides-teaser__eyebrow {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--primary);
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--on);
 }
 
 .guides-teaser__title {
-  margin: 6px 0 0;
-  font-size: clamp(20px, 3.5vw, 24px);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--on);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cat-guide);
 }
 
-.guides-teaser__lead {
-  margin: 8px 0 0;
-  max-width: 60ch;
-  font-size: 15px;
-  line-height: 1.55;
-  color: var(--on-var);
+.guides-teaser__dot {
+  width: 6px;
+  height: 6px;
+  background: var(--cat-guide);
+}
+
+.guides-teaser__num {
+  font-weight: 500;
+  color: var(--on-dim);
 }
 
 .guides-teaser__all {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-  font-size: 14px;
+  font-family: var(--mono);
+  font-size: 10.5px;
   font-weight: 600;
   color: var(--primary);
   text-decoration: none;
-}
-
-.guides-teaser__all ng-icon {
-  font-size: 18px;
-  transition: transform 0.15s ease;
 }
 
 .guides-teaser__all:hover {
   text-decoration: underline;
 }
 
-.guides-teaser__all:hover ng-icon {
-  transform: translateX(3px);
-}
-
-.guides-teaser__all:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
 .guides-teaser__list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
+  border-left: 1px solid var(--rule);
+}
+
+.guides-teaser__item {
+  display: flex;
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
 }
 
 .guides-teaser__card {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  padding: 18px 20px;
-  background: var(--surface);
-  border: 1px solid var(--outline);
-  border-radius: var(--r-card);
+  flex: 1;
+  padding: 12px 14px 14px;
   text-decoration: none;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
 }
 
 .guides-teaser__card:hover {
-  border-color: var(--primary);
-  box-shadow: var(--shadow-card-hover);
-}
-
-.guides-teaser__card:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  background: var(--surface);
 }
 
 .guides-teaser__cat {
-  font-size: 11.5px;
+  font-family: var(--mono);
+  font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--primary);
+  color: var(--cat-guide);
 }
 
 .guides-teaser__name {
-  margin-top: 8px;
-  font-size: 16px;
-  font-weight: 650;
+  margin-top: 7px;
+  font-size: 13.5px;
+  font-weight: 600;
   line-height: 1.3;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   color: var(--on);
 }
 
 .guides-teaser__desc {
-  margin-top: 7px;
-  font-size: 13.5px;
-  line-height: 1.5;
+  margin-top: 5px;
+  font-size: 11.5px;
+  line-height: 1.45;
   color: var(--on-var);
 }
 
 .guides-teaser__meta {
-  margin-top: 12px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--on-var);
+  margin-top: auto;
+  padding-top: 10px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--on-dim);
+}
+
+/* app-ad-slot spacing --------------------------------------------------- */
+app-ad-slot {
+  display: block;
+  margin: 18px 0;
+}
+
+/* Responsive ------------------------------------------------------------ */
+@media (max-width: 820px) {
+  .workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .rail {
+    position: static;
+    padding: 18px 0;
+  }
+
+  .work {
+    padding: 8px 0 40px;
+    border-left: 0;
+  }
+
+  .grid,
+  .guides-teaser__list {
+    grid-template-columns: 1fr;
+  }
 }

@@ -103,7 +103,8 @@
                     class="toc__link"
                     [class.toc__link--active]="activeId() === heading.id"
                     [attr.aria-current]="activeId() === heading.id ? 'location' : null"
-                    [href]="'#' + heading.id"
+                    [href]="tocHref() + heading.id"
+                    (click)="onTocClick($event, heading.id)"
                     >{{ heading.text }}</a
                   >
                 </li>

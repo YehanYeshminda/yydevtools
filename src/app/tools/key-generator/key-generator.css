@@ -21,7 +21,7 @@
   border-radius: 12px;
   background: var(--surface-1);
   color: var(--on);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .choice:hover {

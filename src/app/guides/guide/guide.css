@@ -21,7 +21,9 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 13px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
   color: var(--on-var);
 }
 
@@ -41,22 +43,24 @@
 
 .breadcrumb__sep,
 .breadcrumb [aria-current='page'] {
-  color: var(--on-var);
+  color: var(--on-dim);
 }
 
 /* Head ------------------------------------------------------------------ */
 .doc__head {
   margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 1px solid var(--outline);
+  border-bottom: 2px solid var(--on);
 }
 
 .doc__eyebrow {
   display: inline-block;
-  font-size: 12px;
+  font-family: var(--mono);
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+  /* See the note in guides.css — the amber fill is not a text colour. */
   color: var(--primary);
 }
 
@@ -75,12 +79,13 @@
   align-items: center;
   gap: 8px;
   margin: 16px 0 0;
-  font-size: 13.5px;
+  font-family: var(--mono);
+  font-size: 11.5px;
   color: var(--on-var);
 }
 
 .doc__dot {
-  opacity: 0.6;
+  color: var(--on-dim);
 }
 
 /* Body ------------------------------------------------------------------ */
@@ -133,11 +138,12 @@
 
 .toc__title {
   margin: 0 0 10px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--on-var);
+  color: var(--on-dim);
 }
 
 .toc__list {
@@ -155,8 +161,9 @@
 
 .toc__link {
   display: block;
-  padding: 4px 0;
-  font-size: 13.5px;
+  padding: 5px 0 5px 11px;
+  margin-left: -16px;
+  font-size: 12.5px;
   line-height: 1.45;
   color: var(--on-var);
   text-decoration: none;
@@ -167,8 +174,9 @@
 }
 
 .toc__link--active {
-  color: var(--primary);
+  color: var(--on);
   font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--brand);
 }
 
 .toc__link:focus-visible {
@@ -184,13 +192,15 @@
   color: var(--on-var);
 }
 
+/* No scroll-margin-top here: the global `html { scroll-padding-top }` in
+   styles.css already offsets every anchor target below the sticky app bar, and
+   the two would otherwise stack into a doubled gap on a TOC jump. */
 .doc__h2 {
   margin: 44px 0 14px;
   font-size: 25px;
   font-weight: 680;
   line-height: 1.25;
   letter-spacing: -0.02em;
-  scroll-margin-top: 88px;
   color: var(--on);
 }
 
@@ -200,7 +210,6 @@
   font-weight: 650;
   line-height: 1.3;
   letter-spacing: -0.015em;
-  scroll-margin-top: 88px;
   color: var(--on);
 }
 
@@ -261,26 +270,24 @@
   display: flex;
   gap: 12px;
   margin: 0 0 22px;
-  padding: 14px 16px;
-  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--primary) 26%, var(--outline));
-  border-radius: var(--r-field);
+  padding: 13px 16px;
+  background: var(--surface-1);
+  border-left: 2px solid var(--brand);
 }
 
 .callout--warn {
-  background: color-mix(in srgb, #d97706 9%, var(--surface));
-  border-color: color-mix(in srgb, #d97706 32%, var(--outline));
+  border-left-color: var(--star);
 }
 
 .callout__icon {
   flex-shrink: 0;
   margin-top: 2px;
   font-size: 20px;
-  color: var(--primary);
+  color: var(--brand);
 }
 
 .callout--warn .callout__icon {
-  color: #b45309;
+  color: var(--star);
 }
 
 .callout__text {
@@ -374,11 +381,12 @@
 
 .ends__heading {
   margin: 0 0 16px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--on-var);
+  color: var(--on);
 }
 
 .ends__list,

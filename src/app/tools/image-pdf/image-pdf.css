@@ -133,7 +133,7 @@
   border-radius: 999px;
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-label-large);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .add-more:hover {

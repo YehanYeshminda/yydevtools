@@ -26,8 +26,8 @@
 .appbar__inner {
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 60px;
+  gap: 10px;
+  height: 52px;
 }
 
 .brand {
@@ -36,66 +36,70 @@
   gap: 9px;
   text-decoration: none;
   color: var(--on);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 /* The tile is part of the artwork, so no background or radius here. */
 .brand__mark {
   display: block;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
 }
 
 .brand__name {
-  font-size: 17px;
+  font-family: var(--mono);
+  font-size: 15px;
   font-weight: 700;
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+}
+
+/* The terminal cursor after the wordmark: a mono underscore in the brand
+   amber that blinks the way a shell prompt does. Purely decorative. */
+.brand__cursor {
+  color: var(--brand);
+  animation: cblink 1.2s step-end infinite;
 }
 
 .nav {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-left: 8px;
+  gap: 0;
+  margin-left: 14px;
 }
 
 .nav__link {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 7px 11px;
-  font-size: 13.5px;
+  height: 52px;
+  padding: 0 11px;
+  font-family: var(--mono);
+  font-size: 12px;
   font-weight: 500;
+  letter-spacing: -0.01em;
   color: var(--on-var);
   text-decoration: none;
-  border-radius: 8px;
-  transition: color 0.15s ease, background 0.15s ease;
+  background: none;
+  border: 0;
+  cursor: var(--cursor-pointer);
+  transition: color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .nav__link:hover {
   color: var(--on);
-  background: var(--surface-2);
 }
 
+/* The active tab wears an inset underline in the brand amber rather than a
+   filled pill — flatter, and it reads like a selected file in an editor. */
 .nav__link--active {
   font-weight: 600;
   color: var(--on);
-  background: var(--surface-2);
-}
-
-/* The Browse trigger is a <button>, not an <a>: it opens a panel rather than
-   going anywhere. These reset the UA button chrome so it sits in the row as if
-   it were one of the links beside it. */
-.nav__link--menu {
-  font-family: inherit;
-  background: none;
-  border: 0;
-  cursor: pointer;
+  box-shadow: inset 0 -2px 0 var(--brand);
 }
 
 .nav__caret {
-  font-size: 16px;
+  font-size: 15px;
   transition: transform 0.15s ease;
 }
 
@@ -103,7 +107,6 @@
    second piece of state to keep in sync. */
 .nav__link--menu[aria-expanded='true'] {
   color: var(--on);
-  background: var(--surface-2);
 }
 
 .nav__link--menu[aria-expanded='true'] .nav__caret {
@@ -111,7 +114,8 @@
 }
 
 .nav__ext {
-  font-size: 15px;
+  font-size: 13px;
+  opacity: 0.7;
 }
 
 /* Appbar buttons -------------------------------------------------------- */
@@ -123,54 +127,55 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 38px;
+  height: 32px;
   /* Never let the flex row squeeze these below their tap target: when the bar is
-     crowded the label-less icon would otherwise collapse to ~22px, under the WCAG
-     2.5.8 24px minimum. The nav absorbs the shrink instead. */
+     crowded the label-less icon would otherwise collapse under the WCAG 2.5.8
+     24px minimum. The nav absorbs the shrink instead. */
   flex-shrink: 0;
+  font-family: var(--mono);
   color: var(--on-var);
-  background: var(--surface);
+  background: var(--surface-1);
   border: 1px solid var(--outline);
-  border-radius: 9px;
-  cursor: pointer;
+  border-radius: var(--r-btn);
+  cursor: var(--cursor-pointer);
   transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
 .bar-btn:hover {
   color: var(--on);
-  background: var(--surface-2);
+  border-color: var(--brand);
 }
 
 /* Takes the `margin-left: auto` that used to sit on the theme toggle, so the
    two of them travel together at the trailing end of the bar. */
 .search-trigger {
   margin-left: auto;
-  gap: 8px;
-  padding: 0 8px 0 10px;
-  font: inherit;
-  font-size: 13.5px;
+  gap: 9px;
+  padding: 0 6px 0 10px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .search-trigger__icon {
-  font-size: 19px;
+  font-size: 15px;
 }
 
 .search-trigger__label {
   /* Trailing padding rather than a wider gap, so the label sits away from the
      key chip without the icon drifting from it. */
-  padding-right: 14px;
+  padding-right: 4px;
 }
 
 .search-trigger__key {
-  padding: 3px 6px;
-  font-family: inherit;
-  font-size: 11px;
+  padding: 2px 5px;
+  font-family: var(--mono);
+  font-size: 10px;
   font-weight: 600;
   line-height: 1;
   color: var(--on-var);
   background: var(--surface-2);
   border: 1px solid var(--outline);
-  border-radius: 5px;
+  border-radius: 3px;
 }
 
 /* Below this the bar cannot hold the label; the button becomes an icon square
@@ -178,7 +183,7 @@
    nothing is lost with the text gone. */
 @media (max-width: 860px) {
   .search-trigger {
-    width: 38px;
+    width: 32px;
     padding: 0;
   }
 
@@ -188,30 +193,34 @@
   }
 
   .search-trigger__icon {
-    font-size: 20px;
+    font-size: 16px;
   }
 }
 
 /* Sits at the far end of the bar. */
 .theme-toggle {
-  width: 38px;
+  width: 32px;
   padding: 0;
 }
 
 .theme-toggle ng-icon {
-  font-size: 20px;
+  font-size: 16px;
+}
+
+.theme-toggle:hover {
+  color: var(--brand);
 }
 
 /* The hamburger only exists at phone widths; the inline nav carries every link
    above 640px, so the trigger is hidden until that query swaps them. */
 .nav-trigger {
   display: none;
-  width: 38px;
+  width: 32px;
   padding: 0;
 }
 
 .nav-trigger ng-icon {
-  font-size: 22px;
+  font-size: 18px;
 }
 
 /* The panel renders in a CDK overlay, outside this component's view, so these
@@ -219,12 +228,12 @@
    which is the trade that keeps it off the critical path. */
 ::ng-deep .theme-menu {
   min-width: 168px;
-  padding: 6px;
+  padding: 5px;
   color: var(--on);
   background: var(--surface);
   border: 1px solid var(--outline);
-  border-radius: 10px;
-  box-shadow: 0 10px 28px rgb(0 0 0 / 12%);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-menu);
 }
 
 ::ng-deep .theme-menu__item {
@@ -232,14 +241,14 @@
   align-items: center;
   width: 100%;
   padding: 8px 10px;
-  font: inherit;
-  font-size: 13px;
+  font-family: var(--font);
+  font-size: 12.5px;
   color: inherit;
   text-align: left;
   background: none;
   border: 0;
-  border-radius: 7px;
-  cursor: pointer;
+  border-radius: 3px;
+  cursor: var(--cursor-pointer);
 }
 
 ::ng-deep .theme-menu__item:hover,
@@ -272,12 +281,12 @@
 /* The mobile nav panel, same overlay treatment as the theme menu. */
 ::ng-deep .nav-menu {
   min-width: 180px;
-  padding: 6px;
+  padding: 5px;
   color: var(--on);
   background: var(--surface);
   border: 1px solid var(--outline);
-  border-radius: 10px;
-  box-shadow: 0 10px 28px rgb(0 0 0 / 12%);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-menu);
 }
 
 ::ng-deep .nav-menu__item {
@@ -285,14 +294,14 @@
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 10px 12px;
-  font: inherit;
-  font-size: 14px;
+  padding: 9px 11px;
+  font-family: var(--mono);
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--on-var);
   text-decoration: none;
-  border-radius: 7px;
-  cursor: pointer;
+  border-radius: 3px;
+  cursor: var(--cursor-pointer);
 }
 
 ::ng-deep .nav-menu__item:hover,
@@ -310,7 +319,7 @@
 /* Pushes the submenu chevron to the trailing edge of the Browse row. */
 ::ng-deep .nav-menu__caret {
   margin-left: auto;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 /* Browse menu ----------------------------------------------------------- */
@@ -321,37 +330,38 @@
 ::ng-deep .browse-menu {
   min-width: 244px;
   max-width: min(300px, calc(100vw - 24px));
-  padding: 6px;
+  padding: 5px;
   color: var(--on);
   background: var(--surface);
   border: 1px solid var(--outline);
-  border-radius: 10px;
-  box-shadow: 0 10px 28px rgb(0 0 0 / 12%);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-menu);
 }
 
 ::ng-deep .browse-menu__label {
   margin: 0;
-  padding: 8px 10px 4px;
-  font-size: 11px;
+  padding: 8px 9px 5px;
+  font-family: var(--mono);
+  font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--on-var);
+  color: var(--on-dim);
 }
 
 ::ng-deep .browse-menu__item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   width: 100%;
-  /* 36px tall with the 13.5px line box, clear of the WCAG 2.5.8 minimum. */
-  padding: 8px 10px;
-  font: inherit;
-  font-size: 13.5px;
+  /* 34px tall with the 12.5px line box, clear of the WCAG 2.5.8 minimum. */
+  padding: 7px 9px;
+  font-family: var(--font);
+  font-size: 12.5px;
   color: var(--on-var);
   text-decoration: none;
-  border-radius: 7px;
-  cursor: pointer;
+  border-radius: 3px;
+  cursor: var(--cursor-pointer);
 }
 
 ::ng-deep .browse-menu__item:hover,
@@ -362,7 +372,8 @@
 
 ::ng-deep .browse-menu__icon {
   flex-shrink: 0;
-  font-size: 18px;
+  font-size: 17px;
+  color: var(--on-dim);
 }
 
 ::ng-deep .browse-menu__name {
@@ -372,19 +383,17 @@
 /* Tabular figures so the counts line up down the column. */
 ::ng-deep .browse-menu__count {
   flex-shrink: 0;
-  padding: 2px 7px;
+  font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--on-var);
-  background: var(--surface-2);
-  border-radius: 999px;
+  color: var(--on-dim);
 }
 
 ::ng-deep .browse-menu__sep {
   height: 1px;
-  margin: 6px 4px;
-  background: var(--outline);
+  margin: 5px 4px;
+  background: var(--rule);
 }
 
 /* Below 640px the inline row cannot fit beside the trailing buttons, so it gives
@@ -415,14 +424,25 @@
 .footer__inner {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding-block: 22px;
-  font-size: 13px;
+  align-items: center;
+  gap: 10px;
+  padding-block: 20px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 500;
   color: var(--on-var);
 }
 
+/* The one-line tagline stays in the prose sans; everything else in the row is
+   mono metadata. */
+.footer__tag {
+  font-family: var(--font);
+  font-size: 12.5px;
+  font-weight: 400;
+}
+
 .footer__dot {
-  opacity: 0.6;
+  color: var(--on-dim);
 }
 
 .footer__nav {
@@ -433,22 +453,31 @@
 }
 
 .footer__link {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 500;
   color: var(--on-var);
   text-decoration: none;
 }
 
 .footer__link:hover {
-  color: var(--on);
-  text-decoration: underline;
+  color: var(--primary);
 }
 
 /* "Cookie settings" reopens the banner, so it is a button styled as a link. */
 .footer__button {
   padding: 0;
-  font: inherit;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--on-var);
   background: none;
   border: 0;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
+}
+
+.footer__button:hover {
+  color: var(--primary);
 }
 
 @media (max-width: 560px) {

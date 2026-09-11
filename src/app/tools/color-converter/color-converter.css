@@ -25,7 +25,7 @@
   border: 1px solid var(--mat-sys-outline);
   border-radius: 10px;
   background: var(--mat-sys-surface);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .picker__swatch:focus-visible {
@@ -153,7 +153,7 @@
   /* Light labels by default — most generated swatches are mid-to-dark. */
   color: rgba(255, 255, 255, 0.95);
   text-align: start;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .swatch--tall {

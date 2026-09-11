@@ -96,31 +96,34 @@ import { ConsentService } from '../../core/consent.service';
 
     .cb__btn {
       padding: 9px 14px;
-      font-family: inherit;
-      font-size: 13px;
+      font-family: var(--mono);
+      font-size: 12px;
       font-weight: 600;
       border: 1px solid transparent;
       border-radius: var(--r-btn);
-      cursor: pointer;
-      transition: background 0.15s ease;
+      cursor: var(--cursor-pointer);
+      transition: background 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
     }
 
     .cb__btn--primary {
-      color: var(--on-primary);
-      background: var(--primary);
+      color: var(--on-brand);
+      background: var(--brand);
+      border-color: var(--brand);
+      font-weight: 700;
     }
 
     .cb__btn--primary:hover {
-      background: var(--primary-strong);
+      filter: brightness(1.08);
     }
 
     .cb__btn--ghost {
       color: var(--on);
-      background: var(--surface);
+      background: transparent;
       border-color: var(--outline);
     }
 
     .cb__btn--ghost:hover {
+      border-color: var(--brand);
       background: var(--surface-2);
     }
 

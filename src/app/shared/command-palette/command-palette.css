@@ -6,7 +6,7 @@
   justify-content: center;
   align-items: flex-start;
   padding: 12vh 16px 16px;
-  background: rgba(18, 26, 44, 0.44);
+  background: var(--overlay);
   backdrop-filter: blur(2px);
   overflow-y: auto;
 }
@@ -55,13 +55,14 @@
 
 .cmdk__esc {
   flex: none;
-  padding: 2px 6px;
+  padding: 3px 6px;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10.5px;
+  font-weight: 600;
   color: var(--on-var);
   background: var(--surface-2);
   border: 1px solid var(--outline);
-  border-radius: 6px;
+  border-radius: 3px;
 }
 
 /* --- Results --- */
@@ -81,12 +82,13 @@
   align-items: center;
   gap: 6px;
   margin: 0;
-  padding: 8px 10px 4px;
-  font-size: 11px;
-  font-weight: 600;
+  padding: 9px 10px 5px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--on-var);
+  letter-spacing: 0.14em;
+  color: var(--on-dim);
 }
 
 .cmdk__group-label ng-icon {
@@ -105,7 +107,7 @@
   gap: 12px;
   padding: 9px 10px;
   border-radius: var(--r-field);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .cmdk__opt--active {

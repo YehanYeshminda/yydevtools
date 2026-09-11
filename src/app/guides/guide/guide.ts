@@ -54,6 +54,14 @@ export class GuideArticle implements OnDestroy {
     initialValue: this.route.snapshot.data['slug'] as string,
   });
 
+  /**
+   * The article's own path, so the TOC's fragment links carry it. A bare
+   * `#id` resolves against `<base href="/">`, not the current page, so it would
+   * send the reader to the homepage; the full path keeps them on the article
+   * and lets the browser do a native (smooth) same-document scroll.
+   */
+  protected readonly tocHref = computed(() => `/guides/${this.slug()}#`);
+
   protected readonly guide = computed<Guide | undefined>(() => GUIDE_BY_SLUG[this.slug()]);
 
   /** The tools this guide is about, resolved and filtered to ready ones. */
@@ -163,6 +171,41 @@ export class GuideArticle implements OnDestroy {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
+  }
+
+  /**
+   * Scrolls to a heading when its "on this page" link is clicked.
+   *
+   * The link keeps a real, full-path href for right-click / open-in-new-tab and
+   * for crawlers, but a plain in-app click is handled here instead: letting the
+   * browser follow the fragment would count as a router navigation, and the
+   * router's scroll-position restoration then immediately yanks the page back to
+   * the top (measured — the fragment scroll and the restore fight, top wins).
+   *
+   * `scrollIntoView` sidesteps the router entirely and inherits the page's
+   * `scroll-behavior: smooth` and root `scroll-padding-top`, so the heading
+   * glides to rest just below the sticky app bar. `replaceState` records the
+   * section for deep-linking without firing the popstate the router listens on.
+   */
+  protected onTocClick(event: MouseEvent, id: string): void {
+    // Let modified clicks (new tab, new window) fall through to the href.
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    if (!this.isBrowser) {
+      return;
+    }
+    const target = document.getElementById(id);
+    if (!target) {
+      return;
+    }
+    event.preventDefault();
+    target.scrollIntoView();
+    history.replaceState(history.state, '', `${this.tocHref()}${id}`);
+    // Move focus into the section so keyboard and screen-reader users follow the
+    // jump; -1 keeps the heading out of the tab order afterwards.
+    target.setAttribute('tabindex', '-1');
+    target.focus({ preventScroll: true });
   }
 
   protected readonly totalGuides = GUIDES.length;

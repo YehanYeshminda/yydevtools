@@ -8,17 +8,19 @@
 
 /* Breadcrumb ------------------------------------------------------------ */
 .crumbs {
-  margin-bottom: 20px;
+  margin-bottom: 6px;
 }
 
 .breadcrumb {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 13px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
   color: var(--on-var);
 }
 
@@ -38,115 +40,124 @@
 
 .breadcrumb__sep,
 .breadcrumb [aria-current='page'] {
-  color: var(--on-var);
+  color: var(--on-dim);
 }
 
 /* Head ------------------------------------------------------------------ */
 .head {
-  margin-bottom: 28px;
+  padding: 34px 0 22px;
+  margin-bottom: 0;
+  border-bottom: 2px solid var(--on);
+}
+
+.head__eyebrow {
+  margin: 0 0 12px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  /* --primary, not --brand: the brand amber is a fill, and as text on the light
+     page background it lands at ~1.7:1. --primary is its text-safe counterpart
+     (9.6:1 dark, 6.6:1 light). */
+  color: var(--primary);
 }
 
 .head__title {
   margin: 0;
-  font-size: clamp(28px, 5vw, 34px);
+  max-width: 18ch;
+  font-size: clamp(28px, 4vw, 40px);
   font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.025em;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
   color: var(--on);
 }
 
 .head__lead {
   margin: 12px 0 0;
   max-width: 60ch;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.6;
   color: var(--on-var);
 }
 
-/* List of guides -------------------------------------------------------- */
-/* Two-up on the full-width column — a single card stretched across 1240px
-   reads as a banner, not a list item. Collapses to one column on its own. */
+/* Catalogue grid -------------------------------------------------------- */
+/* Bordered cells, no gaps — the index reads as a table of contents. */
 .guides {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 480px), 1fr));
-  gap: 14px;
-  margin: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 22px 0 0;
   padding: 0;
   list-style: none;
-  align-items: stretch;
+  border-top: 1px solid var(--rule);
+  border-left: 1px solid var(--rule);
 }
 
 .guide {
-  display: block;
+  display: flex;
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
 }
 
 .guide__link {
-  display: block;
-  height: 100%;
-  box-sizing: border-box;
-  padding: 20px 22px;
-  background: var(--surface);
-  border: 1px solid var(--outline);
-  border-radius: var(--r-card);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 17px 18px 19px;
   text-decoration: none;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
+  transition: background 0.12s ease;
 }
 
 .guide__link:hover {
-  border-color: var(--primary);
-  box-shadow: var(--shadow-card-hover);
+  background: var(--surface);
 }
 
 .guide__link:focus-visible {
   outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 .guide__eyebrow {
-  display: inline-block;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--primary);
+  color: var(--cat-guide);
+}
+
+.guide__dot {
+  width: 6px;
+  height: 6px;
+  background: var(--cat-guide);
 }
 
 .guide__title {
-  margin: 8px 0 0;
-  font-size: 19px;
-  font-weight: 650;
+  margin: 10px 0 0;
+  font-size: 16px;
+  font-weight: 600;
   line-height: 1.3;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
   color: var(--on);
 }
 
 .guide__desc {
-  margin: 8px 0 0;
-  font-size: 14.5px;
-  line-height: 1.55;
+  margin: 7px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--on-var);
 }
 
 .guide__meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--on-var);
-}
-
-.guide__arrow {
-  transition: transform 0.15s ease;
-}
-
-.guide__link:hover .guide__arrow {
-  transform: translateX(3px);
-  color: var(--primary);
+  margin-top: auto;
+  padding-top: 14px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--on-dim);
 }
 
 /* Closing prose below the list — explains what the section is for, and gives the
@@ -154,15 +165,17 @@
 .about {
   margin-top: 44px;
   padding-top: 28px;
-  border-top: 1px solid var(--outline);
+  border-top: 1px solid var(--rule);
   max-width: var(--page-measure);
 }
 
 .about__title {
   margin: 0 0 10px;
-  font-size: 19px;
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--on);
 }
 
@@ -172,16 +185,30 @@
 
 .about__p {
   margin: 0 0 14px;
-  font-size: 15.5px;
+  font-size: 15px;
   line-height: 1.7;
   color: var(--on-var);
 }
 
 .about__link {
   color: var(--primary);
-  text-decoration: none;
+  /* Underlined at rest, not only on hover: inside a paragraph a link that is
+     distinguished by colour alone fails WCAG 1.4.1 (AXE: link-in-text-block). */
+  text-decoration: underline;
 }
 
 .about__link:hover {
-  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+@media (max-width: 860px) {
+  .guides {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .guides {
+    grid-template-columns: 1fr;
+  }
 }

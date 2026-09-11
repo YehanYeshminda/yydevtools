@@ -3,6 +3,7 @@ import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 
 import { FavoritesService } from '../../core/favorites.service';
+import { CATEGORY_META } from '../../tools/tool.model';
 import { TOOLS } from '../../tools/tools.data';
 
 /**
@@ -25,16 +26,20 @@ import { TOOLS } from '../../tools/tools.data';
   imports: [RouterLink, NgIcon],
   template: `
     <nav class="crumbs" aria-label="Breadcrumb">
-      <ol class="breadcrumb">
+      <ol class="breadcrumb" [class]="'cat--' + accent()">
         <li><a routerLink="/">All tools</a></li>
-        <li class="breadcrumb__sep" aria-hidden="true">
-          <ng-icon name="matChevronRightOutline" />
+        <li class="breadcrumb__sep" aria-hidden="true">/</li>
+        <li>
+          <a class="breadcrumb__cat" routerLink="/" [queryParams]="{ category: category() }">{{
+            category()
+          }}</a>
         </li>
+        <li class="breadcrumb__sep" aria-hidden="true">/</li>
         <li aria-current="page">{{ name() }}</li>
       </ol>
     </nav>
 
-    <header class="head">
+    <header class="head" [class]="'cat--' + accent()">
       <div class="head__icon" aria-hidden="true">
         <ng-icon [name]="icon()" />
       </div>
@@ -69,6 +74,9 @@ export class ToolPage {
 
   protected readonly name = computed(() => this.tool()?.name ?? '');
   protected readonly icon = computed(() => this.tool()?.icon ?? 'matBoltOutline');
+  protected readonly category = computed(() => this.tool()?.category ?? 'Developer');
+  /** Modifier suffix (dev/conv/doc) that hands the masthead its accent trio. */
+  protected readonly accent = computed(() => CATEGORY_META[this.category()].accent);
 
   /**
    * Starts false on every page, matching the prerendered HTML — the service

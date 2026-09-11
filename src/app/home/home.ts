@@ -17,14 +17,14 @@ import { FavoritesService } from '../core/favorites.service';
 import { GUIDES } from '../guides/guides.data';
 import { AdSlot } from '../shared/ad-slot/ad-slot';
 import { CATEGORY_META, Tool, ToolCategory } from '../tools/tool.model';
-import { TOOLS, TOOL_CATEGORIES } from '../tools/tools.data';
+import { LOCAL_TOOL_COUNT, TOOLS, TOOL_CATEGORIES } from '../tools/tools.data';
 
 type CategoryFilter = ToolCategory | 'All';
 
 /**
  * A tool plus the classes its card wears. Cards carry their own category
- * accent rather than inheriting it from the section, because the favourites
- * row mixes categories.
+ * accent rather than inheriting it from the section, so a starred tool keeps
+ * its own colour wherever it is listed.
  */
 interface CardTool {
   tool: Tool;
@@ -37,8 +37,25 @@ interface ToolGroup {
   /** Modifier suffix for the section's accent colour. */
   accent: string;
   icon: string;
+  /** How many tools the category holds in total, for the "X of Y" count. */
+  total: number;
   tools: CardTool[];
 }
+
+/** One row in the left rail's category browser. */
+interface RailItem {
+  key: CategoryFilter;
+  label: string;
+  accent: string;
+  total: number;
+}
+
+/** Section headings run in the plural; the filter keys stay singular. */
+const CATEGORY_TITLES: Record<ToolCategory, string> = {
+  Developer: 'Developer',
+  Converter: 'Converters',
+  Document: 'Documents',
+};
 
 @Component({
   selector: 'app-home',
@@ -53,6 +70,34 @@ export class Home {
 
   protected readonly categories: readonly CategoryFilter[] = ['All', ...TOOL_CATEGORIES];
   protected readonly totalCount = TOOLS.length;
+  /** Both halves of the rail's privacy claim, so it cannot go stale again. */
+  protected readonly localCount = LOCAL_TOOL_COUNT;
+
+  /** Per-category totals — static, since the catalog never changes at runtime. */
+  private readonly categoryTotals: Record<ToolCategory, number> = TOOL_CATEGORIES.reduce(
+    (totals, category) => {
+      totals[category] = TOOLS.filter((tool) => tool.category === category).length;
+      return totals;
+    },
+    {} as Record<ToolCategory, number>,
+  );
+
+  /** The left rail's category browser: All, then one row per category. */
+  protected readonly railItems: readonly RailItem[] = [
+    { key: 'All', label: 'All tools', accent: 'all', total: TOOLS.length },
+    ...TOOL_CATEGORIES.map((category) => ({
+      key: category,
+      label: CATEGORY_TITLES[category],
+      accent: CATEGORY_META[category].accent,
+      total: this.categoryTotals[category],
+    })),
+  ];
+
+  /** The heading over the grid: "All tools" or the chosen category, pluralised. */
+  protected readonly workbenchTitle = computed(() => {
+    const cat = this.category();
+    return cat === 'All' ? 'All tools' : CATEGORY_TITLES[cat];
+  });
 
   /** A few guides to surface at the foot of the page; the rest live at /guides. */
   protected readonly featuredGuides = GUIDES.slice(0, 3);
@@ -102,29 +147,29 @@ export class Home {
   });
 
   /**
-   * Starred tools, in the order they were starred, and still subject to the
-   * search and category filters so the row never contradicts the count.
+   * Starred tools, in the order they were starred — the rail's shortcut list.
+   * Unfiltered on purpose: it is a persistent jump list, not a slice of the
+   * grid, so it stays put while you filter. Empty on the prerendered page (the
+   * service reads storage only after first render), which is why it never
+   * causes a hydration mismatch.
    */
-  private readonly favoriteGroup = computed<ToolGroup | null>(() => {
-    const matches = this.matches();
-    const tools = this.favoriteSlugs()
-      .map((slug) => matches.find((tool) => tool.slug === slug))
-      .filter((tool): tool is Tool => tool !== undefined)
-      .map((tool) => this.toCard(tool));
-
-    return tools.length > 0 ? { title: 'Favorites', accent: 'fav', icon: 'matStarOutline', tools } : null;
-  });
+  protected readonly favoriteTools = computed<Tool[]>(() =>
+    this.favoriteSlugs()
+      .map((slug) => TOOLS.find((tool) => tool.slug === slug))
+      .filter((tool): tool is Tool => tool !== undefined),
+  );
 
   /**
-   * The remaining matches, split by category. Starred tools are lifted out into
-   * the favourites row above rather than listed twice, so the per-category
-   * counts always describe what is actually on screen.
+   * The matches, split by category into catalogue sections. Starred tools stay
+   * in their category cell rather than being lifted out — the rail already
+   * carries them as shortcuts, and the grid reads as a table of contents.
    */
-  private readonly categoryGroups = computed<ToolGroup[]>(() => {
-    const matches = this.matches().filter((tool) => !this.favoriteSlugs().includes(tool.slug));
+  protected readonly sections = computed<ToolGroup[]>(() => {
+    const matches = this.matches();
     return TOOL_CATEGORIES.map((category) => ({
-      title: category,
+      title: CATEGORY_TITLES[category],
       ...CATEGORY_META[category],
+      total: this.categoryTotals[category],
       // Surface the ready-to-use tools first; sort is stable, so tools keep
       // their catalog order within the "available" and "coming soon" groups.
       tools: matches
@@ -132,12 +177,6 @@ export class Home {
         .sort((a, b) => Number(b.ready) - Number(a.ready))
         .map((tool) => this.toCard(tool)),
     })).filter((group) => group.tools.length > 0);
-  });
-
-  /** Favourites first, then the categories — every section the page renders. */
-  protected readonly sections = computed<ToolGroup[]>(() => {
-    const favorites = this.favoriteGroup();
-    return favorites ? [favorites, ...this.categoryGroups()] : this.categoryGroups();
   });
 
   protected readonly shownCount = computed(() => this.matches().length);

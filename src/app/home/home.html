@@ -1,157 +1,169 @@
-<section class="hero">
-  <h1 class="hero__title">Developer &amp; PDF tools, ready in your browser.</h1>
-  <p class="hero__sub">
-    A free collection of fast utilities. No account, nothing to install — most tools run
-    entirely on your device, so your files never leave your machine.
-  </p>
+<div class="workbench">
+  <aside class="rail">
+    <div class="rail__search">
+      <ng-icon class="rail__search-icon" aria-hidden="true" name="matSearchOutline" />
+      <input
+        #searchInput
+        class="rail__input"
+        type="search"
+        aria-label="Filter tools"
+        placeholder="filter…"
+        [value]="query()"
+        (input)="onQueryInput($event)"
+      />
+    </div>
 
-  <div class="search">
-    <ng-icon class="search__icon" aria-hidden="true" name="matSearchOutline" />
-    <input
-      #searchInput
-      class="search__input"
-      type="search"
-      aria-label="Search tools on this page"
-      [placeholder]="'Search ' + totalCount + ' tools…'"
-      [value]="query()"
-      (input)="onQueryInput($event)"
-    />
-    <kbd class="search__kbd" aria-hidden="true" title="Press ⌘K or Ctrl-K to jump to any tool">⌘K</kbd>
-  </div>
-</section>
-
-<div class="filters">
-  <div class="chips" role="group" aria-label="Filter tools by category">
-    @for (cat of categories; track cat) {
-      <button
-        type="button"
-        class="chip"
-        [class.chip--active]="category() === cat"
-        [attr.aria-pressed]="category() === cat"
-        (click)="selectCategory(cat)"
-      >
-        {{ cat }}
-      </button>
-    }
-  </div>
-
-  <p class="count" aria-live="polite">Showing {{ shownCount() }} of {{ totalCount }}</p>
-</div>
-
-<app-ad-slot format="leaderboard" />
-
-@if (hasResults()) {
-  <div class="sections">
-    @for (group of sections(); track group.accent; let last = $last) {
-      <section
-        class="section"
-        [class]="'cat--' + group.accent"
-        [attr.aria-labelledby]="'cat-' + group.accent"
-      >
-        <div class="section__head">
-          <ng-icon class="section__icon" aria-hidden="true" [name]="group.icon" />
-          <h2 class="section__title" [id]="'cat-' + group.accent">{{ group.title }}</h2>
-          <span class="section__count">{{ group.tools.length }}</span>
-        </div>
-
-        <div class="grid">
-          @for (item of group.tools; track item.tool.slug) {
-            <article class="card" [class]="item.cssClass">
-              <ng-icon class="card__icon" aria-hidden="true" [name]="item.tool.icon" />
-
-              <h3 class="card__name">
-                @if (item.tool.ready) {
-                  <!-- The ::after on this link stretches over the whole card, so
-                       the card is one click target without nesting the star
-                       button inside an anchor. -->
-                  <a class="card__link" [routerLink]="['/tools', item.tool.slug]">{{
-                    item.tool.name
-                  }}</a>
-                } @else {
-                  {{ item.tool.name }}
-                }
-              </h3>
-
-              <p class="card__desc">{{ item.tool.description }}</p>
-
-              @if (!item.tool.ready) {
-                <span class="card__badge">Coming soon</span>
-              }
-
-              <button
-                type="button"
-                class="fav"
-                [class.fav--on]="isFavorite(item.tool.slug)"
-                [attr.aria-pressed]="isFavorite(item.tool.slug)"
-                [attr.aria-label]="
-                  (isFavorite(item.tool.slug) ? 'Remove ' : 'Add ') +
-                  item.tool.name +
-                  (isFavorite(item.tool.slug) ? ' from favorites' : ' to favorites')
-                "
-                (click)="toggleFavorite(item.tool.slug)"
-              >
-                <ng-icon aria-hidden="true" [name]="isFavorite(item.tool.slug) ? 'matStarOutline' : 'matStarBorderOutline'" />
-              </button>
-            </article>
-          }
-        </div>
-      </section>
-
-      <!-- A single unit at the end of the list, rather than one between every
-           section — AdSense penalises pages where ads crowd out the content. -->
-      @if (last) {
-        <app-ad-slot format="rectangle" />
+    <nav class="rail__nav" aria-label="Filter tools by category">
+      <p class="rail__heading">Browse</p>
+      @for (item of railItems; track item.key) {
+        <button
+          type="button"
+          class="rail__item"
+          [class]="'cat--' + item.accent"
+          [class.rail__item--active]="category() === item.key"
+          [attr.aria-pressed]="category() === item.key"
+          (click)="selectCategory(item.key)"
+        >
+          <span class="rail__dot" aria-hidden="true"></span>
+          <span class="rail__item-label">{{ item.label }}</span>
+          <span class="rail__item-count">{{ item.total }}</span>
+        </button>
       }
-    }
-  </div>
-} @else {
-  <div class="empty">
-    <ng-icon class="empty__icon" aria-hidden="true" name="matSearchOffOutline" />
-    <h2 class="empty__title">No tools match “{{ query() }}”</h2>
-    <p class="empty__text">
-      Try a shorter or different keyword. We don’t have this one yet — but it’s a good idea.
-    </p>
-    <div class="empty__actions">
-      <button type="button" class="btn btn--primary" (click)="clearSearch()">Clear search</button>
-      <a
-        class="btn btn--ghost"
-        href="https://github.com/YehanYeshminda/yydevtools/issues/new"
-        target="_blank"
-        rel="noopener"
-      >
-        <ng-icon aria-hidden="true" name="matNorthEastOutline" />
-        Suggest a tool
-      </a>
-    </div>
-  </div>
-}
+    </nav>
 
-<section class="guides-teaser" aria-labelledby="guides-teaser-title">
-  <div class="guides-teaser__head">
-    <div>
-      <span class="guides-teaser__eyebrow">Guides</span>
-      <h2 class="guides-teaser__title" id="guides-teaser-title">Learn the ideas behind the tools</h2>
-      <p class="guides-teaser__lead">
-        Plain-English explainers — what a JWT really is, why Base64 is not encryption, how cron
-        schedules work, and more.
-      </p>
-    </div>
-    <a class="guides-teaser__all" routerLink="/guides">
-      All {{ guideCount }} guides
-      <ng-icon aria-hidden="true" name="matArrowForwardOutline" />
-    </a>
-  </div>
-
-  <ul class="guides-teaser__list" role="list">
-    @for (guide of featuredGuides; track guide.slug) {
-      <li>
-        <a class="guides-teaser__card" [routerLink]="['/guides', guide.slug]">
-          <span class="guides-teaser__cat">{{ guide.category }}</span>
-          <span class="guides-teaser__name">{{ guide.title }}</span>
-          <span class="guides-teaser__desc">{{ guide.description }}</span>
-          <span class="guides-teaser__meta">{{ guide.readingMinutes }} min read</span>
-        </a>
-      </li>
+    @if (favoriteTools().length) {
+      <div class="rail__fav">
+        <p class="rail__heading">Favourites</p>
+        @for (tool of favoriteTools(); track tool.slug) {
+          <a class="rail__favlink" [routerLink]="['/tools', tool.slug]">
+            <ng-icon class="rail__favstar" aria-hidden="true" name="matStarOutline" />
+            <span>{{ tool.name }}</span>
+          </a>
+        }
+      </div>
     }
-  </ul>
-</section>
+
+    <div class="rail__note">
+      <p><strong>{{ localCount }} of {{ totalCount }}</strong> tools run entirely in this tab.</p>
+      <a class="rail__notelink" routerLink="/about">How that works →</a>
+    </div>
+  </aside>
+
+  <div class="work">
+    <div class="work__head">
+      <h1 class="work__title">
+        <span class="work__prompt" aria-hidden="true">$</span>{{ workbenchTitle() }}
+      </h1>
+      <span class="work__count" aria-live="polite">showing {{ shownCount() }} / {{ totalCount }}</span>
+    </div>
+    <p class="work__lead">Pick a tool. Nothing is uploaded unless the tool says so on its own page.</p>
+
+    <app-ad-slot format="leaderboard" />
+
+    @if (hasResults()) {
+      <div class="sections">
+        @for (group of sections(); track group.accent) {
+          <section
+            class="section"
+            [class]="'cat--' + group.accent"
+            [attr.aria-labelledby]="'cat-' + group.accent"
+          >
+            <div class="section__head">
+              <h2 class="section__tag" [id]="'cat-' + group.accent">{{ group.title }}</h2>
+              <span class="section__count">{{ group.tools.length }} of {{ group.total }}</span>
+            </div>
+
+            <div class="grid">
+              @for (item of group.tools; track item.tool.slug) {
+                <article class="card" [class]="item.cssClass">
+                  <span class="card__sig" aria-hidden="true">
+                    <ng-icon [name]="item.tool.icon" />
+                  </span>
+
+                  <span class="card__body">
+                    <span class="card__name">
+                      @if (item.tool.ready) {
+                        <!-- The ::after on this link stretches over the whole card, so
+                             the card is one click target without nesting the star
+                             button inside an anchor. -->
+                        <a class="card__link" [routerLink]="['/tools', item.tool.slug]">{{
+                          item.tool.name
+                        }}</a>
+                      } @else {
+                        {{ item.tool.name }}
+                      }
+                    </span>
+                    <span class="card__desc">{{ item.tool.description }}</span>
+                    @if (!item.tool.ready) {
+                      <span class="card__badge">Coming soon</span>
+                    }
+                  </span>
+
+                  <button
+                    type="button"
+                    class="fav"
+                    [class.fav--on]="isFavorite(item.tool.slug)"
+                    [attr.aria-pressed]="isFavorite(item.tool.slug)"
+                    [attr.aria-label]="
+                      (isFavorite(item.tool.slug) ? 'Remove ' : 'Add ') +
+                      item.tool.name +
+                      (isFavorite(item.tool.slug) ? ' from favorites' : ' to favorites')
+                    "
+                    (click)="toggleFavorite(item.tool.slug)"
+                  >
+                    <ng-icon aria-hidden="true" [name]="isFavorite(item.tool.slug) ? 'matStarOutline' : 'matStarBorderOutline'" />
+                  </button>
+                </article>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    } @else {
+      <div class="empty">
+        <span class="empty__code" aria-hidden="true">⌕ 0</span>
+        <h2 class="empty__title">No tools match “{{ query() }}”</h2>
+        <p class="empty__text">
+          Try a shorter or different keyword. We don’t have this one yet — but it’s a good idea.
+        </p>
+        <div class="empty__actions">
+          <button type="button" class="btn btn--primary" (click)="clearSearch()">Clear filter</button>
+          <a
+            class="btn btn--ghost"
+            href="https://github.com/YehanYeshminda/yydevtools/issues/new"
+            target="_blank"
+            rel="noopener"
+          >
+            Suggest a tool
+            <ng-icon aria-hidden="true" name="matNorthEastOutline" />
+          </a>
+        </div>
+      </div>
+    }
+
+    <section class="guides-teaser" aria-labelledby="guides-teaser-title">
+      <div class="guides-teaser__head">
+        <h2 class="guides-teaser__title" id="guides-teaser-title">
+          <span class="guides-teaser__dot" aria-hidden="true"></span>Guides
+          <span class="guides-teaser__num">{{ guideCount }}</span>
+        </h2>
+        <a class="guides-teaser__all" routerLink="/guides">All {{ guideCount }} guides →</a>
+      </div>
+
+      <ul class="guides-teaser__list" role="list">
+        @for (guide of featuredGuides; track guide.slug) {
+          <li class="guides-teaser__item">
+            <a class="guides-teaser__card" [routerLink]="['/guides', guide.slug]">
+              <span class="guides-teaser__cat">{{ guide.category }}</span>
+              <span class="guides-teaser__name">{{ guide.title }}</span>
+              <span class="guides-teaser__desc">{{ guide.description }}</span>
+              <span class="guides-teaser__meta">{{ guide.readingMinutes }} min read</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <app-ad-slot format="rectangle" />
+  </div>
+</div>

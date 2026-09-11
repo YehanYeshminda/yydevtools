@@ -235,7 +235,7 @@
   font-weight: 600;
   line-height: 1.45;
   color: var(--on);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   list-style: none;
 }
 

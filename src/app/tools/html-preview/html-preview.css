@@ -136,7 +136,7 @@
   color: var(--on-var);
   font: inherit;
   font-size: 0.78rem;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .seg__btn:hover {
@@ -185,7 +185,7 @@
   font-size: 0.9rem;
   font-weight: 600;
   text-align: left;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .console__toggle:focus-visible {
@@ -235,7 +235,7 @@
   color: var(--on-var);
   font: inherit;
   font-size: 0.78rem;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .console__clear:hover {

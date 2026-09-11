@@ -54,7 +54,7 @@
   border: 1px solid var(--mat-sys-outline);
   border-radius: 10px;
   background: var(--mat-sys-surface);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .picker__swatch:focus-visible {

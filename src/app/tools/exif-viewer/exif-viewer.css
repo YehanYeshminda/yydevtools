@@ -20,7 +20,8 @@
   flex-direction: column;
   gap: 1rem;
   position: sticky;
-  top: 1rem;
+  /* Clear the sticky app bar; a bare 1rem tucks this column behind it. */
+  top: calc(var(--app-bar-h) + 1rem);
 }
 
 @media (max-width: 800px) {

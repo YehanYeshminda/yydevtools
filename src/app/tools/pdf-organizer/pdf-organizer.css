@@ -17,7 +17,8 @@
   border-radius: 12px;
   background: var(--surface-1);
   position: sticky;
-  top: 0.5rem;
+  /* Clear the sticky app bar; a bare 0.5rem tucks the toolbar behind it. */
+  top: calc(var(--app-bar-h) + 0.5rem);
   z-index: 2;
 }
 
@@ -42,7 +43,7 @@
   border-radius: 999px;
   color: var(--on-var);
   font: var(--mat-sys-label-large);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .bar__add:hover {
@@ -132,13 +133,13 @@
   border-radius: 999px;
   background: color-mix(in srgb, #ffffff 88%, transparent);
   box-shadow: 0 1px 3px rgba(18, 26, 44, 0.25);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .card__pick input {
   margin: 0;
   accent-color: var(--primary);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .card__num {
