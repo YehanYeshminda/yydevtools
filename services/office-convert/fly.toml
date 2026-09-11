@@ -36,5 +36,11 @@ primary_region = "iad"
     grace_period = "10s"
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "1gb"
+  # Sized like pdf-convert and pdf-ocr rather than the smaller pdf-compress,
+  # because this is the one service that does its work *in-process*. The others
+  # shell out to Ghostscript, LibreOffice or ocrmypdf, so the heavy allocation
+  # lives in a child process; DocIO and XlsIO build the whole document model on
+  # this app's own heap. With MAX_CONCURRENT at 6 and a 20 MB input cap, six
+  # large workbooks expanded at once do not fit in 1 GB.
+  size = "shared-cpu-2x"
+  memory = "2gb"
