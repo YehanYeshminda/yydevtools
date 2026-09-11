@@ -123,6 +123,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'key-generator',
+    name: 'Key Generator',
+    description:
+      'Generate an RSA or EC key pair in your browser — the private key never leaves your device.',
+    icon: 'matVpnKeyOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'password-generator',
     name: 'Password Generator',
     description:

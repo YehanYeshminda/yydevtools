@@ -589,6 +589,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/key-generator',
+    loadComponent: () =>
+      import('./tools/key-generator/key-generator').then((m) => m.KeyGeneratorTool),
+    title: 'Key Generator — RSA & EC key pairs in your browser — YYDevTools',
+    data: {
+      description:
+        'Generate an RSA or EC key pair with your browser’s own Web Crypto. The private key is ' +
+        'created on your device and never uploaded. Free, no sign-up.',
+    },
+  },
+  {
     path: 'news',
     loadComponent: () => import('./news/news').then((m) => m.News),
     title: 'Tech News — YYDevTools',
