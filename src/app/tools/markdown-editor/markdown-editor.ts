@@ -8,6 +8,7 @@ import { downloadText } from '../../core/download';
 import { syncToolState } from '../../core/tool-state';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
@@ -37,7 +38,7 @@ const greet = (name: string) => \`Hello, \${name}!\`;
 
 @Component({
   selector: 'app-markdown-editor',
-  imports: [ToolPage, ToolContent, CodeEditor, ShareLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, CodeEditor, SendTo, ShareLink, MatButtonModule, NgIcon],
   templateUrl: './markdown-editor.html',
   styleUrl: './markdown-editor.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

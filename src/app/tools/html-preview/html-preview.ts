@@ -18,6 +18,7 @@ import { downloadText } from '../../core/download';
 import { syncToolState } from '../../core/tool-state';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import {
@@ -64,7 +65,7 @@ const VALIDATE_DEBOUNCE = 450;
 
 @Component({
   selector: 'app-html-preview',
-  imports: [ToolPage, ToolContent, CodeEditor, ShareLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, CodeEditor, SendTo, ShareLink, MatButtonModule, NgIcon],
   templateUrl: './html-preview.html',
   styleUrls: ['../tool-shell.css', './html-preview.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

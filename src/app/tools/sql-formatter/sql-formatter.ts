@@ -7,6 +7,7 @@ import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
@@ -48,7 +49,7 @@ const SAMPLE =
 
 @Component({
   selector: 'app-sql-formatter',
-  imports: [ToolPage, ToolContent, CodeEditor, ShareLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, CodeEditor, SendTo, ShareLink, MatButtonModule, NgIcon],
   templateUrl: './sql-formatter.html',
   styleUrls: ['../tool-shell.css', './sql-formatter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

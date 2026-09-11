@@ -9,6 +9,7 @@ import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
 import { Language, generate } from './type-generator';
 import { ToolPage } from '../../shared/tool-page/tool-page';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { TryExample } from '../../shared/try-example/try-example';
@@ -61,7 +62,7 @@ const SAMPLE = `{
 @Component({
   selector: 'app-json-to-types',
   imports: [ToolPage, ToolContent,
-    ShareLink,
+    SendTo, ShareLink,
     TryExample,
     MatButtonModule,
     MatButtonToggleModule,

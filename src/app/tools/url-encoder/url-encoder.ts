@@ -6,6 +6,7 @@ import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
 import { Mode, Scope, parseUrl, transform } from './url-codec';
 import { ToolPage } from '../../shared/tool-page/tool-page';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { TryExample } from '../../shared/try-example/try-example';
@@ -21,7 +22,7 @@ const SAMPLE_INPUT =
 
 @Component({
   selector: 'app-url-encoder',
-  imports: [ToolPage, ToolContent, ShareLink, TryExample, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, SendTo, ShareLink, TryExample, MatButtonModule, NgIcon],
   templateUrl: './url-encoder.html',
   styleUrls: ['../tool-shell.css', './url-encoder.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

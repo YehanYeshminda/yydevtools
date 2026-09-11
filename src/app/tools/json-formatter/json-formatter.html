@@ -70,6 +70,7 @@
     </button>
     <app-try-example (loadExample)="loadExample()" />
     <app-share-link [state]="shared" />
+    <app-send-to [text]="output() || input()" from="json-formatter" />
   </div>
 
   <div class="query">

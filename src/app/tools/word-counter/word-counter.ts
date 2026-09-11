@@ -5,6 +5,7 @@ import { NgIcon } from '@ng-icons/core';
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
 import { ToolPage } from '../../shared/tool-page/tool-page';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { TryExample } from '../../shared/try-example/try-example';
@@ -32,7 +33,7 @@ So: write badly, quickly, and without flinching. Then read it as a stranger woul
 
 @Component({
   selector: 'app-word-counter',
-  imports: [ToolPage, ToolContent, ShareLink, TryExample, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, SendTo, ShareLink, TryExample, MatButtonModule, NgIcon],
   templateUrl: './word-counter.html',
   styleUrls: ['../tool-shell.css', './word-counter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

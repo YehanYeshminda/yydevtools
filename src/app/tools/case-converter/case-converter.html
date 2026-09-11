@@ -23,6 +23,7 @@
       Clear
     </button>
     <app-share-link [state]="shared" />
+    <app-send-to [text]="input()" from="case-converter" />
   </div>
 
   @if (hasInput()) {

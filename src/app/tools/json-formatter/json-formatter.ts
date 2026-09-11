@@ -9,6 +9,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
 import { ToolPage } from '../../shared/tool-page/tool-page';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { JSONPath } from 'jsonpath-plus';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
@@ -31,7 +32,7 @@ const SAMPLE_JSON =
   selector: 'app-json-formatter',
   imports: [ToolPage, ToolContent,
     CodeEditor,
-    ShareLink,
+    SendTo, ShareLink,
     TryExample,
     MatButtonModule,
     MatButtonToggleModule,

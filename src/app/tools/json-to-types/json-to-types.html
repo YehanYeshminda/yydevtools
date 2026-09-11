@@ -54,6 +54,7 @@
     </button>
     <app-try-example (loadExample)="loadExample()" />
     <app-share-link [state]="shared" />
+    <app-send-to [text]="input()" from="json-to-types" />
   </div>
 
   @if (code()) {

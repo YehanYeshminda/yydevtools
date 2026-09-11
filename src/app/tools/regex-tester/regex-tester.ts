@@ -6,6 +6,7 @@ import { syncToolState } from '../../core/tool-state';
 import { compile, run } from './regex-match';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { TryExample } from '../../shared/try-example/try-example';
@@ -46,7 +47,7 @@ const FLAGS: FlagOption[] = [
 
 @Component({
   selector: 'app-regex-tester',
-  imports: [ToolPage, ToolContent, CodeEditor, ShareLink, TryExample, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, CodeEditor, SendTo, ShareLink, TryExample, MatButtonModule, NgIcon],
   templateUrl: './regex-tester.html',
   styleUrls: ['../tool-shell.css', './regex-tester.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

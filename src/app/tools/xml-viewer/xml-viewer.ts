@@ -9,6 +9,7 @@ import { downloadText } from '../../core/download';
 import { syncToolState } from '../../core/tool-state';
 import { CodeEditor } from '../../shared/code-editor/code-editor';
 import { Dropzone } from '../../shared/dropzone/dropzone';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { ToolPage } from '../../shared/tool-page/tool-page';
@@ -57,7 +58,7 @@ const SAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
     ToolContent,
     CodeEditor,
     Dropzone,
-    ShareLink,
+    SendTo, ShareLink,
     TryExample,
     MatButtonModule,
     NgIcon,

@@ -13,6 +13,7 @@ import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { CodeEditor, type EditorLanguage } from '../../shared/code-editor/code-editor';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { Skeleton } from '../../shared/skeleton/skeleton';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -53,7 +54,7 @@ const SAMPLE = `<section class="card"   id="hero">
 
 @Component({
   selector: 'app-code-formatter',
-  imports: [ToolPage, ToolContent, CodeEditor, ShareLink, Skeleton, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, CodeEditor, SendTo, ShareLink, Skeleton, MatButtonModule, NgIcon],
   templateUrl: './code-formatter.html',
   styleUrls: ['../tool-shell.css', './code-formatter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

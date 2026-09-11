@@ -6,6 +6,7 @@ import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
 import { CaseKind, convert } from './case';
 import { ToolPage } from '../../shared/tool-page/tool-page';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
@@ -30,7 +31,7 @@ const CASES: { kind: CaseKind; label: string }[] = [
 
 @Component({
   selector: 'app-case-converter',
-  imports: [ToolPage, ToolContent, ShareLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, SendTo, ShareLink, MatButtonModule, NgIcon],
   templateUrl: './case-converter.html',
   styleUrls: ['../tool-shell.css', './case-converter.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
