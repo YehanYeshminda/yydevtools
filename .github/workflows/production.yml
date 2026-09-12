@@ -15,10 +15,24 @@
 name: Production
 
 on:
-  schedule:
-    # 06:00 UTC daily. Tighten it if a dead Fly service needs finding sooner
-    # than a day, though a cheap /health ping is the better tool for that job.
-    - cron: '0 6 * * *'
+  # The daily schedule is deliberately OFF. Run from a GitHub-hosted runner this
+  # suite fails for reasons that are the site working correctly, not breaking:
+  #
+  #   - Cloudflare answers 403 to a headless browser on a shared datacenter IP,
+  #     including for the /pdfjs/* assets, so pdf-organizer renders nothing.
+  #   - The Worker's own API_RATE_LIMITER (20 requests/60s per IP) answers 429
+  #     to /api/word and /api/excel, and the Office viewers then correctly show
+  #     "conversion service is not running".
+  #
+  # The same specs pass 14/14 in 40s from an ordinary machine, so a nightly red
+  # cross here would train everyone to ignore it. To turn the schedule back on,
+  # one of these has to be true first: a Cloudflare WAF skip rule plus a rate
+  # limiter exemption keyed on a secret header this workflow sends, or a
+  # self-hosted runner on an IP that is not treated as a bot.
+  #
+  # For Fly liveness specifically there is a better tool that sidesteps all of
+  # this: a Cloudflare Cron Trigger calling /api/warm from inside the Worker,
+  # where there is no external IP to be judged on.
   workflow_dispatch:
     inputs:
       base_url:
