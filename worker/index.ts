@@ -71,6 +71,8 @@ const ROUTE_TIMEOUT_MS = {
   officeImport: 60_000,
   // Rendering pages is slower than parsing them; the service allows 90 s.
   officeToPdf: 120_000,
+  // Re-saving with or without encryption is cheap; this is mostly the cold wake.
+  pdfSecurity: 60_000,
 } as const;
 
 const OFFICE_TYPES = new Set(['docx', 'xlsx', 'pptx']);
@@ -434,6 +436,21 @@ async function handleApi(
     }
     const endpoint = serviceEndpoint(env.PDF_CONVERT_URL, env.PDF_CONVERT_SECRET);
     return proxy(request, endpoint, '/convert', { format }, ROUTE_TIMEOUT_MS.export);
+  }
+
+  // Multipart, forwarded verbatim like the Excel route: the password travels
+  // in the body, never in a query string that every log between here and the
+  // service would record.
+  if (path === '/api/pdf/protect' || path === '/api/pdf/unlock') {
+    const endpoint = serviceEndpoint(env.OFFICE_CONVERT_URL, env.OFFICE_CONVERT_SECRET);
+    return proxy(
+      request,
+      endpoint,
+      path.slice('/api'.length),
+      {},
+      ROUTE_TIMEOUT_MS.pdfSecurity,
+      request.headers.get('Content-Type') ?? undefined,
+    );
   }
 
   if (path === '/api/office/to-pdf') {

@@ -12,8 +12,8 @@ import { Injectable } from '@angular/core';
 /** Export targets supported by the LibreOffice converter. */
 export type ExportFormat = 'docx' | 'rtf';
 
-/** The three operations that run on a hosted machine, as the Worker names them. */
-export type HostedService = 'compress' | 'ocr' | 'export';
+/** The machines behind the hosted tools, as the Worker's /api/warm names them. */
+export type HostedService = 'compress' | 'ocr' | 'export' | 'office';
 
 /**
  * `unavailable` means the hosted service could not serve this request through

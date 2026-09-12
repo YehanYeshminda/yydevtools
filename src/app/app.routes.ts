@@ -232,6 +232,28 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/pdf-protect',
+    loadComponent: () => import('./tools/pdf-protect/pdf-protect').then((m) => m.PdfProtectTool),
+    title: 'Protect PDF — Password-protect a PDF online — YYDevTools',
+    data: {
+      mode: 'protect',
+      description:
+        'Add a password to a PDF online with AES-256 encryption. Set an open password and an ' +
+        'optional owner password. Free, no account, the file is deleted after processing.',
+    },
+  },
+  {
+    path: 'tools/pdf-unlock',
+    loadComponent: () => import('./tools/pdf-protect/pdf-protect').then((m) => m.PdfProtectTool),
+    title: 'Unlock PDF — Remove a PDF password online — YYDevTools',
+    data: {
+      mode: 'unlock',
+      description:
+        'Remove the password and editing restrictions from a PDF you know the password for. ' +
+        'Free, no account, the file is deleted after processing.',
+    },
+  },
+  {
     path: 'tools/pdf-convert',
     loadComponent: () => import('./tools/pdf-convert/pdf-convert').then((m) => m.PdfConvertTool),
     title: 'PDF Convert — YYDevTools',

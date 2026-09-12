@@ -1,0 +1,110 @@
+<app-tool-page [slug]="slug">
+  @if (unlock) {
+    Remove the password and restrictions from a PDF you have the password for. This needs a hosted
+    service — your file is uploaded to be processed, then deleted.
+  } @else {
+    Lock a PDF with a password using AES-256 encryption, the strongest the format allows. This needs
+    a hosted service — your file is uploaded to be processed, then deleted.
+  }
+</app-tool-page>
+
+<div class="panel">
+  @if (unavailable()) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matCloudOffOutline" />
+      <span class="note__text">
+        {{ unavailable() }} <a routerLink="/tools/pdf-viewer">Viewing</a>,
+        <a routerLink="/tools/pdf-merge">merging</a> and
+        <a routerLink="/tools/pdf-split">splitting</a> still work entirely in your browser.
+      </span>
+    </p>
+  }
+
+  <app-dropzone accept="application/pdf,.pdf" (filesSelected)="acceptFiles($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
+    <span class="dropzone__title">
+      @if (hasFile()) {
+        Drop another PDF here, or click to replace
+      } @else {
+        Drop a PDF here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">One file at a time — up to 20 MB</span>
+  </app-dropzone>
+
+  @if (hasFile()) {
+    <p class="status status--ok" role="status">
+      <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
+      {{ fileSummary() }}
+    </p>
+
+    <div class="field">
+      <label class="field__label" for="pdf-password">
+        {{ unlock ? 'Current password' : 'Password to open the file' }}
+      </label>
+      <div class="secret">
+        <input
+          id="pdf-password"
+          class="field__input"
+          [type]="reveal() ? 'text' : 'password'"
+          autocomplete="off"
+          spellcheck="false"
+          maxlength="127"
+          [value]="password()"
+          (input)="onPassword($event)"
+        />
+        <button type="button" matButton (click)="toggleReveal()" [attr.aria-pressed]="reveal()">
+          <ng-icon [name]="reveal() ? 'matVisibilityOffOutline' : 'matVisibilityOutline'" />
+          {{ reveal() ? 'Hide' : 'Show' }}
+        </button>
+      </div>
+    </div>
+
+    @if (!unlock) {
+      <div class="field">
+        <label class="field__label" for="pdf-owner">Owner password (optional)</label>
+        <input
+          id="pdf-owner"
+          class="field__input"
+          [type]="reveal() ? 'text' : 'password'"
+          autocomplete="off"
+          spellcheck="false"
+          maxlength="127"
+          [value]="owner()"
+          (input)="onOwner($event)"
+          aria-describedby="pdf-owner-hint"
+        />
+        <span class="field__hint" id="pdf-owner-hint">
+          A second password that also allows changing permissions. Leave empty to use the same one.
+        </span>
+      </div>
+    }
+
+    <div class="actions">
+      @if (working()) {
+        <button matButton="filled" disabled>
+          <app-spinner />
+          {{ unlock ? 'Unlocking…' : 'Protecting…' }}
+        </button>
+      } @else {
+        <button matButton="filled" (click)="run()" [disabled]="!ready()">
+          <ng-icon [name]="unlock ? 'matLockOpenOutline' : 'matLockOutline'" />
+          {{ unlock ? 'Unlock & download' : 'Protect & download' }}
+        </button>
+      }
+      <button matButton (click)="clear()" [disabled]="working()">
+        <ng-icon name="matDeleteSweepOutline" />
+        Clear
+      </button>
+    </div>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    This tool uploads your file and password. Both are sent over HTTPS to our own service, used once
+    to rewrite the PDF, and discarded — neither is stored or logged. If that is not acceptable for
+    your file, use the local tools instead.
+  </p>
+</div>
+
+<app-tool-content [slug]="slug" />

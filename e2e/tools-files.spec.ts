@@ -232,6 +232,49 @@ test('office-to-pdf converts a .docx', async ({ page }) => {
   expectClean(watch);
 });
 
+test('pdf-protect encrypts a PDF', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-protect', 'Protect PDF');
+
+  await uploadFiles(page, ['sample.pdf']);
+  await page.getByLabel('Password to open the file').fill('e2e-secret');
+
+  if (HOSTED_OFFICE) {
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: /Protect & download/ }).click();
+    expect((await download).suggestedFilename()).toBe('sample-protected.pdf');
+  } else {
+    await page.getByRole('button', { name: /Protect & download/ }).click();
+    await expect(page.getByRole('alert')).toContainText(/conversion service is not running/i, {
+      timeout: 45_000,
+    });
+  }
+
+  expectClean(watch);
+});
+
+test('pdf-unlock removes the password from a protected PDF', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-unlock', 'Unlock PDF');
+
+  // sample-locked.pdf is sample.pdf run through /pdf/protect with "e2e-secret".
+  await uploadFiles(page, ['sample-locked.pdf']);
+  await page.getByLabel('Current password').fill('e2e-secret');
+
+  if (HOSTED_OFFICE) {
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: /Unlock & download/ }).click();
+    expect((await download).suggestedFilename()).toBe('sample-locked-unlocked.pdf');
+  } else {
+    await page.getByRole('button', { name: /Unlock & download/ }).click();
+    await expect(page.getByRole('alert')).toContainText(/conversion service is not running/i, {
+      timeout: 45_000,
+    });
+  }
+
+  expectClean(watch);
+});
+
 test.describe('hosted operations accept a file and show their pre-flight state', () => {
   for (const [slug, name] of [
     ['pdf-convert', 'PDF Convert'],

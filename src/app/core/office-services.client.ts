@@ -165,14 +165,35 @@ export class OfficeServicesClient {
    * importDocx — raw bytes in, one document out — with the type carried in the
    * query because all three inputs are ZIPs and the service does not sniff.
    */
-  async toPdf(bytes: Uint8Array, type: OfficeType): Promise<PdfResult> {
+  toPdf(bytes: Uint8Array, type: OfficeType): Promise<PdfResult> {
+    return this.fetchPdf(`/api/office/to-pdf?type=${type}`, {
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: new Blob([bytes.slice()], { type: 'application/octet-stream' }),
+    });
+  }
+
+  /** Encrypts a PDF (AES-256) with an open password and, optionally, a separate owner password. */
+  protectPdf(bytes: Uint8Array, password: string, owner: string): Promise<PdfResult> {
+    const form = pdfForm(bytes, password);
+    if (owner) {
+      form.append('owner', owner);
+    }
+    return this.fetchPdf('/api/pdf/protect', { body: form });
+  }
+
+  /** Removes the passwords and restrictions from a PDF, given its password. */
+  unlockPdf(bytes: Uint8Array, password: string): Promise<PdfResult> {
+    return this.fetchPdf('/api/pdf/unlock', { body: pdfForm(bytes, password) });
+  }
+
+  /**
+   * POSTs to a route that answers with a PDF. A FormData body must go without
+   * a Content-Type header so the browser sets the multipart boundary itself.
+   */
+  private async fetchPdf(url: string, init: RequestInit): Promise<PdfResult> {
     let response: Response;
     try {
-      response = await fetch(`/api/office/to-pdf?type=${type}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/octet-stream' },
-        body: new Blob([bytes.slice()], { type: 'application/octet-stream' }),
-      });
+      response = await fetch(url, { method: 'POST', ...init });
     } catch {
       return {
         ok: false,
@@ -220,6 +241,14 @@ export class OfficeServicesClient {
     const shouldFallback = FALLBACK_CODES.has(code) || response.status >= 500;
     return { kind: shouldFallback ? 'unavailable' : 'rejected', code, message };
   }
+}
+
+/** The multipart body /pdf/protect and /pdf/unlock share: the file, then the password. */
+function pdfForm(bytes: Uint8Array, password: string): FormData {
+  const form = new FormData();
+  form.append('file', new Blob([bytes.slice()], { type: 'application/pdf' }), 'document.pdf');
+  form.append('password', password);
+  return form;
 }
 
 function isErrorBody(value: unknown): value is { error: { code: string; message: string } } {

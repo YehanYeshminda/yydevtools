@@ -1811,6 +1811,117 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['word-viewer', 'excel-viewer', 'pdf-convert', 'pdf-compress'],
   },
+  'pdf-protect': {
+    slug: 'pdf-protect',
+    intro: [
+      'Lock a PDF so it cannot be opened without a password. The file is encrypted with AES-256 — the strongest protection the PDF format defines — so the contents are unreadable to anyone without the password, not merely hidden behind a prompt.',
+      'Encrypting a PDF properly means rewriting every string and stream inside it, which is why this runs on our own processing service rather than in the browser: the file and password are sent over HTTPS, the PDF is rewritten, returned, and both are discarded.',
+    ],
+    steps: [
+      'Choose the PDF you want to protect.',
+      'Type the password readers will need to open it. Add a separate owner password if you want to keep permission changes to yourself.',
+      'Download the protected copy — the original is untouched.',
+    ],
+    features: [
+      'AES-256 encryption, the current PDF standard (PDF 2.0, revision 6).',
+      'An open password, with an optional separate owner password.',
+      'Passwords travel in the request body, never in a URL that could be logged.',
+      'The file and password are used once and discarded.',
+    ],
+    sections: [
+      {
+        heading: 'Open password versus owner password',
+        body: [
+          'A PDF can carry two passwords. The open password — the user password, in the specification’s terms — is the one readers are asked for; without it the document does not open at all. The owner password governs permissions: whether the document can be printed, copied from, edited or annotated once it is open. Someone with the owner password can lift those restrictions; someone with only the open password cannot.',
+          'If you leave the owner password empty, the open password is used for both. That is the right choice for most people: the goal is usually “nobody without the password can read this”, and a second password nobody was told about only causes trouble later. Set a distinct owner password when you want readers to open the file but not change it.',
+        ],
+      },
+      {
+        heading: 'How strong is the protection?',
+        body: [
+          'The encryption is AES-256 as defined in PDF 2.0, revision 6, which is what Adobe Acrobat uses when you choose its strongest setting. The document is encrypted, not obscured: every text string and content stream is ciphertext until the correct password is supplied, and there is no known shortcut.',
+          'The password is the weak point, as always. Encryption of this strength only helps if the password cannot be guessed — a short or common one can be tried by brute force in hours. Use a passphrase of several words, or a generated one from the Password Generator, and share it through a different channel from the file itself.',
+        ],
+      },
+      {
+        heading: 'Restrictions are not protection',
+        body: [
+          'Owner-password-only restrictions — the file opens freely but says printing or copying is not allowed — are honoured by well-behaved viewers, and only by them. The content is fully readable by any program that chooses to ignore the flag, and many do. Treat those permissions as a polite request. If something genuinely must not be read by the wrong person, it needs an open password.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Will the protected PDF open in any reader?',
+        a: 'Yes. AES-256 has been part of the PDF standard since 2008 and is supported by Adobe Reader, browsers, Preview on macOS and every mainstream viewer. Readers are prompted for the password on opening.',
+      },
+      {
+        q: 'Can I recover the password if I forget it?',
+        a: 'No. Nothing about the password is stored anywhere, and the encryption has no back door. Keep it somewhere safe — a password manager is ideal.',
+      },
+      {
+        q: 'Is my password logged?',
+        a: 'No. It is sent in the body of an HTTPS request, not in the address, so it does not appear in access logs. The service uses it once to encrypt the file and then discards it.',
+      },
+      {
+        q: 'What if the PDF already has a password?',
+        a: 'Protecting an already-encrypted file is refused. Unlock it first with the Unlock PDF tool, then protect it with the new password.',
+      },
+    ],
+    related: ['pdf-unlock', 'password-generator', 'pdf-merge', 'pdf-compress'],
+  },
+  'pdf-unlock': {
+    slug: 'pdf-unlock',
+    intro: [
+      'Take the password off a PDF you have the password for, so it opens directly and can be printed, copied from and edited again. The result is a normal, unencrypted PDF with the same content and layout.',
+      'Removing encryption means decrypting and rewriting the whole file, which this tool does on our own processing service: the file and its password are sent over HTTPS, the PDF is rewritten without protection, returned, and both are discarded.',
+    ],
+    steps: [
+      'Choose the protected PDF.',
+      'Type its password — the one you use to open it, or the owner password if the file opens freely but is restricted.',
+      'Download the unlocked copy.',
+    ],
+    features: [
+      'Removes both the open password and the permission restrictions.',
+      'Works with every PDF encryption level, from RC4 to AES-256.',
+      'The password travels in the request body, never in a URL.',
+      'The file and password are used once and discarded.',
+    ],
+    sections: [
+      {
+        heading: 'What this tool does — and does not — do',
+        body: [
+          'This removes protection from a PDF whose password you know. It does not guess, crack or bypass passwords. If you have forgotten the password to a properly encrypted PDF, no online tool can help: AES-256 has no shortcut, and a service claiming otherwise is either lying or dealing with a file that was never really locked.',
+          'What it is for is the everyday case: a statement, form or report that arrives password-protected and that you want to file, merge or search without typing the password every time. Once unlocked, the file behaves like any other PDF and works with every local tool here.',
+        ],
+      },
+      {
+        heading: 'Files that open but will not print or copy',
+        body: [
+          'Some PDFs open without a password yet refuse to print, or will not let you select text. Those carry only an owner password with restrictions. Most viewers honour the restrictions but the content itself is not encrypted, and the owner password removes the flags entirely. If you do not have that password either, the file is still readable — it is just being polite.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Can it unlock a PDF I do not have the password for?',
+        a: 'No. Unlocking requires the password. Real PDF encryption has no back door, and this tool does not attempt to guess.',
+      },
+      {
+        q: 'Does unlocking change the document?',
+        a: 'Only the encryption is removed. Pages, text, images, bookmarks and form fields are preserved as they were.',
+      },
+      {
+        q: 'Is my password logged?',
+        a: 'No. It is sent in the body of an HTTPS request, used once to open the file, and discarded. It never appears in a URL or a log.',
+      },
+      {
+        q: 'What if the file is not actually protected?',
+        a: 'The tool tells you so rather than returning a copy. There is nothing to remove.',
+      },
+    ],
+    related: ['pdf-protect', 'pdf-merge', 'pdf-split', 'pdf-viewer'],
+  },
   'pdf-convert': {
     slug: 'pdf-convert',
     intro: [

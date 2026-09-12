@@ -1,0 +1,10 @@
+.secret {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.secret .field__input {
+  flex: 1;
+  min-width: 0;
+}

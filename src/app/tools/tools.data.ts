@@ -242,6 +242,22 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'pdf-protect',
+    name: 'Protect PDF',
+    description: 'Lock a PDF with a password — AES-256, the strongest the format allows.',
+    icon: 'matLockOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
+    slug: 'pdf-unlock',
+    name: 'Unlock PDF',
+    description: 'Remove the password and restrictions from a PDF you know the password for.',
+    icon: 'matLockOpenOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'pdf-convert',
     name: 'PDF Convert',
     description: 'Turn a PDF into an editable Word or rich-text file.',

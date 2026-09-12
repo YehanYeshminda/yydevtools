@@ -37,6 +37,8 @@ using Syncfusion.EJ2.DocumentEditor;
 using Syncfusion.EJ2.Spreadsheet;
 using Syncfusion.Licensing;
 using Syncfusion.Pdf;
+using Syncfusion.Pdf.Parsing;
+using Syncfusion.Pdf.Security;
 // Not `using Syncfusion.Presentation` — it also defines a FormatType, which
 // would collide with the DocumentEditor one /word/import already uses.
 using Syncfusion.PresentationRenderer;
@@ -263,7 +265,158 @@ app.MapPost("/office/to-pdf", async (HttpRequest request) =>
     }
 });
 
+//   POST /pdf/protect   multipart: file, password, [owner]  ->  200 application/pdf
+//   POST /pdf/unlock    multipart: file, password           ->  200 application/pdf
+//
+// Multipart so the passwords ride in the body: a query string is written to
+// every access log between the browser and this process, and a password is
+// the one input here that must not be.
+app.MapPost("/pdf/protect", (HttpRequest request) => SecurePdfAsync(request, protect: true));
+app.MapPost("/pdf/unlock", (HttpRequest request) => SecurePdfAsync(request, protect: false));
+
 app.Run();
+
+async Task<IResult> SecurePdfAsync(HttpRequest request, bool protect)
+{
+    if (!Authorized(request.Headers.Authorization, secret))
+    {
+        logger.LogInformation("{Event}", "unauthorized");
+        return Failure(401, "UNAUTHORIZED", "Missing or invalid credentials.");
+    }
+    if (!request.HasFormContentType)
+    {
+        return Failure(400, "INVALID_INPUT", "Expected a multipart form upload.");
+    }
+
+    var form = await request.ReadFormAsync();
+    var file = form.Files.Count > 0 ? form.Files[0] : null;
+    if (file is null || file.Length == 0)
+    {
+        return Failure(400, "INVALID_INPUT", "No PDF was sent.");
+    }
+    if (file.Length > MaxBytes)
+    {
+        return Failure(413, "TOO_LARGE", "That file is larger than this tool allows.");
+    }
+
+    // 127 bytes is the ceiling AES-256 (PDF 2.0, revision 6) allows for a
+    // password; anything longer would be silently truncated by the encoder.
+    var password = form["password"].ToString();
+    var owner = form["owner"].ToString();
+    if (password.Length is 0 or > 127 || owner.Length > 127)
+    {
+        return Failure(400, "INVALID_INPUT", "A password of 1 to 127 characters is required.");
+    }
+
+    byte[] input;
+    using (var body = new MemoryStream())
+    {
+        await file.CopyToAsync(body);
+        input = body.ToArray();
+    }
+    if (!LooksLikePdf(input))
+    {
+        logger.LogInformation("{Event} {Bytes}", "rejected_not_pdf", input.Length);
+        return Failure(400, "INVALID_INPUT", "That file is not a PDF.");
+    }
+
+    var op = protect ? "protect" : "unlock";
+    var started = DateTime.UtcNow;
+    await concurrencyGate.WaitAsync();
+    try
+    {
+        var output = await WithTimeout(
+            () => protect ? Protect(input, password, owner) : Unlock(input, password),
+            importTimeout);
+        logger.LogInformation(
+            "{Event} {InBytes} {OutBytes} {Ms}",
+            $"ok_{op}", input.Length, output.Length, (DateTime.UtcNow - started).TotalMilliseconds);
+        return Results.Bytes(output, "application/pdf");
+    }
+    catch (PdfInvalidPasswordException)
+    {
+        // Same exception either way round: opening a protected file with no
+        // password (protect) or with the wrong one (unlock).
+        return Failure(400, "INVALID_INPUT", protect
+            ? "That PDF is already password-protected. Unlock it first."
+            : "That password is not correct.");
+    }
+    catch (InvalidOperationException)
+    {
+        return Failure(400, "INVALID_INPUT", "That PDF is not password-protected.");
+    }
+    catch (TimeoutException)
+    {
+        logger.LogWarning("{Event} {InBytes}", $"timeout_{op}", input.Length);
+        return Failure(504, "TIMEOUT", "Processing took too long and was stopped.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "{Event} {InBytes}", $"failed_{op}", input.Length);
+        return Failure(502, "UPSTREAM_REJECTED", "The PDF could not be processed.");
+    }
+    finally
+    {
+        concurrencyGate.Release();
+    }
+}
+
+static byte[] Protect(byte[] input, string password, string owner)
+{
+    using var stream = new MemoryStream(input);
+    using var document = new PdfLoadedDocument(stream);
+    var security = document.Security;
+    security.KeySize = PdfEncryptionKeySize.Key256Bit;
+    security.Algorithm = PdfEncryptionAlgorithm.AES;
+    security.UserPassword = password;
+    // Without a distinct owner password the open password also unlocks the
+    // permissions — which is what "protect with a password" means to most
+    // people, and strictly better than an owner password nobody was told.
+    security.OwnerPassword = owner.Length > 0 ? owner : password;
+    return Save(document);
+}
+
+static byte[] Unlock(byte[] input, string password)
+{
+    using var stream = new MemoryStream(input);
+    using var document = new PdfLoadedDocument(stream, password);
+    if (!document.IsEncrypted)
+    {
+        throw new InvalidOperationException("not encrypted");
+    }
+    document.Security.UserPassword = string.Empty;
+    document.Security.OwnerPassword = string.Empty;
+    return Save(document);
+}
+
+static byte[] Save(PdfLoadedDocument document)
+{
+    using var output = new MemoryStream();
+    document.Save(output);
+    return output.ToArray();
+}
+
+/// <summary>
+/// The spec allows up to 1024 bytes of junk before the header, and real files
+/// use that allowance — so this looks within it, not only at offset 0.
+/// </summary>
+static bool LooksLikePdf(byte[] bytes)
+{
+    var window = bytes.AsSpan(0, Math.Min(bytes.Length, 1024));
+    return window.IndexOf("%PDF-"u8) >= 0;
+}
+
+/// <summary>Same bounded-wait contract as ImportAsync and ToPdfAsync.</summary>
+static async Task<T> WithTimeout<T>(Func<T> work, TimeSpan timeout)
+{
+    var task = Task.Run(work);
+    var winner = await Task.WhenAny(task, Task.Delay(timeout));
+    if (winner != task)
+    {
+        throw new TimeoutException();
+    }
+    return await task;
+}
 
 /// <summary>
 /// Renders an OOXML document to PDF with the matching Syncfusion engine. The
