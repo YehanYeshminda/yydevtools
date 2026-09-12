@@ -211,6 +211,27 @@ test('excel-viewer renders an .xlsx', async ({ page }) => {
   expectClean(watch);
 });
 
+test('office-to-pdf converts a .docx', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'office-to-pdf', 'Office to PDF');
+
+  await uploadFiles(page, ['sample.docx']);
+  await expect(page.getByText(/sample\.docx/).first()).toBeVisible();
+
+  if (HOSTED_OFFICE) {
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: /Convert/ }).click();
+    expect((await download).suggestedFilename()).toBe('sample.pdf');
+  } else {
+    await page.getByRole('button', { name: /Convert/ }).click();
+    await expect(page.getByRole('alert')).toContainText(/conversion service is not running/i, {
+      timeout: 45_000,
+    });
+  }
+
+  expectClean(watch);
+});
+
 test.describe('hosted operations accept a file and show their pre-flight state', () => {
   for (const [slug, name] of [
     ['pdf-convert', 'PDF Convert'],

@@ -49,6 +49,9 @@ test.describe('every tool page', () => {
   }
 
   test('every tool page keeps its layout inside the viewport', async ({ page }) => {
+    // One test, every page: its cost grows with the catalogue, and at 38 tools
+    // it already runs past the 90 s budget on a cold dev server.
+    test.slow();
     for (const tool of READY) {
       await page.goto(`/tools/${tool.slug}`);
       await expect(page.locator('.head__title')).toHaveText(tool.name);
