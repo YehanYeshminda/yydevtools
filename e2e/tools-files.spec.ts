@@ -211,6 +211,25 @@ test('excel-viewer renders an .xlsx', async ({ page }) => {
   expectClean(watch);
 });
 
+test('pdf-watermark stamps text and page numbers with a live preview', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-watermark', 'PDF Watermark & Page Numbers');
+
+  await uploadFiles(page, ['sample.pdf']);
+  await expect(page.getByText(/sample\.pdf · 3 pages/)).toBeVisible({ timeout: 45_000 });
+  await expect(page.locator('app-pdf-preview iframe')).toBeVisible({ timeout: 45_000 });
+
+  await page.getByLabel('Text', { exact: true }).fill('DRAFT');
+  await page.locator('#pn-on').check();
+  await expect(page.getByLabel('Style')).toBeEnabled();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download PDF' }).click();
+  expect((await download).suggestedFilename()).toBe('sample-stamped.pdf');
+
+  expectClean(watch);
+});
+
 test('pdf-sign places a typed signature and downloads the signed file', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'pdf-sign', 'Sign PDF');

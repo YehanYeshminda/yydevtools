@@ -1,0 +1,199 @@
+<app-tool-page slug="pdf-watermark">
+  Stamp a watermark across every page, add page numbers, or both — with a live preview. The file
+  never leaves your browser.
+</app-tool-page>
+
+<div class="panel">
+  <app-dropzone accept="application/pdf,.pdf" (filesSelected)="acceptFiles($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
+    <span class="dropzone__title">
+      @if (hasFile()) {
+        Drop another PDF here, or click to replace
+      } @else {
+        Drop a PDF here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">One file at a time — up to 50 MB</span>
+  </app-dropzone>
+
+  @if (hasFile()) {
+    <p class="status status--ok" role="status">
+      <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
+      {{ fileSummary() }}
+    </p>
+
+    <div class="options">
+      <fieldset class="group">
+        <legend class="group__legend">
+          <input
+            id="wm-on"
+            type="checkbox"
+            [checked]="watermarkOn()"
+            (change)="set(watermarkOn, checked($event))"
+          />
+          <label for="wm-on">Watermark</label>
+        </legend>
+        <div class="field">
+          <label class="field__label" for="wm-text">Text</label>
+          <input
+            id="wm-text"
+            class="field__input"
+            type="text"
+            maxlength="80"
+            [disabled]="!watermarkOn()"
+            [value]="text()"
+            (input)="set(text, value($event))"
+          />
+        </div>
+        <div class="grid">
+          <div class="field">
+            <label class="field__label" for="wm-size">Size: {{ size() }} pt</label>
+            <input
+              id="wm-size"
+              type="range"
+              min="16"
+              max="160"
+              step="2"
+              [disabled]="!watermarkOn()"
+              [value]="size()"
+              (input)="set(size, number($event, 64))"
+            />
+          </div>
+          <div class="field">
+            <label class="field__label" for="wm-opacity">Opacity: {{ opacity() }}%</label>
+            <input
+              id="wm-opacity"
+              type="range"
+              min="5"
+              max="100"
+              step="5"
+              [disabled]="!watermarkOn()"
+              [value]="opacity()"
+              (input)="set(opacity, number($event, 20))"
+            />
+          </div>
+          <div class="field">
+            <label class="field__label" for="wm-color">Colour</label>
+            <select
+              id="wm-color"
+              class="field__input"
+              [disabled]="!watermarkOn()"
+              [value]="color()"
+              (change)="setColor($event)"
+            >
+              <option value="grey">Grey</option>
+              <option value="red">Red</option>
+              <option value="blue">Blue</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="wm-angle">Angle</label>
+            <select
+              id="wm-angle"
+              class="field__input"
+              [disabled]="!watermarkOn()"
+              [value]="diagonal() ? 'diagonal' : 'flat'"
+              (change)="set(diagonal, value($event) === 'diagonal')"
+            >
+              <option value="diagonal">Diagonal</option>
+              <option value="flat">Horizontal</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend class="group__legend">
+          <input
+            id="pn-on"
+            type="checkbox"
+            [checked]="numbersOn()"
+            (change)="set(numbersOn, checked($event))"
+          />
+          <label for="pn-on">Page numbers</label>
+        </legend>
+        <div class="grid">
+          <div class="field">
+            <label class="field__label" for="pn-format">Style</label>
+            <select
+              id="pn-format"
+              class="field__input"
+              [disabled]="!numbersOn()"
+              [value]="format()"
+              (change)="setFormat($event)"
+            >
+              @for (option of formats; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="pn-position">Position</label>
+            <select
+              id="pn-position"
+              class="field__input"
+              [disabled]="!numbersOn()"
+              [value]="position()"
+              (change)="setPosition($event)"
+            >
+              @for (option of positions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="pn-start">Start at</label>
+            <input
+              id="pn-start"
+              class="field__input"
+              type="number"
+              min="0"
+              max="9999"
+              [disabled]="!numbersOn()"
+              [value]="start()"
+              (input)="set(start, number($event, 1))"
+            />
+          </div>
+        </div>
+      </fieldset>
+
+      <label class="check">
+        <input type="checkbox" [checked]="skipFirst()" (change)="set(skipFirst, checked($event))" />
+        Leave the first page alone (a cover or title page)
+      </label>
+    </div>
+
+    @if (stamped(); as bytes) {
+      <app-pdf-preview [bytes]="bytes" [fileName]="fileName()" height="40rem" />
+    }
+
+    <div class="actions">
+      <button matButton="filled" (click)="download()" [disabled]="!stamped() || busy()">
+        @if (busy()) {
+          <app-spinner />
+          Updating…
+        } @else {
+          <ng-icon name="matDownloadOutline" />
+          Download PDF
+        }
+      </button>
+      <button matButton (click)="clear()" [disabled]="busy()">
+        <ng-icon name="matDeleteSweepOutline" />
+        Close file
+      </button>
+      @if (!anythingToDo()) {
+        <span class="field__hint">Turn on the watermark or page numbers to change the file.</span>
+      }
+    </div>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+    <span class="note__text">
+      Stamping happens in this tab; the PDF is never uploaded. The preview is the real result — what
+      you see there is what downloads.
+    </span>
+  </p>
+</div>
+
+<app-tool-content slug="pdf-watermark" />

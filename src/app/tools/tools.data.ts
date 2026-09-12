@@ -251,6 +251,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'pdf-watermark',
+    name: 'PDF Watermark & Page Numbers',
+    description:
+      'Stamp text across every page and add page numbers, with a live preview — no upload.',
+    icon: 'matBrandingWatermarkOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'pdf-sign',
     name: 'Sign PDF',
     description: 'Draw, type or upload a signature and place it on a PDF — nothing is uploaded.',

@@ -1746,6 +1746,67 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['code-formatter', 'markdown-editor', 'url-encoder'],
   },
 
+  'pdf-watermark': {
+    slug: 'pdf-watermark',
+    intro: [
+      'Mark a PDF as DRAFT, CONFIDENTIAL or SAMPLE across every page, number the pages so a printed copy stays in order, or do both at once. Change an option and the preview updates — it is the real output, shown in the same viewer you would open the file in.',
+      'The stamping happens in your browser with the pages’ own coordinates, so the result is crisp vector text, not a rasterised copy, and the file never leaves your device.',
+    ],
+    steps: [
+      'Choose the PDF.',
+      'Set the watermark text, size, opacity, colour and angle — or switch the watermark off and use only page numbers.',
+      'Pick a numbering style and position, and a starting number if the document continues another.',
+      'Check the preview, then download.',
+    ],
+    features: [
+      'Text watermark on every page: diagonal or horizontal, any opacity, grey, red or blue.',
+      'Page numbers in four styles and five positions, with a custom starting number.',
+      'Leave a cover page alone with one checkbox.',
+      'Rotated scans are handled: “bottom centre” is the bottom the reader sees.',
+      'Live preview of the actual result; nothing uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'What a watermark does — and does not — protect',
+        body: [
+          'A visible watermark tells every reader what a document is: a draft that will change, a confidential copy that should not be forwarded, a sample not to be used for real. That social signal is most of its value. It also makes a leaked copy traceable if you put something identifying in it — a recipient’s name, a date, a reference number — which is why some firms stamp each copy differently.',
+          'It is not a lock. The text is drawn on the page as an ordinary object, and a PDF editor can remove it, just as it could remove any other text. If the document must not be altered, combine the watermark with a password (see Protect PDF) or a cryptographic signature.',
+        ],
+      },
+      {
+        heading: 'Page numbers on a file that already has them',
+        body: [
+          'Many PDFs already carry page numbers in their own layout. Adding a second set is confusing, so this tool is most useful for files that were assembled from parts — merged scans, exported slides, forms — where the original numbering is missing or restarts. If the document has a cover, tick the checkbox to skip it, and set the starting number if this file is a continuation of another.',
+          'Numbers use a small, neutral typeface and sit inside the printable margin so they survive both screen and paper.',
+        ],
+      },
+      {
+        heading: 'Rotated pages',
+        body: [
+          'Scanned documents often store pages sideways with a rotation flag that viewers honour. This tool works out positions in the frame the reader sees, so a page number set to “bottom centre” lands at the visual bottom, and a diagonal watermark runs corner to corner as displayed — not corner to corner of the bitmap underneath.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Can I use an image or logo as the watermark?',
+        a: 'Not yet — text only. An image watermark is on the list; for a one-off, Sign PDF can place a picture on a single page.',
+      },
+      {
+        q: 'Why does my watermark text come out wrong or refuse to stamp?',
+        a: 'The built-in font covers Latin letters, digits and common punctuation. Characters outside that — Cyrillic, Greek, CJK, most emoji — cannot be drawn with it. Keep the text to Latin characters for now.',
+      },
+      {
+        q: 'Does the tool change anything else in the PDF?',
+        a: 'No. Pages, links, bookmarks and form fields are kept; the tool only draws on top of each page. Encrypted files that open without a password are stamped as they are, but their encryption is not preserved.',
+      },
+      {
+        q: 'Is the file uploaded?',
+        a: 'No. Everything, including the preview, runs in your browser.',
+      },
+    ],
+    related: ['pdf-sign', 'pdf-protect', 'pdf-merge', 'pdf-organizer'],
+  },
   'office-to-pdf': {
     slug: 'office-to-pdf',
     intro: [

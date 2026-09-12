@@ -232,6 +232,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/pdf-watermark',
+    loadComponent: () =>
+      import('./tools/pdf-watermark/pdf-watermark').then((m) => m.PdfWatermarkTool),
+    title: 'PDF Watermark & Page Numbers — Stamp and number a PDF online — YYDevTools',
+    data: {
+      description:
+        'Add a text watermark like CONFIDENTIAL or DRAFT across every page of a PDF, and add ' +
+        'page numbers in the style and position you want. Live preview, nothing uploaded. Free.',
+    },
+  },
+  {
     path: 'tools/pdf-sign',
     loadComponent: () => import('./tools/pdf-sign/pdf-sign').then((m) => m.PdfSignTool),
     title: 'Sign PDF — Add your signature to a PDF online — YYDevTools',
