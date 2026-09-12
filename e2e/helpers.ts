@@ -149,6 +149,36 @@ export async function expectNoHorizontalOverflow(page: Page): Promise<void> {
   ).toBeLessThanOrEqual(overflow.client + 1);
 }
 
+/**
+ * Fails if any element on the page has content wider than its own box while
+ * that box is not meant to scroll — the long-token-bursts-out-of-a-card bug.
+ *
+ * Elements that scroll (`overflow-x: auto | scroll`) are the legitimate homes
+ * of wide content and are skipped, as is anything hidden or zero-sized.
+ */
+export async function expectNoClippedContent(page: Page): Promise<void> {
+  const offenders = await page.evaluate(() => {
+    const bad: string[] = [];
+    // Material's icon buttons and checkboxes carry a 44px touch target inside
+    // a 40px box on purpose; text that has burst out of a card is wider by far.
+    const SLACK = 8;
+    for (const el of Array.from(document.body.querySelectorAll<HTMLElement>('*'))) {
+      if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth + SLACK) {
+        continue;
+      }
+      const style = getComputedStyle(el);
+      if (style.overflowX !== 'visible' || style.display === 'inline') {
+        continue;
+      }
+      const name =
+        el.tagName.toLowerCase() + (el.className ? `.${String(el.className).split(' ')[0]}` : '');
+      bad.push(`${name}: content ${el.scrollWidth}px in a ${el.clientWidth}px box`);
+    }
+    return bad;
+  });
+  expect(offenders, ['content overflows its box:', ...offenders].join(' | ')).toEqual([]);
+}
+
 /** Switches the colour theme the way the header's menu does. */
 export async function setTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
   await page.evaluate((value) => {

@@ -4,6 +4,17 @@ html {
   font-size: 14px;
 }
 
+/*
+ * Long unbroken tokens — Base64, hashes, JWTs, URLs — are everyday input on
+ * this site, and any of them can end up echoed into a card, a label or a list.
+ * A word may therefore always break rather than push its box open. Prose is
+ * unaffected: this only applies where a word would otherwise overflow, and
+ * `white-space: pre` / `nowrap` elements still opt out and scroll instead.
+ */
+body {
+  overflow-wrap: anywhere;
+}
+
 /**
  * Design tokens.
  *
@@ -277,10 +288,14 @@ html {
    their bare `pointer` would win the specificity tie and paint the native
    cursor instead. */
 :root {
-  --cursor-default: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4Ij48cGF0aCBkPSJNNCAzIEw0IDIyIEw5LjQgMTYuOCBMMTIuOCAyNCBMMTUuOCAyMi42IEwxMi40IDE1LjYgTDE4LjggMTUuNiBaIiBmaWxsPSIjZmZiZTNkIiBzdHJva2U9IiMxYTE0MDUiIHN0cm9rZS13aWR0aD0iMS40IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+Cg==')
-      4 3, auto;
-  --cursor-pointer: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4Ij48ZyBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxnIHN0cm9rZT0iIzFhMTQwNSIgc3Ryb2tlLXdpZHRoPSIzLjQiIG9wYWNpdHk9IjAuNSI+PHBhdGggZD0iTTE0IDIuNVY5TTE0IDE5djYuNU0yLjUgMTRIOU0xOSAxNGg2LjUiLz48L2c+PGcgc3Ryb2tlPSIjZmZiZTNkIiBzdHJva2Utd2lkdGg9IjEuNyI+PHBhdGggZD0iTTE0IDIuNVY5TTE0IDE5djYuNU0yLjUgMTRIOU0xOSAxNGg2LjUiLz48L2c+PGNpcmNsZSBjeD0iMTQiIGN5PSIxNCIgcj0iMy4yIiBzdHJva2U9IiMxYTE0MDUiIHN0cm9rZS13aWR0aD0iMi42IiBvcGFjaXR5PSIwLjUiLz48Y2lyY2xlIGN4PSIxNCIgY3k9IjE0IiByPSIzLjIiIHN0cm9rZT0iI2ZmYmUzZCIgc3Ryb2tlLXdpZHRoPSIxLjUiLz48L2c+PGNpcmNsZSBjeD0iMTQiIGN5PSIxNCIgcj0iMSIgZmlsbD0iI2ZmYmUzZCIvPjwvc3ZnPgo=')
-      14 14, pointer;
+  --cursor-default:
+    url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4Ij48cGF0aCBkPSJNNCAzIEw0IDIyIEw5LjQgMTYuOCBMMTIuOCAyNCBMMTUuOCAyMi42IEwxMi40IDE1LjYgTDE4LjggMTUuNiBaIiBmaWxsPSIjZmZiZTNkIiBzdHJva2U9IiMxYTE0MDUiIHN0cm9rZS13aWR0aD0iMS40IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+Cg==')
+      4 3,
+    auto;
+  --cursor-pointer:
+    url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4Ij48ZyBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxnIHN0cm9rZT0iIzFhMTQwNSIgc3Ryb2tlLXdpZHRoPSIzLjQiIG9wYWNpdHk9IjAuNSI+PHBhdGggZD0iTTE0IDIuNVY5TTE0IDE5djYuNU0yLjUgMTRIOU0xOSAxNGg2LjUiLz48L2c+PGcgc3Ryb2tlPSIjZmZiZTNkIiBzdHJva2Utd2lkdGg9IjEuNyI+PHBhdGggZD0iTTE0IDIuNVY5TTE0IDE5djYuNU0yLjUgMTRIOU0xOSAxNGg2LjUiLz48L2c+PGNpcmNsZSBjeD0iMTQiIGN5PSIxNCIgcj0iMy4yIiBzdHJva2U9IiMxYTE0MDUiIHN0cm9rZS13aWR0aD0iMi42IiBvcGFjaXR5PSIwLjUiLz48Y2lyY2xlIGN4PSIxNCIgY3k9IjE0IiByPSIzLjIiIHN0cm9rZT0iI2ZmYmUzZCIgc3Ryb2tlLXdpZHRoPSIxLjUiLz48L2c+PGNpcmNsZSBjeD0iMTQiIGN5PSIxNCIgcj0iMSIgZmlsbD0iI2ZmYmUzZCIvPjwvc3ZnPgo=')
+      14 14,
+    pointer;
 
   cursor: var(--cursor-default);
 }
