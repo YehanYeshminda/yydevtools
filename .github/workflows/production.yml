@@ -1,0 +1,63 @@
+# Runs the same Playwright suite against the live site.
+#
+# This catches two things the CI workflow structurally cannot:
+#
+#   1. The five tools that depend on the Fly services — the three hosted PDF
+#      operations and the two Office viewers — are only exercised for real when
+#      E2E_BASE_URL points at a deployment. Against a local dev server those
+#      specs can only assert that the tool degrades honestly.
+#   2. The Fly machines scale to zero, so a run that starts cold doubles as a
+#      liveness check on the wake path.
+#
+# NOTE: GitHub only runs `schedule` — and only offers the manual "Run workflow"
+# button — for workflows that exist on the DEFAULT branch. This file does
+# nothing until it is merged to master.
+name: Production
+
+on:
+  schedule:
+    # 06:00 UTC daily. Tighten it if a dead Fly service needs finding sooner
+    # than a day, though a cheap /health ping is the better tool for that job.
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Base URL to test against'
+        required: false
+        default: 'https://yydevtools.com'
+
+env:
+  NG_CLI_ANALYTICS: false
+
+jobs:
+  e2e:
+    name: Playwright against production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # With E2E_BASE_URL set, playwright.config skips the local dev server
+      # entirely and the hosted-tool specs switch to asserting a real render.
+      # On a scheduled run `inputs.base_url` is empty, so the fallback applies.
+      - name: Run Playwright against the deployment
+        run: npm run e2e
+        env:
+          E2E_BASE_URL: ${{ inputs.base_url || 'https://yydevtools.com' }}
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-production
+          path: |
+            e2e/.report
+            e2e/.results
+          retention-days: 14

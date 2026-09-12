@@ -52,10 +52,15 @@ export default defineConfig({
       testMatch: /responsive\.spec\.ts/,
     },
   ],
-  webServer: {
-    command: 'npm start',
-    url: 'http://localhost:4200',
-    reuseExistingServer: true,
-    timeout: 180_000,
-  },
+  // Against a deployment there is nothing to start: without this guard Playwright
+  // would boot a local dev server, wait up to 180s for :4200 and then never send
+  // it a request, because baseURL points somewhere else entirely.
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: 'npm start',
+        url: 'http://localhost:4200',
+        reuseExistingServer: true,
+        timeout: 180_000,
+      },
 });
