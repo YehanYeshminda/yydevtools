@@ -10,6 +10,33 @@
   // The build prerenders every route to its own HTML file, so there is no SPA
   // fallback: unmatched paths fall through to the Worker, which answers with
   // the prerendered /404 page and a real 404 status.
+  // Workers Builds — the dashboard's git integration — builds and deploys this
+  // Worker on every push. Its settings live in the Cloudflare dashboard rather
+  // than in this repo (Settings > Build), so they are written down here too,
+  // because a build that is configured somewhere you never look is a build that
+  // stays broken without anyone noticing. It did, for a week:
+  //
+  //   Build variable   SKIP_DEPENDENCY_INSTALL = 1
+  //   Build secret     SYNCFUSION_LICENSE_KEY = (the key already in .env.local)
+  //   Build command    npm install --no-audit --no-fund && npm run build
+  //   Deploy command   npx wrangler deploy
+  //
+  // Skipping the automatic install is the point. Left alone Workers Builds
+  // installs with `npm ci`, which cannot install this lockfile on a Linux
+  // builder — the same Windows-authored-lockfile problem that already forced
+  // GitHub Actions onto `npm install`, explained in full at the top of
+  // .github/workflows/ci.yml. Fix that lockfile properly and both this and the
+  // workaround in ci.yml can go.
+  //
+  // The licence key matters more than it looks. A manual `npm run build` picks
+  // it up from .env.local, which is gitignored and exists only on the machine
+  // that deploys; a Workers Build has neither that file nor the variable, and
+  // scripts/generate-syncfusion-license.mjs deliberately falls back to an empty
+  // key rather than failing. So an unconfigured build deploys quite happily
+  // with the Word and Excel Viewers dropped into Syncfusion's trial mode, and
+  // nothing anywhere goes red. Set it as a build *secret*, not a plaintext
+  // variable — it ships inside the client bundle either way, but there is no
+  // reason to also leave it readable in the dashboard.
   "name": "yydevtools",
   "main": "worker/index.ts",
   "compatibility_date": "2025-11-01",
