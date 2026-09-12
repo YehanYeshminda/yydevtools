@@ -20,6 +20,92 @@
   align-self: flex-start;
 }
 
+/* Direction switch with its explanation ------------------------------- */
+.modes-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.modes-row__hint {
+  font-size: 0.9rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* Input beside result, with the swap in the gutter --------------------- */
+.duo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.duo__pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.duo__swap {
+  /* Level with the text boxes, not the labels above them. */
+  margin-top: 6.5rem;
+}
+
+.field__input--pane {
+  min-height: 16rem;
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.field__hint--err {
+  color: var(--mat-sys-error);
+}
+
+/* A result box that explains instead of showing a value. */
+.trouble {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  resize: none;
+}
+
+.trouble__title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0;
+  font-weight: 600;
+  color: var(--mat-sys-on-surface);
+}
+
+.trouble__body {
+  margin: 0;
+  font-family: var(--sans, system-ui, sans-serif);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.trouble__body code {
+  font-family: var(--mono);
+  padding: 0 0.25em;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+
+@media (max-width: 900px) {
+  .duo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .duo__swap {
+    margin: 0 auto;
+    transform: rotate(90deg);
+  }
+}
+
 .field--narrow {
   max-width: 20rem;
 }
@@ -60,7 +146,11 @@
     linear-gradient(45deg, transparent 75%, var(--mat-sys-surface-container) 75%),
     linear-gradient(-45deg, transparent 75%, var(--mat-sys-surface-container) 75%);
   background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-position:
+    0 0,
+    0 10px,
+    10px -10px,
+    -10px 0;
 }
 
 .field__input--tall {
@@ -79,7 +169,10 @@
 }
 
 .status--warn {
-  background: var(--mat-sys-tertiary-container, color-mix(in srgb, var(--mat-sys-primary) 14%, transparent));
+  background: var(
+    --mat-sys-tertiary-container,
+    color-mix(in srgb, var(--mat-sys-primary) 14%, transparent)
+  );
   color: var(--mat-sys-on-surface);
 }
 

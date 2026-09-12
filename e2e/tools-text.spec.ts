@@ -302,11 +302,22 @@ test('base64-converter round-trips text', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'base64-converter', 'Base64 Converter');
 
-  // The tool opens on the File tab; text encoding lives behind the Text tab.
-  await page.getByRole('tab', { name: 'Text' }).click();
+  // The Text tab is the landing tab, and the direction is worked out from the input.
   await page.locator('#b64-text').fill('hello world');
-
+  await expect(page.getByTestId('direction')).toContainText('encoding');
   await expect(page.locator('#b64-result')).toHaveValue(/aGVsbG8gd29ybGQ=/);
+
+  // Base64 in, text out — no switch touched.
+  await page.locator('#b64-text').fill('SGVsbG8sIHdvcmxk');
+  await expect(page.getByTestId('direction')).toContainText('decoding');
+  await expect(page.locator('#b64-result')).toHaveValue('Hello, world');
+
+  // A stray character is named by position, and the fix button removes it.
+  await page.locator('.modes').getByText('Decode', { exact: true }).click();
+  await page.locator('#b64-text').fill('SGVs*bG8=');
+  await expect(page.getByRole('alert')).toContainText('“*” at position 5');
+  await page.getByRole('button', { name: 'Remove the stray characters' }).click();
+  await expect(page.locator('#b64-result')).toHaveValue('Hello');
 
   expectClean(watch);
 });

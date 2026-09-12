@@ -1,9 +1,170 @@
 <app-tool-page slug="base64-converter">
-  Encode and decode text or files to and from Base64. Everything runs in your browser, on a
-  background thread — big files and long strings stay responsive.
+  Paste anything: plain text is encoded, Base64 is decoded, and the result appears as you type.
+  Files have their own tabs. Everything runs in your browser, on a background thread.
 </app-tool-page>
 
-<mat-tab-group [preserveContent]="true">
+<mat-tab-group [preserveContent]="true" [(selectedIndex)]="tab">
+  <!-- ------------------------------------------------------------- Text -->
+  <mat-tab label="Text">
+    <div class="panel panel--tab">
+      <div class="modes-row">
+        <mat-button-toggle-group
+          class="modes"
+          aria-label="Conversion direction"
+          [value]="choice()"
+          (change)="setChoice($event.value)"
+        >
+          <mat-button-toggle value="auto">Auto</mat-button-toggle>
+          <mat-button-toggle value="encode">Encode</mat-button-toggle>
+          <mat-button-toggle value="decode">Decode</mat-button-toggle>
+        </mat-button-toggle-group>
+        <span class="modes-row__hint" aria-live="polite" data-testid="direction">
+          @if (detectedReason()) {
+            Looks like {{ detectedReason() }} → {{ mode() === 'encode' ? 'encoding' : 'decoding' }}
+          } @else if (choice() === 'auto') {
+            The input decides: text is encoded, Base64 is decoded.
+          } @else {
+            {{ mode() === 'encode' ? 'Encoding' : 'Decoding' }} whatever is pasted.
+          }
+        </span>
+      </div>
+
+      <div class="duo">
+        <section class="duo__pane">
+          <div class="field">
+            <label class="field__label" for="b64-text">
+              {{ mode() === 'encode' ? 'Text to encode' : 'Base64 to decode' }}
+            </label>
+            <textarea
+              id="b64-text"
+              #textArea
+              class="field__input field__input--pane"
+              rows="12"
+              spellcheck="false"
+              placeholder="Type or paste text, Base64 or a data URI…"
+              [readonly]="textSource.locked()"
+              (input)="onTextInput($event)"
+              (paste)="onTextPaste($event)"
+            ></textarea>
+            <span class="field__hint">
+              @if (textSource.locked()) {
+                All {{ count(textSource.length()) }} characters are loaded — the box shows the first
+                {{ count(previewChars) }}. Clear to edit again.
+              } @else if (textSource.length() > 0) {
+                {{ count(textSource.length()) }} characters
+                @if (inputBytes() !== null && mode() === 'encode') {
+                  · {{ formatBytes(inputBytes() ?? 0) }} as UTF-8
+                }
+              } @else {
+                Nothing is uploaded; the page never sees a server.
+              }
+            </span>
+          </div>
+          <div class="actions">
+            <button matButton (click)="clearText()" [disabled]="!textSource.length()">
+              <ng-icon name="matClearOutline" />
+              Clear
+            </button>
+            <app-try-example (loadExample)="loadExample()" />
+          </div>
+        </section>
+
+        <button
+          type="button"
+          class="duo__swap"
+          matIconButton
+          aria-label="Use the result as the input"
+          title="Use the result as the input"
+          (click)="swapText()"
+          [disabled]="!textResultLength()"
+        >
+          <ng-icon name="matSwapHorizOutline" />
+        </button>
+
+        <section class="duo__pane" aria-live="polite">
+          <div class="field">
+            <label class="field__label" for="b64-result">
+              {{ mode() === 'encode' ? 'Base64' : 'Decoded text' }}
+            </label>
+            @if (issue(); as bad) {
+              <div class="field__input field__input--pane trouble" role="alert">
+                <p class="trouble__title">
+                  <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutlineOutline" />
+                  {{ bad.message }}
+                </p>
+                <p class="trouble__body">
+                  Base64 only uses letters, digits, <code>+</code> <code>/</code> <code>=</code> (or
+                  <code>-</code> <code>_</code> in the URL-safe form). Line breaks and spaces are
+                  fine and are ignored.
+                </p>
+                <div class="actions">
+                  <button matButton="filled" (click)="fixInput()">
+                    <ng-icon name="matAutoFixHighOutline" />
+                    Remove the stray characters
+                  </button>
+                  <button matButton (click)="setChoice('encode')">Encode it instead</button>
+                </div>
+              </div>
+            } @else if (binaryMime()) {
+              <div class="field__input field__input--pane trouble" data-testid="binary">
+                <p class="trouble__title">
+                  <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
+                  This is the Base64 of a {{ binaryLabel() }}, about
+                  {{ formatBytes(binaryBytes()) }}.
+                </p>
+                <p class="trouble__body">
+                  It is a file rather than text, so there is nothing readable to show here. The
+                  Decode file tab can preview it and save it with the right extension.
+                </p>
+                <div class="actions">
+                  <button matButton="filled" (click)="openInDecodeTab()">
+                    <ng-icon name="matVisibilityOutline" />
+                    Open in Decode file
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <textarea
+                id="b64-result"
+                class="field__input field__input--pane"
+                rows="12"
+                readonly
+                spellcheck="false"
+                placeholder="The result appears here as you type."
+                [value]="textResultHead()"
+              ></textarea>
+            }
+            <span class="field__hint">
+              @if (textError()) {
+                <span class="field__hint--err">{{ textError() }}</span>
+              } @else if (textBusy()) {
+                Converting…
+              } @else if (textResultLength() > 0) {
+                {{ count(textResultLength()) }} characters
+                @if (textResultTruncated()) {
+                  · only the first {{ count(previewChars) }} are shown — copy or download for the
+                  rest
+                }
+              } @else {
+                &nbsp;
+              }
+            </span>
+          </div>
+          <div class="actions">
+            <button matButton="filled" [disabled]="!textResultLength()" (click)="copyTextResult()">
+              <ng-icon name="matContentCopyOutline" />
+              Copy
+            </button>
+            <button matButton [disabled]="!textResultLength()" (click)="downloadTextResult()">
+              <ng-icon name="matDownloadOutline" />
+              Download .txt
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </mat-tab>
+
   <!-- --------------------------------------------------- Encode a file -->
   <mat-tab label="Encode file">
     <div class="panel panel--tab">
@@ -35,7 +196,7 @@
 
       @if (encodedLength() > 0) {
         <mat-checkbox [checked]="withDataUri()" (change)="toggleDataUri($event.checked)">
-          Include data URI prefix
+          Include the data URI prefix
         </mat-checkbox>
 
         <div class="field">
@@ -51,8 +212,8 @@
           <span class="field__hint">
             {{ count(encodedTotal()) }} characters.
             @if (encodedTruncated()) {
-              Only the first {{ count(previewChars) }} are shown — rendering the whole string
-              would freeze the page. Copy or download to get all of it.
+              Only the first {{ count(previewChars) }} are shown — rendering the whole string would
+              freeze the page. Copy or download to get all of it.
             }
           </span>
         </div>
@@ -220,93 +381,6 @@
             </div>
           }
         </section>
-      </div>
-    </div>
-  </mat-tab>
-
-  <!-- ------------------------------------------------------------- Text -->
-  <mat-tab label="Text">
-    <div class="panel panel--tab">
-      <mat-button-toggle-group
-        class="modes"
-        aria-label="Conversion mode"
-        [value]="mode()"
-        (change)="setMode($event.value)"
-      >
-        <mat-button-toggle value="encode">Encode</mat-button-toggle>
-        <mat-button-toggle value="decode">Decode</mat-button-toggle>
-      </mat-button-toggle-group>
-
-      <div class="field">
-        <label class="field__label" for="b64-text">
-          {{ mode() === 'encode' ? 'Text to encode' : 'Base64 to decode' }}
-        </label>
-        <textarea
-          id="b64-text"
-          #textArea
-          class="field__input"
-          rows="8"
-          spellcheck="false"
-          placeholder="Type or paste here…"
-          [readonly]="textSource.locked()"
-          (input)="onTextInput($event)"
-          (paste)="onTextPaste($event)"
-        ></textarea>
-        @if (textSource.locked()) {
-          <span class="field__hint">
-            All {{ count(textSource.length()) }} characters are loaded — the box shows the first
-            {{ count(previewChars) }}. Clear to edit again.
-          </span>
-        }
-      </div>
-
-      @if (textError()) {
-        <p class="status status--err" role="alert">
-          <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutlineOutline" />
-          {{ textError() }}
-        </p>
-      }
-
-      <div class="field">
-        <label class="field__label" for="b64-result">Result</label>
-        <textarea
-          id="b64-result"
-          class="field__input"
-          rows="8"
-          readonly
-          spellcheck="false"
-          [value]="textResultHead()"
-        ></textarea>
-        @if (textBusy()) {
-          <span class="field__hint">Converting…</span>
-        } @else if (textResultLength() > 0) {
-          <span class="field__hint">
-            {{ count(textResultLength()) }} characters.
-            @if (textResultTruncated()) {
-              Only the first {{ count(previewChars) }} are shown — copy or download for the rest.
-            }
-          </span>
-        }
-      </div>
-
-      <div class="actions">
-        <button matButton="filled" [disabled]="!textResultLength()" (click)="copyTextResult()">
-          <ng-icon name="matContentCopyOutline" />
-          Copy result
-        </button>
-        <button matButton [disabled]="!textResultLength()" (click)="downloadTextResult()">
-          <ng-icon name="matDownloadOutline" />
-          Download .txt
-        </button>
-        <button matButton (click)="swapText()" [disabled]="!textResultLength()">
-          <ng-icon name="matSwapVertOutline" />
-          Use as input
-        </button>
-        <button matButton (click)="clearText()" [disabled]="!textSource.length()">
-          <ng-icon name="matClearOutline" />
-          Clear
-        </button>
-        <app-try-example (loadExample)="loadExample()" />
       </div>
     </div>
   </mat-tab>
