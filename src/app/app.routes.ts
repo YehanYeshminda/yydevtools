@@ -254,6 +254,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/pdf-form-fill',
+    loadComponent: () =>
+      import('./tools/pdf-form-fill/pdf-form-fill').then((m) => m.PdfFormFillTool),
+    title: 'PDF Form Fill & Flatten — Fill a PDF form online — YYDevTools',
+    data: {
+      description:
+        'Fill in the text fields, checkboxes, radio buttons and dropdowns of a PDF form in your ' +
+        'browser, preview the result, and download it editable or flattened. Nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/pdf-sign',
     loadComponent: () => import('./tools/pdf-sign/pdf-sign').then((m) => m.PdfSignTool),
     title: 'Sign PDF — Add your signature to a PDF online — YYDevTools',

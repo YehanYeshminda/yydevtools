@@ -258,6 +258,28 @@ test('pdf-watermark stamps text and page numbers with a live preview', async ({ 
   expectClean(watch);
 });
 
+test('pdf-form-fill lists the fields, previews and downloads the filled form', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-form-fill', 'PDF Form Fill & Flatten');
+
+  await uploadFiles(page, ['sample-form.pdf']);
+  await expect(page.getByText(/sample-form\.pdf · 1 page .* 5 fields/)).toBeVisible({
+    timeout: 45_000,
+  });
+
+  await page.getByLabel('Full name').fill('Ada Lovelace');
+  await page.getByLabel('agree').check();
+  await page.getByLabel('Blue').check();
+  await page.getByLabel('size').selectOption('Large');
+  await expect(page.locator('app-pdf-preview iframe')).toBeVisible({ timeout: 45_000 });
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download filled PDF' }).click();
+  expect((await download).suggestedFilename()).toBe('sample-form-filled.pdf');
+
+  expectClean(watch);
+});
+
 test('pdf-sign places a typed signature and downloads the signed file', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'pdf-sign', 'Sign PDF');

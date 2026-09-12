@@ -13,7 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateSync } from 'node:zlib';
 
-import { PDFDocument, StandardFonts, rgb } from '@cantoo/pdf-lib';
+import { PDFDocument, PDFName, PDFString, StandardFonts, rgb } from '@cantoo/pdf-lib';
 import { zipSync, strToU8 } from 'fflate';
 
 const OUT = dirname(fileURLToPath(import.meta.url));
@@ -42,6 +42,45 @@ async function makePdf(pages, title) {
       font,
     });
   }
+  return Buffer.from(await doc.save());
+}
+
+/** A one-page AcroForm with one field of each kind the form-fill tool handles. */
+async function makeFormPdf() {
+  const doc = await PDFDocument.create();
+  doc.setTitle('Application Form');
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const page = doc.addPage([595, 842]);
+  const form = doc.getForm();
+  page.drawText('Application Form', { x: 60, y: 760, size: 24, font });
+
+  const label = (text, y) => page.drawText(text, { x: 60, y, size: 12, font });
+
+  label('Full name', 700);
+  const name = form.createTextField('applicant.name');
+  name.acroField.dict.set(PDFName.of('TU'), PDFString.of('Full name'));
+  name.addToPage(page, { x: 200, y: 690, width: 300, height: 26 });
+
+  label('Notes', 650);
+  const notes = form.createTextField('notes');
+  notes.enableMultiline();
+  notes.addToPage(page, { x: 200, y: 590, width: 300, height: 80 });
+
+  label('I agree to the terms', 550);
+  const agree = form.createCheckBox('agree');
+  agree.addToPage(page, { x: 200, y: 545, width: 20, height: 20 });
+
+  label('Colour', 500);
+  const colour = form.createRadioGroup('colour');
+  colour.addOptionToPage('Red', page, { x: 200, y: 495, width: 20, height: 20 });
+  colour.addOptionToPage('Blue', page, { x: 260, y: 495, width: 20, height: 20 });
+
+  label('Size', 450);
+  const size = form.createDropdown('size');
+  size.addOptions(['Small', 'Medium', 'Large']);
+  size.select('Medium');
+  size.addToPage(page, { x: 200, y: 440, width: 150, height: 26 });
+
   return Buffer.from(await doc.save());
 }
 
@@ -297,6 +336,7 @@ function makeXlsx() {
 console.log('Generating e2e fixtures…');
 write('sample.pdf', await makePdf(3, 'Annual Report'));
 write('sample-2.pdf', await makePdf(2, 'Appendix A'));
+write('sample-form.pdf', await makeFormPdf());
 write('sample.png', makePng());
 write('sample.jpg', makeJpegWithExif());
 write('sample.csv', Buffer.from('region,requests,p99\niad,1284,210\nfra,903,188\nsyd,412,264\n'));

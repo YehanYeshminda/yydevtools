@@ -269,6 +269,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'pdf-form-fill',
+    name: 'PDF Form Fill & Flatten',
+    description:
+      'Fill in a PDF form’s fields with a live preview, then download it editable or flattened.',
+    icon: 'matFactCheckOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'pdf-sign',
     name: 'Sign PDF',
     description: 'Draw, type or upload a signature and place it on a PDF — nothing is uploaded.',

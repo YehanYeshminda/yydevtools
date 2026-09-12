@@ -2060,6 +2060,67 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['office-to-pdf', 'word-viewer', 'excel-viewer', 'pdf-viewer'],
   },
+  'pdf-form-fill': {
+    slug: 'pdf-form-fill',
+    intro: [
+      'Government forms, HR paperwork, applications, consent forms: the PDF has fields, but the viewer you have either will not fill them, will not save what you typed, or insists on an account. This tool reads the form’s own fields — text, checkboxes, radio buttons, dropdowns, lists — shows them as an ordinary web form, previews the filled pages as you type, and downloads the result.',
+      'Tick “flatten” and the values are burned into the pages so nothing can be edited afterwards, which is what most recipients want. Everything runs in your browser; the form and what you enter in it are never uploaded.',
+    ],
+    steps: [
+      'Choose the PDF form.',
+      'Fill in the fields. Required ones are marked; read-only ones are shown but locked.',
+      'Check the preview below the fields — it is the flattened result, updated as you type.',
+      'Decide whether to flatten, then download the filled PDF.',
+    ],
+    features: [
+      'Text fields (single and multi-line, with length limits honoured), checkboxes, radio groups, dropdowns and list boxes.',
+      'Field labels from the form’s own tooltips where the author set them.',
+      'Live preview of the filled document in the real viewer.',
+      'Download editable (the recipient can still change values) or flattened (they cannot).',
+      'XFA forms fall back to their standard fields; the XFA layer is dropped so every viewer shows the same thing.',
+    ],
+    sections: [
+      {
+        heading: 'Editable or flattened?',
+        body: [
+          'An editable result keeps the form’s fields, with your values in them. Anyone can open it and change what you wrote, and some viewers will show a “this document contains form fields” bar. That is right when the form goes on to someone who must add to it — a manager’s section, a countersignature.',
+          'Flattening draws the values onto the pages and removes the fields. The result looks the same, prints the same, and cannot be altered without an editor and some effort. Choose it for anything final: a submitted application, a signed agreement, a form for the file. It is also the fix for the classic problem where a filled form opens blank in another viewer — that happens when the viewer ignores stored values, and flattened text cannot be ignored.',
+        ],
+      },
+      {
+        heading: 'When a form has no fields',
+        body: [
+          'A scanned or printed form is just a picture of a form; there is nothing to fill. The tool says so. For those, Sign PDF places text and a signature anywhere on the page, and PDF OCR can make the text searchable first if you need to find the boxes.',
+        ],
+      },
+      {
+        heading: 'XFA and other oddities',
+        body: [
+          'A few government forms use XFA, an older Adobe-only format layered on top of a normal PDF form. Browsers and most viewers cannot show XFA at all; they show the standard fields underneath, which is what this tool fills. The XFA layer is removed from the result so the filled values are what every viewer displays rather than being hidden behind a “please open in Adobe Reader” page.',
+          'Fields that run calculations or validation scripts keep their values but the scripts do not run here — enter the totals yourself. Signature fields are left for a signing tool.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Why does my text look different in the preview than in the box?',
+        a: 'The form’s author chose the field font and size, and that is what the page shows. Long text in a single-line field is clipped just as it would be in any viewer; use fewer words or check whether the field allows multiple lines.',
+      },
+      {
+        q: 'Can I type characters outside the Latin alphabet?',
+        a: 'Only if the form embeds a font that has them, which most do not. If a value cannot be drawn you will be told which characters to avoid.',
+      },
+      {
+        q: 'Are my answers stored anywhere?',
+        a: 'No. They live in this tab until you close it. Nothing is sent to a server.',
+      },
+      {
+        q: 'Can I sign the form too?',
+        a: 'Fill and flatten it here, then open the result in Sign PDF to add a signature image.',
+      },
+    ],
+    related: ['pdf-sign', 'pdf-protect', 'pdf-ocr', 'pdf-organizer'],
+  },
   'pdf-sign': {
     slug: 'pdf-sign',
     intro: [

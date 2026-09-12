@@ -1,0 +1,182 @@
+<app-tool-page slug="pdf-form-fill">
+  Fill in a PDF form's fields, see the result as you type, and download it — editable or flattened
+  so it cannot be changed. Nothing is uploaded.
+</app-tool-page>
+
+<div class="panel">
+  <app-dropzone accept="application/pdf,.pdf" (filesSelected)="acceptFiles($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
+    <span class="dropzone__title">
+      @if (hasFile()) {
+        Drop another PDF form here, or click to replace
+      } @else {
+        Drop a PDF form here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">One file at a time — up to 50 MB</span>
+  </app-dropzone>
+
+  @if (hasFile()) {
+    <p class="status status--ok" role="status">
+      <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
+      {{ fileSummary() }} · {{ fields().length }} {{ fields().length === 1 ? 'field' : 'fields' }}
+    </p>
+
+    @if (xfa()) {
+      <p class="status" role="status">
+        <ng-icon class="status__icon" aria-hidden="true" name="matInfoOutline" />
+        This form carries an XFA layer. The fields below are its standard fallback; the XFA data is
+        dropped from the result so what you fill in is what every viewer shows.
+      </p>
+    }
+
+    @if (fields().length === 0) {
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutlineOutline" />
+        This PDF has no fillable fields. If it is a printed form, use Sign PDF to place text or a
+        signature on the page instead.
+      </p>
+    } @else {
+      <form class="fields" (submit)="$event.preventDefault()">
+        @for (field of fields(); track field.name) {
+          @switch (field.kind) {
+            @case ('text') {
+              <div class="field">
+                <label class="field__label" [for]="'f-' + field.name">
+                  {{ field.label }}
+                  @if (field.required) {
+                    <span class="req" aria-hidden="true">*</span>
+                  }
+                </label>
+                @if (field.multiline) {
+                  <textarea
+                    class="field__input"
+                    rows="3"
+                    [id]="'f-' + field.name"
+                    [disabled]="field.readOnly"
+                    [required]="field.required"
+                    [attr.maxlength]="field.maxLength"
+                    [value]="asText(field.name)"
+                    (input)="setValue(field.name, text($event))"
+                  ></textarea>
+                } @else {
+                  <input
+                    class="field__input"
+                    type="text"
+                    [id]="'f-' + field.name"
+                    [disabled]="field.readOnly"
+                    [required]="field.required"
+                    [attr.maxlength]="field.maxLength"
+                    [value]="asText(field.name)"
+                    (input)="setValue(field.name, text($event))"
+                  />
+                }
+              </div>
+            }
+            @case ('checkbox') {
+              <label class="check">
+                <input
+                  type="checkbox"
+                  [disabled]="field.readOnly"
+                  [checked]="asBool(field.name)"
+                  (change)="setValue(field.name, checked($event))"
+                />
+                {{ field.label }}
+              </label>
+            }
+            @case ('radio') {
+              <fieldset class="group" [disabled]="field.readOnly">
+                <legend class="field__label">{{ field.label }}</legend>
+                @for (option of field.options; track option) {
+                  <label class="check">
+                    <input
+                      type="radio"
+                      [name]="field.name"
+                      [value]="option"
+                      [checked]="isChosen(field.name, option)"
+                      (change)="setValue(field.name, option)"
+                    />
+                    {{ option }}
+                  </label>
+                }
+              </fieldset>
+            }
+            @default {
+              <div class="field">
+                <label class="field__label" [for]="'f-' + field.name">{{ field.label }}</label>
+                @if (field.kind === 'dropdown' && field.editable && !field.multi) {
+                  <input
+                    class="field__input"
+                    type="text"
+                    [id]="'f-' + field.name"
+                    [attr.list]="'opts-' + field.name"
+                    [disabled]="field.readOnly"
+                    [value]="first(field.name)"
+                    (input)="setValue(field.name, [text($event)])"
+                  />
+                  <datalist [id]="'opts-' + field.name">
+                    @for (option of field.options; track option) {
+                      <option [value]="option"></option>
+                    }
+                  </datalist>
+                } @else {
+                  <select
+                    class="field__input"
+                    [id]="'f-' + field.name"
+                    [multiple]="field.multi"
+                    [disabled]="field.readOnly"
+                    (change)="setValue(field.name, selected($event))"
+                  >
+                    @if (!field.multi) {
+                      <option value="" [selected]="first(field.name) === ''">—</option>
+                    }
+                    @for (option of field.options; track option) {
+                      <option [value]="option" [selected]="isChosen(field.name, option)">
+                        {{ option }}
+                      </option>
+                    }
+                  </select>
+                }
+              </div>
+            }
+          }
+        }
+      </form>
+
+      @if (preview(); as bytes) {
+        <app-pdf-preview [bytes]="bytes" [fileName]="fileName()" height="36rem" />
+      }
+
+      <label class="check">
+        <input type="checkbox" [checked]="flatten()" (change)="setFlatten($event)" />
+        Flatten the form — fix the values so the download can no longer be edited
+      </label>
+
+      <div class="actions">
+        <button matButton="filled" (click)="download()" [disabled]="busy()">
+          @if (busy()) {
+            <app-spinner />
+            Working…
+          } @else {
+            <ng-icon name="matDownloadOutline" />
+            Download filled PDF
+          }
+        </button>
+        <button matButton (click)="clear()" [disabled]="busy()">
+          <ng-icon name="matDeleteSweepOutline" />
+          Close file
+        </button>
+      </div>
+    }
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+    <span class="note__text">
+      Filling and flattening run in this tab; the form and what you type in it never leave your
+      device. The preview shows the flattened result.
+    </span>
+  </p>
+</div>
+
+<app-tool-content slug="pdf-form-fill" />
