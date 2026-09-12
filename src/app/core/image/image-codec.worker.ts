@@ -55,6 +55,17 @@ export interface EncodeOptions {
   targetBytes: number;
   /** Carry the source's Exif into the output. JPEG → JPEG only. */
   keepMetadata: boolean;
+  /** Source-pixel rectangle to keep; the whole image when absent. */
+  crop?: PixelRect;
+  /** Exact output size; overrides `maxDimension` and may enlarge. */
+  size?: { width: number; height: number };
+}
+
+export interface PixelRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface EncodedImage {
@@ -162,8 +173,10 @@ const api = {
 
   async encode(id: string, file: File, options: EncodeOptions): Promise<EncodedImage> {
     const bitmap = await bitmapFor(id, file);
-    const { width, height } = fitInside(bitmap.width, bitmap.height, options.maxDimension);
-    const pixels = rasterise(bitmap, width, height);
+    const crop = options.crop ?? { x: 0, y: 0, width: bitmap.width, height: bitmap.height };
+    const { width, height } =
+      options.size ?? fitInside(crop.width, crop.height, options.maxDimension);
+    const pixels = rasterise(bitmap, width, height, crop);
 
     const result =
       options.targetBytes > 0
@@ -242,7 +255,7 @@ interface Attempt {
   targetMissed: boolean;
 }
 
-function rasterise(bitmap: ImageBitmap, width: number, height: number): ImageData {
+function rasterise(bitmap: ImageBitmap, width: number, height: number, crop: PixelRect): ImageData {
   const canvas = new OffscreenCanvas(width, height);
   const context = canvas.getContext('2d');
   if (!context) {
@@ -250,7 +263,7 @@ function rasterise(bitmap: ImageBitmap, width: number, height: number): ImageDat
   }
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = 'high';
-  context.drawImage(bitmap, 0, 0, width, height);
+  context.drawImage(bitmap, crop.x, crop.y, crop.width, crop.height, 0, 0, width, height);
   return context.getImageData(0, 0, width, height);
 }
 

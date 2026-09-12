@@ -166,6 +166,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/image-resize',
+    loadComponent: () =>
+      import('./tools/image-resize/image-resize').then((m) => m.ImageResizeTool),
+    title: 'Image Resizer & Cropper — Crop and resize images online — YYDevTools',
+    data: {
+      description:
+        'Crop an image with a draggable box or exact pixels, resize it to a width, height or ' +
+        'maximum file size, and save as JPEG, PNG or WebP. Runs in your browser; nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/exif-viewer',
     loadComponent: () => import('./tools/exif-viewer/exif-viewer').then((m) => m.ExifViewerTool),
     title: 'EXIF Viewer & Metadata Remover — YYDevTools',

@@ -1,0 +1,280 @@
+<app-tool-page slug="image-resize">
+  Crop with a draggable box or exact numbers, resize to a width, height or file size, and save as
+  JPEG, PNG or WebP. Nothing is uploaded.
+</app-tool-page>
+
+<div class="panel">
+  <app-dropzone
+    accept="image/*,.heic,.heif"
+    [disabled]="opening()"
+    (filesSelected)="acceptFiles($event)"
+  >
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matAddPhotoAlternateOutline" />
+    <span class="dropzone__title">
+      @if (opening()) {
+        Opening…
+      } @else if (hasImage()) {
+        Drop another image here, or click to replace
+      } @else {
+        Drop an image here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">JPEG, PNG, WebP, HEIC, AVIF, GIF or BMP — up to 20 MB</span>
+  </app-dropzone>
+
+  @if (hasImage()) {
+    <p class="status status--ok" role="status">
+      <ng-icon class="status__icon" aria-hidden="true" name="matImageOutline" />
+      {{ name() }} · {{ imageWidth() }} × {{ imageHeight() }} px · {{ formatBytes(fileSize()) }}
+    </p>
+
+    <section class="cropper" aria-label="Crop">
+      <div class="chips" role="group" aria-label="Aspect ratio">
+        @for (option of aspects; track option.key) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="aspectKey() === option.key"
+            [attr.aria-pressed]="aspectKey() === option.key"
+            (click)="setAspect(option.key)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+
+      <div
+        class="frame"
+        #frame
+        (pointermove)="pointerMove($event)"
+        (pointerup)="pointerUp($event)"
+        (pointercancel)="pointerUp($event)"
+      >
+        @if (previewUrl(); as src) {
+          <img class="frame__image" [src]="src" alt="" draggable="false" />
+        }
+        <div
+          class="box"
+          [style.left]="cropStyle().left"
+          [style.top]="cropStyle().top"
+          [style.width]="cropStyle().width"
+          [style.height]="cropStyle().height"
+          (pointerdown)="boxDown($event)"
+        >
+          <button
+            type="button"
+            class="handle handle--nw"
+            aria-label="Drag the top-left corner"
+            (pointerdown)="cornerDown($event, 'nw')"
+          ></button>
+          <button
+            type="button"
+            class="handle handle--ne"
+            aria-label="Drag the top-right corner"
+            (pointerdown)="cornerDown($event, 'ne')"
+          ></button>
+          <button
+            type="button"
+            class="handle handle--sw"
+            aria-label="Drag the bottom-left corner"
+            (pointerdown)="cornerDown($event, 'sw')"
+          ></button>
+          <button
+            type="button"
+            class="handle handle--se"
+            aria-label="Drag the bottom-right corner"
+            (pointerdown)="cornerDown($event, 'se')"
+          ></button>
+        </div>
+      </div>
+
+      <div class="grid grid--4">
+        <div class="field">
+          <label class="field__label" for="crop-x">Left</label>
+          <input
+            id="crop-x"
+            class="field__input"
+            type="number"
+            min="0"
+            [max]="imageWidth()"
+            [value]="crop().x"
+            (change)="setCropField('x', $event)"
+          />
+        </div>
+        <div class="field">
+          <label class="field__label" for="crop-y">Top</label>
+          <input
+            id="crop-y"
+            class="field__input"
+            type="number"
+            min="0"
+            [max]="imageHeight()"
+            [value]="crop().y"
+            (change)="setCropField('y', $event)"
+          />
+        </div>
+        <div class="field">
+          <label class="field__label" for="crop-w">Crop width</label>
+          <input
+            id="crop-w"
+            class="field__input"
+            type="number"
+            min="8"
+            [max]="imageWidth()"
+            [value]="crop().width"
+            (change)="setCropField('width', $event)"
+          />
+        </div>
+        <div class="field">
+          <label class="field__label" for="crop-h">Crop height</label>
+          <input
+            id="crop-h"
+            class="field__input"
+            type="number"
+            min="8"
+            [max]="imageHeight()"
+            [value]="crop().height"
+            (change)="setCropField('height', $event)"
+          />
+        </div>
+      </div>
+      <p class="field__hint">
+        Drag the box to move it and the corners to resize it, or type exact pixels. Values are in
+        the original image's pixels.
+      </p>
+    </section>
+
+    <section class="resize" aria-label="Resize and output">
+      <div class="grid grid--4">
+        <div class="field">
+          <label class="field__label" for="out-w">Width (px)</label>
+          <input
+            id="out-w"
+            class="field__input"
+            type="number"
+            min="1"
+            max="16384"
+            [placeholder]="crop().width"
+            [value]="wantWidth() ?? ''"
+            (change)="setWant('width', $event)"
+          />
+        </div>
+        <div class="field">
+          <label class="field__label" for="out-h">Height (px)</label>
+          <input
+            id="out-h"
+            class="field__input"
+            type="number"
+            min="1"
+            max="16384"
+            [placeholder]="crop().height"
+            [value]="wantHeight() ?? ''"
+            (change)="setWant('height', $event)"
+          />
+        </div>
+        <div class="field">
+          <label class="field__label" for="out-format">Format</label>
+          <select
+            id="out-format"
+            class="field__input"
+            [value]="format()"
+            (change)="setFormat($event)"
+          >
+            @for (option of formats; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label class="field__label" for="out-target">Max file size (KB)</label>
+          <input
+            id="out-target"
+            class="field__input"
+            type="number"
+            min="0"
+            placeholder="Any"
+            [disabled]="!lossy()"
+            [value]="targetKb() || ''"
+            (change)="setTargetKb($event)"
+          />
+        </div>
+      </div>
+
+      <div class="row-wrap">
+        <label class="check">
+          <input type="checkbox" [checked]="lock()" (change)="setLock($event)" />
+          Keep proportions
+        </label>
+        <div class="chips" role="group" aria-label="Scale">
+          @for (percent of [100, 75, 50, 25]; track percent) {
+            <button type="button" class="chip" (click)="scale(percent)">{{ percent }}%</button>
+          }
+        </div>
+        @if (lossy() && !targetKb()) {
+          <label class="slider">
+            Quality {{ quality() }}
+            <input
+              type="range"
+              min="30"
+              max="100"
+              [value]="quality()"
+              (input)="setQuality($event)"
+              aria-label="Quality"
+            />
+          </label>
+        }
+      </div>
+    </section>
+
+    @if (result(); as out) {
+      <section class="result" aria-label="Result">
+        <img class="result__image" [src]="out.url" alt="Resized preview" />
+        <div class="result__meta">
+          <p class="result__line" data-testid="result-size">
+            <strong>{{ out.width }} × {{ out.height }} px</strong> · {{ formatBytes(out.size) }}
+            @if (lossy()) {
+              · quality {{ out.quality }}
+            }
+          </p>
+          @if (out.targetMissed) {
+            <p class="status status--err" role="alert">
+              Even the lowest quality could not fit inside {{ targetKb() }} KB. Try smaller
+              dimensions.
+            </p>
+          }
+          <div class="actions">
+            <button matButton="filled" (click)="download()" [disabled]="busy()">
+              @if (busy()) {
+                <app-spinner />
+                Updating…
+              } @else {
+                <ng-icon name="matDownloadOutline" />
+                Download
+              }
+            </button>
+            <button matButton (click)="resetCrop()">
+              <ng-icon name="matCropFreeOutline" />
+              Reset crop
+            </button>
+            <button matButton (click)="clear()" [disabled]="busy()">
+              <ng-icon name="matDeleteSweepOutline" />
+              Close
+            </button>
+          </div>
+        </div>
+      </section>
+    } @else if (busy()) {
+      <p class="status" role="status"><app-spinner /> Preparing the preview…</p>
+    }
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+    <span class="note__text">
+      Cropping, resizing and encoding run in this tab. Location and camera metadata are not carried
+      into the result; use the EXIF viewer if you want to keep it.
+    </span>
+  </p>
+</div>
+
+<app-tool-content slug="image-resize" />

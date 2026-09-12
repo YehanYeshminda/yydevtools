@@ -1,0 +1,141 @@
+.cropper,
+.resize {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.frame {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  background: repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 0 0 / 16px 16px;
+  border: 1px solid var(--outline);
+  border-radius: 6px;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+}
+
+.frame__image {
+  display: block;
+  max-width: 100%;
+  max-height: 60vh;
+  width: auto;
+  height: auto;
+}
+
+.box {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1.5px solid var(--brand);
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.5);
+  cursor: move;
+}
+
+.handle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 2px solid var(--brand);
+  border-radius: 50%;
+  background: var(--surface);
+  cursor: nwse-resize;
+}
+
+.handle--nw {
+  top: -9px;
+  left: -9px;
+}
+
+.handle--ne {
+  top: -9px;
+  right: -9px;
+  cursor: nesw-resize;
+}
+
+.handle--sw {
+  bottom: -9px;
+  left: -9px;
+  cursor: nesw-resize;
+}
+
+.handle--se {
+  bottom: -9px;
+  right: -9px;
+}
+
+.grid {
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--on);
+}
+
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--on);
+  min-width: 14rem;
+}
+
+.slider input {
+  flex: 1;
+  accent-color: var(--brand);
+}
+
+input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--brand);
+}
+
+.result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--outline);
+  border-radius: var(--r-field);
+}
+
+.result__image {
+  max-width: min(100%, 320px);
+  max-height: 240px;
+  width: auto;
+  height: auto;
+  background: repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 0 0 / 16px 16px;
+  border-radius: 4px;
+}
+
+.result__meta {
+  flex: 1;
+  min-width: 14rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.result__line {
+  margin: 0;
+  color: var(--on);
+}

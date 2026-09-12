@@ -12,9 +12,10 @@ import type {
   EncodeOptions,
   ImageCodecApi,
   OpenedImage,
+  PixelRect,
 } from './image-codec.worker';
 
-export type { CodecFormat, EncodeOptions, OpenedImage };
+export type { CodecFormat, EncodeOptions, OpenedImage, PixelRect };
 
 export interface CompressedImage {
   blob: Blob;

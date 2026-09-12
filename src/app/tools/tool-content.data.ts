@@ -1464,6 +1464,68 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['image-compressor', 'exif-viewer', 'image-pdf'],
   },
 
+  'image-resize': {
+    slug: 'image-resize',
+    intro: [
+      'Crop a photo to the part that matters, then make it the size the destination wants — a 1080-pixel-wide post, a 500 KB attachment limit, a 4:5 profile picture. Drag the box and its corners, or type exact pixels when you need to match a spec, and pick the format to save in.',
+      'It runs on the same encoders as the compressor and converter, in your browser: HEIC from a phone opens directly, the preview updates as you change anything, and the file is never uploaded.',
+    ],
+    steps: [
+      'Drop in an image.',
+      'Crop: pick an aspect ratio or leave it free, then drag the box and corners — or type Left, Top, Width and Height.',
+      'Resize: set a width or height (the other follows unless you untick “Keep proportions”), or hit a percentage. Set a maximum file size if there is a limit to meet.',
+      'Choose JPEG, PNG or WebP, check the preview, download.',
+    ],
+    features: [
+      'Draggable crop box with corner handles, plus exact pixel inputs.',
+      'Aspect presets: square, 4:5, 4:3, 3:2, 16:9, 9:16 and the original.',
+      'Resize to a width, a height, a percentage, or a maximum file size in KB.',
+      'JPEG, PNG or WebP output, with a quality slider for the lossy two.',
+      'Reads HEIC, AVIF, WebP, PNG, JPEG, GIF and BMP; everything stays in the tab.',
+    ],
+    sections: [
+      {
+        heading: 'Cropping first, then resizing',
+        body: [
+          'The order matters. The crop is chosen on the original pixels, so nothing is thrown away before you decide what to keep; the resize then scales just the cropped region. A width you type refers to the output, and the placeholder in each box shows what the crop would give unscaled.',
+          'Enlarging is allowed but rarely wise — a 600-pixel image made 1800 wide is the same detail spread thinner. When a destination demands a minimum size, this is the tool for it; when it merely accepts one, keep the original.',
+        ],
+      },
+      {
+        heading: 'Hitting a file-size limit',
+        body: [
+          'Forms that cap uploads at 200 KB or 1 MB are common. Set the maximum file size and the tool searches for the highest JPEG or WebP quality that fits, the same way the compressor does. If even the lowest quality cannot get there, it says so; then reduce the dimensions, which is where most of the bytes are.',
+          'PNG has no quality dial, so the limit only applies to the lossy formats. A photo that must be PNG is best shrunk in pixels instead.',
+        ],
+      },
+      {
+        heading: 'Which format to save as',
+        body: [
+          'JPEG for photographs going anywhere; it is understood by everything. WebP for the web, about a third smaller at the same quality and supported by every current browser. PNG for screenshots, logos, anything with sharp edges or transparency — it is lossless, so larger, and this tool keeps transparent areas transparent when the source had them.',
+          'Metadata such as camera model and GPS location is not carried into the result. That is usually what people want from a resized copy meant for sharing; the EXIF viewer shows what was in the original.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Can I resize many images at once?',
+        a: 'Not here. The compressor and the converter both take a batch and can cap the longest edge for all of them; this tool is for one image where the crop is a per-image decision.',
+      },
+      {
+        q: 'Why are the crop numbers different from the image on screen?',
+        a: 'They are in the original image’s pixels, which is what you need to match a specification. The picture on screen is scaled to fit the page.',
+      },
+      {
+        q: 'Does it keep transparency?',
+        a: 'Saving as PNG or WebP keeps it. JPEG has no transparency, so transparent areas become black there; choose PNG or WebP for logos and cut-outs.',
+      },
+      {
+        q: 'Is anything uploaded?',
+        a: 'No. Decoding, cropping, resizing and encoding all run in your browser.',
+      },
+    ],
+    related: ['image-compressor', 'image-converter', 'exif-viewer', 'image-pdf'],
+  },
   'exif-viewer': {
     slug: 'exif-viewer',
     intro: [

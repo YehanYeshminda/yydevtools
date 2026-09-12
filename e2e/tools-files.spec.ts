@@ -211,6 +211,34 @@ test('excel-viewer renders an .xlsx', async ({ page }) => {
   expectClean(watch);
 });
 
+test('image-resize crops, resizes and downloads', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'image-resize', 'Image Resizer & Cropper');
+
+  await uploadFiles(page, ['sample-photo.jpg']);
+  await expect(page.getByText(/sample-photo\.jpg · 640 × 480 px/)).toBeVisible({
+    timeout: 45_000,
+  });
+  await expect(page.getByTestId('result-size')).toContainText('640 × 480 px', {
+    timeout: 45_000,
+  });
+
+  // A square crop, then a 200 px output: the result follows both.
+  await page.getByRole('button', { name: 'Square' }).click();
+  await expect(page.locator('#crop-w')).toHaveValue('480');
+  await page.locator('#out-w').fill('200');
+  await page.locator('#out-w').dispatchEvent('change');
+  await expect(page.getByTestId('result-size')).toContainText('200 × 200 px', {
+    timeout: 45_000,
+  });
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download' }).click();
+  expect((await download).suggestedFilename()).toBe('sample-photo-200x200.jpg');
+
+  expectClean(watch);
+});
+
 test('pdf-watermark stamps text and page numbers with a live preview', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'pdf-watermark', 'PDF Watermark & Page Numbers');

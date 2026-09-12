@@ -200,6 +200,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'image-resize',
+    name: 'Image Resizer & Cropper',
+    description:
+      'Crop with a draggable box, resize to exact pixels or a file size, and save as JPEG, PNG or WebP.',
+    icon: 'matCropOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'exif-viewer',
     name: 'EXIF Viewer',
     description:
