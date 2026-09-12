@@ -32,11 +32,16 @@ import {
 } from './base64-codec';
 import type { PreviewKind } from './base64-codec';
 import { Base64WorkerClient } from './base64-worker.client';
+import { Detection, Issue, detect, firstInvalid, stripInvalid } from './base64-detect';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { TryExample } from '../../shared/try-example/try-example';
 
 type TextMode = 'encode' | 'decode';
+/** What the person picked; 'auto' lets the input decide. */
+type TextChoice = 'auto' | TextMode;
+
+const NO_DETECTION: Detection = { direction: 'encode', reason: '', mime: '' };
 
 /**
  * "Try an example" input for the Text tab. Deliberately not ASCII-only — the
@@ -121,7 +126,8 @@ interface RenderedPreview {
 
 @Component({
   selector: 'app-base64',
-  imports: [ToolPage, 
+  imports: [
+    ToolPage,
     Dropzone,
     ToolContent,
     MatButtonModule,
@@ -263,6 +269,10 @@ export class Base64Tool implements OnDestroy {
     return value;
   }
 
+  // --- Tabs -------------------------------------------------------------
+  /** Text first: it is the common case. 1 encodes a file, 2 decodes to one. */
+  protected readonly tab = signal(0);
+
   // --- Decode a file ----------------------------------------------------
   private readonly decodeArea = viewChild<ElementRef<HTMLTextAreaElement>>('decodeArea');
 
@@ -343,7 +353,9 @@ export class Base64Tool implements OnDestroy {
         mime,
         bytes,
         url: kind === 'image' ? URL.createObjectURL(new Blob([bytes], { type: mime })) : null,
-        ...(kind === 'text' ? readText(bytes, mime) : { text: null, textLength: 0, prettyPrinted: false }),
+        ...(kind === 'text'
+          ? readText(bytes, mime)
+          : { text: null, textLength: 0, prettyPrinted: false }),
       });
       this.previewStale.set(false);
       this.suggestDecodeFileName(mime);
@@ -394,22 +406,51 @@ export class Base64Tool implements OnDestroy {
   // --- Text -------------------------------------------------------------
   private readonly textArea = viewChild<ElementRef<HTMLTextAreaElement>>('textArea');
 
-  protected readonly mode = signal<TextMode>('encode');
+  protected readonly choice = signal<TextChoice>('auto');
+  protected readonly detected = signal<Detection>(NO_DETECTION);
+  /** The direction actually used: the person's pick, or what the input looks like. */
+  protected readonly mode = computed<TextMode>(() => {
+    const choice = this.choice();
+    return choice === 'auto' ? this.detected().direction : choice;
+  });
+  /** Why auto chose what it chose, for the label beside the switch. */
+  protected readonly detectedReason = computed(() =>
+    this.choice() === 'auto' && this.textSource.length() > 0 ? this.detected().reason : '',
+  );
+  /** The first character that stops the input decoding, when decoding. */
+  protected readonly issue = signal<Issue | null>(null);
+  /** Set when the input decodes to a file rather than text — the result pane says so. */
+  protected readonly binaryMime = computed(() =>
+    this.mode() === 'decode' && this.detected().mime && previewKind(this.detected().mime) !== 'text'
+      ? this.detected().mime
+      : '',
+  );
+  protected readonly binaryLabel = computed(() => labelForMime(this.binaryMime()));
+  protected readonly binaryBytes = computed(() =>
+    decodedByteLength(splitDataUri(this.textSource.value).data),
+  );
+  /** UTF-8 size of the input; only measured while it is small enough to matter. */
+  protected readonly inputBytes = signal<number | null>(0);
   protected readonly textSource = new BulkText();
   protected readonly textBusy = signal(false);
   protected readonly textError = signal('');
   protected readonly textResultLength = signal(0);
   protected readonly textResultHead = signal('');
-  protected readonly textResultTruncated = computed(
-    () => this.textResultLength() > PREVIEW_CHARS,
-  );
+  protected readonly textResultTruncated = computed(() => this.textResultLength() > PREVIEW_CHARS);
 
   private textResult = '';
   private textTimer: ReturnType<typeof setTimeout> | null = null;
   private textRun = 0;
 
   protected onTextInput(event: Event): void {
-    this.textSource.set((event.target as HTMLTextAreaElement).value);
+    this.setTextSource((event.target as HTMLTextAreaElement).value);
+  }
+
+  /** Every way the input changes goes through here, so detection never goes stale. */
+  private setTextSource(text: string): void {
+    this.textSource.set(text);
+    this.detected.set(text === '' ? NO_DETECTION : detect(text));
+    this.inputBytes.set(this.textSource.locked() ? null : new TextEncoder().encode(text).length);
     this.scheduleTextConvert();
   }
 
@@ -419,39 +460,49 @@ export class Base64Tool implements OnDestroy {
       return;
     }
     event.preventDefault();
-    this.textSource.set(text);
+    this.setTextSource(text);
     this.write(this.textArea, this.textSource.display);
-    this.scheduleTextConvert();
   }
 
-  protected setMode(mode: TextMode): void {
-    this.mode.set(mode);
+  protected setChoice(choice: TextChoice): void {
+    this.choice.set(choice);
     this.scheduleTextConvert();
   }
 
   protected clearText(): void {
-    this.textSource.set('');
+    this.setTextSource('');
     this.write(this.textArea, '');
-    this.scheduleTextConvert();
   }
 
-  /** Drop the sample sentence into the encode box — the result converts on its own. */
+  /** Drop the sample sentence into the box — auto mode sees text and encodes it. */
   protected loadExample(): void {
-    this.mode.set('encode');
-    this.textSource.set(SAMPLE_TEXT);
+    this.choice.set('auto');
+    this.setTextSource(SAMPLE_TEXT);
     this.write(this.textArea, this.textSource.display);
-    this.scheduleTextConvert();
   }
 
-  /** Move the result back into the input and flip the mode — handy for round-tripping. */
+  /** Move the result back into the input and flip the direction — handy for round-tripping. */
   protected swapText(): void {
     if (this.textResult === '') {
       return;
     }
-    this.textSource.set(this.textResult);
+    const next: TextMode = this.mode() === 'encode' ? 'decode' : 'encode';
+    this.choice.set(next);
+    this.setTextSource(this.textResult);
     this.write(this.textArea, this.textSource.display);
-    this.mode.update((m) => (m === 'encode' ? 'decode' : 'encode'));
-    this.scheduleTextConvert();
+  }
+
+  /** Remove the characters that stop the input decoding, then decode it. */
+  protected fixInput(): void {
+    this.setTextSource(stripInvalid(this.textSource.value));
+    this.write(this.textArea, this.textSource.display);
+  }
+
+  /** Hand a payload that decodes to a file over to the tab that can show and save it. */
+  protected openInDecodeTab(): void {
+    this.setDecodeSource(this.textSource.value);
+    this.write(this.decodeArea, this.decodeSource.display);
+    this.tab.set(2);
   }
 
   protected copyTextResult(): void {
@@ -479,16 +530,17 @@ export class Base64Tool implements OnDestroy {
   private async convertText(): Promise<void> {
     const run = ++this.textRun;
     const source = this.textSource.value;
-    if (source === '') {
+    const decoding = this.mode() === 'decode';
+    this.issue.set(decoding ? firstInvalid(source) : null);
+    if (source === '' || this.issue() || this.binaryMime()) {
       this.applyTextResult(run, '', '');
       return;
     }
     this.textBusy.set(true);
     try {
-      const value =
-        this.mode() === 'encode'
-          ? await this.codec.encodeText(source)
-          : await this.codec.decodeText(source);
+      const value = decoding
+        ? await this.codec.decodeText(source)
+        : await this.codec.encodeText(source);
       this.applyTextResult(run, value, '');
     } catch (error) {
       this.applyTextResult(run, '', base64ErrorMessage(error));
@@ -514,10 +566,7 @@ export class Base64Tool implements OnDestroy {
     return value.toLocaleString('en-US');
   }
 
-  private write(
-    ref: Signal<ElementRef<HTMLTextAreaElement> | undefined>,
-    text: string,
-  ): void {
+  private write(ref: Signal<ElementRef<HTMLTextAreaElement> | undefined>, text: string): void {
     const element = ref()?.nativeElement;
     if (element) {
       element.value = text;
