@@ -174,10 +174,16 @@ test('word-viewer renders a .docx', async ({ page }) => {
   await uploadFiles(page, ['sample.docx']);
 
   if (HOSTED_OFFICE) {
-    // Syncfusion's DocumentEditor builds its own DOM; the text is the proof.
-    await expect(page.getByText('YYDevTools fixture document').first()).toBeVisible({
-      timeout: 90_000,
-    });
+    // Not getByText on the document's words: DocumentEditor paints the page to a
+    // <canvas>, so they are never in the DOM and no text locator can see them —
+    // the editor element's only text content is the ruler's tick numbers. What
+    // does prove the round trip is the summary the tool derives from the
+    // converted document, which means the service returned real content rather
+    // than an error, plus the fact that a page was actually painted.
+    await expect(page.getByText(/1 page/)).toBeVisible({ timeout: 90_000 });
+    await expect(page.getByText(/12 words/)).toBeVisible();
+    await expect(page.getByText(/2 paragraphs/)).toBeVisible();
+    await expect(page.locator('canvas').first()).toBeVisible();
   } else {
     await expect(page.getByRole('alert')).toContainText(/conversion service is not running/i, {
       timeout: 45_000,

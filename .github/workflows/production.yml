@@ -48,8 +48,15 @@ jobs:
       # With E2E_BASE_URL set, playwright.config skips the local dev server
       # entirely and the hosted-tool specs switch to asserting a real render.
       # On a scheduled run `inputs.base_url` is empty, so the fallback applies.
+      # Only the file/hosted-tool specs, and one worker. Running the whole
+      # 140-test suite from a single GitHub runner IP reads as bot traffic to
+      # Cloudflare, which answered 403 (with some 429s) and failed a dozen
+      # unrelated tests on the first run — a property of the runner, not of the
+      # site, which passes the same specs from a normal machine. These are also
+      # the only specs that need a deployment at all: everything else is
+      # client-side and already covered against the dev server by ci.yml.
       - name: Run Playwright against the deployment
-        run: npm run e2e
+        run: npx playwright test e2e/tools-files.spec.ts --project=desktop --workers=1
         env:
           E2E_BASE_URL: ${{ inputs.base_url || 'https://yydevtools.com' }}
 
