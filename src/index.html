@@ -82,6 +82,85 @@
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Entry splash: the mark draws itself, the name types out, the veil lifts.
+       Lives here, not in Angular, so it paints with the first frame of a full
+       page load and never runs on in-app navigation. Removed from the DOM once
+       it has played; skipped entirely under prefers-reduced-motion. -->
+  <div id="splash" aria-hidden="true">
+    <svg class="splash__mark" viewBox="0 0 96 96" focusable="false">
+      <rect width="96" height="96" rx="10" fill="#FFBE3D" />
+      <g stroke="#262A33" stroke-width="11" stroke-linecap="round" fill="none">
+        <line class="splash__stroke" pathLength="1" x1="48" y1="22" x2="48" y2="74" />
+        <line class="splash__stroke" pathLength="1" x1="70.5" y1="35" x2="25.5" y2="61" />
+        <line class="splash__stroke" pathLength="1" x1="25.5" y1="35" x2="70.5" y2="61" />
+      </g>
+    </svg>
+    <span class="splash__name">YYDevTools<span class="splash__cursor">_</span></span>
+  </div>
+  <style>
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      background: #f5f3ee;
+      color: #16171d;
+      pointer-events: none;
+      animation: splash-lift 0.35s ease-in 1s forwards;
+    }
+    [data-theme='dark'] #splash {
+      background: #0e0f15;
+      color: #f2f0ea;
+    }
+    .splash__mark {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 8px;
+      animation: splash-pop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+    }
+    .splash__stroke {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: splash-draw 0.28s ease-out forwards;
+    }
+    .splash__stroke:nth-child(2) { animation-delay: 0.14s; }
+    .splash__stroke:nth-child(3) { animation-delay: 0.28s; }
+    .splash__name {
+      overflow: hidden;
+      white-space: nowrap;
+      width: 0;
+      font: 700 1.5rem/1 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+      letter-spacing: -0.02em;
+      animation: splash-type 0.4s steps(10, end) 0.3s forwards;
+    }
+    .splash__cursor {
+      color: #ffbe3d;
+      animation: splash-blink 0.5s steps(2, start) infinite;
+    }
+    @keyframes splash-draw { to { stroke-dashoffset: 0; } }
+    @keyframes splash-pop { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes splash-type { to { width: 7.2em; } }
+    @keyframes splash-blink { to { visibility: hidden; } }
+    @keyframes splash-lift { to { opacity: 0; transform: translateY(-2%); } }
+    @media (prefers-reduced-motion: reduce) {
+      #splash { display: none; }
+    }
+  </style>
+  <script>
+    // Take the veil out of the DOM once it has lifted, so nothing can ever sit
+    // behind an invisible full-screen layer. The timer covers the case where
+    // the animation never runs (reduced motion, or a browser without it).
+    (function () {
+      var splash = document.getElementById('splash');
+      if (!splash) return;
+      var remove = function () { if (splash.parentNode) splash.parentNode.removeChild(splash); };
+      splash.addEventListener('animationend', function (e) { if (e.target === splash) remove(); });
+      setTimeout(remove, 1800);
+    })();
+  </script>
   <app-root></app-root>
 </body>
 </html>
