@@ -23,6 +23,11 @@ const IGNORED_CONSOLE = [
   // is asserted directly in tools-text.spec.ts, so ignoring the message here
   // does not hide a regression in it.
   /Blocked script execution in 'about:srcdoc'/i,
+  // Cloudflare injects its Web Analytics beacon into HTML responses at the
+  // edge, including the pdf.js viewer frame, whose own strict CSP then blocks
+  // it. That is the CSP doing its job on a third-party script, not an app
+  // error — and it only ever appears against the deployment, never locally.
+  /static\.cloudflareinsights\.com/i,
 ];
 
 export interface ConsoleWatch {
