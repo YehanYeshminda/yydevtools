@@ -28,6 +28,10 @@ const IGNORED_CONSOLE = [
   // it. That is the CSP doing its job on a third-party script, not an app
   // error — and it only ever appears against the deployment, never locally.
   /static\.cloudflareinsights\.com/i,
+  // AdSense creatives occasionally frame google.com, which trips the site's
+  // *report-only* frame-ancestors policy. Report-only violations are logged,
+  // never enforced, and this one is the ad network's doing, not the app's.
+  /report-only Content Security Policy/i,
 ];
 
 export interface ConsoleWatch {
