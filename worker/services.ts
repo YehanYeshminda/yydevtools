@@ -14,7 +14,8 @@ export type ServiceErrorCode =
   | 'UPSTREAM_UNAVAILABLE'
   | 'UPSTREAM_REJECTED'
   | 'TIMEOUT'
-  | 'TOO_LARGE';
+  | 'TOO_LARGE'
+  | 'INVALID_INPUT';
 
 export class ServiceError extends Error {
   constructor(
@@ -163,7 +164,21 @@ function classify(status: number): ServiceErrorCode {
   if (status >= 500) {
     return 'UPSTREAM_UNAVAILABLE';
   }
-  // 400 and friends: the input itself was rejected — retrying will not help.
+  if (status === 400) {
+    // The service looked at the bytes and refused them — a wrong file, an empty
+    // body, an unreadable one. That is the caller's problem, not an outage, so
+    // it has to surface as a 400 carrying the service's own explanation.
+    //
+    // This used to fall through to UPSTREAM_REJECTED below, which is a 502, and
+    // the browser clients then read any 5xx as "the hosted service is down" and
+    // showed the unavailable banner instead of the message. Uploading a non-PDF
+    // reported an outage.
+    return 'INVALID_INPUT';
+  }
+  // Any other 4xx is not about the input: a 404 means this Worker asked for a
+  // path the service does not have, a 405 the wrong method. Those are our bug,
+  // they are worth falling back on, and they should never reach a user as
+  // advice about their file.
   return 'UPSTREAM_REJECTED';
 }
 
