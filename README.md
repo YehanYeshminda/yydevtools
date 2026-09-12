@@ -33,6 +33,8 @@ the homepage grid, search, command palette and this table all come from it.
 | **XML Viewer** | Format, validate and explore XML as a tree, and query it with XPath — using the browser’s own parser. |
 | **HTML Preview** | Render HTML live in a sandboxed frame — phone/tablet/full widths, full-screen, a captured console, a Prettier Format button and a light/dark backdrop. |
 | **UUID Generator** | Random v4 or time-ordered v7 UUIDs in bulk. |
+| **Certificate Decoder** | Decode an X.509 certificate or chain — subject, issuer, expiry, key, SANs, fingerprints, extensions. *(hosted)* |
+| **Key Generator** | Generate an RSA or EC key pair in the browser — the private key never leaves the device. |
 | **Password Generator** | Strong random passwords or EFF passphrases, with a strength and crack-time check. |
 | **Color Converter** | Convert HEX, RGB, HSL, OKLCH and LAB, generate palettes and check WCAG contrast. |
 
@@ -44,6 +46,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **URL Encoder / Decoder** | Percent-encode or decode URLs and query values, and break a URL into its parts. |
 | **Image Compressor** | Shrink JPEG, PNG and HEIC images in bulk — by quality or to a target size, with Exif control. |
 | **Image Converter** | Convert between HEIC, JPEG, PNG, WebP and AVIF in bulk — iPhone photos included — without uploading them. |
+| **Image Resizer & Cropper** | Crop with a draggable box, resize to exact pixels or a file size, and save as JPEG, PNG or WebP. |
 | **EXIF Viewer** | See the camera, timestamp and GPS location hidden in a photo, then strip it out without re-compressing. |
 | **Timestamp Converter** | Convert between Unix timestamps and human-readable dates. |
 
@@ -54,20 +57,29 @@ the homepage grid, search, command palette and this table all come from it.
 | **Word & Character Counter** | Count words, characters, sentences and paragraphs live, with reading time and keyword density. |
 | **Markdown Editor** | Write Markdown with a live, side-by-side preview. |
 | **Image ↔ PDF** | Combine JPG/PNG/WebP images into one PDF, or turn every PDF page back into an image. |
+| **Office to PDF** | Convert a Word, Excel or PowerPoint file to PDF, laid out as Office would. *(hosted)* |
+| **PDF Watermark & Page Numbers** | Stamp text across every page and add page numbers, with a live preview. |
+| **PDF Form Fill & Flatten** | Fill a PDF form's fields with a live preview, then download it editable or flattened. |
+| **Sign PDF** | Draw, type or upload a signature and place it on a page. |
+| **Redact PDF** | Black out a phrase everywhere or draw boxes, and get a PDF with the content truly removed. |
+| **Protect PDF** / **Unlock PDF** | Lock a PDF with an AES-256 password, or remove a password you know. *(hosted)* |
 | **PDF Convert** | Turn a PDF into an editable Word or rich-text file. *(hosted)* |
 | **PDF OCR** | Make a scanned PDF searchable — short English files entirely in the browser. *(long files hosted)* |
 | **PDF Compress** | Shrink a PDF by downsampling the images inside it. *(hosted)* |
 | **CSV Viewer** | Open a CSV as a searchable table with the delimiter detected, and export it as JSON. |
 | **Word Viewer** | Open and read a .docx with its layout, tables and images intact, and copy the text out. |
+| **Excel Viewer** | Open an .xlsx workbook and read its sheets with formatting intact. *(hosted)* |
+| **PowerPoint Viewer** | Open a .pptx deck and read it slide by slide. *(hosted)* |
 | **PDF Viewer** | Open and read a PDF with thumbnails, search and zoom. |
 | **PDF Organizer** | Reorder, rotate and delete PDF pages visually, and combine files. |
 | **PDF Merge** | Combine several PDF files into a single document. |
 | **PDF Split** | Extract selected pages from a PDF, or split it into one file per page. |
 
 Client-side tools use the Web Crypto, Canvas, `FileReader`, WASM codec and
-`pdf-lib`/pdf.js APIs directly in the browser. The three *(hosted)* operations
-are proxied by the Worker to self-hosted Fly.io services (Ghostscript, ocrmypdf,
-LibreOffice), rate-limited per IP via Upstash Redis.
+`pdf-lib`/pdf.js APIs directly in the browser. The *(hosted)* operations are
+proxied by the Worker to self-hosted Fly.io services (Ghostscript, ocrmypdf,
+LibreOffice, and an ASP.NET Core service for the Office formats, PDF passwords
+and certificate parsing), rate-limited per IP via Upstash Redis.
 
 ## Development
 

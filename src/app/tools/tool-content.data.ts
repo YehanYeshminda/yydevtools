@@ -2356,17 +2356,17 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   'pdf-convert': {
     slug: 'pdf-convert',
     intro: [
-      'Turn a PDF into an editable document — Word, Excel, PowerPoint or rich text — so you can actually change the content instead of fighting a fixed-layout file. It is what you need when someone sends a PDF you have to update, or when you want to lift a table out of a report into a spreadsheet.',
+      'Turn a PDF into an editable document — Word or rich text — so you can actually change the content instead of fighting a fixed-layout file. It is what you need when someone sends a PDF you have to update, or when you want to lift a table out of a report into a spreadsheet.',
       'Because faithfully reconstructing an editable document from a PDF is genuinely hard, this runs on a processing service rather than in the browser: your file is sent over HTTPS, converted, and returned, then deleted straight after. There is a monthly free allowance and no account is required.',
     ],
     steps: [
       'Choose the PDF you want to convert.',
-      'Select the output format — Word, Excel, PowerPoint or rich text.',
+      'Select the output format — Word or rich text.',
       'Start the conversion and wait for it to process.',
       'Download the editable document.',
     ],
     features: [
-      'Converts to Word, Excel, PowerPoint and rich-text formats.',
+      'Converts to Word (.docx) and rich text (.rtf).',
       'Preserves text and structure so the result is genuinely editable.',
       'A monthly free allowance, with no account needed.',
       'Files are processed over HTTPS and deleted after conversion.',
@@ -2398,7 +2398,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     faq: [
       {
         q: 'Which formats can I convert to?',
-        a: 'A PDF can be converted to an editable Word document, an Excel spreadsheet, a PowerPoint presentation or rich text, depending on which best suits the content you need to work with.',
+        a: 'An editable Word document (.docx) or rich text (.rtf). Word is the right choice for almost everything; rich text is for the rare editor that cannot open .docx. Tables in a PDF come out as Word tables, not as a spreadsheet — copy them into Excel from there if you need to calculate on them.',
       },
       {
         q: 'Why is my file uploaded for this tool?',
