@@ -407,8 +407,9 @@ export const TOOLS: Tool[] = [
 /**
  * The tools that send a file to a service instead of doing the work in the tab.
  *
- * Three PDF operations genuinely cannot run client-side, and the two Office
- * viewers convert through `office-convert`. Every other tool is local.
+ * Three PDF operations genuinely cannot run client-side; the Office viewers,
+ * Office to PDF, PDF password handling and certificate parsing go through
+ * `office-convert`. Every other tool is local.
  *
  * This exists so the "N of M tools run entirely in this tab" claim on the home
  * rail is derived rather than typed. It was typed, and it went stale: the page
@@ -420,6 +421,11 @@ export const HOSTED_SLUGS: readonly string[] = [
   'pdf-compress',
   'word-viewer',
   'excel-viewer',
+  'powerpoint-viewer',
+  'office-to-pdf',
+  'pdf-protect',
+  'pdf-unlock',
+  'certificate-decoder',
 ];
 
 /** How many tools never upload anything — the number the home rail quotes. */
