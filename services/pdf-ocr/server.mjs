@@ -77,9 +77,16 @@ function authorised(header) {
   return given.length === expected.length && timingSafeEqual(given, expected);
 }
 
-/** True when the bytes plausibly start a PDF (header within the first KB). */
+/**
+ * True when the bytes are a PDF: header at offset 0, as ISO 32000-1 requires.
+ *
+ * Previously the header was accepted anywhere in the first kilobyte, which let
+ * a multipart form envelope through on the strength of the header belonging to
+ * the file wrapped inside it. A real PDF with leading junk is now a 400, and
+ * would show up in the logs as `rejected_not_pdf` if it ever happened.
+ */
 function looksLikePdf(buffer) {
-  return buffer.subarray(0, 1024).includes(Buffer.from('%PDF-'));
+  return buffer.subarray(0, 5).equals(Buffer.from('%PDF-'));
 }
 
 function readBody(req) {

@@ -73,15 +73,21 @@ function authorised(header) {
 }
 
 /**
- * True when the bytes plausibly start a PDF (header within the first KB).
+ * True when the bytes are a PDF: header at offset 0, as ISO 32000-1 requires.
  *
  * This matters more here than elsewhere: LibreOffice will cheerfully attempt to
  * import dozens of formats, so without a check the endpoint is a general-purpose
  * document parser exposed to whatever gets through. `--infilter` already pins
  * the importer, and this makes sure the bytes match what we claim to accept.
+ *
+ * The header used to be accepted anywhere in the first kilobyte, which let a
+ * multipart form envelope through on the strength of the header belonging to
+ * the file wrapped inside it — the widest possible hole in exactly the check
+ * that matters most on this endpoint. A real PDF with leading junk is now a
+ * 400, and would appear in the logs as `rejected_not_pdf`.
  */
 function looksLikePdf(buffer) {
-  return buffer.subarray(0, 1024).includes(Buffer.from('%PDF-'));
+  return buffer.subarray(0, 5).equals(Buffer.from('%PDF-'));
 }
 
 function readBody(req) {
