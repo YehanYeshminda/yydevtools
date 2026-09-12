@@ -1,0 +1,126 @@
+<app-tool-page slug="certificate-decoder">
+  Paste an X.509 certificate — or a whole chain — and read who it was issued to, who signed it, when
+  it expires, its key, its fingerprints and every extension. Decoding runs on our server;
+  certificates are public material, and any private key pasted by mistake is skipped unread.
+</app-tool-page>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="cert-input">Certificate (PEM)</label>
+    <textarea
+      id="cert-input"
+      class="field__input"
+      rows="8"
+      spellcheck="false"
+      [value]="text()"
+      (input)="onInput($event)"
+      placeholder="-----BEGIN CERTIFICATE-----&#10;MIIB…&#10;-----END CERTIFICATE-----"
+    ></textarea>
+  </div>
+
+  <app-dropzone accept=".pem,.crt,.cer,.der,.txt" (filesSelected)="acceptFiles($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
+    <span class="dropzone__title">Or drop a .pem, .crt, .cer or .der file here</span>
+  </app-dropzone>
+
+  <div class="actions">
+    @if (busy()) {
+      <button matButton="filled" disabled>
+        <app-spinner />
+        Decoding…
+      </button>
+    } @else {
+      <button matButton="filled" (click)="decode()" [disabled]="!canDecode()">
+        <ng-icon name="matVerifiedUserOutline" />
+        Decode
+      </button>
+    }
+    <button matButton (click)="clear()" [disabled]="busy() || text() === ''">
+      <ng-icon name="matDeleteSweepOutline" />
+      Clear
+    </button>
+  </div>
+
+  @if (error(); as message) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      <span class="note__text">{{ message }}</span>
+    </p>
+  }
+
+  @if (report(); as r) {
+    @if (r.privateKeyIgnored) {
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        <span class="note__text">
+          The text included a private key. It was skipped without being read — but a private key
+          should never be pasted into a web page. Treat that key as exposed and rotate it.
+        </span>
+      </p>
+    }
+
+    @if (r.chain; as chain) {
+      <section class="cert" aria-label="Chain">
+        <h2 class="section__title">Chain of {{ r.certificates.length }} certificates</h2>
+        <p
+          class="status"
+          [class.status--ok]="chain.built"
+          [class.status--err]="!chain.built"
+          role="status"
+        >
+          <ng-icon
+            class="status__icon"
+            aria-hidden="true"
+            [name]="chain.built ? 'matVerifiedUserOutline' : 'matErrorOutline'"
+          />
+          <span class="note__text">
+            @if (chain.built) {
+              Every certificate is signed by the next, up to a self-signed root in the bundle.
+            } @else {
+              The chain does not link up cleanly: {{ chain.status.join(', ') }}.
+            }
+          </span>
+        </p>
+        <ol class="chain">
+          @for (name of chain.order; track $index) {
+            <li>{{ name }}</li>
+          }
+        </ol>
+      </section>
+    }
+
+    @for (card of cards(); track $index) {
+      <section class="cert" [attr.aria-label]="card.title">
+        <h2 class="section__title">
+          {{ card.title }} <span class="cert__kind">{{ card.kind }}</span>
+        </h2>
+        <dl class="rows">
+          @for (row of card.rows; track row.label) {
+            <div class="row" [class.row--warn]="row.warn">
+              <dt class="row__key">{{ row.label }}</dt>
+              <dd class="row__val">{{ row.value }}</dd>
+            </div>
+          }
+        </dl>
+        <details class="cert__ext">
+          <summary>All {{ card.extensions.length }} extensions</summary>
+          <dl class="rows">
+            @for (ext of card.extensions; track ext.oid) {
+              <div class="row">
+                <dt class="row__key">
+                  {{ ext.name ?? ext.oid }}
+                  @if (ext.critical) {
+                    <span class="cert__critical">critical</span>
+                  }
+                </dt>
+                <dd class="row__val">{{ ext.value }}</dd>
+              </div>
+            }
+          </dl>
+        </details>
+      </section>
+    }
+  }
+</div>
+
+<app-tool-content slug="certificate-decoder" />

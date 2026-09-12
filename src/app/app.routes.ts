@@ -633,6 +633,20 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/certificate-decoder',
+    loadComponent: () =>
+      import('./tools/certificate-decoder/certificate-decoder').then(
+        (m) => m.CertificateDecoderTool,
+      ),
+    title: 'Certificate Decoder — Read an X.509 / SSL certificate — YYDevTools',
+    data: {
+      description:
+        'Decode an X.509 SSL/TLS certificate or a whole chain: subject, issuer, validity and ' +
+        'days to expiry, public key, SANs, key usage, fingerprints and every extension. ' +
+        'Paste PEM or upload .crt, .cer or .der. Free, no account.',
+    },
+  },
+  {
     path: 'tools/key-generator',
     loadComponent: () =>
       import('./tools/key-generator/key-generator').then((m) => m.KeyGeneratorTool),

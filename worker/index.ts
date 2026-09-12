@@ -453,6 +453,11 @@ async function handleApi(
     );
   }
 
+  if (path === '/api/x509/decode') {
+    const endpoint = serviceEndpoint(env.OFFICE_CONVERT_URL, env.OFFICE_CONVERT_SECRET);
+    return proxy(request, endpoint, '/x509/decode', {}, ROUTE_TIMEOUT_MS.officeImport);
+  }
+
   if (path === '/api/office/to-pdf') {
     const type = (url.searchParams.get('type') ?? '').toLowerCase();
     if (!OFFICE_TYPES.has(type)) {

@@ -123,6 +123,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'certificate-decoder',
+    name: 'Certificate Decoder',
+    description:
+      'Decode an X.509 certificate or chain — subject, issuer, expiry, key, SANs, fingerprints, extensions.',
+    icon: 'matVerifiedUserOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'key-generator',
     name: 'Key Generator',
     description:

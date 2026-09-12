@@ -33,6 +33,38 @@ export type OfficeType = 'docx' | 'xlsx' | 'pptx';
 export type PdfResult =
   { ok: true; bytes: Uint8Array } | { ok: false; failure: OfficeServiceFailure };
 
+/** One decoded X.509 certificate, as the service describes it. */
+export interface CertificateInfo {
+  subject: string;
+  issuer: string;
+  serialNumber: string;
+  version: number;
+  notBefore: string;
+  notAfter: string;
+  signatureAlgorithm: string;
+  publicKey: { algorithm: string; bits: number | null; curve: string | null };
+  fingerprints: { sha1: string; sha256: string };
+  selfSigned: boolean;
+  subjectAlternativeNames: string[];
+  keyUsage: string[];
+  extendedKeyUsage: string[];
+  basicConstraints: { isCertificateAuthority: boolean; pathLength: number | null } | null;
+  subjectKeyIdentifier: string | null;
+  authorityKeyIdentifier: string | null;
+  extensions: { oid: string | null; name: string | null; critical: boolean; value: string }[];
+}
+
+export interface CertificateReport {
+  certificates: CertificateInfo[];
+  /** Present for a bundle: how the certificates link up, and what is wrong if they do not. */
+  chain: { built: boolean; order: string[]; status: string[] } | null;
+  /** True when a private key was pasted alongside — it was skipped, not read. */
+  privateKeyIgnored: boolean;
+}
+
+export type CertificateResult =
+  { ok: true; report: CertificateReport } | { ok: false; failure: OfficeServiceFailure };
+
 /** Server codes that mean "try again later", not "this file is the problem". */
 const FALLBACK_CODES = new Set([
   'NOT_CONFIGURED',
@@ -184,6 +216,41 @@ export class OfficeServicesClient {
   /** Removes the passwords and restrictions from a PDF, given its password. */
   unlockPdf(bytes: Uint8Array, password: string): Promise<PdfResult> {
     return this.fetchPdf('/api/pdf/unlock', { body: pdfForm(bytes, password) });
+  }
+
+  /** Decodes one PEM/DER certificate or a PEM bundle into a structured report. */
+  async decodeCertificate(text: string): Promise<CertificateResult> {
+    let response: Response;
+    try {
+      response = await fetch('/api/x509/decode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: text,
+      });
+    } catch {
+      return {
+        ok: false,
+        failure: {
+          kind: 'unavailable',
+          code: 'NETWORK',
+          message: 'The decoding service could not be reached.',
+        },
+      };
+    }
+    if (!response.ok) {
+      return { ok: false, failure: await this.readFailure(response) };
+    }
+    if (!(response.headers.get('Content-Type') ?? '').includes('application/json')) {
+      return {
+        ok: false,
+        failure: {
+          kind: 'unavailable',
+          code: 'NOT_DEPLOYED',
+          message: 'The certificate decoding service is not running in this environment.',
+        },
+      };
+    }
+    return { ok: true, report: (await response.json()) as CertificateReport };
   }
 
   /**

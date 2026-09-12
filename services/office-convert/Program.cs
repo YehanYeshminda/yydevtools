@@ -31,6 +31,7 @@
 // check.
 
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Syncfusion.DocIORenderer;
 using Syncfusion.EJ2.DocumentEditor;
@@ -274,7 +275,186 @@ app.MapPost("/office/to-pdf", async (HttpRequest request) =>
 app.MapPost("/pdf/protect", (HttpRequest request) => SecurePdfAsync(request, protect: true));
 app.MapPost("/pdf/unlock", (HttpRequest request) => SecurePdfAsync(request, protect: false));
 
+//   POST /x509/decode   body: PEM text (one certificate or a bundle) or one DER
+//     certificate  ->  200 { certificates: [...], chain, privateKeyIgnored }
+//
+// Nothing Syncfusion here — this lives in the C# service because .NET's
+// X509Certificate2 does the ASN.1 walk that a hand-written TypeScript parser
+// would get subtly wrong. Certificates are public material; a private key
+// pasted alongside is ignored by ImportFromPem and never looked at.
+const int MaxCertificateBytes = 64 * 1024;
+
+app.MapPost("/x509/decode", async (HttpRequest request) =>
+{
+    if (!Authorized(request.Headers.Authorization, secret))
+    {
+        logger.LogInformation("{Event}", "unauthorized");
+        return Failure(401, "UNAUTHORIZED", "Missing or invalid credentials.");
+    }
+
+    byte[] input;
+    using (var body = new MemoryStream())
+    {
+        await request.Body.CopyToAsync(body);
+        input = body.ToArray();
+    }
+    if (input.Length == 0)
+    {
+        return Failure(400, "INVALID_INPUT", "No certificate was sent.");
+    }
+    if (input.Length > MaxCertificateBytes)
+    {
+        return Failure(413, "TOO_LARGE", "That is larger than a certificate bundle should be.");
+    }
+
+    try
+    {
+        var (certificates, privateKeyIgnored) = LoadCertificates(input);
+        if (certificates.Count == 0)
+        {
+            return Failure(400, "INVALID_INPUT", "No certificate found. Paste a PEM block or upload a .crt, .cer or .der file.");
+        }
+        logger.LogInformation("{Event} {Count}", "ok_x509", certificates.Count);
+        return Results.Json(new
+        {
+            certificates = certificates.Select(Describe).ToArray(),
+            chain = DescribeChain(certificates),
+            privateKeyIgnored,
+        });
+    }
+    catch (CryptographicException ex)
+    {
+        logger.LogInformation("{Event} {Detail}", "rejected_x509", ex.Message);
+        return Failure(400, "INVALID_INPUT", "That is not a readable X.509 certificate.");
+    }
+});
+
 app.Run();
+
+static (X509Certificate2Collection, bool privateKeyIgnored) LoadCertificates(byte[] input)
+{
+    var collection = new X509Certificate2Collection();
+    var text = Encoding.UTF8.GetString(input);
+    if (text.Contains("-----BEGIN", StringComparison.Ordinal))
+    {
+        // ImportFromPem takes every CERTIFICATE block and skips the rest —
+        // including any private key someone pasted along with the cert.
+        collection.ImportFromPem(text);
+        return (collection, text.Contains("PRIVATE KEY", StringComparison.Ordinal));
+    }
+    collection.Add(new X509Certificate2(input));
+    return (collection, false);
+}
+
+static object Describe(X509Certificate2 c)
+{
+    using var rsa = c.GetRSAPublicKey();
+    using var ecdsa = c.GetECDsaPublicKey();
+    string? curve = null;
+    try
+    {
+        curve = ecdsa?.ExportParameters(false).Curve.Oid.FriendlyName;
+    }
+    catch (CryptographicException)
+    {
+        // An explicit (non-named) curve has no name to report.
+    }
+
+    var san = c.Extensions.OfType<X509SubjectAlternativeNameExtension>().FirstOrDefault();
+    var keyUsage = c.Extensions.OfType<X509KeyUsageExtension>().FirstOrDefault();
+    var eku = c.Extensions.OfType<X509EnhancedKeyUsageExtension>().FirstOrDefault();
+    var basic = c.Extensions.OfType<X509BasicConstraintsExtension>().FirstOrDefault();
+    var ski = c.Extensions.OfType<X509SubjectKeyIdentifierExtension>().FirstOrDefault();
+    var aki = c.Extensions.OfType<X509AuthorityKeyIdentifierExtension>().FirstOrDefault();
+
+    return new
+    {
+        subject = c.SubjectName.Name,
+        issuer = c.IssuerName.Name,
+        serialNumber = c.SerialNumber,
+        version = c.Version,
+        notBefore = c.NotBefore.ToUniversalTime(),
+        notAfter = c.NotAfter.ToUniversalTime(),
+        signatureAlgorithm = c.SignatureAlgorithm.FriendlyName ?? c.SignatureAlgorithm.Value,
+        publicKey = new
+        {
+            algorithm = c.PublicKey.Oid.FriendlyName ?? c.PublicKey.Oid.Value,
+            bits = rsa?.KeySize ?? ecdsa?.KeySize,
+            curve,
+        },
+        fingerprints = new
+        {
+            sha1 = c.Thumbprint,
+            sha256 = Convert.ToHexString(c.GetCertHash(HashAlgorithmName.SHA256)),
+        },
+        selfSigned = IsSelfSigned(c),
+        subjectAlternativeNames = san is null
+            ? Array.Empty<string>()
+            : san.EnumerateDnsNames().Select(n => "DNS:" + n)
+                .Concat(san.EnumerateIPAddresses().Select(ip => "IP:" + ip))
+                .ToArray(),
+        keyUsage = keyUsage is null || keyUsage.KeyUsages == X509KeyUsageFlags.None
+            ? Array.Empty<string>()
+            : keyUsage.KeyUsages.ToString().Split(", "),
+        extendedKeyUsage = eku is null
+            ? Array.Empty<string>()
+            : eku.EnhancedKeyUsages.Cast<Oid>().Select(o => o.FriendlyName ?? o.Value ?? "").ToArray(),
+        basicConstraints = basic is null
+            ? null
+            : new
+            {
+                isCertificateAuthority = basic.CertificateAuthority,
+                pathLength = basic.HasPathLengthConstraint ? basic.PathLengthConstraint : (int?)null,
+            },
+        subjectKeyIdentifier = ski?.SubjectKeyIdentifier,
+        authorityKeyIdentifier = aki?.KeyIdentifier is { } id ? Convert.ToHexString(id.Span) : null,
+        extensions = c.Extensions.Cast<X509Extension>().Select(e => new
+        {
+            oid = e.Oid?.Value,
+            name = e.Oid?.FriendlyName,
+            critical = e.Critical,
+            value = e.Format(false),
+        }).ToArray(),
+    };
+}
+
+static bool IsSelfSigned(X509Certificate2 c) =>
+    c.SubjectName.RawData.AsSpan().SequenceEqual(c.IssuerName.RawData);
+
+/// <summary>
+/// For a bundle, lets X509Chain link the certificates up: the leaf is the one
+/// nothing else in the bundle was issued by, self-signed members are the only
+/// trusted roots, and revocation is not checked (this is offline). The status
+/// list says what, if anything, is wrong — an empty list is a clean chain.
+/// </summary>
+static object? DescribeChain(X509Certificate2Collection certificates)
+{
+    if (certificates.Count < 2)
+    {
+        return null;
+    }
+    var issuers = certificates.Select(c => c.IssuerName.Name).ToHashSet();
+    var leaf = certificates.FirstOrDefault(c => !issuers.Contains(c.SubjectName.Name)) ?? certificates[0];
+
+    using var chain = new X509Chain();
+    chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+    chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+    foreach (var c in certificates)
+    {
+        chain.ChainPolicy.ExtraStore.Add(c);
+        if (IsSelfSigned(c))
+        {
+            chain.ChainPolicy.CustomTrustStore.Add(c);
+        }
+    }
+    var built = chain.Build(leaf);
+    return new
+    {
+        built,
+        order = chain.ChainElements.Select(e => e.Certificate.SubjectName.Name).ToArray(),
+        status = chain.ChainStatus.Select(s => s.Status.ToString()).Distinct().ToArray(),
+    };
+}
 
 async Task<IResult> SecurePdfAsync(HttpRequest request, bool protect)
 {

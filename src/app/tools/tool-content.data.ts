@@ -1811,6 +1811,72 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['word-viewer', 'excel-viewer', 'pdf-convert', 'pdf-compress'],
   },
+  'certificate-decoder': {
+    slug: 'certificate-decoder',
+    intro: [
+      'Turn the base64 wall of an X.509 certificate into what it actually says: who it was issued to, who signed it, when it starts and stops being valid, which hostnames it covers, what kind of key it carries, and its fingerprints. Paste a PEM block or upload a .crt, .cer or .der file.',
+      'Paste a whole chain — server certificate, intermediates, root — and the decoder shows each one and checks that they link up: every certificate signed by the next, ending at a self-signed root. That is the check a browser performs when it decides whether to trust a site, made visible.',
+    ],
+    steps: [
+      'Paste the certificate text, or drop the file onto the page.',
+      'Press Decode. A chain is decoded as one bundle.',
+      'Read the summary rows; open “All extensions” for the full list.',
+    ],
+    features: [
+      'Subject, issuer, serial, validity with days-to-expiry, signature algorithm.',
+      'Public key type, size and curve; SHA-256 and SHA-1 fingerprints.',
+      'Subject alternative names, key usage, extended key usage, basic constraints.',
+      'Chain linkage check for bundles, with the exact reason when it fails.',
+      'A pasted private key is skipped unread — and you are told to rotate it.',
+    ],
+    sections: [
+      {
+        heading: 'Reading a certificate',
+        body: [
+          'The Subject is the party the certificate was issued to. For a website certificate the meaningful part is not the subject at all but the Subject Alternative Names — browsers have ignored the common name for years and match the hostname against the SAN list only. If the site you are visiting is not in that list, the certificate does not cover it, whatever the CN says.',
+          'The Issuer is whoever signed it. On a real site that is an intermediate CA, whose own certificate was signed by a root CA that the browser or operating system ships with. A certificate whose issuer equals its subject is self-signed: fine for a root, fine for a private test setup, and the reason for the browser warning everywhere else.',
+          'Validity is a window, not a date. A certificate is invalid both after it expires and before it starts, and the second case is the one that bites when a server clock is wrong. Public web certificates now last at most a year and are heading shorter, which is why the expiry row counts the days left.',
+        ],
+      },
+      {
+        heading: 'Why the decoding runs on the server',
+        body: [
+          'A certificate is ASN.1 in DER encoding — a binary tag-length-value format with dozens of structures and a long tail of extensions, each with its own encoding rules. Parsing that correctly is real work, and a parser that gets an edge case wrong will show you a plausible, wrong answer, which is worse than no answer at all.',
+          '.NET has done this work for decades and gets it right, so the decoding happens there. A certificate is public by design — it is sent to every client that connects — so nothing sensitive leaves your browser. If a private key is pasted along with it, the service skips that block without reading it, and the page tells you so, because a private key pasted anywhere on the web should be considered compromised.',
+        ],
+      },
+      {
+        heading: 'What the chain check does',
+        body: [
+          'For a bundle, the decoder works out which certificate is the leaf — the one nothing else in the bundle was issued by — and asks .NET to build a chain from it using only the certificates you provided. The only trusted roots are the self-signed certificates in the bundle, so “linked up cleanly” means exactly that: every signature verifies against the next certificate up, and the top is a root you included.',
+          'When it fails, the reason is shown in .NET’s own terms. PartialChain means an issuer is missing from the bundle; UntrustedRoot means the top certificate is not self-signed; NotTimeValid means something in the chain has expired; NotSignatureValid means a signature does not verify. Revocation is not checked — that needs a network round trip to the CA — so a revoked-but-otherwise-valid certificate still reports clean here.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Which formats can I paste or upload?',
+        a: 'PEM text (the -----BEGIN CERTIFICATE----- form), including bundles with several certificates, and binary DER files (.der, .cer, .crt). PKCS#12 (.pfx/.p12) archives are not accepted — they carry private keys and need a password.',
+      },
+      {
+        q: 'Does it decode CSRs (certificate signing requests)?',
+        a: 'Not yet. A CSR is a different structure from a certificate, and the service’s runtime does not expose a parser for it. Certificates and chains are fully supported.',
+      },
+      {
+        q: 'Is it safe to paste a certificate here?',
+        a: 'Yes. A certificate is public information by design — every client that connects to a server is sent its certificate. Private keys are the sensitive half of the pair, and they are never needed here; if one is pasted by mistake it is skipped unread.',
+      },
+      {
+        q: 'Why does the chain check say PartialChain?',
+        a: 'An issuer is missing from what you pasted. Most often the bundle has the server certificate but not the intermediate, or has the intermediate but not the root. Add the missing certificate and decode again.',
+      },
+      {
+        q: 'Is the certificate checked for revocation?',
+        a: 'No. Revocation checking requires contacting the CA (CRL or OCSP), which this offline check deliberately does not do.',
+      },
+    ],
+    related: ['key-generator', 'jwt-decoder', 'hash-generator', 'base64-converter'],
+  },
   'powerpoint-viewer': {
     slug: 'powerpoint-viewer',
     intro: [
