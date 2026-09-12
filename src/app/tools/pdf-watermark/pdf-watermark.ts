@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   OnDestroy,
@@ -11,6 +12,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { NgIcon } from '@ng-icons/core';
 import { PDFDocument, PDFFont, StandardFonts, degrees, rgb } from '@cantoo/pdf-lib';
 import { downloadBytes } from '../../core/download';
+import type { HandoffFile } from '../../core/file-handoff';
+import { NextStep } from '../../shared/next-step/next-step';
+import { FileHandoff } from '../../core/file-handoff';
 import { describeFile, formatBytes } from '../../core/format';
 import { looksLikePdf } from '../../core/pdf-probe';
 import { Dropzone } from '../../shared/dropzone/dropzone';
@@ -62,7 +66,16 @@ export const NUMBER_POSITIONS: { value: NumberPosition; label: string }[] = [
  */
 @Component({
   selector: 'app-pdf-watermark',
-  imports: [ToolPage, Dropzone, ToolContent, MatButtonModule, NgIcon, Spinner, PdfPreview],
+  imports: [
+    NextStep,
+    ToolPage,
+    Dropzone,
+    ToolContent,
+    MatButtonModule,
+    NgIcon,
+    Spinner,
+    PdfPreview,
+  ],
   templateUrl: './pdf-watermark.html',
   styleUrls: ['../tool-shell.css', './pdf-watermark.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,6 +92,11 @@ export class PdfWatermarkTool implements OnDestroy {
   protected readonly busy = signal(false);
   /** The stamped document, for the preview and the download. */
   protected readonly stamped = signal<Uint8Array | null>(null);
+  /** The same document, named, so it can be carried into the next tool. */
+  protected readonly result = computed<HandoffFile | null>(() => {
+    const bytes = this.stamped();
+    return bytes ? { bytes, name: `${this.fileName().replace(/\.pdf$/i, '')}-stamped.pdf` } : null;
+  });
 
   protected readonly watermarkOn = signal(true);
   protected readonly text = signal('CONFIDENTIAL');
@@ -104,6 +122,14 @@ export class PdfWatermarkTool implements OnDestroy {
   private bytes: Uint8Array | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private run = 0;
+
+  constructor() {
+    // A file carried over from the previous tool is loaded as if dropped in.
+    const handed = inject(FileHandoff).take();
+    if (handed) {
+      afterNextRender(() => this.acceptFiles([handed]));
+    }
+  }
 
   ngOnDestroy(): void {
     if (this.timer) {
@@ -294,11 +320,7 @@ export class PdfWatermarkTool implements OnDestroy {
   protected download(): void {
     const out = this.stamped();
     if (out) {
-      downloadBytes(
-        out,
-        `${this.fileName().replace(/\.pdf$/i, '')}-stamped.pdf`,
-        'application/pdf',
-      );
+      downloadBytes(out, this.result()?.name ?? 'stamped.pdf', 'application/pdf');
     }
   }
 

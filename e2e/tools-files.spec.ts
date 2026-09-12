@@ -255,6 +255,11 @@ test('pdf-watermark stamps text and page numbers with a live preview', async ({ 
   await page.getByRole('button', { name: 'Download PDF' }).click();
   expect((await download).suggestedFilename()).toBe('sample-stamped.pdf');
 
+  // The finished file is carried into the next tool without a second upload.
+  await page.getByTestId('next-step').getByRole('button', { name: 'Add a password' }).click();
+  await expect(page).toHaveURL(/\/tools\/pdf-protect/);
+  await expect(page.getByText(/sample-stamped\.pdf · 3 pages/)).toBeVisible({ timeout: 45_000 });
+
   expectClean(watch);
 });
 

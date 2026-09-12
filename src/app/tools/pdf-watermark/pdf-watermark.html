@@ -185,6 +185,8 @@
         <span class="field__hint">Turn on the watermark or page numbers to change the file.</span>
       }
     </div>
+
+    <app-next-step [file]="result()" [to]="['pdf-protect', 'pdf-sign']" />
   }
 
   <p class="note">

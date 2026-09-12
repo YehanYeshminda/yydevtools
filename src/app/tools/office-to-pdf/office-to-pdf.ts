@@ -11,6 +11,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 import { downloadBytes } from '../../core/download';
+import type { HandoffFile } from '../../core/file-handoff';
+import { NextStep } from '../../shared/next-step/next-step';
 import { describeFile, formatBytes } from '../../core/format';
 import { OfficeServicesClient, OfficeType } from '../../core/office-services.client';
 import { Dropzone } from '../../shared/dropzone/dropzone';
@@ -25,7 +27,16 @@ const LEGACY = /\.(doc|xls|ppt)$/i;
 
 @Component({
   selector: 'app-office-to-pdf',
-  imports: [ToolPage, Dropzone, ToolContent, RouterLink, MatButtonModule, NgIcon, Spinner],
+  imports: [
+    NextStep,
+    ToolPage,
+    Dropzone,
+    ToolContent,
+    RouterLink,
+    MatButtonModule,
+    NgIcon,
+    Spinner,
+  ],
   templateUrl: './office-to-pdf.html',
   styleUrls: ['../tool-shell.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -94,7 +105,11 @@ export class OfficeToPdfTool {
     this.fileSize.set(file.size);
   }
 
+  /** The converted document, so it can be carried into the next tool. */
+  protected readonly result = signal<HandoffFile | null>(null);
+
   protected clear(): void {
+    this.result.set(null);
     this.bytes = null;
     this.type = null;
     this.fileName.set('');
@@ -113,8 +128,9 @@ export class OfficeToPdfTool {
     try {
       const result = await this.office.toPdf(bytes, type);
       if (result.ok) {
-        const stem = this.fileName().replace(/\.[^.]+$/, '');
-        downloadBytes(result.bytes, `${stem}.pdf`, 'application/pdf');
+        const name = `${this.fileName().replace(/\.[^.]+$/, '')}.pdf`;
+        downloadBytes(result.bytes, name, 'application/pdf');
+        this.result.set({ bytes: result.bytes, name });
       } else if (result.failure.kind === 'unavailable') {
         this.unavailable.set(result.failure.message);
       } else {

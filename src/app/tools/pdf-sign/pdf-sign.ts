@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -13,6 +14,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { NgIcon } from '@ng-icons/core';
 import { PDFDocument } from '@cantoo/pdf-lib';
 import { downloadBytes } from '../../core/download';
+import type { HandoffFile } from '../../core/file-handoff';
+import { NextStep } from '../../shared/next-step/next-step';
+import { FileHandoff } from '../../core/file-handoff';
 import { describeFile, formatBytes } from '../../core/format';
 import { looksLikePdf } from '../../core/pdf-probe';
 import { PdfDocumentRenderer } from '../../core/pdf-render';
@@ -54,7 +58,7 @@ interface Signature {
  */
 @Component({
   selector: 'app-pdf-sign',
-  imports: [ToolPage, Dropzone, ToolContent, MatButtonModule, NgIcon, Spinner],
+  imports: [NextStep, ToolPage, Dropzone, ToolContent, MatButtonModule, NgIcon, Spinner],
   templateUrl: './pdf-sign.html',
   styleUrls: ['../tool-shell.css', './pdf-sign.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -95,6 +99,14 @@ export class PdfSignTool implements OnDestroy {
   private renderToken = 0;
   private drawing = false;
   private drag: { pointerId: number; dx: number; dy: number } | null = null;
+
+  constructor() {
+    // A file carried over from the previous tool is loaded as if dropped in.
+    const handed = inject(FileHandoff).take();
+    if (handed) {
+      afterNextRender(() => this.acceptFiles([handed]));
+    }
+  }
 
   ngOnDestroy(): void {
     this.renderer?.close();
@@ -162,7 +174,11 @@ export class PdfSignTool implements OnDestroy {
     }
   }
 
+  /** The last signed document, so it can be carried into the next tool. */
+  protected readonly result = signal<HandoffFile | null>(null);
+
   protected clear(): void {
+    this.result.set(null);
     this.closeDocument();
     this.fileName.set('');
     this.fileSize.set(0);
@@ -368,7 +384,9 @@ export class PdfSignTool implements OnDestroy {
       // signed in that frame; rotate the image to match if it ever matters.
       page.drawImage(image, toPdfRect(placement, page.getSize(), signature.aspect));
       const out = await doc.save();
-      downloadBytes(out, `${this.fileName().replace(/\.pdf$/i, '')}-signed.pdf`, 'application/pdf');
+      const name = `${this.fileName().replace(/\.pdf$/i, '')}-signed.pdf`;
+      downloadBytes(out, name, 'application/pdf');
+      this.result.set({ bytes: out, name });
     } catch {
       this.showError('This PDF could not be signed. It may be damaged or encrypted.');
     } finally {

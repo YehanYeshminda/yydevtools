@@ -12,6 +12,8 @@ import { NgIcon } from '@ng-icons/core';
 import { PDFDocument } from '@cantoo/pdf-lib';
 
 import { downloadBytes } from '../../core/download';
+import type { HandoffFile } from '../../core/file-handoff';
+import { NextStep } from '../../shared/next-step/next-step';
 import { describeFile, formatBytes } from '../../core/format';
 import { looksLikePdf } from '../../core/pdf-probe';
 import { Dropzone } from '../../shared/dropzone/dropzone';
@@ -40,7 +42,16 @@ const SETTLE_MS = 400;
  */
 @Component({
   selector: 'app-pdf-form-fill',
-  imports: [ToolPage, Dropzone, ToolContent, MatButtonModule, NgIcon, Spinner, PdfPreview],
+  imports: [
+    NextStep,
+    ToolPage,
+    Dropzone,
+    ToolContent,
+    MatButtonModule,
+    NgIcon,
+    Spinner,
+    PdfPreview,
+  ],
   templateUrl: './pdf-form-fill.html',
   styleUrls: ['../tool-shell.css', './pdf-form-fill.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -118,7 +129,11 @@ export class PdfFormFillTool implements OnDestroy {
     }
   }
 
+  /** The last filled document, so it can be carried into the next tool. */
+  protected readonly result = signal<HandoffFile | null>(null);
+
   protected clear(): void {
+    this.result.set(null);
     this.run++;
     this.bytes = null;
     this.fileName.set('');
@@ -189,7 +204,9 @@ export class PdfFormFillTool implements OnDestroy {
   protected async download(): Promise<void> {
     const out = await this.build(this.flatten());
     if (out) {
-      downloadBytes(out, `${this.fileName().replace(/\.pdf$/i, '')}-filled.pdf`, 'application/pdf');
+      const name = `${this.fileName().replace(/\.pdf$/i, '')}-filled.pdf`;
+      downloadBytes(out, name, 'application/pdf');
+      this.result.set({ bytes: out, name });
     }
   }
 

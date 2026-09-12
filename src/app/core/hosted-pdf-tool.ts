@@ -1,5 +1,6 @@
 import { afterNextRender, computed, inject, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { FileHandoff } from './file-handoff';
 import { describeFile, formatBytes } from './format';
 import { looksLikePdf, readPageCount } from './pdf-probe';
 import { HostedService, PdfServiceResult, PdfServicesClient } from './pdf-services.client';
@@ -45,6 +46,8 @@ export abstract class HostedPdfTool {
   protected readonly warmOnOpen: boolean = true;
 
   constructor() {
+    // A file carried over from the previous tool is loaded as if dropped in.
+    const handed = inject(FileHandoff).take();
     // The machines suspend when idle, so someone has to pay for the resume.
     // Doing it as the page opens spends it against the seconds the user takes
     // to read the page and choose a file, instead of against their upload.
@@ -54,6 +57,9 @@ export abstract class HostedPdfTool {
     afterNextRender(() => {
       if (this.warmOnOpen) {
         this.warmHosted();
+      }
+      if (handed) {
+        this.acceptFiles([handed]);
       }
     });
   }

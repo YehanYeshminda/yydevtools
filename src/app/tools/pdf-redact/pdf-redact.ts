@@ -14,6 +14,8 @@ import { NgIcon } from '@ng-icons/core';
 import { PDFDocument, degrees } from '@cantoo/pdf-lib';
 
 import { downloadBytes } from '../../core/download';
+import type { HandoffFile } from '../../core/file-handoff';
+import { NextStep } from '../../shared/next-step/next-step';
 import { describeFile, formatBytes } from '../../core/format';
 import { looksLikePdf } from '../../core/pdf-probe';
 import { PdfDocumentRenderer } from '../../core/pdf-render';
@@ -41,7 +43,7 @@ const MIN_BOX = 0.005;
  */
 @Component({
   selector: 'app-pdf-redact',
-  imports: [ToolPage, Dropzone, ToolContent, MatButtonModule, NgIcon, Spinner],
+  imports: [NextStep, ToolPage, Dropzone, ToolContent, MatButtonModule, NgIcon, Spinner],
   templateUrl: './pdf-redact.html',
   styleUrls: ['../tool-shell.css', './pdf-redact.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -146,7 +148,11 @@ export class PdfRedactTool implements OnDestroy {
     }
   }
 
+  /** The last redacted document, so it can be carried into the next tool. */
+  protected readonly result = signal<HandoffFile | null>(null);
+
   protected clear(): void {
+    this.result.set(null);
     this.closeDocument();
     this.fileName.set('');
     this.fileSize.set(0);
@@ -307,11 +313,9 @@ export class PdfRedactTool implements OnDestroy {
       }
 
       const bytes = await out.save();
-      downloadBytes(
-        bytes,
-        `${this.fileName().replace(/\.pdf$/i, '')}-redacted.pdf`,
-        'application/pdf',
-      );
+      const name = `${this.fileName().replace(/\.pdf$/i, '')}-redacted.pdf`;
+      downloadBytes(bytes, name, 'application/pdf');
+      this.result.set({ bytes, name });
     } catch {
       this.showError('The redacted PDF could not be built. Try a lower resolution.');
     } finally {
