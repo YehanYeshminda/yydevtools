@@ -1,0 +1,182 @@
+<app-tool-page slug="pdf-redact">
+  Black out words, lines or whole regions — by searching for a phrase or drawing boxes — and get a
+  PDF where the covered content is actually gone, not just hidden. Nothing is uploaded.
+</app-tool-page>
+
+<div class="panel">
+  <app-dropzone accept="application/pdf,.pdf" (filesSelected)="acceptFiles($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
+    <span class="dropzone__title">
+      @if (hasFile()) {
+        Drop another PDF here, or click to replace
+      } @else {
+        Drop a PDF here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">One file at a time — up to 50 MB</span>
+  </app-dropzone>
+
+  @if (hasFile()) {
+    <p class="status status--ok" role="status">
+      <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
+      {{ fileSummary() }}
+    </p>
+
+    <section class="finder" aria-label="Find text to redact">
+      <div class="field">
+        <label class="field__label" for="redact-query">Find and redact every occurrence of</label>
+        <div class="finder__row">
+          <input
+            id="redact-query"
+            class="field__input"
+            type="search"
+            placeholder="a name, a number, an address…"
+            [value]="query()"
+            (input)="onQuery($event)"
+            (keydown.enter)="find()"
+          />
+          <button matButton="filled" (click)="find()" [disabled]="!query().trim() || searching()">
+            @if (searching()) {
+              <app-spinner />
+            } @else {
+              <ng-icon name="matSearchOutline" />
+            }
+            Find
+          </button>
+        </div>
+        @if (found(); as f) {
+          <p class="field__hint" role="status" data-testid="found">
+            @if (f.count === 0) {
+              No matches. Scanned pages have no text to search — draw the boxes instead.
+            } @else {
+              {{ f.count }} {{ f.count === 1 ? 'match' : 'matches' }} on {{ f.pages }}
+              {{ f.pages === 1 ? 'page' : 'pages' }}, boxed below.
+            }
+          </p>
+        }
+      </div>
+    </section>
+
+    <section class="stage" aria-label="Draw boxes">
+      <div class="stage__bar">
+        <div class="actions">
+          <button matButton (click)="showPage(page() - 1)" [disabled]="page() === 0 || rendering()">
+            <ng-icon name="matChevronLeftOutline" />
+            Previous
+          </button>
+          <span class="stage__count">Page {{ page() + 1 }} of {{ pageCount() }}</span>
+          <button
+            matButton
+            (click)="showPage(page() + 1)"
+            [disabled]="page() + 1 >= pageCount() || rendering()"
+          >
+            Next
+            <ng-icon name="matChevronRightOutline" />
+          </button>
+        </div>
+        <div class="actions">
+          <span class="stage__count" data-testid="box-count">
+            {{ boxes().length }} {{ boxes().length === 1 ? 'box' : 'boxes' }} on
+            {{ pagesTouched() }} {{ pagesTouched() === 1 ? 'page' : 'pages' }}
+          </span>
+          <button matButton (click)="clearPage()" [disabled]="onPage().length === 0">
+            Clear this page
+          </button>
+          <button matButton (click)="clearAll()" [disabled]="boxes().length === 0">
+            Clear all
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="sheet"
+        #sheet
+        (pointerdown)="sheetDown($event)"
+        (pointermove)="sheetMove($event)"
+        (pointerup)="sheetUp($event)"
+        (pointercancel)="sheetUp($event)"
+      >
+        @if (pageImage(); as src) {
+          <img class="sheet__page" [src]="src" alt="Page {{ page() + 1 }}" draggable="false" />
+        }
+        @if (rendering()) {
+          <div class="sheet__busy" role="status"><app-spinner [size]="28" /></div>
+        }
+        @for (box of onPage(); track $index) {
+          <div
+            class="box"
+            [style.left.%]="box.x * 100"
+            [style.top.%]="box.y * 100"
+            [style.width.%]="box.width * 100"
+            [style.height.%]="box.height * 100"
+          >
+            <button
+              type="button"
+              class="box__remove"
+              aria-label="Remove this box"
+              (pointerdown)="$event.stopPropagation()"
+              (click)="removeBox(box, $event)"
+            >
+              ×
+            </button>
+          </div>
+        }
+        @if (draft(); as d) {
+          <div
+            class="box box--draft"
+            [style.left.%]="d.x * 100"
+            [style.top.%]="d.y * 100"
+            [style.width.%]="d.width * 100"
+            [style.height.%]="d.height * 100"
+          ></div>
+        }
+      </div>
+      <p class="field__hint">
+        Drag on the page to draw a box over anything else. Boxes show as translucent here and are
+        solid black in the result.
+      </p>
+    </section>
+
+    <div class="actions">
+      @if (busy()) {
+        <button matButton="filled" disabled>
+          <app-spinner />
+          Redacting… {{ progress() }}%
+        </button>
+      } @else {
+        <button matButton="filled" (click)="apply()" [disabled]="!canApply()">
+          <ng-icon name="matDownloadOutline" />
+          Redact &amp; download
+        </button>
+      }
+      <label class="stage__dpi">
+        Resolution
+        <select
+          class="field__input"
+          [value]="dpi()"
+          (change)="setDpi($event)"
+          aria-label="Output resolution"
+        >
+          <option value="150">150 dpi — screen</option>
+          <option value="200">200 dpi</option>
+          <option value="300">300 dpi — print</option>
+        </select>
+      </label>
+      <button matButton (click)="clear()" [disabled]="busy()">
+        <ng-icon name="matDeleteSweepOutline" />
+        Close file
+      </button>
+    </div>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+    <span class="note__text">
+      The result is rebuilt from images of the pages, so redacted text, hidden layers, metadata and
+      attachments are all gone — and so is the text layer. Run PDF OCR on the result if it needs to
+      stay searchable. Everything happens in this tab.
+    </span>
+  </p>
+</div>
+
+<app-tool-content slug="pdf-redact" />

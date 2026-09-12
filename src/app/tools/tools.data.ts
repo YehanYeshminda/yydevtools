@@ -286,6 +286,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'pdf-redact',
+    name: 'Redact PDF',
+    description:
+      'Black out a phrase everywhere or draw boxes, and get a PDF with the content truly removed.',
+    icon: 'matVisibilityOffOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'pdf-protect',
     name: 'Protect PDF',
     description: 'Lock a PDF with a password — AES-256, the strongest the format allows.',

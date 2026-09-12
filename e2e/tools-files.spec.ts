@@ -280,6 +280,29 @@ test('pdf-form-fill lists the fields, previews and downloads the filled form', a
   expectClean(watch);
 });
 
+test('pdf-redact finds a phrase on every page and downloads the rebuilt file', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-redact', 'Redact PDF');
+
+  await uploadFiles(page, ['sample.pdf']);
+  await expect(page.getByText(/sample\.pdf · 3 pages/)).toBeVisible({ timeout: 45_000 });
+  await expect(page.locator('.sheet__page')).toBeVisible({ timeout: 45_000 });
+
+  await page.locator('#redact-query').fill('quick brown');
+  await page.getByRole('button', { name: 'Find' }).click();
+  await expect(page.getByTestId('found')).toContainText('3 matches on 3 pages', {
+    timeout: 45_000,
+  });
+  await expect(page.getByTestId('box-count')).toContainText('3 boxes on 3 pages');
+  await expect(page.locator('.box')).toHaveCount(1); // only the current page's box is shown
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: /Redact & download/ }).click();
+  expect((await download).suggestedFilename()).toBe('sample-redacted.pdf');
+
+  expectClean(watch);
+});
+
 test('pdf-sign places a typed signature and downloads the signed file', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'pdf-sign', 'Sign PDF');

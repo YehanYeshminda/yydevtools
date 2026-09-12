@@ -2181,6 +2181,67 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['pdf-protect', 'pdf-merge', 'pdf-organizer', 'image-compressor'],
   },
+  'pdf-redact': {
+    slug: 'pdf-redact',
+    intro: [
+      'Drawing a black rectangle over a name does not remove it. In most free “redaction” tools the text is still there under the box — selectable, searchable, and one copy-paste from a leak. This tool removes it: type the phrase to find it on every page, draw boxes over anything else, and the result is rebuilt from images of the pages with the boxes burned in. What was under them is not in the file.',
+      'It runs in your browser. The document you are redacting is, by definition, sensitive, and it is never uploaded.',
+    ],
+    steps: [
+      'Choose the PDF.',
+      'Type a name, number or phrase and press Find — every occurrence is boxed, on every page.',
+      'Turn pages and drag boxes over anything else: a signature, a photo, a table cell. Remove a box with its ×.',
+      'Pick a resolution and download. Check the result before you send it.',
+    ],
+    features: [
+      'Find-and-redact across the whole document, case-insensitive.',
+      'Hand-drawn boxes on any page, as many as needed.',
+      'True removal: the output contains page images with the boxes painted in, not overlays.',
+      'Metadata, hidden layers, comments and attachments do not survive the rebuild either.',
+      'Nothing leaves your device.',
+    ],
+    sections: [
+      {
+        heading: 'Why the result is an image',
+        body: [
+          'A PDF page is a program that draws text and graphics. Cutting one word out of it cleanly — while leaving the words either side intact, the fonts consistent and nothing else disturbed — is hard, and it is exactly where cheap redaction goes wrong: the overlay is drawn but the text beneath is left in place. Rendering the page to an image and painting the box on that image sidesteps every one of those failure modes. There is no text object left to find.',
+          'The trade is that the result has no text layer: it cannot be searched or have text copied from it, and it is larger than the original. For a document being released, that is often fine or even preferred. If it must remain searchable, run PDF OCR on the redacted copy; the recognised text will not include what was blacked out because it is no longer on the page.',
+        ],
+      },
+      {
+        heading: 'What a search can and cannot find',
+        body: [
+          'Find uses the text the PDF actually contains. That works on documents that were produced digitally. A scan is a picture of text, and there is nothing to search — draw the boxes instead, or OCR it first and then redact the OCR’d copy. Text split oddly by the layout (a name broken across two lines, or letters spaced out for effect) can also be missed; page through and check.',
+          'A found match is boxed with a little margin. If the box looks tight on a decorative font, remove it and draw a slightly larger one by hand.',
+        ],
+      },
+      {
+        heading: 'Before you send it',
+        body: [
+          'Open the downloaded file and look at every page you touched. Redaction is irreversible only in the good copy; the original still has everything, so keep it where it belongs and share only the redacted one. And remember that black boxes reveal their own shape: the length of a redacted name is information too. When that matters, box the whole line.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is the text really gone, or just covered?',
+        a: 'Gone. The output is built from fresh page images with the boxes painted onto them. Select-all in a viewer finds nothing under the boxes, because there is nothing there.',
+      },
+      {
+        q: 'Which resolution should I choose?',
+        a: '150 dpi reads well on screen and keeps the file small. Use 300 dpi if the document will be printed or contains fine detail. The boxes are exact at any setting.',
+      },
+      {
+        q: 'Can I redact by colour or shape, or use a white box?',
+        a: 'Black boxes only for now. Black is the convention precisely because it is obviously a redaction rather than a blank.',
+      },
+      {
+        q: 'Is the file uploaded?',
+        a: 'No. Rendering, searching and rebuilding all run in your browser.',
+      },
+    ],
+    related: ['pdf-ocr', 'pdf-protect', 'exif-viewer', 'pdf-sign'],
+  },
   'pdf-protect': {
     slug: 'pdf-protect',
     intro: [

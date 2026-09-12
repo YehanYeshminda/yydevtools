@@ -275,6 +275,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/pdf-redact',
+    loadComponent: () => import('./tools/pdf-redact/pdf-redact').then((m) => m.PdfRedactTool),
+    title: 'Redact PDF — Permanently remove text from a PDF online — YYDevTools',
+    data: {
+      description:
+        'Redact a PDF in your browser: find every occurrence of a name or number, or draw boxes, ' +
+        'and download a copy where the covered content is genuinely removed. Nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/pdf-protect',
     loadComponent: () => import('./tools/pdf-protect/pdf-protect').then((m) => m.PdfProtectTool),
     title: 'Protect PDF — Password-protect a PDF online — YYDevTools',

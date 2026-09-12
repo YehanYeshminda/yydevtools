@@ -32,7 +32,19 @@ interface PdfPageProxy {
     canvasContext: CanvasRenderingContext2D;
     viewport: { width: number; height: number };
   }): { promise: Promise<void>; cancel(): void };
+  getTextContent(): Promise<{
+    items: Array<{ str?: string; transform?: number[]; width?: number; height?: number }>;
+  }>;
   cleanup(): void;
+}
+
+/** A run of text on a page, in unrotated points with the origin bottom-left. */
+export interface PageTextItem {
+  str: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 interface PdfDocumentProxy {
@@ -159,6 +171,36 @@ export class PdfDocumentRenderer {
       context.fillRect(0, 0, canvas.width, canvas.height);
       await page.render({ canvasContext: context, viewport }).promise;
       return { canvas, width: canvas.width, height: canvas.height };
+    } finally {
+      page.cleanup();
+    }
+  }
+
+  /**
+   * The text runs on a page with where they sit, for finding things to redact.
+   * Positions come straight from the content stream's text matrix, so they are
+   * in the unrotated frame — the same one `renderPageCanvas` draws in.
+   */
+  async pageText(pageIndex: number): Promise<PageTextItem[]> {
+    const page = await this.doc.getPage(pageIndex + 1);
+    try {
+      const { items } = await page.getTextContent();
+      const runs: PageTextItem[] = [];
+      for (const item of items) {
+        if (!item.str || !item.transform || item.width === undefined) {
+          continue;
+        }
+        const [a, b, , , e, f] = item.transform;
+        runs.push({
+          str: item.str,
+          x: e,
+          y: f,
+          width: item.width,
+          // Font size is the scale of the text matrix; the width already has it applied.
+          height: item.height || Math.hypot(a, b),
+        });
+      }
+      return runs;
     } finally {
       page.cleanup();
     }
