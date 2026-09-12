@@ -12,7 +12,7 @@
 export type ServiceErrorCode =
   | 'NOT_CONFIGURED'
   | 'UPSTREAM_UNAVAILABLE'
-  | 'UPSTREAM_REJECTED'
+  | 'INVALID_INPUT'
   | 'TIMEOUT'
   | 'TOO_LARGE';
 
@@ -164,7 +164,7 @@ function classify(status: number): ServiceErrorCode {
     return 'UPSTREAM_UNAVAILABLE';
   }
   // 400 and friends: the input itself was rejected — retrying will not help.
-  return 'UPSTREAM_REJECTED';
+  return 'INVALID_INPUT';
 }
 
 async function failureMessage(response: Response): Promise<string> {

@@ -89,7 +89,6 @@ function rateLimited(): Response {
 type ErrorCode =
   | 'NOT_CONFIGURED'
   | 'UPSTREAM_UNAVAILABLE'
-  | 'UPSTREAM_REJECTED'
   | 'TIMEOUT'
   | 'TOO_LARGE'
   | 'INVALID_INPUT'
@@ -99,7 +98,6 @@ type ErrorCode =
 const STATUS: Record<ErrorCode, number> = {
   NOT_CONFIGURED: 503,
   UPSTREAM_UNAVAILABLE: 502,
-  UPSTREAM_REJECTED: 502,
   TIMEOUT: 504,
   TOO_LARGE: 413,
   INVALID_INPUT: 400,
