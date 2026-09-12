@@ -1,0 +1,91 @@
+# Continuous integration for yydevtools.
+#
+# Two jobs on purpose. The unit/build job finishes in a couple of minutes and
+# reports first; the much slower Playwright run happens alongside it rather than
+# queued behind it, so a broken unit test is not hidden by a ten-minute E2E wait.
+#
+# No repository secret is required for this to pass. `scripts/generate-syncfusion
+# -license.mjs` falls back to an empty key, which puts the two Office viewers in
+# Syncfusion's trial mode — fine here, because the conversion service they talk
+# to is not reachable from CI anyway and the specs assert honest degradation
+# rather than a real render (see the E2E_BASE_URL switch in tools-files.spec.ts).
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+# A newer push to the same branch makes an in-flight run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# The Angular CLI prompts for analytics consent on a fresh machine, which would
+# hang a runner. GitHub sets CI=true as well, but this is the explicit opt-out.
+env:
+  NG_CLI_ANALYTICS: false
+
+jobs:
+  test:
+    name: Unit, worker, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Angular's own runner (vitest + jsdom + a real TestBed).
+      - name: Unit tests
+        run: npm test
+
+      # The Worker is deployed by wrangler, not produced by `ng build`, so
+      # without these two steps nothing checks it at all.
+      - name: Worker typecheck
+        run: npx tsc -p worker/tsconfig.json
+      - name: Worker tests
+        run: npm run test:worker
+
+      # Prerenders every route and writes the sitemap — this is what catches the
+      # failures that only exist at build time and that no test ever sees.
+      - name: Production build
+        run: npm run build
+        env:
+          SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
+
+  e2e:
+    name: Playwright
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Chromium only: both Playwright projects (desktop and Pixel 7) run on it.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config starts `npm start` itself and waits for :4200.
+      - name: Run Playwright
+        run: npm run e2e
+        env:
+          SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
+
+      # Uploaded on a pass too, not only a failure: with `trace: retain-on-failure`
+      # a test that fails and then succeeds on retry still leaves a trace behind,
+      # and that flake is the one worth looking at.
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/.report
+            e2e/.results
+          retention-days: 7

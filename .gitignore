@@ -32,8 +32,9 @@ yarn-error.log*
 
 # Miscellaneous
 /.angular/cache
-# Playwright run output (traces, screenshots, JSON report)
+# Playwright run output (traces, screenshots, JSON report) and its HTML report
 /e2e/.results/
+/e2e/.report/
 .sass-cache/
 /connect.lock
 /coverage
