@@ -224,7 +224,8 @@ test('certificate-decoder reads a chain', async ({ page }) => {
       timeout: 45_000,
     });
     await expect(page.getByRole('heading', { name: /YYDevTools E2E Root CA/ })).toBeVisible();
-    await expect(page.getByText(/DNS:www\.e2e\.yydevtools\.com/)).toBeVisible();
+    // Also present inside the collapsed extensions list, hence first().
+    await expect(page.getByText(/DNS:www\.e2e\.yydevtools\.com/).first()).toBeVisible();
     await expect(page.getByText(/signed by the next, up to a self-signed root/)).toBeVisible();
   } else {
     await expect(page.getByRole('alert')).toContainText(/decoding service is not running/i, {
