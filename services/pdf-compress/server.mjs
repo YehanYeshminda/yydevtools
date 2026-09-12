@@ -90,16 +90,24 @@ function authorised(header) {
 }
 
 /**
- * True when the bytes plausibly start a PDF.
+ * True when the bytes are a PDF: header at offset 0, as ISO 32000-1 requires.
  *
- * The header is scanned within the first kilobyte rather than required at
- * offset 0: the specification says offset 0, but a great many real files carry
- * leading junk and every reader tolerates it, so being stricter than Ghostscript
- * would reject documents that work fine. The point is to fail obvious garbage in
- * microseconds instead of spending 90 seconds of a shared CPU discovering it.
+ * This used to scan the first kilobyte, reasoning that readers tolerate leading
+ * junk so we should too. That tolerance was the bug. A whole multipart form
+ * envelope passed the check, because the file's own %PDF- header sat a few
+ * hundred bytes inside it; Ghostscript then read the embedded document, failed
+ * to make it smaller, and the "original wins" rule below returned the
+ * *envelope* as application/pdf with a 200.
+ *
+ * That echo is exactly why this is strict rather than lenient: this service can
+ * hand the input back verbatim, so the input has to actually be what it claims
+ * to be. The cost is that a real PDF carrying leading junk is now a 400 — and
+ * if that ever happens it appears in the logs as `rejected_not_pdf`, which is
+ * the evidence needed to loosen this again deliberately rather than by
+ * assumption.
  */
 function looksLikePdf(buffer) {
-  return buffer.subarray(0, 1024).includes(Buffer.from('%PDF-'));
+  return buffer.subarray(0, 5).equals(Buffer.from('%PDF-'));
 }
 
 /** Collects the request body, bailing out early if it exceeds the cap. */

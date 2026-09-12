@@ -1277,14 +1277,26 @@ everyday work" audience this expansion is for.
       banners. Verified in-browser: navbar inner 13–1253, guides cards
       41–626/640–1225, about grids 41–1225 — one column everywhere. The guide
       *article* page keeps its 760px reading measure on purpose.
-- [ ] **Orphaned `IMAGE_COMPRESS_SECRET` Worker secret.** The Fly app it
-      authenticated is already destroyed; this is a live credential for nothing.
-- [ ] **The PDF sniff is loose.** `services/*/server.mjs` searches for `%PDF-`
-      anywhere in the first 1 KB rather than requiring it at offset 0. Found by
-      accident when a `curl -F` test had its whole multipart envelope accepted
-      as a PDF and echoed back with a 200. The failure is benign — Ghostscript
-      fails and the original is returned — but malformed input gets a success
-      status instead of a 400.
+- [x] **Orphaned `IMAGE_COMPRESS_SECRET` Worker secret.** *(done 2026-09-12)*
+      Deleted — and auditing the list turned up a second one, the
+      `ADOBE_PDF_CLIENT_SECRET` left behind when the PDF stack moved off Adobe,
+      which was deleted too. Both were verified to have zero references across
+      `worker/ src/ scripts/ services/ wrangler.jsonc package.json README.md`
+      first. The six that remain (`CURRENTS_API_KEY`, `OFFICE_CONVERT_SECRET`,
+      `PDF_COMPRESS_SECRET`, `PDF_CONVERT_SECRET`, `PDF_OCR_SECRET`,
+      `UPSTASH_REDIS_REST_TOKEN`) are all in active use. Note that deleting the
+      Adobe secret from the Worker does not revoke it at Adobe's end.
+- [x] **The PDF sniff is loose.** *(done 2026-09-12)* All three services now
+      require `%PDF-` at offset 0 rather than anywhere in the first kilobyte.
+      The real mechanism turned out to be worse than "Ghostscript fails and the
+      original is returned": Ghostscript *succeeded*, because it found the PDF
+      embedded inside the multipart envelope — and since the result was not
+      smaller than the input, the "original wins" rule handed the **envelope**
+      back as `application/pdf` with a 200. Being able to echo the input
+      verbatim is exactly why the input has to be what it claims. The cost is
+      that a real PDF carrying leading junk is now a 400; it shows up in the
+      logs as `rejected_not_pdf`, which is the evidence to loosen this again
+      deliberately rather than by assumption.
 
 **Suggested order:** the search button, then the service worker, then
 Images ↔ PDF. The first is a real defect, the second completes something already
