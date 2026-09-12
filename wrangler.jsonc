@@ -42,6 +42,14 @@
   "compatibility_date": "2025-11-01",
   // Keep the *.workers.dev URL alive alongside the custom domain.
   "workers_dev": true,
+  // Per-version preview URLs, which the dashboard has had switched on since
+  // before this file existed. Declared here because `wrangler deploy` replaces
+  // the remote configuration with this one: left undeclared it resolves to
+  // false, so every deploy quietly turned them off again. A local run at least
+  // warns and asks; Workers Builds deploys non-interactively and would just do
+  // it. Config drift that only one of the two paths can see is not worth
+  // keeping.
+  "preview_urls": true,
   "assets": {
     "directory": "./dist/yydevtools/browser",
     // Bound so the Worker can serve the prerendered pages for non-API routes.
