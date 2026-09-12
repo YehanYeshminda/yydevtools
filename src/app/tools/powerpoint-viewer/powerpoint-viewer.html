@@ -1,0 +1,59 @@
+<app-tool-page slug="powerpoint-viewer">
+  Open a PowerPoint deck and read it in the browser, slide by slide, with a thumbnail strip to jump
+  around. Reading it needs a conversion step on our server — see the note below.
+</app-tool-page>
+
+<div class="panel">
+  @if (!pdf() && !loading()) {
+    <app-dropzone
+      accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+      (filesSelected)="open($event)"
+    >
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matSlideshowOutline" />
+      <span class="dropzone__title">Drop a .pptx file here, or click to choose</span>
+      <span class="dropzone__hint">Up to 20 MB</span>
+    </app-dropzone>
+  }
+
+  @if (error(); as message) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      <span class="note__text">{{ message }}</span>
+    </p>
+  }
+
+  @if (loading()) {
+    <p class="status" role="status">
+      <app-spinner />
+      <span>Opening {{ name() }}…</span>
+    </p>
+  }
+
+  @if (pdf(); as rendered) {
+    <p class="status status--ok" role="status">
+      <ng-icon class="status__icon" aria-hidden="true" name="matSlideshowOutline" />
+      {{ summary() }}
+    </p>
+
+    <app-pdf-preview [bytes]="rendered" [fileName]="name()" height="42rem" />
+
+    <div class="actions">
+      <button matButton="filled" (click)="download()">
+        <ng-icon name="matPictureAsPdfOutline" />
+        Download as PDF
+      </button>
+      <button matButton (click)="close()">
+        <ng-icon name="matDeleteSweepOutline" />
+        Close file
+      </button>
+    </div>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    This tool uploads your file. It is sent over HTTPS to our own conversion service, rendered to
+    PDF for display, and returned — the file is deleted right after processing and never stored.
+  </p>
+</div>
+
+<app-tool-content slug="powerpoint-viewer" />

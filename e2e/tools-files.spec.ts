@@ -211,6 +211,25 @@ test('excel-viewer renders an .xlsx', async ({ page }) => {
   expectClean(watch);
 });
 
+test('powerpoint-viewer renders a .pptx', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'powerpoint-viewer', 'PowerPoint Viewer');
+
+  await uploadFiles(page, ['sample.pptx']);
+
+  if (HOSTED_OFFICE) {
+    // Two slides in, two pages out — the count comes from the rendered PDF.
+    await expect(page.getByText(/2 slides/)).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('app-pdf-preview iframe')).toBeVisible();
+  } else {
+    await expect(page.getByRole('alert')).toContainText(/conversion service is not running/i, {
+      timeout: 45_000,
+    });
+  }
+
+  expectClean(watch);
+});
+
 test('office-to-pdf converts a .docx', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'office-to-pdf', 'Office to PDF');

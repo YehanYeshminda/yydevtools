@@ -305,6 +305,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/powerpoint-viewer',
+    loadComponent: () =>
+      import('./tools/powerpoint-viewer/powerpoint-viewer').then((m) => m.PowerpointViewerTool),
+    title: 'PowerPoint Viewer — Open PPTX in your browser — YYDevTools',
+    data: {
+      description:
+        'Open a PowerPoint .pptx presentation in your browser and read it slide by slide, with ' +
+        'thumbnails, search and zoom. Free, no sign-up, no PowerPoint needed.',
+    },
+  },
+  {
     path: 'tools/excel-viewer',
     loadComponent: () => import('./tools/excel-viewer/excel-viewer').then((m) => m.ExcelViewerTool),
     title: 'Excel Viewer — Open XLSX in your browser — YYDevTools',

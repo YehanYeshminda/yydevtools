@@ -300,6 +300,14 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'powerpoint-viewer',
+    name: 'PowerPoint Viewer',
+    description: 'Open a .pptx deck and read it slide by slide, with thumbnails to jump around.',
+    icon: 'matSlideshowOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'excel-viewer',
     name: 'Excel Viewer',
     description:

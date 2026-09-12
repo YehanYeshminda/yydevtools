@@ -1811,6 +1811,66 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['word-viewer', 'excel-viewer', 'pdf-convert', 'pdf-compress'],
   },
+  'powerpoint-viewer': {
+    slug: 'powerpoint-viewer',
+    intro: [
+      'Open a PowerPoint presentation and read it in the browser without PowerPoint, Keynote or a Google account. Each slide is shown as a page, with a thumbnail strip down the side to jump between them, text search across the whole deck, and zoom for the small print in a chart.',
+      'There is no browser-side engine that lays out a .pptx faithfully, so the deck is rendered to PDF on our own service first: the file is sent over HTTPS, converted, shown, and deleted straight after. The PDF it produces is yours to download too.',
+    ],
+    steps: [
+      'Choose the .pptx file you want to read.',
+      'Wait a moment while it is rendered — a typical deck takes a few seconds.',
+      'Read it slide by slide, use the thumbnails to jump, or search for a phrase.',
+      'Download the rendered PDF if you want to keep or share a fixed copy.',
+    ],
+    features: [
+      'Every slide rendered with its layout, fonts, images and tables intact.',
+      'Thumbnails, search and zoom from the built-in PDF viewer.',
+      'One-click download of the deck as a PDF.',
+      'Files are processed over HTTPS and deleted after rendering.',
+    ],
+    sections: [
+      {
+        heading: 'Why a deck is rendered rather than opened',
+        body: [
+          'A .pptx file is a bundle of XML describing shapes, text runs, placeholders and theme references, plus the images it uses. Turning that into what you would see in PowerPoint means resolving the theme, laying out every text box with the right fonts and line breaks, and drawing every shape and chart. That is a presentation engine, and there is not a serious one that runs in a browser tab.',
+          'Rendering the deck to PDF on the server sidesteps the problem. A proper Office layout engine produces one page per slide, and the PDF viewer every browser can host does the rest — thumbnails, search, zoom, printing. What you lose is animation and the speaker notes; what you gain is a faithful picture of each slide on any device.',
+        ],
+      },
+      {
+        heading: 'What renders well, and what does not',
+        body: [
+          'Text, bullet lists, tables, images, shapes, SmartArt that has been converted to shapes, and charts all render as they appear in PowerPoint. Slide transitions, animations, embedded video and audio do not — a PDF has no concept of them — so a slide with a build animation shows its final state.',
+          'Fonts are the usual variable. Decks in Calibri, Arial, Times or another common family look right. A deck in a font the service does not have is rendered in a metrically similar fallback, which keeps line breaks in the right place but changes the look of headings.',
+        ],
+      },
+      {
+        heading: 'Reading versus presenting',
+        body: [
+          'This is a reader, not a presentation tool. If you need to present the deck, download the PDF and open it full-screen in any PDF viewer — page-down advances one slide at a time, which is all most presentations need. If you need to edit the deck, PowerPoint, Keynote, Google Slides and LibreOffice Impress all open .pptx files directly.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Which formats can I open?',
+        a: 'PowerPoint .pptx files. The older .ppt format is not accepted — open it in PowerPoint or LibreOffice and save it as .pptx first.',
+      },
+      {
+        q: 'Why is my file uploaded for this tool?',
+        a: 'Laying out a presentation faithfully needs a full Office rendering engine, which cannot run in a browser. The file is sent to our own service, rendered to PDF, and deleted — it is not retained or read.',
+      },
+      {
+        q: 'Are animations and speaker notes shown?',
+        a: 'No. Each slide is shown in its final state, without transitions or animations, and speaker notes are not included.',
+      },
+      {
+        q: 'Can I keep the rendered version?',
+        a: 'Yes — the Download as PDF button saves exactly what you are looking at, one page per slide.',
+      },
+    ],
+    related: ['office-to-pdf', 'word-viewer', 'excel-viewer', 'pdf-viewer'],
+  },
   'pdf-protect': {
     slug: 'pdf-protect',
     intro: [
