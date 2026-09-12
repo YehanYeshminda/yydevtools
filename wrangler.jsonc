@@ -87,4 +87,20 @@
       "simple": { "limit": 20, "period": 60 },
     },
   ],
+  // Liveness check for the four Fly machines — the `scheduled` handler in
+  // worker/index.ts. It runs here rather than from CI because the same probe
+  // from a GitHub runner is answered with 403 by Cloudflare's bot protection
+  // and 429 by the rate limiter above; from inside the Worker there is no
+  // external IP to be judged on.
+  //
+  // Six-hourly, not minutes: every run resumes all four machines, so a tight
+  // schedule would quietly undo `min_machines_running = 0` and bill for exactly
+  // the idle time this project avoids. This bounds how long a dead service can
+  // hide without keeping anything awake.
+  "triggers": {
+    "crons": ["0 */6 * * *"],
+  },
+  // Retain Worker logs, so the scheduled check can be read after the fact
+  // rather than only live through `wrangler tail`.
+  "observability": { "enabled": true },
 }

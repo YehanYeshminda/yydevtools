@@ -461,12 +461,106 @@ async function handleApi(
   return fail('NOT_FOUND', 'Unknown endpoint.');
 }
 
+/** The hosted machines a scheduled check looks at, named as `warmBaseUrl` names them. */
+const HEALTH_SERVICES = ['compress', 'ocr', 'export', 'office'] as const;
+
+/** Long enough for a suspended machine to resume, short enough to bound the run. */
+const HEALTH_TIMEOUT_MS = 25_000;
+
+/** What one machine reported, or why it could not be asked. */
+export interface ServiceHealth {
+  service: string;
+  ok: boolean;
+  status?: number;
+  ms: number;
+  error?: string;
+}
+
+/**
+ * Probes one machine's `/health`.
+ *
+ * `/health` is the right target rather than any plain GET, because it runs the
+ * tool it depends on (`gs --version` and friends) instead of only proving Node
+ * is up — so a machine whose image lost Ghostscript reports unhealthy here
+ * instead of looking fine and 502-ing every real request. It is also
+ * unauthenticated, since Fly's own checks call it, so this never touches a
+ * secret.
+ *
+ * Failures are returned rather than thrown: one dead machine must not stop the
+ * other three from being checked.
+ */
+export async function checkService(env: Env, service: string): Promise<ServiceHealth> {
+  const base = warmBaseUrl(env, service);
+  if (!base) {
+    return { service, ok: false, ms: 0, error: 'not configured' };
+  }
+
+  const started = Date.now();
+  try {
+    const response = await fetch(new URL('/health', base), {
+      signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
+    });
+    return { service, ok: response.ok, status: response.status, ms: Date.now() - started };
+  } catch (error) {
+    return {
+      service,
+      ok: false,
+      ms: Date.now() - started,
+      // Name and message both: the name alone is usually just "Error", which
+      // says nothing about whether the machine refused, stalled or hung up.
+      error: error instanceof Error ? `${error.name}: ${error.message}` : 'failed',
+    };
+  }
+}
+
+/**
+ * Checks every hosted machine and writes one line about the result.
+ *
+ * The line goes to `console.error` when anything is down, so the bad runs can be
+ * filtered from the healthy ones — which is the point of recording it at all.
+ * Workers Logs retains these (see `observability` in wrangler.jsonc), so "when
+ * did OCR start failing" is answerable afterwards rather than only while
+ * tailing.
+ */
+export async function checkAllServices(env: Env): Promise<ServiceHealth[]> {
+  const results = await Promise.all(HEALTH_SERVICES.map((service) => checkService(env, service)));
+  const down = results.filter((result) => !result.ok).map((result) => result.service);
+  const line = JSON.stringify({ event: 'health_check', down, results });
+  if (down.length > 0) {
+    console.error(line);
+  } else {
+    console.log(line);
+  }
+  return results;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     // Every answer gets the security headers, including redirects and errors —
     // an HSTS header on the www redirect is the one that matters most, since
     // that redirect is often the first response a visitor ever sees.
     return withSecurityHeaders(await route(request, env, ctx));
+  },
+
+  /**
+   * Scheduled liveness check for the four Fly machines.
+   *
+   * Running it from inside Cloudflare is the whole point. The same check driven
+   * from a GitHub runner is answered with 403 by the bot protection and 429 by
+   * this Worker's own rate limiter, because a shared datacenter IP looks exactly
+   * like abuse — measured, not assumed. From here there is no external IP to be
+   * judged on, and no secret to hand to a third party.
+   *
+   * It is deliberately infrequent: every run resumes all four machines, so a
+   * tight schedule would quietly undo the `min_machines_running = 0` this
+   * project is built around. See the cron in wrangler.jsonc.
+   */
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
+    ctx.waitUntil(checkAllServices(env));
   },
 };
 
