@@ -29,6 +29,7 @@ import { SeoService } from './core/seo.service';
 import { ThemePreference, ThemeService } from './core/theme.service';
 import { CommandPalette } from './shared/command-palette/command-palette';
 import { ConsentBanner } from './shared/consent-banner/consent-banner';
+import { NavProgress } from './shared/nav-progress/nav-progress';
 import { NewsFeed } from './shared/news-feed/news-feed';
 import { CATEGORY_META, Tool } from './tools/tool.model';
 import { TOOLS, TOOL_CATEGORIES } from './tools/tools.data';
@@ -93,6 +94,7 @@ const THEME_MENU_POSITION: readonly ConnectedPosition[] = [
     NgIcon,
     ConsentBanner,
     CommandPalette,
+    NavProgress,
     NewsFeed,
   ],
   templateUrl: './app.html',
