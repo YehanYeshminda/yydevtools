@@ -232,6 +232,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/pdf-sign',
+    loadComponent: () => import('./tools/pdf-sign/pdf-sign').then((m) => m.PdfSignTool),
+    title: 'Sign PDF — Add your signature to a PDF online — YYDevTools',
+    data: {
+      description:
+        'Sign a PDF in your browser: draw your signature, type your name or upload an image, ' +
+        'drag it onto the page and download. The file is never uploaded. Free, no account.',
+    },
+  },
+  {
     path: 'tools/pdf-protect',
     loadComponent: () => import('./tools/pdf-protect/pdf-protect').then((m) => m.PdfProtectTool),
     title: 'Protect PDF — Password-protect a PDF online — YYDevTools',

@@ -1937,6 +1937,66 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['office-to-pdf', 'word-viewer', 'excel-viewer', 'pdf-viewer'],
   },
+  'pdf-sign': {
+    slug: 'pdf-sign',
+    intro: [
+      'Put your signature on a PDF without printing it, signing it and scanning it back. Draw with a mouse, finger or pen, type your name in a handwriting face, or upload a picture of your real signature — then drag it onto the page, size it to the line, and download the signed copy.',
+      'It all happens in your browser. The page is drawn locally so you can see where the signature goes, and the signature is embedded into the PDF locally too. Nothing about the document or your signature is sent anywhere.',
+    ],
+    steps: [
+      'Choose the PDF that needs signing.',
+      'Make your signature: draw it, type your name, or upload an image.',
+      'Drag it into place on the page and adjust the size. Use Previous and Next to reach another page.',
+      'Download the signed PDF. The original is untouched.',
+    ],
+    features: [
+      'Draw, type or upload — a transparent PNG of a real signature looks best.',
+      'Drag to position, slider to size, any page of the document.',
+      'The signature becomes part of the page, the way a scanned signature is.',
+      'Entirely in the browser; the file is never uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'What kind of signature this is',
+        body: [
+          'This tool adds a visible signature: an image placed on the page, exactly as a printed-and-scanned document carries one. For the everyday cases — a lease, a consent form, a contract a counterparty sends as PDF, an expense claim — that is what is being asked for, and it is what most e-signature services produce too.',
+          'It is not a cryptographic digital signature. A digital signature, in the PDF sense, is a mathematical seal made with a private key and a certificate that lets a reader verify who signed and that nothing changed afterwards. That needs a certificate issued to you and is a different tool; the certificates guide explains what such a signature actually proves.',
+        ],
+      },
+      {
+        heading: 'Getting a signature that looks right',
+        body: [
+          'Drawing with a mouse is awkward; on a phone or a tablet with a pen the pad works much better, and the page is responsive so it can be used there. If you have signed on paper before, a photo of that signature works well: crop it tight, and if you can, make the background transparent so the paper texture does not come with it — a scan on white paper over a white page is usually fine as it is.',
+          'Typing your name gives a tidy, consistent result in a handwriting-style face. It reads as a signature and is accepted for the same kinds of documents, but it is obviously typed; use it when neatness matters more than authenticity of hand.',
+        ],
+      },
+      {
+        heading: 'Where the signature goes',
+        body: [
+          'The page you see is a rendering of the actual PDF page, and the signature is positioned in that page’s own coordinates — so what you see is where it lands, at the same size relative to the page. Pages that are stored rotated are shown unrotated here, which is rare; if a page appears sideways, sign it in the orientation shown and the result matches the file’s own frame.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is the signed PDF legally binding?',
+        a: 'In most jurisdictions an electronic mark applied with the intent to sign is treated like a handwritten one for ordinary agreements. Some documents — wills, some property transfers, notarised deeds — have specific requirements. When it matters, the recipient’s rules decide, so ask them.',
+      },
+      {
+        q: 'Can someone remove or move the signature afterwards?',
+        a: 'It is embedded as an image on the page, so with a PDF editor it can be altered, just as a scanned signature can. If you need tamper-evidence, that is what a cryptographic digital signature is for.',
+      },
+      {
+        q: 'Can I sign several pages, or add a date and initials?',
+        a: 'One signature on one page for now. Run the tool again on the signed file to add another mark. Initials and dates are on the list.',
+      },
+      {
+        q: 'Is my document or signature uploaded?',
+        a: 'No. Rendering, placement and embedding all run in your browser. Nothing leaves your device.',
+      },
+    ],
+    related: ['pdf-protect', 'pdf-merge', 'pdf-organizer', 'image-compressor'],
+  },
   'pdf-protect': {
     slug: 'pdf-protect',
     intro: [

@@ -1,0 +1,215 @@
+<app-tool-page slug="pdf-sign">
+  Draw, type or upload your signature, drag it onto the page, and download the signed PDF. The file
+  never leaves your browser.
+</app-tool-page>
+
+<div class="panel">
+  <app-dropzone accept="application/pdf,.pdf" (filesSelected)="acceptFiles($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
+    <span class="dropzone__title">
+      @if (hasFile()) {
+        Drop another PDF here, or click to replace
+      } @else {
+        Drop a PDF here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">One file at a time — up to 50 MB</span>
+  </app-dropzone>
+
+  @if (hasFile()) {
+    <p class="status status--ok" role="status">
+      <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
+      {{ fileSummary() }}
+    </p>
+
+    <section class="maker" aria-label="Your signature">
+      <div class="tabs" role="tablist" aria-label="How to make your signature">
+        <button
+          type="button"
+          class="chip"
+          role="tab"
+          [class.chip--on]="mode() === 'draw'"
+          [attr.aria-selected]="mode() === 'draw'"
+          (click)="setMode('draw')"
+        >
+          Draw
+        </button>
+        <button
+          type="button"
+          class="chip"
+          role="tab"
+          [class.chip--on]="mode() === 'type'"
+          [attr.aria-selected]="mode() === 'type'"
+          (click)="setMode('type')"
+        >
+          Type
+        </button>
+        <button
+          type="button"
+          class="chip"
+          role="tab"
+          [class.chip--on]="mode() === 'upload'"
+          [attr.aria-selected]="mode() === 'upload'"
+          (click)="setMode('upload')"
+        >
+          Upload
+        </button>
+      </div>
+
+      @switch (mode()) {
+        @case ('draw') {
+          <canvas
+            #pad
+            class="pad"
+            width="720"
+            height="240"
+            aria-label="Signature pad — draw with your mouse, finger or pen"
+            (pointerdown)="penDown($event)"
+            (pointermove)="penMove($event)"
+            (pointerup)="penUp()"
+            (pointercancel)="penUp()"
+          ></canvas>
+          <div class="actions">
+            <button matButton="filled" (click)="useDrawn()">
+              <ng-icon name="matHistoryEduOutline" />
+              Use this signature
+            </button>
+            <button matButton (click)="clearPad()">
+              <ng-icon name="matDeleteSweepOutline" />
+              Clear pad
+            </button>
+          </div>
+        }
+        @case ('type') {
+          <div class="field">
+            <label class="field__label" for="sig-name">Your name</label>
+            <input
+              id="sig-name"
+              class="field__input"
+              type="text"
+              autocomplete="name"
+              [value]="typed()"
+              (input)="onTyped($event)"
+            />
+          </div>
+          <div class="actions">
+            <button matButton="filled" (click)="useTyped()">
+              <ng-icon name="matHistoryEduOutline" />
+              Use this signature
+            </button>
+          </div>
+        }
+        @case ('upload') {
+          <app-dropzone
+            accept="image/png,image/jpeg,image/webp"
+            (filesSelected)="acceptImage($event)"
+          >
+            <ng-icon class="dropzone__icon" aria-hidden="true" name="matHistoryEduOutline" />
+            <span class="dropzone__title">Drop an image of your signature</span>
+            <span class="dropzone__hint">A PNG with a transparent background works best</span>
+          </app-dropzone>
+        }
+      }
+    </section>
+
+    <section class="stage" aria-label="Place the signature">
+      <div class="stage__bar">
+        <div class="actions">
+          <button matButton (click)="showPage(page() - 1)" [disabled]="page() === 0 || rendering()">
+            <ng-icon name="matChevronLeftOutline" />
+            Previous
+          </button>
+          <span class="stage__count">Page {{ page() + 1 }} of {{ pageCount() }}</span>
+          <button
+            matButton
+            (click)="showPage(page() + 1)"
+            [disabled]="page() + 1 >= pageCount() || rendering()"
+          >
+            Next
+            <ng-icon name="matChevronRightOutline" />
+          </button>
+        </div>
+        @if (placement(); as p) {
+          @if (p.page !== page()) {
+            <button matButton (click)="placeHere()">
+              <ng-icon name="matHistoryEduOutline" />
+              Move signature to this page
+            </button>
+          } @else {
+            <label class="stage__size">
+              Size
+              <input
+                type="range"
+                min="10"
+                max="60"
+                [value]="p.width * 100"
+                (input)="onWidth($event)"
+                aria-label="Signature width as a percentage of the page"
+              />
+            </label>
+          }
+        }
+      </div>
+
+      <div class="sheet" #sheet>
+        @if (pageImage(); as src) {
+          <img class="sheet__page" [src]="src" alt="Page {{ page() + 1 }}" draggable="false" />
+        }
+        @if (rendering()) {
+          <div class="sheet__busy" role="status"><app-spinner [size]="28" /></div>
+        }
+        @if (shown(); as p) {
+          @if (signature(); as sig) {
+            <img
+              class="sig"
+              [src]="sig.dataUrl"
+              alt="Your signature — drag to move"
+              draggable="false"
+              [style.left.%]="p.x * 100"
+              [style.top.%]="p.y * 100"
+              [style.width.%]="p.width * 100"
+              (pointerdown)="dragStart($event)"
+              (pointermove)="dragMove($event)"
+              (pointerup)="dragEnd()"
+              (pointercancel)="dragEnd()"
+            />
+          }
+        }
+      </div>
+      @if (!signature()) {
+        <p class="stage__hint">
+          Make a signature above and it will appear here, ready to drag into place.
+        </p>
+      }
+    </section>
+
+    <div class="actions">
+      @if (busy()) {
+        <button matButton="filled" disabled>
+          <app-spinner />
+          Signing…
+        </button>
+      } @else {
+        <button matButton="filled" (click)="sign()" [disabled]="!canSign()">
+          <ng-icon name="matDownloadOutline" />
+          Sign &amp; download
+        </button>
+      }
+      <button matButton (click)="clear()" [disabled]="busy()">
+        <ng-icon name="matDeleteSweepOutline" />
+        Close file
+      </button>
+    </div>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+    <span class="note__text">
+      This places a picture of your signature on the page — the way a scanned signature does. It is
+      not a cryptographic digital signature and does not certify the document; for that, see the
+      guide on certificates linked below.
+    </span>
+  </p>
+</div>
+
+<app-tool-content slug="pdf-sign" />

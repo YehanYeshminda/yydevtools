@@ -251,6 +251,14 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'pdf-sign',
+    name: 'Sign PDF',
+    description: 'Draw, type or upload a signature and place it on a PDF — nothing is uploaded.',
+    icon: 'matHistoryEduOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'pdf-protect',
     name: 'Protect PDF',
     description: 'Lock a PDF with a password — AES-256, the strongest the format allows.',

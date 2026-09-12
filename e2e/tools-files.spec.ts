@@ -211,6 +211,26 @@ test('excel-viewer renders an .xlsx', async ({ page }) => {
   expectClean(watch);
 });
 
+test('pdf-sign places a typed signature and downloads the signed file', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-sign', 'Sign PDF');
+
+  await uploadFiles(page, ['sample.pdf']);
+  await expect(page.getByText(/sample\.pdf · 3 pages/)).toBeVisible({ timeout: 45_000 });
+  await expect(page.locator('.sheet__page')).toBeVisible({ timeout: 45_000 });
+
+  await page.getByRole('tab', { name: 'Type' }).click();
+  await page.getByLabel('Your name').fill('Ada Lovelace');
+  await page.getByRole('button', { name: 'Use this signature' }).click();
+  await expect(page.locator('.sig')).toBeVisible();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: /Sign & download/ }).click();
+  expect((await download).suggestedFilename()).toBe('sample-signed.pdf');
+
+  expectClean(watch);
+});
+
 test('certificate-decoder reads a chain', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'certificate-decoder', 'Certificate Decoder');

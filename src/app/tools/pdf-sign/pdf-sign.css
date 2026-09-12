@@ -1,0 +1,82 @@
+.maker {
+  margin-top: 1rem;
+}
+
+.pad {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  aspect-ratio: 3;
+  margin-top: 0.75rem;
+  background: #fff;
+  border: 1px dashed var(--mat-sys-outline);
+  border-radius: 10px;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.stage {
+  margin-top: 1.25rem;
+}
+
+.stage__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.stage__count {
+  align-self: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.stage__size {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.stage__hint {
+  margin: 0.5rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.sheet {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0.75rem auto 0;
+  background: #fff;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 6px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.sheet__page {
+  display: block;
+  max-width: 100%;
+  max-height: 70vh;
+  width: auto;
+  height: auto;
+}
+
+.sheet__busy {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(255 255 255 / 0.6);
+}
+
+.sig {
+  position: absolute;
+  height: auto;
+  cursor: move;
+  touch-action: none;
+  outline: 2px dashed var(--mat-sys-primary);
+  outline-offset: 2px;
+}
