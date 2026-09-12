@@ -213,9 +213,15 @@ function streamBodyAfter(text: string, index: number): { start: number; end: num
 
   // The declared /Length is often an indirect reference we cannot resolve
   // without the cross-reference table, so find the terminator instead.
-  const end = text.indexOf('endstream', start);
+  let end = text.indexOf('endstream', start);
   if (end === -1 || end - start > MAX_OBJECT_STREAM_BYTES) {
     return null;
+  }
+  // Writers put an EOL before "endstream" (Syncfusion: CRLF). It is not part of
+  // the stream, and DecompressionStream refuses any byte after the deflate
+  // trailer — so leaving it in makes every such stream inflate to nothing.
+  while (end > start && (text[end - 1] === '\n' || text[end - 1] === '\r')) {
+    end--;
   }
   return { start, end };
 }

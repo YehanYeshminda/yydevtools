@@ -55,6 +55,19 @@ describe('readPageCount', () => {
     });
   });
 
+  it('reads object streams whose writer ends them with CRLF before endstream', async () => {
+    // Syncfusion (and Acrobat) terminate streams with "\r\nendstream". The EOL
+    // is not stream data, and Chrome's DecompressionStream throws on any byte
+    // after the deflate trailer, so it has to be trimmed before inflating.
+    const bytes = await makePdf(5, true);
+    const text = new TextDecoder('latin1').decode(bytes);
+    const crlf = Uint8Array.from(text.replaceAll('\nendstream', '\r\nendstream'), (c) =>
+      c.charCodeAt(0),
+    );
+
+    expect(await readPageCount(crlf)).toBe(5);
+  });
+
   it('is not fooled by an outline /Count larger than the page count', async () => {
     const doc = await PDFDocument.create();
     doc.addPage([300, 400]);
