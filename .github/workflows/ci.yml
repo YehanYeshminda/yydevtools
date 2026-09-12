@@ -40,8 +40,8 @@ jobs:
     name: Unit, worker, build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -70,8 +70,8 @@ jobs:
     name: Playwright
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -93,10 +93,14 @@ jobs:
       # and that flake is the one worth looking at.
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: |
             e2e/.report
             e2e/.results
+          # Both folders are dot-prefixed and the action skips hidden paths by
+          # default — without this it reports "No files were found" and uploads
+          # nothing, which is exactly what the first green run did.
+          include-hidden-files: true
           retention-days: 7

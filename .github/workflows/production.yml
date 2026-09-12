@@ -34,8 +34,8 @@ jobs:
     name: Playwright against production
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -55,10 +55,12 @@ jobs:
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-production
           path: |
             e2e/.report
             e2e/.results
+          # Dot-prefixed folders are skipped unless this is set — see ci.yml.
+          include-hidden-files: true
           retention-days: 14
