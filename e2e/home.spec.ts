@@ -38,7 +38,8 @@ test.describe('home workbench', () => {
     );
     expect(total).toBe(catalogTotal);
     expect(local).toBeLessThan(total);
-    expect(local).toBeGreaterThan(total - 10);
+    // The privacy story only holds while the hosted tools stay the minority.
+    expect(local).toBeGreaterThan(total / 2);
   });
 
   test('the rail lists every category, and the totals add up to the catalogue', async ({ page }) => {
