@@ -9,6 +9,15 @@
 # Syncfusion's trial mode — fine here, because the conversion service they talk
 # to is not reachable from CI anyway and the specs assert honest degradation
 # rather than a real render (see the E2E_BASE_URL switch in tools-files.spec.ts).
+#
+# `npm install`, not `npm ci`, and deliberately so. The lockfile is written on
+# Windows, and npm only records the optional native packages for the platform it
+# resolved on — so the Linux-only chain Angular's build pulls in here
+# (@rolldown/binding-wasm32-wasi -> @napi-rs/wasm-runtime -> @emnapi/core) is
+# absent from it, and `npm ci` refuses to install with "Missing: @emnapi/core
+# from lock file". Neither regenerating the lockfile nor `--os=linux --cpu=x64`
+# adds it; only resolving on Linux would. The cost is that CI is not pinned to
+# the lockfile byte for byte, which is the right trade for a safety net.
 name: CI
 
 on:
@@ -36,7 +45,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # See the note at the top of this file for why this is not `npm ci`.
+      - run: npm install --no-audit --no-fund
 
       # Angular's own runner (vitest + jsdom + a real TestBed).
       - name: Unit tests
@@ -65,7 +75,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # See the note at the top of this file for why this is not `npm ci`.
+      - run: npm install --no-audit --no-fund
 
       # Chromium only: both Playwright projects (desktop and Pixel 7) run on it.
       - name: Install Chromium

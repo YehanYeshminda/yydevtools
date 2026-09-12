@@ -39,7 +39,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # Not `npm ci` — see the note at the top of ci.yml.
+      - run: npm install --no-audit --no-fund
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
