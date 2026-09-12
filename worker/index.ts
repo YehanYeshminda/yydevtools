@@ -69,7 +69,11 @@ const ROUTE_TIMEOUT_MS = {
   // DocIO and XlsIO parse in-process — no Ghostscript/LibreOffice/Tesseract
   // spawn to wait on — so this mostly covers a cold Fly wake, not real work.
   officeImport: 60_000,
+  // Rendering pages is slower than parsing them; the service allows 90 s.
+  officeToPdf: 120_000,
 } as const;
+
+const OFFICE_TYPES = new Set(['docx', 'xlsx', 'pptx']);
 
 /** Seconds to tell a rate-limited caller to wait, matching the 60 s window. */
 const RETRY_AFTER_SECONDS = '60';
@@ -430,6 +434,15 @@ async function handleApi(
     }
     const endpoint = serviceEndpoint(env.PDF_CONVERT_URL, env.PDF_CONVERT_SECRET);
     return proxy(request, endpoint, '/convert', { format }, ROUTE_TIMEOUT_MS.export);
+  }
+
+  if (path === '/api/office/to-pdf') {
+    const type = (url.searchParams.get('type') ?? '').toLowerCase();
+    if (!OFFICE_TYPES.has(type)) {
+      return fail('INVALID_INPUT', `"${type}" is not a supported document type.`);
+    }
+    const endpoint = serviceEndpoint(env.OFFICE_CONVERT_URL, env.OFFICE_CONVERT_SECRET);
+    return proxy(request, endpoint, '/office/to-pdf', { type }, ROUTE_TIMEOUT_MS.officeToPdf);
   }
 
   if (path === '/api/word/import') {

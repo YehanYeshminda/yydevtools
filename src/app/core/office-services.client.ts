@@ -28,6 +28,11 @@ export type WorkbookJson = Record<string, unknown>;
 export type WorkbookResult =
   { ok: true; workbook: WorkbookJson } | { ok: false; failure: OfficeServiceFailure };
 
+export type OfficeType = 'docx' | 'xlsx' | 'pptx';
+
+export type PdfResult =
+  { ok: true; bytes: Uint8Array } | { ok: false; failure: OfficeServiceFailure };
+
 /** Server codes that mean "try again later", not "this file is the problem". */
 const FALLBACK_CODES = new Set([
   'NOT_CONFIGURED',
@@ -153,6 +158,49 @@ export class OfficeServicesClient {
         },
       };
     }
+  }
+
+  /**
+   * Renders a Word, Excel or PowerPoint file to PDF. Same wire shape as
+   * importDocx — raw bytes in, one document out — with the type carried in the
+   * query because all three inputs are ZIPs and the service does not sniff.
+   */
+  async toPdf(bytes: Uint8Array, type: OfficeType): Promise<PdfResult> {
+    let response: Response;
+    try {
+      response = await fetch(`/api/office/to-pdf?type=${type}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/octet-stream' },
+        body: new Blob([bytes.slice()], { type: 'application/octet-stream' }),
+      });
+    } catch {
+      return {
+        ok: false,
+        failure: {
+          kind: 'unavailable',
+          code: 'NETWORK',
+          message: 'The document conversion service could not be reached.',
+        },
+      };
+    }
+
+    if (!response.ok) {
+      return { ok: false, failure: await this.readFailure(response) };
+    }
+
+    const contentType = response.headers.get('Content-Type') ?? '';
+    if (!contentType.includes('application/pdf')) {
+      // Same SPA-fallback guard as the imports above.
+      return {
+        ok: false,
+        failure: {
+          kind: 'unavailable',
+          code: 'NOT_DEPLOYED',
+          message: 'The document conversion service is not running in this environment.',
+        },
+      };
+    }
+    return { ok: true, bytes: new Uint8Array(await response.arrayBuffer()) };
   }
 
   private async readFailure(response: Response): Promise<OfficeServiceFailure> {

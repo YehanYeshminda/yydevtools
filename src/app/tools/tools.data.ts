@@ -234,6 +234,14 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'office-to-pdf',
+    name: 'Office to PDF',
+    description: 'Convert a Word, Excel or PowerPoint file to PDF, laid out as Office would.',
+    icon: 'matPictureAsPdfOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'pdf-convert',
     name: 'PDF Convert',
     description: 'Turn a PDF into an editable Word or rich-text file.',

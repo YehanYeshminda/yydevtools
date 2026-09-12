@@ -17,9 +17,18 @@
          tool-verification step: there is no separate "is it installed"
          question — either the assemblies loaded or the process never started.
          Keep both on the same version; they share transitive dependencies. -->
-    <PackageReference Include="Syncfusion.EJ2.WordEditor.AspNet.Core" Version="34.2.6" />
-    <PackageReference Include="Syncfusion.EJ2.Spreadsheet.AspNet.Core" Version="34.2.6" />
-    <PackageReference Include="Syncfusion.Licensing" Version="34.2.6" />
+    <PackageReference Include="Syncfusion.EJ2.WordEditor.AspNet.Core" Version="34.2.7" />
+    <PackageReference Include="Syncfusion.EJ2.Spreadsheet.AspNet.Core" Version="34.2.7" />
+    <PackageReference Include="Syncfusion.Licensing" Version="34.2.7" />
+    <!-- The three renderers behind /office/to-pdf. Each pulls in its own
+         engine (DocIO, XlsIO, Presentation) plus SkiaSharp for layout and text
+         measurement; the Linux native assets have to be named explicitly or
+         the managed SkiaSharp finds no libSkiaSharp.so at runtime. Version
+         must match the SkiaSharp the renderers were built against. -->
+    <PackageReference Include="Syncfusion.DocIORenderer.Net.Core" Version="34.2.7" />
+    <PackageReference Include="Syncfusion.XlsIORenderer.Net.Core" Version="34.2.7" />
+    <PackageReference Include="Syncfusion.PresentationRenderer.Net.Core" Version="34.2.7" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.1" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,66 @@
+<app-tool-page slug="office-to-pdf">
+  Turn a Word document, Excel workbook or PowerPoint deck into a PDF that looks the way it does in
+  Office. This needs a hosted service — your file is uploaded to be converted, then deleted.
+</app-tool-page>
+
+<div class="panel">
+  @if (unavailable()) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matCloudOffOutline" />
+      <span class="note__text">
+        {{ unavailable() }} You can still open the file in the
+        <a routerLink="/tools/word-viewer">Word</a> or
+        <a routerLink="/tools/excel-viewer">Excel</a> viewer.
+      </span>
+    </p>
+  }
+
+  <app-dropzone
+    accept=".docx,.xlsx,.pptx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    (filesSelected)="acceptFiles($event)"
+  >
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
+    <span class="dropzone__title">
+      @if (hasFile()) {
+        Drop another file here, or click to replace
+      } @else {
+        Drop a .docx, .xlsx or .pptx here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">One file at a time — up to 20 MB</span>
+  </app-dropzone>
+
+  @if (hasFile()) {
+    <p class="status status--ok" role="status">
+      <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
+      {{ fileSummary() }}
+    </p>
+
+    <div class="actions">
+      @if (working()) {
+        <button matButton="filled" disabled>
+          <app-spinner />
+          Converting…
+        </button>
+      } @else {
+        <button matButton="filled" (click)="convert()" [disabled]="!canRun()">
+          <ng-icon name="matPictureAsPdfOutline" />
+          Convert &amp; download PDF
+        </button>
+      }
+      <button matButton (click)="clear()" [disabled]="working()">
+        <ng-icon name="matDeleteSweepOutline" />
+        Clear
+      </button>
+    </div>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    This tool uploads your file. It is sent over HTTPS to our own conversion service, rendered to
+    PDF, and returned — the file is deleted right after processing and never stored. If that is not
+    acceptable for your file, export to PDF from Office or LibreOffice instead.
+  </p>
+</div>
+
+<app-tool-content slug="office-to-pdf" />

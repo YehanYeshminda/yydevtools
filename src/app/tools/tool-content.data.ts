@@ -1746,6 +1746,71 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['code-formatter', 'markdown-editor', 'url-encoder'],
   },
 
+  'office-to-pdf': {
+    slug: 'office-to-pdf',
+    intro: [
+      'Convert a Word document, Excel workbook or PowerPoint presentation into a PDF that looks the way it does in Office — same fonts, same page breaks, same tables. It is the format you reach for when a file has to be sent, printed or archived and must not shift around on someone else’s machine.',
+      'Laying out an Office file properly needs a real document engine, so this tool runs on a processing service rather than in the browser: your file is sent over HTTPS, rendered to PDF, and returned, then deleted straight after. No account is needed.',
+    ],
+    steps: [
+      'Choose the .docx, .xlsx or .pptx file you want to convert.',
+      'Check the name and size shown, then start the conversion.',
+      'Download the PDF — it is named after the original file.',
+    ],
+    features: [
+      'Word, Excel and PowerPoint in one tool — the type is detected from the file.',
+      'Rendered by a full Office layout engine, not a browser print dialog.',
+      'Every worksheet in a workbook and every slide in a deck is included.',
+      'Files are processed over HTTPS and deleted after conversion.',
+    ],
+    sections: [
+      {
+        heading: 'Why a PDF is the safe way to send an Office file',
+        body: [
+          'A .docx does not describe what the document looks like. It describes what is in it — this paragraph in this style, this table with these widths — and leaves the layout to whichever program opens it. Two machines with different fonts installed, or two versions of Word, can flow the same file onto different page counts. The recipient sees a slightly different document from the one you approved.',
+          'A PDF fixes the appearance. Every glyph has a position, every page break is final, and the fonts travel with the file. That is why forms, contracts, CVs and anything that will be printed are sent as PDF: the layout you saw is the layout they get.',
+        ],
+      },
+      {
+        heading: 'What the layout engine does that “print to PDF” does not',
+        body: [
+          'Browser-based converters generally rebuild the document as HTML and print it. That works for plain text, but headers and footers, section breaks, multi-column layouts, tracked changes, footnotes, chart objects and precise table borders are where HTML stops matching Word. Spreadsheets are worse: print areas, repeated header rows, page scaling and frozen panes are all things a browser has no idea about.',
+          'This tool uses a document engine that understands those constructs natively — the same class of library that desktop office suites are built on — so what comes out follows the rules the file was written with. It is not pixel-identical to Microsoft Office in every case, but it is far closer than reflowing through a web page.',
+        ],
+      },
+      {
+        heading: 'Getting the best result',
+        body: [
+          'Fonts are the main variable. The service ships with metric-compatible substitutes for Arial, Times New Roman and Courier New, so documents in those families render at the correct widths. A document in an unusual font will be rendered in a fallback with similar metrics; if that matters, embed the font in the document or switch it before converting.',
+          'For spreadsheets, set the print area and page orientation in Excel before converting — the PDF follows the workbook’s own print settings, so a wide sheet that is not scaled to fit will run across several pages exactly as it would on a printer.',
+          'Only the modern formats are accepted. If you have an older .doc, .xls or .ppt, open it in Office or LibreOffice and save it in the current format first.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Which file types can I convert?',
+        a: 'Word (.docx), Excel (.xlsx) and PowerPoint (.pptx). The older binary formats (.doc, .xls, .ppt) are not accepted — save them in the current format first.',
+      },
+      {
+        q: 'Why is my file uploaded for this tool?',
+        a: 'Rendering an Office file faithfully needs a full layout engine that is far too large to run in a browser tab. The file is sent to our own service, converted and returned, then deleted — it is not retained or read.',
+      },
+      {
+        q: 'Will the result match what I see in Office?',
+        a: 'Closely. Fonts, tables, headers and footers, page breaks and images are all rendered by a proper document engine. Uncommon fonts are substituted with a metrically similar face, which is the most common source of small differences.',
+      },
+      {
+        q: 'Does it convert every sheet and every slide?',
+        a: 'Yes. A workbook produces one PDF containing all its worksheets, following each sheet’s print settings; a presentation produces one page per slide.',
+      },
+      {
+        q: 'Is there a size limit?',
+        a: 'Files up to 20 MB are accepted. Larger files are refused before any upload happens.',
+      },
+    ],
+    related: ['word-viewer', 'excel-viewer', 'pdf-convert', 'pdf-compress'],
+  },
   'pdf-convert': {
     slug: 'pdf-convert',
     intro: [

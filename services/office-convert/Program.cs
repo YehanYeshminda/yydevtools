@@ -32,9 +32,16 @@
 
 using System.Security.Cryptography;
 using System.Text;
+using Syncfusion.DocIORenderer;
 using Syncfusion.EJ2.DocumentEditor;
 using Syncfusion.EJ2.Spreadsheet;
 using Syncfusion.Licensing;
+using Syncfusion.Pdf;
+// Not `using Syncfusion.Presentation` — it also defines a FormatType, which
+// would collide with the DocumentEditor one /word/import already uses.
+using Syncfusion.PresentationRenderer;
+using Syncfusion.XlsIO;
+using Syncfusion.XlsIORenderer;
 
 var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
 if (!string.IsNullOrEmpty(licenseKey))
@@ -184,7 +191,129 @@ app.MapPost("/excel/import", async (HttpRequest request) =>
     }
 });
 
+// Laying out pages is slower than parsing them, so this gets double the
+// import budget. Same caveat: it bounds the wait, not the work.
+var renderTimeout = TimeSpan.FromSeconds(90);
+
+//   POST /office/to-pdf?type=docx|xlsx|pptx   Authorization: Bearer <secret>
+//     body: application/octet-stream  ->  200 application/pdf
+//
+// The type comes from the caller rather than being sniffed: all three are
+// ZIPs of OOXML parts, and telling them apart properly means reading the
+// archive's content-types entry — which is exactly the work the engine that
+// opens the file is about to do anyway.
+app.MapPost("/office/to-pdf", async (HttpRequest request) =>
+{
+    if (!Authorized(request.Headers.Authorization, secret))
+    {
+        logger.LogInformation("{Event}", "unauthorized");
+        return Failure(401, "UNAUTHORIZED", "Missing or invalid credentials.");
+    }
+
+    var type = request.Query["type"].ToString();
+    if (type is not ("docx" or "xlsx" or "pptx"))
+    {
+        return Failure(400, "INVALID_INPUT", "Unsupported document type.");
+    }
+
+    byte[] input;
+    using (var body = new MemoryStream())
+    {
+        await request.Body.CopyToAsync(body);
+        input = body.ToArray();
+    }
+
+    if (input.Length == 0)
+    {
+        return Failure(400, "INVALID_INPUT", "No document was sent.");
+    }
+    if (input.LongLength > MaxBytes)
+    {
+        return Failure(413, "TOO_LARGE", "That file is larger than this tool allows.");
+    }
+    if (!LooksLikeDocx(input))
+    {
+        logger.LogInformation("{Event} {Bytes}", "rejected_not_office", input.Length);
+        return Failure(400, "INVALID_INPUT", $"That file is not a .{type} document.");
+    }
+
+    var started = DateTime.UtcNow;
+    await concurrencyGate.WaitAsync();
+    try
+    {
+        var pdf = await ToPdfAsync(input, type, renderTimeout);
+        logger.LogInformation(
+            "{Event} {Type} {InBytes} {OutBytes} {Ms}",
+            "ok_pdf", type, input.Length, pdf.Length, (DateTime.UtcNow - started).TotalMilliseconds);
+        return Results.Bytes(pdf, "application/pdf");
+    }
+    catch (TimeoutException)
+    {
+        logger.LogWarning("{Event} {Type} {InBytes}", "timeout_pdf", type, input.Length);
+        return Failure(504, "TIMEOUT", "Conversion took too long and was stopped.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "{Event} {Type} {InBytes}", "failed_pdf", type, input.Length);
+        return Failure(502, "UPSTREAM_REJECTED", "The document could not be converted.");
+    }
+    finally
+    {
+        concurrencyGate.Release();
+    }
+});
+
 app.Run();
+
+/// <summary>
+/// Renders an OOXML document to PDF with the matching Syncfusion engine. The
+/// DocIO types are spelled out in full because <c>WordDocument</c> and
+/// <c>FormatType</c> also exist in the EJ2 DocumentEditor namespace this file
+/// already imports for /word/import — same names, unrelated types.
+/// </summary>
+static async Task<byte[]> ToPdfAsync(byte[] input, string type, TimeSpan timeout)
+{
+    var work = Task.Run(() =>
+    {
+        using var stream = new MemoryStream(input);
+        using PdfDocument pdf = type switch
+        {
+            "docx" => RenderDocx(stream),
+            "xlsx" => RenderXlsx(stream),
+            _ => RenderPptx(stream),
+        };
+        using var output = new MemoryStream();
+        pdf.Save(output);
+        return output.ToArray();
+    });
+
+    var winner = await Task.WhenAny(work, Task.Delay(timeout));
+    if (winner != work)
+    {
+        throw new TimeoutException();
+    }
+    return await work;
+}
+
+static PdfDocument RenderDocx(Stream stream)
+{
+    using var document = new Syncfusion.DocIO.DLS.WordDocument(stream, Syncfusion.DocIO.FormatType.Docx);
+    using var renderer = new DocIORenderer();
+    return renderer.ConvertToPDF(document);
+}
+
+static PdfDocument RenderXlsx(Stream stream)
+{
+    using var engine = new ExcelEngine();
+    var workbook = engine.Excel.Workbooks.Open(stream);
+    return new XlsIORenderer().ConvertToPDF(workbook);
+}
+
+static PdfDocument RenderPptx(Stream stream)
+{
+    using var presentation = Syncfusion.Presentation.Presentation.Open(stream);
+    return PresentationToPdfConverter.Convert(presentation);
+}
 
 /// <summary>
 /// Converts an uploaded .xlsx into the workbook JSON the client-side

@@ -221,6 +221,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/office-to-pdf',
+    loadComponent: () =>
+      import('./tools/office-to-pdf/office-to-pdf').then((m) => m.OfficeToPdfTool),
+    title: 'Office to PDF — YYDevTools',
+    data: {
+      description:
+        'Convert Word to PDF, Excel to PDF or PowerPoint to PDF online. Rendered with a real ' +
+        'Office layout engine, so fonts, tables and page breaks land where they should. Free, no account.',
+    },
+  },
+  {
     path: 'tools/pdf-convert',
     loadComponent: () => import('./tools/pdf-convert/pdf-convert').then((m) => m.PdfConvertTool),
     title: 'PDF Convert — YYDevTools',
