@@ -7,6 +7,7 @@ import {
   decodedByteLength,
   encodeTextToBase64,
   extForMime,
+  formatBase64,
   formatBytes,
   labelForMime,
   previewKind,
@@ -64,6 +65,7 @@ const ambient: Codec = {
   decodedByteLength,
   encodeTextToBase64,
   extForMime,
+  formatBase64,
   formatBytes,
   labelForMime,
   previewKind,
@@ -194,10 +196,7 @@ describe('base64 codec', () => {
           for (let i = 0; i < length; i++) {
             source[i] = 0xf8 + (i % 8); // biased towards bytes that produce + and /
           }
-          const urlSafe = encode(source)
-            .replace(/\+/g, '-')
-            .replace(/\//g, '_')
-            .replace(/=+$/, '');
+          const urlSafe = encode(source).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
           expect(decode(urlSafe), `length ${length}`).toEqual(source);
         }
       });
@@ -406,5 +405,24 @@ describe('base64 codec', () => {
       expect(formatBytes(1536)).toBe('1.5 KB');
       expect(formatBytes(5 * 1024 * 1024)).toBe('5 MB');
     });
+  });
+});
+
+describe('formatBase64', () => {
+  it('leaves the standard form alone', () => {
+    expect(formatBase64('Pz8/Pz8+', { urlSafe: false, noPadding: false, mime: false })).toBe(
+      'Pz8/Pz8+',
+    );
+  });
+
+  it('swaps the alphabet and drops the padding', () => {
+    expect(formatBase64('Pz8/Pj4+YQ==', { urlSafe: true, noPadding: true, mime: false })).toBe(
+      'Pz8_Pj4-YQ',
+    );
+  });
+
+  it('wraps at 76 columns with CRLF for MIME', () => {
+    const wrapped = formatBase64('A'.repeat(160), { urlSafe: false, noPadding: false, mime: true });
+    expect(wrapped.split('\r\n').map((line) => line.length)).toEqual([76, 76, 8]);
   });
 });

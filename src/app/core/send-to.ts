@@ -29,6 +29,7 @@ export const SEND_TARGETS: readonly SendTarget[] = [
   { slug: 'markdown-editor', label: 'Markdown Editor', field: 'source' },
   { slug: 'html-preview', label: 'HTML Preview', field: 'source' },
   { slug: 'url-encoder', label: 'URL Encoder', field: 'input' },
+  { slug: 'base64-converter', label: 'Base64 Converter', field: 'text' },
   { slug: 'case-converter', label: 'Case Converter', field: 'input' },
   { slug: 'text-diff', label: 'Text Diff', field: 'original' },
   { slug: 'regex-tester', label: 'Regex Tester', field: 'text' },

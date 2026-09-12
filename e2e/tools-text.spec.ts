@@ -319,6 +319,28 @@ test('base64-converter round-trips text', async ({ page }) => {
   await page.getByRole('button', { name: 'Remove the stray characters' }).click();
   await expect(page.locator('#b64-result')).toHaveValue('Hello');
 
+  // The same bytes, read as a hex dump instead of text.
+  await page.locator('.views').getByText('Hex', { exact: true }).click();
+  await expect(page.locator('#b64-result')).toHaveValue(/48 65 6c 6c 6f {2,}\|Hello\|/);
+
+  // Encoding dialects: "???" is Pz8/ in the standard alphabet, and "hello" pads.
+  await page.locator('.modes').getByText('Encode', { exact: true }).click();
+  await page.locator('#b64-text').fill('???');
+  await expect(page.locator('#b64-result')).toHaveValue('Pz8/');
+  await page.getByRole('checkbox', { name: 'URL-safe' }).check();
+  await expect(page.locator('#b64-result')).toHaveValue('Pz8_');
+  await page.locator('#b64-text').fill('hello');
+  await expect(page.locator('#b64-result')).toHaveValue('aGVsbG8=');
+  await page.getByRole('checkbox', { name: 'No padding' }).check();
+  await expect(page.locator('#b64-result')).toHaveValue('aGVsbG8');
+
+  // The result can be handed to another tool, and the state fits in a link.
+  await expect(page.getByRole('button', { name: 'Copy link' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Send to' }).click();
+  await page.getByRole('menuitem', { name: 'Case Converter' }).click();
+  await expect(page).toHaveURL(/\/tools\/case-converter/);
+  await expect(page.locator('#case-input')).toHaveValue('aGVsbG8');
+
   expectClean(watch);
 });
 

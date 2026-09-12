@@ -83,9 +83,22 @@
 
         <section class="duo__pane" aria-live="polite">
           <div class="field">
-            <label class="field__label" for="b64-result">
-              {{ mode() === 'encode' ? 'Base64' : 'Decoded text' }}
-            </label>
+            <div class="field__head">
+              <label class="field__label" for="b64-result">{{ resultLabel() }}</label>
+              @if (mode() === 'decode') {
+                <mat-button-toggle-group
+                  class="views"
+                  aria-label="How to show the decoded bytes"
+                  hideSingleSelectionIndicator
+                  [value]="view()"
+                  (change)="setView($event.value)"
+                >
+                  <mat-button-toggle value="text">Text</mat-button-toggle>
+                  <mat-button-toggle value="hex">Hex</mat-button-toggle>
+                  <mat-button-toggle value="binary">Binary</mat-button-toggle>
+                </mat-button-toggle-group>
+              }
+            </div>
             @if (issue(); as bad) {
               <div class="field__input field__input--pane trouble" role="alert">
                 <p class="trouble__title">
@@ -105,7 +118,7 @@
                   <button matButton (click)="setChoice('encode')">Encode it instead</button>
                 </div>
               </div>
-            } @else if (binaryMime()) {
+            } @else if (binaryMime() && view() === 'text') {
               <div class="field__input field__input--pane trouble" data-testid="binary">
                 <p class="trouble__title">
                   <ng-icon class="status__icon" aria-hidden="true" name="matDescriptionOutline" />
@@ -114,19 +127,22 @@
                 </p>
                 <p class="trouble__body">
                   It is a file rather than text, so there is nothing readable to show here. The
-                  Decode file tab can preview it and save it with the right extension.
+                  Decode file tab can preview it and save it with the right extension, or switch to
+                  Hex to read the bytes.
                 </p>
                 <div class="actions">
                   <button matButton="filled" (click)="openInDecodeTab()">
                     <ng-icon name="matVisibilityOutline" />
                     Open in Decode file
                   </button>
+                  <button matButton (click)="setView('hex')">Show as hex</button>
                 </div>
               </div>
             } @else {
               <textarea
                 id="b64-result"
                 class="field__input field__input--pane"
+                [class.field__input--dump]="mode() === 'decode' && view() !== 'text'"
                 rows="12"
                 readonly
                 spellcheck="false"
@@ -140,7 +156,15 @@
               } @else if (textBusy()) {
                 Converting…
               } @else if (textResultLength() > 0) {
-                {{ count(textResultLength()) }} characters
+                @if (mode() === 'decode' && view() !== 'text') {
+                  {{ formatBytes(dumpTotal()) }}
+                  @if (dumpTotal() > dumpLimit) {
+                    · only the first {{ formatBytes(dumpLimit) }} are dumped — the Decode file tab
+                    saves all of it
+                  }
+                } @else {
+                  {{ count(textResultLength()) }} characters
+                }
                 @if (textResultTruncated()) {
                   · only the first {{ count(previewChars) }} are shown — copy or download for the
                   rest
@@ -159,9 +183,25 @@
               <ng-icon name="matDownloadOutline" />
               Download .txt
             </button>
+            <app-share-link [state]="shared" />
+            <app-send-to [text]="sendText()" from="base64-converter" />
           </div>
         </section>
       </div>
+
+      @if (mode() === 'encode') {
+        <div class="options" aria-label="Encoding options">
+          <mat-checkbox [checked]="urlSafe()" (change)="setOption('urlSafe', $event.checked)">
+            URL-safe
+          </mat-checkbox>
+          <mat-checkbox [checked]="noPadding()" (change)="setOption('noPadding', $event.checked)">
+            No padding
+          </mat-checkbox>
+          <mat-checkbox [checked]="mime()" (change)="setOption('mime', $event.checked)">
+            Wrap at 76 columns
+          </mat-checkbox>
+        </div>
+      }
     </div>
   </mat-tab>
 
@@ -195,12 +235,23 @@
       }
 
       @if (encodedLength() > 0) {
-        <mat-checkbox [checked]="withDataUri()" (change)="toggleDataUri($event.checked)">
-          Include the data URI prefix
-        </mat-checkbox>
+        <div class="options" aria-label="Encoding options">
+          <mat-checkbox [checked]="urlSafe()" (change)="setOption('urlSafe', $event.checked)">
+            URL-safe
+          </mat-checkbox>
+          <mat-checkbox [checked]="noPadding()" (change)="setOption('noPadding', $event.checked)">
+            No padding
+          </mat-checkbox>
+          <mat-checkbox [checked]="mime()" (change)="setOption('mime', $event.checked)">
+            Wrap at 76 columns
+          </mat-checkbox>
+          <mat-checkbox [checked]="withDataUri()" (change)="toggleDataUri($event.checked)">
+            Include the data URI prefix
+          </mat-checkbox>
+        </div>
 
         <div class="field">
-          <label class="field__label" for="b64-out">Base64 output</label>
+          <label class="field__label" for="b64-out">{{ encodedLabel() }}</label>
           <textarea
             id="b64-out"
             class="field__input"

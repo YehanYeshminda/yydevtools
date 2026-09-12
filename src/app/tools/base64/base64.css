@@ -63,6 +63,35 @@
   color: var(--mat-sys-error);
 }
 
+/* Label on the left, the Text / Hex / Binary switch on the right. */
+.field__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  min-height: 2rem;
+}
+
+.views {
+  --mat-button-toggle-height: 1.75rem;
+  --mat-button-toggle-label-text-size: 0.8rem;
+}
+
+/* A dump is columns, so it must not wrap; it scrolls sideways instead. */
+.field__input--dump {
+  white-space: pre;
+  overflow: auto;
+  overflow-wrap: normal;
+  font-size: 0.8rem;
+}
+
+/* The three dialect switches, and the data URI one on the file tab. */
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+}
+
 /* A result box that explains instead of showing a value. */
 .trouble {
   display: flex;

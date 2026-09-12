@@ -17,6 +17,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { syncToolState } from '../../core/tool-state';
+import { SendTo } from '../../shared/send-to/send-to';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { PdfPreview } from '../../shared/pdf-preview/pdf-preview';
 import { Spinner } from '../../shared/spinner/spinner';
@@ -29,8 +32,10 @@ import {
   previewKind,
   sniffBase64Mime,
   splitDataUri,
+  STANDARD_ENCODING,
 } from './base64-codec';
-import type { PreviewKind } from './base64-codec';
+import type { EncodeOptions, PreviewKind } from './base64-codec';
+import { binaryDump, DUMP_LIMIT, hexDump, type ByteView } from './byte-view';
 import { Base64WorkerClient } from './base64-worker.client';
 import { Detection, Issue, detect, firstInvalid, stripInvalid } from './base64-detect';
 import { Dropzone } from '../../shared/dropzone/dropzone';
@@ -138,6 +143,8 @@ interface RenderedPreview {
     Spinner,
     PdfPreview,
     TryExample,
+    ShareLink,
+    SendTo,
   ],
   templateUrl: './base64.html',
   styleUrls: ['../tool-shell.css', './base64.css'],
@@ -152,6 +159,35 @@ export class Base64Tool implements OnDestroy {
   protected readonly previewChars = PREVIEW_CHARS;
   protected readonly textPreviewChars = TEXT_PREVIEW_CHARS;
   protected readonly maxFileLabel = formatBytes(MAX_FILE_BYTES);
+
+  // --- Encoding dialect ---------------------------------------------------
+  protected readonly urlSafe = signal(false);
+  protected readonly noPadding = signal(false);
+  protected readonly mime = signal(false);
+  protected readonly encodeOptions = computed<EncodeOptions>(() => ({
+    urlSafe: this.urlSafe(),
+    noPadding: this.noPadding(),
+    mime: this.mime(),
+  }));
+  /** What the result box is called once the dialect is not the plain one. */
+  protected readonly encodedLabel = computed(() => {
+    const parts = [
+      this.urlSafe() ? 'URL-safe' : '',
+      this.noPadding() ? 'no padding' : '',
+      this.mime() ? '76-column' : '',
+    ].filter(Boolean);
+    return parts.length ? `Base64 (${parts.join(', ')})` : 'Base64';
+  });
+
+  /** Flip one dialect option; both encoders redo their work with it. */
+  protected setOption(option: 'urlSafe' | 'noPadding' | 'mime', on: boolean): void {
+    this[option].set(on);
+    this.scheduleTextConvert();
+    const file = this.lastFile;
+    if (file) {
+      void this.acceptFile(file);
+    }
+  }
 
   ngOnDestroy(): void {
     if (this.textTimer !== null) {
@@ -168,6 +204,8 @@ export class Base64Tool implements OnDestroy {
   protected readonly encoding = signal(false);
   protected readonly withDataUri = signal(false);
 
+  /** Kept so a change of dialect can encode it again. */
+  private lastFile: File | null = null;
   /** The full Base64 payload, held out of the DOM. */
   private encoded = '';
   private encodedCache: { withPrefix: boolean; value: string } | null = null;
@@ -204,6 +242,7 @@ export class Base64Tool implements OnDestroy {
       return;
     }
 
+    this.lastFile = file;
     this.fileName.set(file.name);
     this.fileSize.set(file.size);
     this.fileMime.set(file.type);
@@ -212,7 +251,10 @@ export class Base64Tool implements OnDestroy {
     try {
       // The File is handed to the worker as-is, so its bytes never reach the
       // main thread — only the finished string comes back.
-      this.setEncoded(await this.codec.encodeFile(file));
+      const value = await this.codec.encodeFile(file, this.encodeOptions());
+      if (this.lastFile === file) {
+        this.setEncoded(value);
+      }
     } catch (error) {
       this.showError(base64ErrorMessage(error));
     } finally {
@@ -232,6 +274,7 @@ export class Base64Tool implements OnDestroy {
   }
 
   protected clearEncoded(): void {
+    this.lastFile = null;
     this.fileName.set('');
     this.fileSize.set(0);
     this.fileMime.set('');
@@ -406,8 +449,58 @@ export class Base64Tool implements OnDestroy {
   // --- Text -------------------------------------------------------------
   private readonly textArea = viewChild<ElementRef<HTMLTextAreaElement>>('textArea');
 
+  // Declared first: the shared-state snapshot below reads it while the class is built.
+  protected readonly textSource = new BulkText();
   protected readonly choice = signal<TextChoice>('auto');
   protected readonly detected = signal<Detection>(NO_DETECTION);
+  /** How a decoded payload is shown: as text, or as the bytes themselves. */
+  protected readonly view = signal<ByteView>('text');
+  /** How many bytes the input decoded to when a dump is showing. */
+  protected readonly dumpTotal = signal(0);
+  protected readonly dumpLimit = DUMP_LIMIT;
+  /** The result, when it is small enough to hand to another tool. */
+  protected readonly sendable = signal('');
+  /** Whatever a "Send to" should carry: the result, or failing that the input. */
+  protected readonly sendText = computed(() => {
+    const result = this.sendable();
+    if (result) {
+      return result;
+    }
+    return this.textSource.locked() || this.textSource.length() === 0 ? '' : this.textSource.value;
+  });
+
+  /**
+   * The text and the switches travel in the link; a huge paste does not, and
+   * the result never does — the recipient's browser recomputes it.
+   */
+  protected readonly shared = syncToolState({
+    key: 'base64-converter',
+    snapshot: () => ({
+      text: this.textSource.length() > INLINE_LIMIT ? '' : this.textSource.value,
+      choice: this.choice(),
+      view: this.view(),
+      urlSafe: this.urlSafe(),
+      noPadding: this.noPadding(),
+      mime: this.mime(),
+    }),
+    restore: (state) => {
+      if (state.choice === 'auto' || state.choice === 'encode' || state.choice === 'decode') {
+        this.choice.set(state.choice);
+      }
+      if (state.view === 'text' || state.view === 'hex' || state.view === 'binary') {
+        this.view.set(state.view);
+      }
+      for (const option of ['urlSafe', 'noPadding', 'mime'] as const) {
+        if (typeof state[option] === 'boolean') {
+          this[option].set(state[option]);
+        }
+      }
+      if (typeof state.text === 'string' && state.text !== '') {
+        this.setTextSource(state.text);
+        this.write(this.textArea, this.textSource.display);
+      }
+    },
+  });
   /** The direction actually used: the person's pick, or what the input looks like. */
   protected readonly mode = computed<TextMode>(() => {
     const choice = this.choice();
@@ -426,12 +519,19 @@ export class Base64Tool implements OnDestroy {
       : '',
   );
   protected readonly binaryLabel = computed(() => labelForMime(this.binaryMime()));
+  /** The result pane's label follows the direction and, when decoding, the view. */
+  protected readonly resultLabel = computed(() => {
+    if (this.mode() === 'encode') {
+      return this.encodedLabel();
+    }
+    const view = this.view();
+    return view === 'hex' ? 'Hex dump' : view === 'binary' ? 'Binary' : 'Decoded text';
+  });
   protected readonly binaryBytes = computed(() =>
     decodedByteLength(splitDataUri(this.textSource.value).data),
   );
   /** UTF-8 size of the input; only measured while it is small enough to matter. */
   protected readonly inputBytes = signal<number | null>(0);
-  protected readonly textSource = new BulkText();
   protected readonly textBusy = signal(false);
   protected readonly textError = signal('');
   protected readonly textResultLength = signal(0);
@@ -466,6 +566,11 @@ export class Base64Tool implements OnDestroy {
 
   protected setChoice(choice: TextChoice): void {
     this.choice.set(choice);
+    this.scheduleTextConvert();
+  }
+
+  protected setView(view: ByteView): void {
+    this.view.set(view);
     this.scheduleTextConvert();
   }
 
@@ -513,10 +618,14 @@ export class Base64Tool implements OnDestroy {
     if (this.textResult === '') {
       return;
     }
-    this.saveBlob(
-      new Blob([this.textResult], { type: 'text/plain' }),
-      this.mode() === 'encode' ? 'encoded.base64.txt' : 'decoded.txt',
-    );
+    const view = this.view();
+    const name =
+      this.mode() === 'encode'
+        ? 'encoded.base64.txt'
+        : view === 'text'
+          ? 'decoded.txt'
+          : `decoded.${view}.txt`;
+    this.saveBlob(new Blob([this.textResult], { type: 'text/plain' }), name);
   }
 
   private scheduleTextConvert(): void {
@@ -531,16 +640,28 @@ export class Base64Tool implements OnDestroy {
     const run = ++this.textRun;
     const source = this.textSource.value;
     const decoding = this.mode() === 'decode';
+    const view = decoding ? this.view() : 'text';
     this.issue.set(decoding ? firstInvalid(source) : null);
-    if (source === '' || this.issue() || this.binaryMime()) {
+    if (source === '' || this.issue() || (this.binaryMime() && view === 'text')) {
       this.applyTextResult(run, '', '');
       return;
     }
     this.textBusy.set(true);
     try {
-      const value = decoding
-        ? await this.codec.decodeText(source)
-        : await this.codec.encodeText(source);
+      let value: string;
+      if (!decoding) {
+        value = await this.codec.encodeText(source, this.encodeOptions());
+      } else if (view === 'text') {
+        value = await this.codec.decodeText(source);
+      } else {
+        // A dump is a view of the bytes, so it is the bytes that are asked for.
+        const { bytes } = await this.codec.decodeBytes(source);
+        if (run !== this.textRun) {
+          return;
+        }
+        this.dumpTotal.set(bytes.length);
+        value = view === 'hex' ? hexDump(bytes) : binaryDump(bytes);
+      }
       this.applyTextResult(run, value, '');
     } catch (error) {
       this.applyTextResult(run, '', base64ErrorMessage(error));
@@ -554,6 +675,7 @@ export class Base64Tool implements OnDestroy {
     this.textResult = value;
     this.textResultLength.set(value.length);
     this.textResultHead.set(value.slice(0, PREVIEW_CHARS));
+    this.sendable.set(value.length <= INLINE_LIMIT ? value : '');
     this.textError.set(error);
     this.textBusy.set(false);
   }

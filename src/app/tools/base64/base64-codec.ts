@@ -86,6 +86,43 @@ export function encodeTextToBase64(text: string): string {
   return bytesToBase64(new TextEncoder().encode(text));
 }
 
+/** The dialects of Base64 an encoder is asked for. All off is RFC 4648 section 4. */
+export interface EncodeOptions {
+  /** `-` and `_` instead of `+` and `/`, for URLs, JWTs and file names. */
+  urlSafe: boolean;
+  /** Drop the trailing `=` — what JWTs and most web APIs expect. */
+  noPadding: boolean;
+  /** Break into 76-column lines with CRLF, as MIME bodies (RFC 2045) require. */
+  mime: boolean;
+}
+
+export const STANDARD_ENCODING: EncodeOptions = { urlSafe: false, noPadding: false, mime: false };
+
+/** Line length RFC 2045 allows for a Base64 body part. */
+const MIME_LINE = 76;
+
+/**
+ * Turn standard Base64 into the dialect asked for. Every step is a native
+ * string operation, so it is fine on a multi-megabyte value.
+ */
+export function formatBase64(standard: string, options: EncodeOptions): string {
+  let out = standard;
+  if (options.urlSafe) {
+    out = out.replace(/\+/g, '-').replace(/\//g, '_');
+  }
+  if (options.noPadding) {
+    out = out.replace(/=+$/, '');
+  }
+  if (options.mime && out.length > MIME_LINE) {
+    const lines: string[] = [];
+    for (let start = 0; start < out.length; start += MIME_LINE) {
+      lines.push(out.slice(start, start + MIME_LINE));
+    }
+    out = lines.join('\r\n');
+  }
+  return out;
+}
+
 export function decodeBase64ToText(raw: string): string {
   return new TextDecoder().decode(base64ToBytes(splitDataUri(raw).data));
 }
@@ -334,16 +371,16 @@ export interface DecodedBytes {
  * and Comlink's proxy of it the same shape, so the client can hold either.
  */
 export const base64Api = {
-  async encodeFile(file: File): Promise<string> {
+  async encodeFile(file: File, options: EncodeOptions = STANDARD_ENCODING): Promise<string> {
     try {
-      return bytesToBase64(new Uint8Array(await file.arrayBuffer()));
+      return formatBase64(bytesToBase64(new Uint8Array(await file.arrayBuffer())), options);
     } catch (error) {
       throw new Error(base64ErrorMessage(error));
     }
   },
 
-  async encodeText(text: string): Promise<string> {
-    return reported(() => encodeTextToBase64(text));
+  async encodeText(text: string, options: EncodeOptions = STANDARD_ENCODING): Promise<string> {
+    return reported(() => formatBase64(encodeTextToBase64(text), options));
   },
 
   async decodeText(text: string): Promise<string> {

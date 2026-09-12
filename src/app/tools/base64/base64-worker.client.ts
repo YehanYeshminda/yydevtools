@@ -8,7 +8,7 @@
  */
 import type { Remote } from 'comlink';
 import { WorkerProxy, workersAvailable } from '../../core/worker-proxy';
-import { base64Api, type Base64Api, type DecodedBytes } from './base64-codec';
+import { base64Api, type Base64Api, type DecodedBytes, type EncodeOptions } from './base64-codec';
 
 export type { DecodedBytes };
 
@@ -21,12 +21,12 @@ export class Base64WorkerClient {
     () => 'The Base64 converter stopped unexpectedly.',
   );
 
-  encodeFile(file: File): Promise<string> {
-    return this.run((api) => api.encodeFile(file));
+  encodeFile(file: File, options?: EncodeOptions): Promise<string> {
+    return this.run((api) => api.encodeFile(file, options));
   }
 
-  encodeText(text: string): Promise<string> {
-    return this.run((api) => api.encodeText(text));
+  encodeText(text: string, options?: EncodeOptions): Promise<string> {
+    return this.run((api) => api.encodeText(text, options));
   }
 
   decodeText(text: string): Promise<string> {
