@@ -7,7 +7,7 @@
  *
  * Runs after `ng build` — see the "build" script in package.json.
  */
-import { readdir, writeFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 
 const SITE_URL = 'https://yydevtools.com';
@@ -48,15 +48,32 @@ const routes = (await findRoutes(OUT_DIR))
   .filter((route) => !EXCLUDED.has(route))
   .sort((a, b) => a.localeCompare(b));
 
-const lastmod = new Date().toISOString().slice(0, 10);
+// Guides carry a real "updated" date in their data file; every other page has
+// no honest date to give, and a build timestamp on all 67 URLs only teaches
+// Google to ignore the field. So: guides get their date, the rest get none.
+// Split on the guide-level `slug:` (four-space indent) so a tool slug quoted
+// inside a guide's body cannot be paired with the wrong date.
+const guideDates = new Map(
+  (await readFile('src/app/guides/guides.data.ts', 'utf8'))
+    .split("\n    slug: '")
+    .slice(1)
+    .map((block) => [
+      `/guides/${block.slice(0, block.indexOf("'"))}`,
+      block.match(/\n    updated: '(\d{4}-\d{2}-\d{2})'/)?.[1],
+    ])
+    .filter(([, date]) => date),
+);
+const lastmodFor = (route) => {
+  const date = guideDates.get(route);
+  return date ? `\n    <lastmod>${date}</lastmod>` : '';
+};
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${routes
   .map(
     (route) => `  <url>
-    <loc>${SITE_URL}${route === '/' ? '/' : route}</loc>
-    <lastmod>${lastmod}</lastmod>
+    <loc>${SITE_URL}${route === '/' ? '/' : route}</loc>${lastmodFor(route)}
     <priority>${priorityFor(route)}</priority>
   </url>`,
   )

@@ -12,11 +12,13 @@ import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 
-const STARTER = `# Markdown Editor
+// The tool page already has its H1, so the sample starts at ## — the preview
+// is prerendered into the page, and two H1s read as two topics to a crawler.
+const STARTER = `## Markdown Editor
 
 Write **Markdown** on the left and see it rendered live on the right.
 
-## Features
+### Features
 
 - Headings, **bold**, _italic_ and \`inline code\`
 - Lists, links and blockquotes

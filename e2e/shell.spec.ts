@@ -143,6 +143,7 @@ test.describe('app shell', () => {
       ['About', '/about'],
       ['Contact', '/contact'],
       ['Privacy', '/privacy'],
+      ['Terms', '/terms'],
     ] as const) {
       await footer.getByRole('link', { name: label, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));

@@ -38,6 +38,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'terms',
+    loadComponent: () => import('./terms/terms').then((m) => m.Terms),
+    title: 'Terms of Use — YYDevTools',
+    data: {
+      description:
+        'The terms for using YYDevTools: the tools are free and provided as-is, your ' +
+        'content stays yours, and what counts as acceptable use of the hosted services.',
+    },
+  },
+  {
     path: 'contact',
     loadComponent: () => import('./contact/contact').then((m) => m.Contact),
     title: 'Contact — YYDevTools',
@@ -84,21 +94,19 @@ export const routes: Routes = [
     title: 'JSON Formatter, YAML Converter & JSONPath — YYDevTools',
     data: {
       description:
-        'Format, validate and minify JSON, convert between JSON and YAML, and query with JSONPath — ' +
-        'with clear error messages. Runs in your browser, so your data never leaves your machine. ' +
-        'Free, no sign-up.',
+        'Format, validate and minify JSON, convert to and from YAML, and query with JSONPath. ' +
+        'Clear error messages. Runs in your browser — free, no sign-up.',
     },
   },
   {
     path: 'tools/json-to-types',
     loadComponent: () =>
       import('./tools/json-to-types/json-to-types').then((m) => m.JsonToTypesTool),
-    title: 'JSON to TypeScript, Python, Rust, Kotlin, Java & more — YYDevTools',
+    title: 'JSON to TypeScript, Python, Rust, Kotlin & more — YYDevTools',
     data: {
       description:
-        'Paste JSON and generate TypeScript, C#, Python dataclasses, Go, Zod, Rust serde structs, ' +
-        'Kotlin data classes, Java records, JSON Schema or Pydantic v2 models — nested types, ' +
-        'optional properties and nullables inferred. Free, runs in your browser.',
+        'Paste JSON and generate TypeScript, C#, Python, Go, Zod, Rust, Kotlin, Java, JSON ' +
+        'Schema or Pydantic types, optionals and nullables inferred. Free, in-browser.',
     },
   },
   {
@@ -138,9 +146,8 @@ export const routes: Routes = [
     title: 'JWT Decoder & Signature Verifier — YYDevTools',
     data: {
       description:
-        'Decode a JSON Web Token and inspect its header, payload and claims, then verify the ' +
-        'signature with an HMAC secret or a public key (HS/RS/PS/ES). Everything runs in your ' +
-        'browser and is never sent anywhere. Free, no sign-up.',
+        'Decode a JSON Web Token’s header, payload and claims, then verify the signature with ' +
+        'an HMAC secret or public key (HS/RS/PS/ES). Runs in your browser, free.',
     },
   },
   {
@@ -149,9 +156,8 @@ export const routes: Routes = [
     title: 'JWT Editor — Edit and re-sign a JSON Web Token — YYDevTools',
     data: {
       description:
-        'Edit a JSON Web Token’s header and payload and re-sign it into a new, valid token with ' +
-        'an HMAC secret or a PKCS#8 private key (HS/RS/PS/ES). Signing runs in your browser with ' +
-        'Web Crypto — the token and key are never sent anywhere. Free, no sign-up.',
+        'Edit a JWT’s header and payload and re-sign it with an HMAC secret or PKCS#8 private ' +
+        'key (HS/RS/PS/ES). Signing runs in your browser; nothing is sent anywhere.',
     },
   },
   {
@@ -167,13 +173,12 @@ export const routes: Routes = [
   },
   {
     path: 'tools/image-resize',
-    loadComponent: () =>
-      import('./tools/image-resize/image-resize').then((m) => m.ImageResizeTool),
-    title: 'Image Resizer & Cropper — Crop and resize images online — YYDevTools',
+    loadComponent: () => import('./tools/image-resize/image-resize').then((m) => m.ImageResizeTool),
+    title: 'Image Resizer & Cropper — Crop and resize online — YYDevTools',
     data: {
       description:
-        'Crop an image with a draggable box or exact pixels, resize it to a width, height or ' +
-        'maximum file size, and save as JPEG, PNG or WebP. Runs in your browser; nothing is uploaded.',
+        'Crop an image with a draggable box or exact pixels, resize to a width, height or ' +
+        'target file size, and save as JPEG, PNG or WebP. Nothing is uploaded.',
     },
   },
   {
@@ -193,9 +198,8 @@ export const routes: Routes = [
     title: 'Image Compressor — YYDevTools',
     data: {
       description:
-        'Compress JPEG, PNG and HEIC images to JPEG or WebP in bulk — by quality or to a ' +
-        'target file size — and download them as a zip. Compare before and after, and see ' +
-        'or strip the Exif metadata. Runs in your browser; your images are never uploaded.',
+        'Compress JPEG, PNG and HEIC images to JPEG or WebP in bulk, by quality or to a ' +
+        'target size, and download a zip. Compare before and after. Nothing is uploaded.',
     },
   },
   {
@@ -204,9 +208,8 @@ export const routes: Routes = [
     title: 'Image to PDF & PDF to Image — JPG ⇄ PDF — YYDevTools',
     data: {
       description:
-        'Convert JPG, PNG and WebP images to a single PDF, or turn every page of a PDF into a ' +
-        'PNG or JPG image. Reorder pages, pick the page size and resolution. Everything runs ' +
-        'in your browser — nothing is uploaded. Free, no sign-up.',
+        'Convert JPG, PNG and WebP images to one PDF, or turn every PDF page into a PNG or ' +
+        'JPG. Reorder pages, pick size and resolution. Runs in your browser, free.',
     },
   },
   {
@@ -223,12 +226,11 @@ export const routes: Routes = [
     path: 'tools/pdf-organizer',
     loadComponent: () =>
       import('./tools/pdf-organizer/pdf-organizer').then((m) => m.PdfOrganizerTool),
-    title: 'PDF Organizer — Reorder, rotate and delete PDF pages — YYDevTools',
+    title: 'PDF Organizer — Reorder, rotate & delete pages — YYDevTools',
     data: {
       description:
-        'Organize a PDF page by page: see every page as a thumbnail, drag to reorder, rotate, ' +
-        'delete, insert blank pages and combine several files into one. Runs in your browser, ' +
-        'so your documents never leave your device. Free, no sign-up.',
+        'Organize a PDF page by page: thumbnails, drag to reorder, rotate, delete, insert ' +
+        'blank pages and combine files. Runs in your browser; documents never leave it.',
     },
   },
   {
@@ -238,19 +240,19 @@ export const routes: Routes = [
     title: 'Office to PDF — YYDevTools',
     data: {
       description:
-        'Convert Word to PDF, Excel to PDF or PowerPoint to PDF online. Rendered with a real ' +
-        'Office layout engine, so fonts, tables and page breaks land where they should. Free, no account.',
+        'Convert Word, Excel or PowerPoint to PDF online with a real Office layout engine, so ' +
+        'fonts, tables and page breaks land where they should. Free, no account.',
     },
   },
   {
     path: 'tools/pdf-watermark',
     loadComponent: () =>
       import('./tools/pdf-watermark/pdf-watermark').then((m) => m.PdfWatermarkTool),
-    title: 'PDF Watermark & Page Numbers — Stamp and number a PDF online — YYDevTools',
+    title: 'PDF Watermark & Page Numbers — Stamp a PDF online — YYDevTools',
     data: {
       description:
-        'Add a text watermark like CONFIDENTIAL or DRAFT across every page of a PDF, and add ' +
-        'page numbers in the style and position you want. Live preview, nothing uploaded. Free.',
+        'Add a text watermark like CONFIDENTIAL or DRAFT across every page of a PDF, and page ' +
+        'numbers in the style and position you want. Live preview, nothing uploaded.',
     },
   },
   {
@@ -260,8 +262,8 @@ export const routes: Routes = [
     title: 'PDF Form Fill & Flatten — Fill a PDF form online — YYDevTools',
     data: {
       description:
-        'Fill in the text fields, checkboxes, radio buttons and dropdowns of a PDF form in your ' +
-        'browser, preview the result, and download it editable or flattened. Nothing is uploaded.',
+        'Fill the text fields, checkboxes, radio buttons and dropdowns of a PDF form in your ' +
+        'browser, preview it, and download it editable or flattened. Never uploaded.',
     },
   },
   {
@@ -271,17 +273,17 @@ export const routes: Routes = [
     data: {
       description:
         'Sign a PDF in your browser: draw your signature, type your name or upload an image, ' +
-        'drag it onto the page and download. The file is never uploaded. Free, no account.',
+        'drag it onto the page and download. Never uploaded. Free, no account.',
     },
   },
   {
     path: 'tools/pdf-redact',
     loadComponent: () => import('./tools/pdf-redact/pdf-redact').then((m) => m.PdfRedactTool),
-    title: 'Redact PDF — Permanently remove text from a PDF online — YYDevTools',
+    title: 'Redact PDF — Permanently remove text online — YYDevTools',
     data: {
       description:
-        'Redact a PDF in your browser: find every occurrence of a name or number, or draw boxes, ' +
-        'and download a copy where the covered content is genuinely removed. Nothing is uploaded.',
+        'Redact a PDF in your browser: find every occurrence of a name or number, or draw ' +
+        'boxes, and download a copy with the covered content truly gone. Never uploaded.',
     },
   },
   {
@@ -291,8 +293,8 @@ export const routes: Routes = [
     data: {
       mode: 'protect',
       description:
-        'Add a password to a PDF online with AES-256 encryption. Set an open password and an ' +
-        'optional owner password. Free, no account, the file is deleted after processing.',
+        'Add a password to a PDF online with AES-256 encryption: an open password and an ' +
+        'optional owner password. Free, no account; the file is deleted after processing.',
     },
   },
   {
@@ -322,9 +324,8 @@ export const routes: Routes = [
     title: 'PDF OCR — YYDevTools',
     data: {
       description:
-        'Run text recognition on a scanned PDF to make it searchable and selectable. Short ' +
-        'English documents are recognised entirely in your browser and never uploaded; longer ' +
-        'documents and fifteen languages use our hosted service. Free, no account required.',
+        'Make a scanned PDF searchable and selectable. Short English documents are recognised ' +
+        'in your browser and never uploaded; longer ones use our service.',
     },
   },
   {
@@ -344,7 +345,7 @@ export const routes: Routes = [
     data: {
       description:
         'Open a CSV as a searchable table with the delimiter detected automatically, see what ' +
-        'each column holds, and export to JSON. Nothing is uploaded. Free, no sign-up.',
+        'each column holds, and export to JSON. Nothing is uploaded. Free.',
     },
   },
   {
@@ -374,8 +375,8 @@ export const routes: Routes = [
     title: 'Excel Viewer — Open XLSX in your browser — YYDevTools',
     data: {
       description:
-        'Open an Excel .xlsx workbook in your browser and read every sheet, with formatting ' +
-        'and number formats intact and columns widened to fit. Free, no sign-up, no Excel needed.',
+        'Open an Excel .xlsx workbook in your browser and read every sheet with formatting ' +
+        'and number formats intact. Free, no sign-up, no Excel needed.',
     },
   },
   {
@@ -394,8 +395,8 @@ export const routes: Routes = [
     title: 'PDF Split — YYDevTools',
     data: {
       description:
-        'Extract selected pages from a PDF, or split it into one file per page and get them ' +
-        'back as a single zip. Runs in your browser, so your document stays on your device.',
+        'Extract selected pages from a PDF, or split it into one file per page and get a ' +
+        'single zip back. Runs in your browser, so your document stays on your device.',
     },
   },
   {
@@ -405,9 +406,8 @@ export const routes: Routes = [
     title: 'Hash & HMAC Generator — YYDevTools',
     data: {
       description:
-        'Compute MD5, CRC32, SHA-1/256/384/512 and keyed HMAC digests of text or a batch of ' +
-        'files, export a sha256sum-style checksum list, and verify a digest you were given. ' +
-        'Hashing happens in your browser. Free, with no sign-up.',
+        'Compute MD5, CRC32, SHA-1/256/384/512 and HMAC digests of text or files, export a ' +
+        'sha256sum-style list, and verify a digest. Hashing runs in your browser, free.',
     },
   },
   {
@@ -425,11 +425,11 @@ export const routes: Routes = [
     path: 'tools/password-generator',
     loadComponent: () =>
       import('./tools/password-generator/password-generator').then((m) => m.PasswordGeneratorTool),
-    title: 'Password Generator — Strong Passwords & Passphrases — YYDevTools',
+    title: 'Password Generator — Passwords & Passphrases — YYDevTools',
     data: {
       description:
-        'Generate strong random passwords and memorable EFF passphrases in your browser, ' +
-        'with a strength meter and crack-time estimate. Nothing is uploaded. Free, no sign-up.',
+        'Generate strong random passwords and memorable EFF passphrases in your browser, with ' +
+        'a strength meter and crack-time estimate. Nothing uploaded. Free.',
     },
   },
   {
@@ -452,8 +452,8 @@ export const routes: Routes = [
     title: 'Color Converter — HEX, RGB, HSL, OKLCH & LAB — YYDevTools',
     data: {
       description:
-        'Convert colours between HEX, RGB, HSL, OKLCH and LAB, generate a perceptual tint/shade ' +
-        'ramp and colour harmonies, and check WCAG contrast ratios. Free, runs in your browser.',
+        'Convert colours between HEX, RGB, HSL, OKLCH and LAB, build tint and shade ramps and ' +
+        'harmonies, and check WCAG contrast. Free, runs in your browser.',
     },
   },
   {
@@ -463,7 +463,7 @@ export const routes: Routes = [
     data: {
       description:
         'Compare two blocks of text line by line, in a split or unified view, with options to ' +
-        'ignore case and whitespace. Runs entirely in your browser. Free, no sign-up.',
+        'ignore case and whitespace. Runs entirely in your browser, free.',
     },
   },
   {
@@ -493,9 +493,8 @@ export const routes: Routes = [
     title: 'QR Code Generator — YYDevTools',
     data: {
       description:
-        'Make a QR code for a link, Wi-Fi network, contact card, email, SMS, phone number, ' +
-        'location or calendar event, adjust the size, colours and error correction, and ' +
-        'download it as PNG or SVG. Generated in your browser. Free, no sign-up.',
+        'Make a QR code for a link, Wi-Fi network, contact card, email, SMS, phone, location ' +
+        'or event; set size, colours and error correction; download PNG or SVG.',
     },
   },
   {
@@ -516,20 +515,19 @@ export const routes: Routes = [
     title: 'SQL Formatter — YYDevTools',
     data: {
       description:
-        'Format and beautify SQL for Postgres, MySQL, SQL Server, SQLite, BigQuery and more, with ' +
-        'adjustable indentation and keyword case. Runs in your browser. Free, no sign-up.',
+        'Format and beautify SQL for Postgres, MySQL, SQL Server, SQLite, BigQuery and more, ' +
+        'with adjustable indentation and keyword case. Runs in your browser, free.',
     },
   },
   {
     path: 'tools/code-formatter',
     loadComponent: () =>
       import('./tools/code-formatter/code-formatter').then((m) => m.CodeFormatterTool),
-    title: 'Code Formatter — HTML, CSS, JS, TypeScript, XML & more — YYDevTools',
+    title: 'Code Formatter — HTML, CSS, JS, TypeScript & more — YYDevTools',
     data: {
       description:
-        'Beautify HTML, CSS, SCSS, JavaScript, TypeScript, JSON, Markdown, YAML, GraphQL and XML ' +
-        'with Prettier, with adjustable indentation and quote style. Runs in your browser, nothing ' +
-        'is uploaded. Free, no sign-up.',
+        'Beautify HTML, CSS, SCSS, JavaScript, TypeScript, JSON, Markdown, YAML, GraphQL and ' +
+        'XML with Prettier; set indentation and quote style. Runs in your browser.',
     },
   },
   {
@@ -538,8 +536,8 @@ export const routes: Routes = [
     title: 'Guides — YYDevTools',
     data: {
       description:
-        'Plain-English explainers on the ideas behind the tools — JWTs, Base64, hashing, cron ' +
-        'schedules, UUIDs and image compression. Free, and written to be read on their own.',
+        'Plain-English explainers on the ideas behind the tools: JWTs, Base64, hashing, cron ' +
+        'schedules, UUIDs and image compression. Free, and readable on their own.',
     },
   },
   {
@@ -550,7 +548,7 @@ export const routes: Routes = [
       slug: 'jwt-explained',
       description:
         'A plain-English guide to JSON Web Tokens: how the header, payload and signature fit ' +
-        'together, why decoding is not verifying, and the classic JWT forgery attacks.',
+        'together, why decoding is not verifying, and the classic forgery attacks.',
     },
   },
   {
@@ -582,8 +580,8 @@ export const routes: Routes = [
     data: {
       slug: 'cron-expressions-guide',
       description:
-        'Read and write cron schedules with confidence: the five fields, the asterisks, slashes ' +
-        'and ranges, worked examples, and the timezone gotcha that fires jobs at the wrong hour.',
+        'Read and write cron schedules with confidence: the five fields, asterisks, slashes ' +
+        'and ranges, worked examples, and the timezone gotcha that misfires jobs.',
     },
   },
   {
@@ -593,8 +591,8 @@ export const routes: Routes = [
     data: {
       slug: 'uuid-versions-explained',
       description:
-        'UUID version 4 vs version 7: why v4 is random, how v7 embeds a timestamp so ids sort by ' +
-        'creation time, and why that ordering matters for database index performance.',
+        'UUID v4 vs v7: why v4 is random, how v7 embeds a timestamp so ids sort by creation ' +
+        'time, and why that ordering matters for database index performance.',
     },
   },
   {
@@ -604,8 +602,8 @@ export const routes: Routes = [
     data: {
       slug: 'compress-images-for-web',
       description:
-        'Compress images for the web without visible loss: JPEG vs WebP, how the quality slider ' +
-        'really works, resizing before compressing, and stripping the GPS metadata in photos.',
+        'Compress images for the web without visible loss: JPEG vs WebP, how the quality ' +
+        'slider really works, resizing first, and stripping GPS metadata from photos.',
     },
   },
   {
@@ -616,7 +614,7 @@ export const routes: Routes = [
       slug: 'password-storage-explained',
       description:
         'Why passwords are hashed rather than encrypted, what a salt prevents, why bcrypt and ' +
-        'Argon2 are deliberately slow, and how to read what a breach announcement really says.',
+        'Argon2 are deliberately slow, and how to read a breach announcement.',
     },
   },
   {
@@ -637,8 +635,8 @@ export const routes: Routes = [
     data: {
       slug: 'image-formats-explained',
       description:
-        'What each image format throws away and when to use it: how JPEG decides what to discard, ' +
-        'why PNG is huge for photos, what WebP and AVIF changed, and why iPhones produce HEIC.',
+        'What each image format throws away and when to use it: how JPEG decides what to ' +
+        'discard, why PNG is huge for photos, what WebP and AVIF changed, and HEIC.',
     },
   },
   {
@@ -648,14 +646,14 @@ export const routes: Routes = [
     data: {
       slug: 'photo-metadata-privacy',
       description:
-        'Photos record the camera, the exact time and often the coordinates where they were taken. ' +
-        'What is in there, when sharing strips it, and how to remove it without degrading the image.',
+        'Photos record the camera, the exact time and often the coordinates where they were ' +
+        'taken. What is in there, when sharing strips it, and how to remove it.',
     },
   },
   {
     path: 'guides/regex-explained',
     loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
-    title: 'Regular expressions explained: reading, writing and when not to — YYDevTools',
+    title: 'Regex explained: reading, writing and when not to — YYDevTools',
     data: {
       slug: 'regex-explained',
       description:
@@ -666,7 +664,7 @@ export const routes: Routes = [
   {
     path: 'guides/character-encoding-explained',
     loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
-    title: 'Character encoding explained: Unicode, UTF-8 and mojibake — YYDevTools',
+    title: 'Character encoding: Unicode, UTF-8 and mojibake — YYDevTools',
     data: {
       slug: 'character-encoding-explained',
       description:
@@ -682,7 +680,7 @@ export const routes: Routes = [
       slug: 'certificates-and-the-chain-of-trust',
       description:
         'What a TLS certificate contains, why the chain has intermediates, how little a ' +
-        'certificate authority really verifies, and what the warnings you see actually mean.',
+        'certificate authority really verifies, and what browser warnings mean.',
     },
   },
   {
@@ -691,19 +689,18 @@ export const routes: Routes = [
       import('./tools/certificate-decoder/certificate-decoder').then(
         (m) => m.CertificateDecoderTool,
       ),
-    title: 'Certificate Decoder — Read an X.509 / SSL certificate — YYDevTools',
+    title: 'Certificate Decoder — Read an SSL certificate — YYDevTools',
     data: {
       description:
-        'Decode an X.509 SSL/TLS certificate or a whole chain: subject, issuer, validity and ' +
-        'days to expiry, public key, SANs, key usage, fingerprints and every extension. ' +
-        'Paste PEM or upload .crt, .cer or .der. Free, no account.',
+        'Decode an X.509 SSL/TLS certificate or chain: subject, issuer, expiry, public key, ' +
+        'SANs, key usage, fingerprints and extensions. Paste PEM or upload .crt/.der.',
     },
   },
   {
     path: 'tools/key-generator',
     loadComponent: () =>
       import('./tools/key-generator/key-generator').then((m) => m.KeyGeneratorTool),
-    title: 'Key Generator — RSA & EC key pairs in your browser — YYDevTools',
+    title: 'Key Generator — RSA & EC key pairs — YYDevTools',
     data: {
       description:
         'Generate an RSA or EC key pair with your browser’s own Web Crypto. The private key is ' +
@@ -728,8 +725,8 @@ export const routes: Routes = [
     data: {
       slug: 'colour-on-the-web-explained',
       description:
-        'What a hex code really is, why averaging colours in sRGB looks muddy, why HSL lightness ' +
-        'is not comparable across hues, and what OKLCH fixes for palettes and contrast.',
+        'What a hex code really is, why averaging colours in sRGB looks muddy, why HSL ' +
+        'lightness is not comparable across hues, and what OKLCH fixes.',
     },
   },
   {

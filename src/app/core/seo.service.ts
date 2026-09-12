@@ -10,6 +10,8 @@ import { filter, map } from 'rxjs';
 export const SITE_URL = 'https://yydevtools.com';
 
 const SITE_NAME = 'YYDevTools';
+/** One image for every page: a link preview needs a picture, and the mark is the brand. */
+const SOCIAL_IMAGE = `${SITE_URL}/og-image.png`;
 const DEFAULT_DESCRIPTION =
   'Free developer and PDF tools that run in your browser — JSON, JWT, Base64, hashing, ' +
   'image compression and PDF editing. No account, no upload, no install.';
@@ -82,7 +84,12 @@ export class SeoService {
     this.meta.updateTag({ property: 'og:url', content: canonical });
     this.meta.updateTag({ property: 'og:type', content: 'website' });
     this.meta.updateTag({ property: 'og:site_name', content: SITE_NAME });
-    this.meta.updateTag({ name: 'twitter:card', content: 'summary' });
+    this.meta.updateTag({ property: 'og:image', content: SOCIAL_IMAGE });
+    this.meta.updateTag({ property: 'og:image:width', content: '1200' });
+    this.meta.updateTag({ property: 'og:image:height', content: '630' });
+    this.meta.updateTag({ property: 'og:image:alt', content: `${SITE_NAME} — ${title}` });
+    this.meta.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    this.meta.updateTag({ name: 'twitter:image', content: SOCIAL_IMAGE });
     this.meta.updateTag({ name: 'twitter:title', content: title });
     this.meta.updateTag({ name: 'twitter:description', content: description });
   }

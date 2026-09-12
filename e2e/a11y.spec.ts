@@ -26,6 +26,7 @@ const SURFACES: Array<[string, string]> = [
   ['guides index', '/guides'],
   ['about', '/about'],
   ['privacy', '/privacy'],
+  ['terms', '/terms'],
   ['contact', '/contact'],
 ];
 
