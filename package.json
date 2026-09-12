@@ -8,6 +8,7 @@
     "prebuild": "node scripts/generate-syncfusion-license.mjs",
     "build": "ng build && node scripts/generate-sitemap.mjs",
     "icons": "node scripts/generate-icons.mjs",
+    "stats": "node scripts/stats.mjs",
     "prewatch": "node scripts/generate-syncfusion-license.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",

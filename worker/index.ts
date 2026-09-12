@@ -14,6 +14,7 @@ import { allowRequest } from './rate-limit';
 import { getNews } from './news';
 import { cacheControlFor } from './asset-cache';
 import { withSecurityHeaders } from './security-headers';
+import { dayKey, isBot, isPageView, recordPageView } from './stats';
 
 /** Workers Rate Limiting binding (see the `ratelimits` block in wrangler.jsonc). */
 interface RateLimiter {
@@ -588,6 +589,17 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
   // 404 in Search Console and is a common AdSense rejection reason.
   const response = await env.ASSETS.fetch(request);
   if (response.status !== 404) {
+    // Count the view off the response path, so the visitor never waits on it.
+    // A 404 is not a page view, asset fetches are not page views, and bots are
+    // not people — all three are excluded here rather than counted and filtered
+    // later, because a ranking is only useful if its numbers mean one thing.
+    if (
+      isPageView(request.method, request.headers.get('accept') ?? '') &&
+      !isBot(request.headers.get('user-agent') ?? '')
+    ) {
+      ctx.waitUntil(recordPageView(env, path, dayKey(new Date())));
+    }
+
     // Content-hashed bundles are safe to keep forever; everything else stays
     // on the asset server's revalidating default. See asset-cache.ts for why
     // this is here rather than in a `_headers` file.
