@@ -35,17 +35,15 @@ test('interactive elements use the reticle, not the native pointer', async ({ pa
 
 test('text fields keep the native I-beam', async ({ page }) => {
   await page.goto('/');
-  expect(await cursorOf(page, '.rail__input')).toBe('text');
+  await expect(page.locator('.rail__input')).toHaveCSS('cursor', 'text');
 
   await page.goto('/tools/json-formatter');
   await expect(page.locator('.head__title')).toBeVisible();
-  // The CodeMirror surface (and its textarea fallback) must stay text, not the
-  // reticle — a crosshair over an editor reads as wrong.
-  const editorCursor = await page
-    .locator('.cm-content, textarea.editor__fallback')
-    .first()
-    .evaluate((el) => getComputedStyle(el).cursor);
-  expect(editorCursor).toBe('text');
+  // The CodeMirror surface must stay text, not the reticle — a crosshair over
+  // an editor reads as wrong. Retrying matters here: the prerendered fallback
+  // textarea is swapped for CodeMirror on hydration, and a one-shot read of the
+  // element that was just detached comes back empty.
+  await expect(page.locator('.cm-content').first()).toHaveCSS('cursor', 'text');
 });
 
 test('the cursor is identical in both themes (baked, not token-driven)', async ({ page }) => {
