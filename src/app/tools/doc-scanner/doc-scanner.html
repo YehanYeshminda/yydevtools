@@ -1,0 +1,197 @@
+<app-tool-page slug="document-scanner">
+  Turn photos of pages into a straight, clean PDF. Drag the corners onto the page edges, choose a
+  look, and download. Every photo is processed on this device.
+</app-tool-page>
+
+<div class="panel">
+  <app-dropzone
+    [multiple]="true"
+    accept="image/*,.heic,.heif"
+    (filesSelected)="acceptFiles($event)"
+  >
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matDocumentScannerOutline" />
+    <span class="dropzone__title">
+      @if (pages().length) {
+        Drop more photos here, or click to add pages
+      } @else {
+        Drop photos of pages here, or click to choose
+      }
+    </span>
+    <span class="dropzone__hint">
+      One photo per page, in order. JPEG, PNG, WebP or HEIC — nothing is uploaded.
+    </span>
+  </app-dropzone>
+
+  @if (opening()) {
+    <p class="working" role="status">
+      <app-spinner />
+      Reading photos…
+    </p>
+  }
+
+  @if (current(); as page) {
+    <div class="chips" role="group" aria-label="Look">
+      @for (option of filters; track option.value) {
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="filter() === option.value"
+          [attr.aria-pressed]="filter() === option.value"
+          (click)="setFilter(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+
+    <div class="scan">
+      <section class="scan__pane" aria-label="Page corners">
+        <h2 class="section__title">Drag the corners onto the page</h2>
+        <div
+          class="frame"
+          #frame
+          (pointermove)="pointerMove($event)"
+          (pointerup)="pointerUp($event)"
+          (pointercancel)="pointerUp($event)"
+        >
+          <img class="frame__image" [src]="page.previewUrl" alt="" draggable="false" />
+          <svg
+            class="quad"
+            [attr.viewBox]="'0 0 ' + page.width + ' ' + page.height"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <polygon class="quad__edge" [attr.points]="pointsOf(page.quad)" />
+          </svg>
+          @for (corner of corners; track corner.index) {
+            <button
+              type="button"
+              class="handle"
+              [attr.aria-label]="'Drag the ' + corner.label + ' corner'"
+              [style.left.%]="(page.quad[corner.index].x / page.width) * 100"
+              [style.top.%]="(page.quad[corner.index].y / page.height) * 100"
+              (pointerdown)="handleDown($event, corner.index)"
+              (keydown)="handleKey($event, corner.index)"
+            ></button>
+          }
+        </div>
+        <p class="field__hint">
+          {{ page.name }} · {{ page.width }} × {{ page.height }} px · arrow keys nudge a focused
+          corner
+        </p>
+        <div class="actions">
+          <button matButton (click)="resetCorners()">
+            <ng-icon name="matCropFreeOutline" />
+            Reset corners
+          </button>
+          <button matButton (click)="removePage(page.id)">
+            <ng-icon name="matDeleteSweepOutline" />
+            Remove page
+          </button>
+        </div>
+      </section>
+
+      <section class="scan__pane" aria-label="Scanned page" aria-live="polite">
+        <h2 class="section__title">Scanned page</h2>
+        @if (page.result; as scan) {
+          <div class="frame frame--result" [class.frame--stale]="page.busy">
+            <img
+              class="frame__image"
+              [src]="scan.url"
+              alt="The straightened, cleaned page"
+              data-testid="scan-result"
+            />
+          </div>
+          <p class="field__hint" data-testid="scan-size">
+            {{ scan.width }} × {{ scan.height }} px · {{ formatBytes(scan.bytes.length) }}
+            @if (page.busy) {
+              · updating…
+            }
+          </p>
+        } @else {
+          <div class="empty">
+            <app-spinner />
+            <p class="empty__hint">Scanning…</p>
+          </div>
+        }
+      </section>
+    </div>
+
+    @if (pages().length > 1) {
+      <ol class="thumbs" aria-label="Pages, in PDF order">
+        @for (entry of pages(); track entry.id; let i = $index) {
+          <li>
+            <button
+              type="button"
+              class="thumb"
+              [class.thumb--on]="entry.id === selectedId()"
+              [attr.aria-current]="entry.id === selectedId() ? 'true' : null"
+              [attr.aria-label]="'Page ' + (i + 1) + ': ' + entry.name"
+              (click)="select(entry.id)"
+            >
+              <img [src]="entry.result?.url ?? entry.previewUrl" alt="" />
+              <span class="thumb__number">{{ i + 1 }}</span>
+            </button>
+          </li>
+        }
+      </ol>
+    }
+
+    <div class="row-wrap">
+      <span class="opt__label">PDF page size</span>
+      <div class="chips" role="group" aria-label="PDF page size">
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="pagePreset() === 'a4'"
+          [attr.aria-pressed]="pagePreset() === 'a4'"
+          (click)="setPagePreset('a4')"
+        >
+          A4
+        </button>
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="pagePreset() === 'letter'"
+          [attr.aria-pressed]="pagePreset() === 'letter'"
+          (click)="setPagePreset('letter')"
+        >
+          Letter
+        </button>
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="pagePreset() === 'fit'"
+          [attr.aria-pressed]="pagePreset() === 'fit'"
+          (click)="setPagePreset('fit')"
+        >
+          Fit to scan
+        </button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button matButton="filled" (click)="downloadPdf()" [disabled]="!canDownload()">
+        @if (building()) {
+          <app-spinner />
+          Building…
+        } @else {
+          <ng-icon name="matPictureAsPdfOutline" />
+          Download PDF ({{ pages().length }} {{ pages().length === 1 ? 'page' : 'pages' }})
+        }
+      </button>
+      <button matButton (click)="downloadPage()" [disabled]="!page.result || page.busy">
+        <ng-icon name="matDownloadOutline" />
+        Download this page as JPEG
+      </button>
+      <button matButton (click)="clear()">
+        <ng-icon name="matDeleteSweepOutline" />
+        Clear
+      </button>
+    </div>
+
+    <app-next-step [file]="result()" [to]="['pdf-ocr', 'pdf-protect', 'pdf-compress']" />
+  }
+</div>
+
+<app-tool-content slug="document-scanner" />

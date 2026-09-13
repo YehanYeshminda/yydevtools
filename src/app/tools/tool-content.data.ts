@@ -2762,6 +2762,59 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['pdf-organizer', 'pdf-merge', 'pdf-viewer'],
   },
 
+  'document-scanner': {
+    slug: 'document-scanner',
+    intro: [
+      'A photo of a page is not a scan: it is tilted, the paper is grey, and there is a shadow across half of it. This tool fixes all three. Drag the four corners onto the edges of the page and the photo is pulled straight, as if it had gone through a flatbed; the black-and-white look then lifts the text off the paper the way a scanner app does, without needing an account or sending the photo anywhere.',
+      'Add as many photos as the document has pages. They become one PDF, in the order you added them, ready for the OCR tool to make searchable or the Protect tool to lock with a password.',
+    ],
+    steps: [
+      'Drop in the photos, one per page, in order.',
+      'Drag each corner handle onto the matching corner of the page. Arrow keys nudge a focused handle.',
+      'Pick a look: black and white for text, greyscale for mixed pages, colour for anything with pictures.',
+      'Choose A4, Letter or a page that fits the scan, then download the PDF or a single page as a JPEG.',
+    ],
+    features: [
+      'Perspective correction: a page photographed at an angle comes out rectangular.',
+      'Adaptive black and white: the threshold follows the local brightness, so a shadow across the page does not turn into a black block.',
+      'HEIC from an iPhone opens directly; JPEG, PNG and WebP too.',
+      'Photos are downsized to about 300 dpi for an A4 page, so the PDF stays a sensible size.',
+      'Everything runs in your browser, in a background thread. Nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Getting a good photo',
+        body: [
+          'Lay the page flat, fill the frame with it, and keep your own shadow off it: the corner handles can fix a tilt, but not a crease or a shadow so deep the text disappears. Daylight from a window beats an overhead lamp. If the page is glossy, angle it slightly so the light does not reflect straight back at the camera.',
+        ],
+      },
+      {
+        heading: 'Which look to choose',
+        body: [
+          'Black and white is the classic scan: printed or handwritten text becomes crisp and the file is smallest. Greyscale keeps pencil, stamps and light printing that the threshold might drop. Colour keeps everything and is the right choice for a page with photographs, highlighter or a coloured signature.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Can it find the page edges by itself?',
+        a: 'Not yet. The handles start slightly inside the photo; drag them onto the page corners. Because the straightened result updates as you drag, it takes a few seconds per page.',
+      },
+      {
+        q: 'Why is the text a bit jagged in black and white?',
+        a: 'Black and white keeps only two values per pixel, so edges are hard by definition. If the page has small type, take the photo closer or switch to greyscale, which keeps the anti-aliasing.',
+      },
+      {
+        q: 'Can I make the PDF searchable?',
+        a: 'Yes. After downloading, use the button under the actions to send the PDF straight to the OCR tool, which adds an invisible text layer so the words can be selected and searched.',
+      },
+      {
+        q: 'Is the photo uploaded?',
+        a: 'No. Decoding, straightening, cleaning and building the PDF all happen in your browser. The page never talks to a server for this tool.',
+      },
+    ],
+    related: ['pdf-ocr', 'pdf-protect', 'image-pdf', 'pdf-compress'],
+  },
   'image-pdf': {
     slug: 'image-pdf',
     intro: [

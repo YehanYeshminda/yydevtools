@@ -68,6 +68,42 @@ test('image-converter queues an image and offers a target format', async ({ page
   expectClean(watch);
 });
 
+test('document-scanner straightens a photo and builds a PDF', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'document-scanner', 'Document Scanner');
+
+  await uploadFiles(page, ['sample-photo.jpg']);
+  await expect(page.getByTestId('scan-result')).toBeVisible({ timeout: 45_000 });
+  // The default corners sit 4% inside a 640×480 photo, so the scan is 92% of it.
+  await expect(page.getByTestId('scan-size')).toContainText('589 × 442 px');
+
+  // Dragging the top-left corner out to the photo's edge lengthens the top and
+  // left edges (now slightly diagonal), so the scan grows to about 96% of the photo.
+  const handle = page.getByRole('button', { name: 'Drag the top-left corner' });
+  const box = (await handle.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x - 80, box.y - 60, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.getByTestId('scan-size')).toContainText('615 × 462 px', { timeout: 45_000 });
+
+  await page.getByRole('button', { name: 'Greyscale' }).click();
+  await expect(page.getByTestId('scan-size')).not.toContainText('updating', { timeout: 45_000 });
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: /Download PDF/ }).click();
+  expect((await download).suggestedFilename()).toBe('sample-photo-scanned.pdf');
+
+  // The finished PDF can be carried straight into OCR.
+  await page.getByTestId('next-step').getByRole('button', { name: 'Make it searchable' }).click();
+  await expect(page).toHaveURL(/\/tools\/pdf-ocr/);
+  await expect(page.getByText(/sample-photo-scanned\.pdf · 1 page/)).toBeVisible({
+    timeout: 45_000,
+  });
+
+  expectClean(watch);
+});
+
 test('image-pdf turns images into a PDF', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'image-pdf', 'Image ↔ PDF');

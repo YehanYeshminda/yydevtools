@@ -243,6 +243,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'document-scanner',
+    name: 'Document Scanner',
+    description:
+      'Turn photos of pages into a straight, clean PDF — drag the corners, pick a look, download.',
+    icon: 'matDocumentScannerOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'image-pdf',
     name: 'Image ↔ PDF',
     description:
@@ -429,6 +438,4 @@ export const HOSTED_SLUGS: readonly string[] = [
 ];
 
 /** How many tools never upload anything — the number the home rail quotes. */
-export const LOCAL_TOOL_COUNT = TOOLS.filter(
-  (tool) => !HOSTED_SLUGS.includes(tool.slug),
-).length;
+export const LOCAL_TOOL_COUNT = TOOLS.filter((tool) => !HOSTED_SLUGS.includes(tool.slug)).length;

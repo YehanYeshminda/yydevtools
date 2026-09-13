@@ -203,6 +203,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/document-scanner',
+    loadComponent: () => import('./tools/doc-scanner/doc-scanner').then((m) => m.DocScannerTool),
+    title: 'Document Scanner — Photos of pages to a clean PDF — YYDevTools',
+    data: {
+      description:
+        'Scan documents with your phone photos: drag the corners onto the page, it is ' +
+        'straightened and cleaned to black and white, and saved as a PDF. Nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/image-pdf',
     loadComponent: () => import('./tools/image-pdf/image-pdf').then((m) => m.ImagePdfTool),
     title: 'Image to PDF & PDF to Image — JPG ⇄ PDF — YYDevTools',

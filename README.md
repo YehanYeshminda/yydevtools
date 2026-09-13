@@ -56,6 +56,7 @@ the homepage grid, search, command palette and this table all come from it.
 | --- | --- |
 | **Word & Character Counter** | Count words, characters, sentences and paragraphs live, with reading time and keyword density. |
 | **Markdown Editor** | Write Markdown with a live, side-by-side preview. |
+| **Document Scanner** | Turn photos of pages into a straight, clean PDF — drag the corners, pick a look, download. |
 | **Image ↔ PDF** | Combine JPG/PNG/WebP images into one PDF, or turn every PDF page back into an image. |
 | **Office to PDF** | Convert a Word, Excel or PowerPoint file to PDF, laid out as Office would. *(hosted)* |
 | **PDF Watermark & Page Numbers** | Stamp text across every page and add page numbers, with a live preview. |
