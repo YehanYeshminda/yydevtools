@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
+
+import { FileHandoff } from '../../core/file-handoff';
 
 /**
  * The file drop target shared by every tool that takes an upload.
@@ -63,6 +73,16 @@ export class Dropzone {
    * cleared once the count returns to zero.
    */
   private depth = 0;
+
+  constructor() {
+    // A file dropped elsewhere on the site and routed here by type arrives
+    // through the handoff service; it enters the tool exactly as a drop would.
+    // Tools that pick the handoff up themselves have already taken it by now.
+    const handed = inject(FileHandoff).take();
+    if (handed) {
+      afterNextRender(() => this.filesSelected.emit([handed]));
+    }
+  }
 
   protected onDragEnter(event: DragEvent): void {
     if (this.disabled() || !this.hasFiles(event)) {

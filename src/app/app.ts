@@ -31,6 +31,7 @@ import { CommandPalette } from './shared/command-palette/command-palette';
 import { ConsentBanner } from './shared/consent-banner/consent-banner';
 import { NavProgress } from './shared/nav-progress/nav-progress';
 import { NewsFeed } from './shared/news-feed/news-feed';
+import { GlobalDrop } from './shared/global-drop/global-drop';
 import { CATEGORY_META, Tool } from './tools/tool.model';
 import { TOOLS, TOOL_CATEGORIES } from './tools/tools.data';
 
@@ -96,6 +97,7 @@ const THEME_MENU_POSITION: readonly ConnectedPosition[] = [
     CommandPalette,
     NavProgress,
     NewsFeed,
+    GlobalDrop,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -116,7 +118,8 @@ export class App {
    * communicates the choice rather than its current outcome.
    */
   protected readonly activeThemeOption = computed(
-    () => THEME_OPTIONS.find((option) => option.value === this.theme.preference()) ?? THEME_OPTIONS[2],
+    () =>
+      THEME_OPTIONS.find((option) => option.value === this.theme.preference()) ?? THEME_OPTIONS[2],
   );
 
   /**
