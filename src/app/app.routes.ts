@@ -761,6 +761,39 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'guides/csv-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'CSV explained: delimiters, quoting and Excel — YYDevTools',
+    data: {
+      slug: 'csv-explained',
+      description:
+        'What a CSV really is, why the delimiter is not always a comma, the quoting rule most ' +
+        'hand-written parsers break, and the five ways Excel silently corrupts one.',
+    },
+  },
+  {
+    path: 'guides/docx-files-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Inside a Word file: why .docx is a ZIP — YYDevTools',
+    data: {
+      slug: 'docx-files-explained',
+      description:
+        'Rename a .docx to .zip and look inside: XML for the text, a separate file for styles, ' +
+        'and a metadata file that knows who edited it. What that structure explains.',
+    },
+  },
+  {
+    path: 'guides/favicons-and-app-icons-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Favicons and app icons: every size explained — YYDevTools',
+    data: {
+      slug: 'favicons-and-app-icons-explained',
+      description:
+        'Why a website is asked for its icon in seven sizes, which file each browser and phone ' +
+        'really picks, what "maskable" means, and why a new icon refuses to show up.',
+    },
+  },
+  {
     path: 'news',
     loadComponent: () => import('./news/news').then((m) => m.News),
     title: 'Tech News — YYDevTools',

@@ -1336,7 +1336,11 @@ export const GUIDES: Guide[] = [
         kind: 'p',
         text: 'Editing the text on a page is the opposite. There is no paragraph to re-flow — changing a word means recomputing glyph positions, and if the replacement is wider, deciding what moves. Editors that offer it are reconstructing a layout the file never described, which is why the results are so often subtly wrong. The reliable path for real edits is to change the source document and export again.',
       },
-      { kind: 'tool', lead: 'Reorder, rotate or delete pages without touching their content:', slug: 'pdf-organizer' },
+      {
+        kind: 'tool',
+        lead: 'Reorder, rotate or delete pages without touching their content:',
+        slug: 'pdf-organizer',
+      },
       { kind: 'h2', text: 'Where the megabytes actually are' },
       {
         kind: 'p',
@@ -1350,7 +1354,11 @@ export const GUIDES: Guide[] = [
           'Everything that was never removed. Duplicate copies of the same logo on every page, thumbnails, and the older revisions described below.',
         ],
       },
-      { kind: 'tool', lead: 'See where the size is going, and recompress what is worth recompressing:', slug: 'pdf-compress' },
+      {
+        kind: 'tool',
+        lead: 'See where the size is going, and recompress what is worth recompressing:',
+        slug: 'pdf-compress',
+      },
       { kind: 'h2', text: 'Incremental updates, and the redaction that is not one' },
       {
         kind: 'p',
@@ -1445,7 +1453,11 @@ export const GUIDES: Guide[] = [
         kind: 'p',
         text: 'It also makes systematic palettes straightforward. A ramp from a base colour becomes a series of steps in L, which stay even across every hue in the system, rather than a set of hand-tuned values that only look right for one of them. Interpolating in OKLCH keeps gradients bright through the middle for the same reason.',
       },
-      { kind: 'tool', lead: 'Convert between hex, RGB, HSL and OKLCH, and check contrast:', slug: 'color-converter' },
+      {
+        kind: 'tool',
+        lead: 'Convert between hex, RGB, HSL and OKLCH, and check contrast:',
+        slug: 'color-converter',
+      },
       { kind: 'h2', text: 'Contrast is a floor, not a target' },
       {
         kind: 'p',
@@ -1480,6 +1492,313 @@ export const GUIDES: Guide[] = [
     relatedGuides: ['image-formats-explained', 'compress-images-for-web'],
   },
 
+  {
+    slug: 'csv-explained',
+    title: 'CSV explained: delimiters, quoting, encodings and why Excel mangles your file',
+    description:
+      'What a CSV really is, why the delimiter is not always a comma, the quoting rule most hand-written parsers break, and the five ways Excel silently corrupts one.',
+    category: 'Data formats',
+    readingMinutes: 10,
+    updated: '2026-09-14',
+    published: '2026-09-14',
+    intro: [
+      'CSV is the oldest data format still in daily use and the one with the fewest rules. That is why it is everywhere — every database, spreadsheet and script can produce one — and why the same file can open perfectly on one machine and arrive as garbage on another.',
+      'This guide covers what a CSV actually contains, where the traps are, and why Excel in particular has a habit of quietly rewriting your data. If you have ever lost the leading zeros from a column of postcodes, this is the article that explains it.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'What a CSV actually is' },
+      {
+        kind: 'p',
+        text: 'A CSV file is plain text: one record per line, with the fields of each record separated by a delimiter. There is no header rule, no type system and no metadata — the file does not know whether its first line is column names or data, or whether "42" is a number or a product code. RFC 4180 is the nearest thing to a specification, and it was written in 2005 to describe what programs were already doing rather than to define a format. Every reader is therefore a little tolerant, a little opinionated, and slightly different from every other.',
+      },
+      { kind: 'h2', text: 'The delimiter is not always a comma' },
+      {
+        kind: 'p',
+        text: 'In much of Europe the comma is the decimal mark, so 3,14 is a number and cannot also be a field separator. Excel in those locales writes and expects semicolons instead, and a file made in Paris will open as a single column in London. Tab-separated files are common in exports from databases and scientific instruments, and the pipe character turns up in older systems.',
+      },
+      {
+        kind: 'p',
+        text: 'Good readers sniff the delimiter rather than assuming it: they count how many commas, semicolons and tabs appear on each of the first few lines and pick the one that gives the most consistent field count. That is what a viewer is doing when it opens a semicolon file correctly without being told.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Open any CSV and see which delimiter was detected:',
+        slug: 'csv-viewer',
+      },
+      { kind: 'h2', text: 'Quoting: the one rule everyone gets wrong' },
+      {
+        kind: 'p',
+        text: 'A field that contains the delimiter, a double quote or a line break has to be wrapped in double quotes, and any double quote inside it is written twice. That is the whole rule. An address with a comma in it, a product description with a quotation, a note that spans two lines — each is one field, and a compliant writer quotes it.',
+      },
+      {
+        kind: 'code',
+        code: 'name,address,note\n"Smith, John","12 High Street\nLondon","She said ""hello"""',
+        caption:
+          'Three fields on the second record: a comma inside a name, a line break inside an address, quotes inside a note.',
+      },
+      {
+        kind: 'p',
+        text: 'The classic failure is a reader that splits each line on the delimiter and calls it done. It works on the sample file, ships, and then the first customer with a comma in their address shifts every column after it one place to the right. Line breaks inside quotes break it a second way: the record is cut in half and the second half appears as a new, malformed row.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Never parse CSV with a plain split on the delimiter. Use a real parser — every language has one — and it will handle quoting, embedded line breaks and the delimiter sniffing for you.',
+      },
+      { kind: 'h2', text: 'There are no types' },
+      {
+        kind: 'p',
+        text: 'Every cell in a CSV is text. Whether it becomes a number, a date or a boolean is a decision the reader makes on the way in, and the two obvious policies both have victims. Convert eagerly and a postcode like 00420 becomes 420, a phone number loses its leading plus, and a part number such as 1E5 turns into 100000. Convert nothing and every figure in a spreadsheet of sales arrives as a string that has to be cast before it can be summed.',
+      },
+      {
+        kind: 'p',
+        text: 'The only safe answer is to make it a choice. Detect types when the file is figures, keep everything as text when it carries identifiers, and look at the first few rows before deciding — which is exactly the switch a converter should expose rather than hide.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Convert a CSV to JSON with types detected or left alone, and back again:',
+        slug: 'json-csv',
+      },
+      { kind: 'h2', text: 'Encodings and the byte-order mark' },
+      {
+        kind: 'p',
+        text: 'A CSV is bytes, and bytes need an encoding to become letters. Almost everything written today is UTF-8, but Excel on Windows assumes the machine’s legacy code page unless told otherwise, so a UTF-8 file with an accented name opens as caf├⌐ instead of café. The traditional fix is to start the file with a byte-order mark — three bytes, EF BB BF — which Excel recognises as a UTF-8 signal.',
+      },
+      {
+        kind: 'p',
+        text: 'The BOM has its own cost: a naive parser treats those bytes as part of the first header, so the first column is named "﻿name" and lookups for "name" quietly fail. If a file’s first column will not match no matter how you spell it, this is usually why.',
+      },
+      { kind: 'h2', text: 'Why Excel mangles your file' },
+      {
+        kind: 'p',
+        text: 'Excel does not open a CSV; it imports one, applying every automatic conversion it has, and then saves whatever it decided. The results are well known enough to have names.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Leading zeros are dropped, because the cell became a number. Postcodes, account numbers and zero-padded IDs all suffer.',
+          'Long digit strings become scientific notation and are rounded to fifteen significant digits. A sixteen-digit card or order number is permanently corrupted the moment the file is saved.',
+          'Anything that looks like a date becomes one. The most famous casualty is genetics: gene names such as SEPT1 and MARCH1 were converted to dates in so many published papers that the naming committee renamed the genes.',
+          'The delimiter and the decimal mark follow the machine’s locale, so a file saved on one computer may not open correctly on the next.',
+          'The encoding follows the locale too, unless a byte-order mark is present.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'The way around it is to import rather than open — Data, then From Text — and set each column’s type by hand, or to keep two files: an .xlsx for people, which stores types and formatting properly, and a CSV for machines, generated from the data rather than saved out of Excel.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Open an .xlsx directly, with its types and formatting intact:',
+        slug: 'excel-viewer',
+      },
+      { kind: 'h2', text: 'When CSV is the wrong choice' },
+      {
+        kind: 'p',
+        text: 'CSV is a table and nothing more. Data with nesting — an order with its line items, a person with several addresses — has to be flattened, joined or spread across several files, and every reader has to know the scheme. Types are lost on every trip. For anything that needs structure, JSON is the honest format; for very large analytical data, columnar formats such as Parquet keep the types and compress far better.',
+      },
+      {
+        kind: 'p',
+        text: 'What CSV keeps winning on is reach. It can be produced by anything, read by anything, streamed a line at a time, inspected in a text editor and diffed in version control. For a flat table that has to travel between systems that will never agree on anything else, it remains the right answer — as long as it is written with quotes, read with a real parser, and never round-tripped through a spreadsheet by accident.',
+      },
+    ],
+    related: ['csv-viewer', 'json-csv', 'excel-viewer'],
+    relatedGuides: ['character-encoding-explained'],
+  },
+  {
+    slug: 'docx-files-explained',
+    title:
+      'Inside a Word file: why .docx is a ZIP, and what that means for viewing, converting and privacy',
+    description:
+      'Rename a .docx to .zip and look inside: XML for the text, a separate file for styles, and a metadata file that knows who edited it. What that structure explains.',
+    category: 'Documents',
+    readingMinutes: 10,
+    updated: '2026-09-14',
+    published: '2026-09-14',
+    intro: [
+      'A Word document is not one thing. It is a folder of XML files, images and relationship maps, compressed into a ZIP archive and given the extension .docx. That single fact explains most of what people find strange about Word files: why a search finds nothing in text you can see, why the same file paginates differently on two machines, and why a document can carry the name of everyone who ever touched it.',
+      'This guide opens one up, shows what is inside, and follows the consequences through to viewing, converting to PDF and what you should check before sending a document to someone outside your organisation.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Rename it to .zip and look inside' },
+      {
+        kind: 'p',
+        text: 'Take any .docx, change the extension to .zip and extract it. Since 2007, Word has used the Office Open XML format, and what comes out is a small tree of plain-text files.',
+      },
+      {
+        kind: 'code',
+        code: '[Content_Types].xml\n_rels/.rels\nword/document.xml\nword/styles.xml\nword/settings.xml\nword/media/image1.png\nword/_rels/document.xml.rels\ndocProps/core.xml\ndocProps/app.xml',
+        caption:
+          'A typical .docx, unzipped. The body text is document.xml; everything else supports it.',
+      },
+      {
+        kind: 'p',
+        text: 'The body of the document is word/document.xml. Styles — what "Heading 1" means — live in styles.xml. Images are ordinary files under media, referenced by ID from a relationships file rather than embedded in the text. The docProps folder holds the metadata. Nothing is hidden or encrypted; the format is documented and open, which is why so many programs other than Word can read it.',
+      },
+      { kind: 'h2', text: 'The text is XML, and it is more fragmented than it looks' },
+      {
+        kind: 'p',
+        text: 'Inside document.xml, every paragraph is a w:p element containing one or more runs, w:r, each holding a stretch of text, w:t, with the same formatting. A sentence in a single font would ideally be one run. In practice Word splits runs constantly — at a spelling-check boundary, where the proofing language changed, where a tracked edit once happened — so a single word is often three runs.',
+      },
+      {
+        kind: 'code',
+        code: '<w:p>\n  <w:r><w:t>Invoice </w:t></w:r>\n  <w:r><w:rPr><w:b/></w:rPr><w:t>overdue</w:t></w:r>\n</w:p>',
+        caption:
+          'One paragraph, two runs: the second is bold. Real documents split far more often than this.',
+      },
+      {
+        kind: 'p',
+        text: 'This is why naive tools that search the XML for a phrase find nothing: the phrase is there, but scattered across elements with tags in between. A correct find-and-replace has to stitch the runs together, match across them, and then rewrite the runs without losing which parts were bold. Most template-filling bugs — a placeholder that was not replaced — come from exactly this.',
+      },
+      { kind: 'h2', text: 'Why viewing a Word file is genuinely hard' },
+      {
+        kind: 'p',
+        text: 'A .docx stores content and formatting, but not layout. There is no record of where line breaks fall or which paragraph starts page three. All of that is computed when the file opens, from the fonts installed, their exact metrics, the printer’s page size and dozens of settings in settings.xml that change how Word measures things. Two machines with a different version of Calibri can paginate the same file differently, and a machine without the font substitutes one and reflows everything.',
+      },
+      {
+        kind: 'p',
+        text: 'A browser-based viewer therefore faces a choice: approximate the layout with HTML and CSS, which is fast and private but drifts on anything complex, or run a full layout engine that understands the format the way Word does. The Word Viewer on this site takes the second route through a hosted document engine — which is the one honest exception to the rest of the site running in your tab, and the page says so.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Open a .docx and see it laid out as Word would:',
+        slug: 'word-viewer',
+      },
+      { kind: 'h2', text: 'Converting to PDF freezes the layout' },
+      {
+        kind: 'p',
+        text: 'A PDF is the opposite kind of file: it stores positions, not intentions. Converting a Word document to PDF is precisely the layout pass — fonts are measured, lines are broken, pages are cut — with the result written down so it never has to be computed again, and the fonts embedded so it looks the same on a machine that has never heard of them. That is why a PDF is what you send when the appearance must not change, and a .docx is what you send when the recipient needs to edit.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Convert a Word, Excel or PowerPoint file to a PDF that looks the way Office lays it out:',
+        slug: 'office-to-pdf',
+      },
+      { kind: 'h2', text: 'What a .docx knows about you' },
+      {
+        kind: 'p',
+        text: 'Open docProps/core.xml and you will find the creator, the last person to modify the file, the revision number and the creation and modification times. app.xml adds the total editing time in minutes and sometimes the company name the copy of Word was registered to. Comments live in their own file and tracked changes are recorded inline, so a document sent with revisions "hidden" rather than accepted still contains every deleted sentence. Images under media keep whatever metadata they had when they were inserted, including a phone photo’s location.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Before a document leaves your organisation, run Word’s Document Inspector (File, Info, Check for Issues) or export to PDF with comments and markup turned off. A .docx sent as-is can reveal who wrote it, how long it took, what was deleted, and the internal name the file started with.',
+      },
+      { kind: 'h2', text: 'The old .doc is a different animal, and .docm has teeth' },
+      {
+        kind: 'p',
+        text: 'Files with the older .doc extension are not ZIPs and contain no XML. They use a binary compound-file format that is far harder to read, which is why converters exist and why many tools simply refuse it. A .docm is a .docx that is allowed to carry macros — the m is the only difference, and it is the reason mail filters treat the two so differently. If you did not expect a macro, do not enable it.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Need someone to edit it — send the .docx.',
+          'Need it to look identical everywhere — convert to PDF first.',
+          'Need to be sure nothing private travels with it — inspect the metadata and comments, or send a clean PDF.',
+          'Received a .docm you were not expecting — treat it as executable.',
+        ],
+      },
+    ],
+    related: ['word-viewer', 'office-to-pdf', 'pdf-convert'],
+    relatedGuides: ['pdf-internals-explained', 'photo-metadata-privacy'],
+  },
+  {
+    slug: 'favicons-and-app-icons-explained',
+    title: 'Favicons and app icons: every size a site needs, and what each platform actually uses',
+    description:
+      'Why a website is asked for its icon in seven sizes, which file each browser and phone really picks, what "maskable" means, and why a new icon refuses to show up.',
+    category: 'Design',
+    readingMinutes: 9,
+    updated: '2026-09-14',
+    published: '2026-09-14',
+    intro: [
+      'The favicon started as one 16-pixel .ico file that Internet Explorer looked for at the root of a site. Thirty years later, the same small picture is requested by browser tabs, bookmark lists, iPhone home screens, Android launchers, Windows start menus, install prompts and search results — each with its own preferred size, format and rules about transparency.',
+      'This guide is the map: what each platform asks for, which of the files it will actually use, how to declare them, and the two problems that catch nearly everyone — the maskable safe zone and the cache.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Where the icon shows up' },
+      {
+        kind: 'ul',
+        items: [
+          'The browser tab, the bookmark bar and the history list — tiny, usually 16 or 32 pixels.',
+          'An iPhone or iPad home screen, when someone adds the site — 180 pixels, always opaque.',
+          'An Android launcher and the "install this app" prompt — from the web manifest, 192 and 512 pixels.',
+          'Search results: Google shows a site’s favicon beside its listing and wants at least 48 pixels, in a multiple of 48.',
+          'Desktop shortcuts and pinned sites on Windows and macOS, which take the largest icon they can find.',
+        ],
+      },
+      { kind: 'h2', text: 'The sizes, and why there are so many' },
+      {
+        kind: 'p',
+        text: 'Nobody designed this list; it accumulated as each platform added its own requirement without removing anyone else’s. The practical set today is short enough to generate in one go and rarely changes.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          '16 and 32 pixels — browser tabs on standard and high-density displays. Bundled together in favicon.ico for the browsers and tools that still fetch it by name.',
+          '48 pixels — the minimum Google will show beside a search result.',
+          '180 pixels — apple-touch-icon.png, the iOS home screen. iOS ignores every other declaration.',
+          '192 and 512 pixels — icon-192.png and icon-512.png, listed in the web manifest for Android and desktop installs.',
+          'A second 512 marked maskable — the same artwork with extra margin, for launchers that crop icons into shapes.',
+        ],
+      },
+      { kind: 'h2', text: 'ICO, PNG or SVG?' },
+      {
+        kind: 'p',
+        text: 'An .ico file is a container: it can hold several bitmaps at different sizes, and the browser picks the one closest to what it needs. Modern .ico files hold PNG data inside, which keeps them small. It remains worth shipping because a long tail of software — RSS readers, link-preview bots, older bookmark managers — asks for /favicon.ico without reading your HTML at all.',
+      },
+      {
+        kind: 'p',
+        text: 'A PNG declared in the head is the ordinary choice for tabs, and an SVG is the best one where it works: it stays crisp at every size and density, and can even switch colours for dark tab bars using a media query inside the file. Every current browser supports SVG favicons, Safari having been last to arrive, which is why the safe pattern is to offer the SVG first and keep the .ico and PNG as fallbacks.',
+      },
+      {
+        kind: 'code',
+        code: '<link rel="icon" href="/favicon.ico" sizes="32x32">\n<link rel="icon" type="image/svg+xml" href="/icon.svg">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n<link rel="manifest" href="/site.webmanifest">\n<meta name="theme-color" content="#1a1a1a">',
+        caption:
+          'The head declarations that cover every platform. Browsers that understand SVG prefer it; the rest fall through to the .ico.',
+      },
+      { kind: 'h2', text: 'The web manifest and the maskable safe zone' },
+      {
+        kind: 'p',
+        text: 'site.webmanifest is a small JSON file that tells Android and desktop browsers how the site should behave when installed: its name, the short name that fits under an icon, the colour of the browser chrome, and the list of icons. Each icon carries a purpose. "any" means the launcher shows it as drawn; "maskable" means the launcher may crop it into a circle, a rounded square or a squircle, depending on the phone.',
+      },
+      {
+        kind: 'p',
+        text: 'A maskable icon therefore needs margin. The specification defines a safe zone — a circle whose diameter is 80% of the icon — and promises only that this zone will survive the crop. Artwork that fills the square gets its corners cut off on one phone and its edges clipped on another. The right maskable icon is your logo scaled down to sit inside that circle on a solid background, and it will look oddly small until a launcher applies its shape, at which point it looks right.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'Do not mark one file as both "any" and "maskable" to save a request. A launcher that treats it as maskable will crop your full-bleed icon; one that treats it as "any" will show the padded version with a visible border. Two files, two purposes.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Generate every size, the .ico, the manifest and the head snippet from one logo:',
+        slug: 'favicon-generator',
+      },
+      { kind: 'h2', text: 'Why your new icon does not show up' },
+      {
+        kind: 'p',
+        text: 'Favicons are cached more aggressively than almost anything else a browser fetches, and separately from the page cache, so a hard refresh often does nothing. Bookmarks keep the icon they were created with. Google keeps its own copy and refreshes it on its own schedule. The reliable fix is to change the file name — icon-v2.svg — or add a query string to the href, so every consumer sees a new URL. Waiting works too, but on no timetable you control.',
+      },
+      { kind: 'h2', text: 'Designing for sixteen pixels' },
+      {
+        kind: 'p',
+        text: 'Almost any logo becomes a smudge at 16 pixels. The icons that survive are a single bold shape with strong contrast against both a light and a dark tab bar — which is worth testing, since many people run dark browser themes. Wordmarks and thin lines do not survive at all; if the full logo is a wordmark, make a separate mark for the small sizes and keep the full artwork for 180 pixels and up.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Start from a square SVG or a PNG of at least 512 pixels; icons are scaled down, never up.',
+          'Ship the .ico, a PNG, the SVG if you have one, the apple-touch-icon and the manifest with both 512s.',
+          'Give the maskable icon room and the iOS icon a solid background.',
+          'Rename the file when you change the icon, and check it on a dark tab bar before you call it done.',
+        ],
+      },
+    ],
+    related: ['favicon-generator', 'image-resize', 'image-converter'],
+    relatedGuides: ['image-formats-explained', 'colour-on-the-web-explained'],
+  },
 ];
 
 /** Fast slug → guide lookup for the detail route. */
