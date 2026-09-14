@@ -22,14 +22,25 @@ async function dataTransfer(page: Page, name: string, type: string): Promise<JSH
   );
 }
 
+/**
+ * Starts a drag and waits for the page to light up. Pages are prerendered, so
+ * a drag fired the instant `goto` resolves can land before Angular has hydrated
+ * and attached its listeners; the veil answering is the proof that it has.
+ */
+async function dragIn(page: Page, transfer: JSHandle, text: string): Promise<void> {
+  await expect(async () => {
+    await page.dispatchEvent('body', 'dragenter', { dataTransfer: transfer });
+    await expect(page.getByRole('status').filter({ hasText: text })).toBeVisible({ timeout: 500 });
+  }).toPass();
+}
+
 test('a PDF dropped on the home page opens in the PDF Viewer', async ({ page }) => {
   const watch = watchConsole(page);
   await page.goto('/');
   const transfer = await dataTransfer(page, 'sample.pdf', 'application/pdf');
 
   // The page lights up and names the destination while the drag is in flight.
-  await page.dispatchEvent('body', 'dragenter', { dataTransfer: transfer });
-  await expect(page.getByRole('status').filter({ hasText: 'PDF Viewer' })).toBeVisible();
+  await dragIn(page, transfer, 'Drop to open in PDF Viewer');
 
   await page.dispatchEvent('h1', 'drop', { dataTransfer: transfer });
   await expect(page).toHaveURL(/\/tools\/pdf-viewer$/);
@@ -44,6 +55,7 @@ test('a drop beside a tool’s zone still lands in that tool', async ({ page }) 
   await gotoTool(page, 'pdf-organizer', 'PDF Organizer');
   const transfer = await dataTransfer(page, 'sample.pdf', 'application/pdf');
 
+  await dragIn(page, transfer, 'Drop to add it here');
   await page.dispatchEvent('.head__title', 'drop', { dataTransfer: transfer });
   await expect(page.locator('.grid > *')).toHaveCount(3, { timeout: 60_000 });
   await expect(page).toHaveURL(/\/tools\/pdf-organizer$/);
@@ -61,6 +73,7 @@ test('a file no tool opens says so instead of leaving the site', async ({ page }
     (t as DataTransfer).items.add(new File([file], 'mystery.xyz', { type: '' }));
   }, transfer);
 
+  await dragIn(page, transfer, 'Drop to open in the right tool');
   await page.dispatchEvent('h1', 'drop', { dataTransfer: transfer });
   await expect(page.getByText('Nothing here opens "mystery.xyz".')).toBeVisible();
   await expect(page).toHaveURL(/\/about$/);
