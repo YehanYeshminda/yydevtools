@@ -794,6 +794,83 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'guides/xlsx-files-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Inside an .xlsx file: shared strings and serial dates — YYDevTools',
+    data: {
+      slug: 'xlsx-files-explained',
+      description:
+        'A spreadsheet is a ZIP of XML with a string table and a date system that is deliberately ' +
+        'wrong. Why Excel eats leading zeros and mangles long numbers.',
+    },
+  },
+  {
+    path: 'guides/qr-codes-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'How a QR code works, and why yours will not scan — YYDevTools',
+    data: {
+      slug: 'qr-codes-explained',
+      description:
+        'What the three big squares are for, how a code survives being scratched, why uppercase ' +
+        'URLs make smaller codes, and the printing mistakes that stop a scan.',
+    },
+  },
+  {
+    path: 'guides/markdown-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Markdown explained: one syntax, many dialects — YYDevTools',
+    data: {
+      slug: 'markdown-explained',
+      description:
+        'Why the same file renders differently on GitHub and in your notes app, which rules are ' +
+        'actually standard, and the five bits of syntax that trip everyone up.',
+    },
+  },
+  {
+    path: 'guides/unix-time-and-time-zones-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Unix time, UTC and time zones explained — YYDevTools',
+    data: {
+      slug: 'unix-time-and-time-zones-explained',
+      description:
+        'What the epoch really counts, how to tell seconds from milliseconds, why a time zone is ' +
+        'not an offset, and the one rule that prevents most date bugs.',
+    },
+  },
+  {
+    path: 'guides/sql-dialects-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'SQL dialects: Postgres, MySQL and SQL Server compared — YYDevTools',
+    data: {
+      slug: 'sql-dialects-explained',
+      description:
+        'Quoting, string concatenation, LIMIT versus TOP, upserts, GROUP BY strictness and NULL ' +
+        'rules. What the standard says and where each database goes its own way.',
+    },
+  },
+  {
+    path: 'guides/json-schema-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'JSON Schema explained — YYDevTools',
+    data: {
+      slug: 'json-schema-explained',
+      description:
+        'How to write a schema that actually rejects bad data, why additionalProperties and ' +
+        'format catch everyone out, and the difference between anyOf and oneOf.',
+    },
+  },
+  {
+    path: 'guides/ocr-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'How OCR works, and why it still gets things wrong — YYDevTools',
+    data: {
+      slug: 'ocr-explained',
+      description:
+        'The pipeline that turns a picture of a page into text, why 0 and O are the least of ' +
+        'your problems, and what a searchable PDF really contains.',
+    },
+  },
+  {
     path: 'news',
     loadComponent: () => import('./news/news').then((m) => m.News),
     title: 'Tech News — YYDevTools',

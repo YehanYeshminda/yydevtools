@@ -1799,6 +1799,865 @@ export const GUIDES: Guide[] = [
     related: ['favicon-generator', 'image-resize', 'image-converter'],
     relatedGuides: ['image-formats-explained', 'colour-on-the-web-explained'],
   },
+  {
+    slug: 'xlsx-files-explained',
+    title:
+      'Inside an .xlsx file: shared strings, serial dates and the leap year that never happened',
+    description:
+      'A spreadsheet is a ZIP of XML with a string table and a date system that is deliberately wrong. Why Excel eats leading zeros and mangles long numbers.',
+    category: 'Documents',
+    readingMinutes: 11,
+    updated: '2026-09-14',
+    published: '2026-09-14',
+    intro: [
+      'An .xlsx file is not a grid. Like a .docx it is a ZIP archive full of XML, and the numbers you see on screen are stored separately from the formatting that decides whether 45914 is a quantity, a price or the fourteenth of September.',
+      'That separation explains almost every strange thing Excel does with imported data: the dropped leading zeros, the product code that turned into a date, the card number ending in a zero it never had. This guide opens the file up and shows where each of those comes from.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Rename it to .zip and look inside' },
+      {
+        kind: 'p',
+        text: 'The Office Open XML format, standardised in 2006, stores a workbook as an ordinary ZIP archive. Unzip one and you get a small tree of XML parts, each with one job. Nothing is encrypted and nothing is unreadable: any language with a ZIP library and an XML parser can read a spreadsheet.',
+      },
+      {
+        kind: 'code',
+        code: '[Content_Types].xml        what kind each part is\nxl/workbook.xml            sheet names, defined names, the date system\nxl/worksheets/sheet1.xml   the cells, by row\nxl/sharedStrings.xml       every distinct piece of text, once\nxl/styles.xml              number formats, fonts, fills, borders\nxl/calcChain.xml           the order formulas were evaluated in',
+        caption:
+          'The parts that matter in a typical workbook. A sheet with charts or images gains a few more.',
+      },
+      { kind: 'h2', text: 'The shared string table' },
+      {
+        kind: 'p',
+        text: 'Text is rarely stored in the cell. Every distinct string in the workbook goes into sharedStrings.xml once, and the cell holds an index into that table, marked with the attribute t="s". A column of ten thousand rows containing three repeated statuses stores three strings and ten thousand small integers, which is why a text-heavy sheet compresses so well.',
+      },
+      {
+        kind: 'code',
+        code: '<c r="A2" t="s"><v>0</v></c>     <!-- text: shared string 0 -->\n<c r="B2"><v>1250.5</v></c>       <!-- a number, as written -->\n<c r="C2" s="3"><v>45914</v></c>  <!-- a number shown as a date by style 3 -->',
+        caption:
+          'Three cells. Only the style index tells you the third one is meant to be read as a date.',
+      },
+      {
+        kind: 'p',
+        text: 'This is the first practical consequence. A cell has a value and, separately, a style that decides how the value is displayed. Two cells holding exactly the same number can read as 45914, as 14/09/2026 and as a currency amount. Nothing in the value itself says which is right.',
+      },
+      { kind: 'h2', text: 'Dates are numbers, counted from a day that is off by one' },
+      {
+        kind: 'p',
+        text: 'Excel stores a date as a serial number: the count of days since an epoch, with the time of day as the fraction after the decimal point. In the default 1900 system, serial 1 is the first of January 1900 and 0.5 means midday. Subtracting two dates gives you a number of days for free, which is the whole point of the design.',
+      },
+      {
+        kind: 'p',
+        text: 'It also contains a famous deliberate error. Excel believes the 29th of February 1900 existed. It did not, because the Gregorian rule skips centuries that are not divisible by 400. The bug came from Lotus 1-2-3 and Microsoft copied it so that files would interchange. Correcting it now would silently shift every date in every historical spreadsheet, so it has been preserved for forty years and will not be fixed.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Dates before the 1st of March 1900 are therefore one day out when you convert serial numbers yourself. Old Mac versions used a second epoch entirely, the 1904 system, offset by exactly 1462 days. The workbook records which one it uses, and a converter that assumes 1900 turns a whole file into dates four years early.',
+      },
+      { kind: 'h2', text: 'The five ways an import gets corrupted' },
+      {
+        kind: 'p',
+        text: 'Excel guesses a type for every value it reads from a CSV or a paste, and once it has guessed, the original characters are gone. The guesses are consistent and, once you know them, predictable.',
+      },
+      {
+        kind: 'ol',
+        items: [
+          'Leading zeros disappear. The postcode 01234 is read as the number 1234, and so is an account reference, a phone number and a product code.',
+          'Anything that looks like a date becomes one. Gene symbols such as SEPT1 and MARCH1 were converted so reliably that in 2020 the body responsible for human gene naming renamed dozens of genes rather than keep fighting spreadsheets.',
+          'Long numbers lose precision. Excel keeps 15 significant digits, so a 16-digit card number or a long identifier comes back with a zero on the end and no warning at all.',
+          'Very large or very small numbers switch to scientific notation, and often export that way too: 1234567890123456 becomes 1.23457E+15.',
+          'Text that looks numeric is stored as a number, which then breaks the join you were about to do against a system that treats the same field as a string.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'The reliable fix is to stop letting it guess. Do not double-click a CSV. Use Data, then Get Data, then From Text/CSV, and in the import dialog set the type of every identifier column to Text before loading. That import path is also the only one that lets you choose the file encoding, which is the other half of the problem.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Open a workbook in the browser and read the values as they are stored:',
+        slug: 'excel-viewer',
+      },
+      { kind: 'h2', text: 'Formulas, and the answer stored beside them' },
+      {
+        kind: 'p',
+        text: 'A formula cell stores two things: the formula text and the last calculated result. That cached value is what every non-Excel reader shows you, because evaluating a spreadsheet properly means implementing several hundred functions, iteration, and the dependency graph in calcChain.xml. It also means a file can be internally inconsistent. If something wrote new inputs without recalculating, the visible numbers are stale.',
+      },
+      {
+        kind: 'p',
+        text: 'When a sheet is exported to CSV or JSON, formulas are not carried across; only their results are. That is usually what you want, but it is a one-way door, and it is the reason a round trip through CSV quietly flattens a model into a report.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Turn sheet data into JSON, or a JSON payload back into columns:',
+        slug: 'json-csv',
+      },
+      { kind: 'h2', text: 'Why a small sheet is a big file' },
+      {
+        kind: 'ul',
+        items: [
+          'Styles are stored per cell. Formatting an entire column applies a style reference to every cell in it, empty or not.',
+          'The used range is remembered. One stray character in row 40000 makes the sheet claim forty thousand rows forever, which is why the scroll bar goes tiny and why deleting those rows and saving is the fix.',
+          'Images are embedded at full resolution. A screenshot pasted in is stored as pasted, not as displayed.',
+          'Conditional formatting and data validation are stored per range, and ranges multiply every time someone copies a block of cells.',
+        ],
+      },
+      { kind: 'h2', text: 'The other extensions' },
+      {
+        kind: 'p',
+        text: 'A .xls is the older binary format and shares nothing with .xlsx beyond the application that opens it. A .xlsb is the modern structure with the XML replaced by a binary encoding, which is faster on very large workbooks and unreadable to most third-party tools. A .xlsm is an .xlsx that is permitted to carry macros: Visual Basic code stored in a part called vbaProject.bin that runs when the file is opened.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'An unexpected .xlsm is the spreadsheet equivalent of an unexpected program. If you did not ask for a macro, do not enable content, and save the file as .xlsx if you only need the numbers.',
+      },
+      { kind: 'h2', text: 'Which format to send' },
+      {
+        kind: 'ul',
+        items: [
+          'Someone will edit the formulas: send the .xlsx.',
+          'Another program will read it: send CSV, and agree the encoding and the delimiter first.',
+          'It must look identical everywhere and never recalculate: convert it to PDF.',
+          'It contains identifiers rather than quantities: make sure they arrive as text at both ends.',
+        ],
+      },
+    ],
+    related: ['excel-viewer', 'json-csv', 'csv-viewer', 'office-to-pdf'],
+    relatedGuides: ['csv-explained', 'docx-files-explained'],
+  },
+  {
+    slug: 'qr-codes-explained',
+    title: 'How a QR code works: finder patterns, error correction, and why yours will not scan',
+    description:
+      'What the three big squares are for, how a code survives being scratched, why uppercase URLs make smaller codes, and the printing mistakes that stop a scan.',
+    category: 'Data formats',
+    readingMinutes: 10,
+    updated: '2026-09-14',
+    published: '2026-09-14',
+    intro: [
+      'A QR code is a two-dimensional barcode invented in 1994 by Denso Wave to track car parts on a production line. The design brief was speed and damage tolerance: a scanner had to find the code at any angle, in a fraction of a second, on a part that might be oily or scratched.',
+      'Everything visible in the pattern follows from that brief. This guide explains what each part of the square does, how much data one can hold, and the handful of reasons a code that looks fine refuses to scan.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'The furniture: what the fixed patterns do' },
+      {
+        kind: 'p',
+        text: 'Only some of the black and white squares, called modules, carry data. The rest are structural, and they are what lets a camera lock on to a code that is upside down, rotated forty degrees and photographed at an angle.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'The three large squares in the corners are finder patterns. Their ratio of dark to light along any line through the centre is 1:1:3:1:1, a sequence that almost never occurs by accident in a photograph, so a scanner can find them fast. Three corners rather than four is what tells the scanner which way up the code is.',
+          'The smaller squares dotted through larger codes are alignment patterns. They let the scanner correct for perspective and for paper that is curved rather than flat.',
+          'The dashed lines of alternating modules between the finders are the timing patterns. They tell the scanner how big one module is, which is how it maps pixels to the grid.',
+          'The strips beside the finders hold the format information: the error correction level and which mask was applied. That is stored twice, in two places, because losing it would make the rest unreadable.',
+        ],
+      },
+      { kind: 'h2', text: 'Versions and sizes' },
+      {
+        kind: 'p',
+        text: 'QR codes come in forty versions. Version 1 is 21 modules square, and each version adds four, so version 40 is 177 across. Encoders pick the smallest version that fits the data at the requested error correction level, which is why a code for a short link looks coarse and open while one carrying a paragraph looks like static.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'Coarser is better. A version 2 code has big modules that survive a cheap camera, a low-resolution printer and a sticker on a curved bottle. Every character you remove from the payload makes the code more robust, not just smaller.',
+      },
+      { kind: 'h2', text: 'Four encoding modes, and the uppercase trick' },
+      {
+        kind: 'p',
+        text: 'The encoder chooses a mode based on what characters it sees, and the modes are wildly different in efficiency.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Numeric, for digits only: three digits in ten bits, about 3.3 bits each.',
+          'Alphanumeric, for digits, uppercase A to Z, space and eight symbols: two characters in eleven bits, 5.5 bits each.',
+          'Byte, for anything else, including any lowercase letter: eight bits per character.',
+          'Kanji, a compact mode for Japanese characters at thirteen bits each.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'A single lowercase letter forces the whole segment into byte mode, which is why HTTPS://EXAMPLE.COM/PROMO produces a visibly simpler code than the same link in lowercase. Domain names are case-insensitive, so the uppercase version works identically. Paths are not case-insensitive, so only do this if you control the server and know the path is safe to fold.',
+      },
+      {
+        kind: 'code',
+        code: 'https://example.com/a/b   25 chars, byte mode      -> version 2\nHTTPS://EXAMPLE.COM/A/B   23 chars, alphanumeric   -> version 1',
+        caption: 'The same destination, one version smaller and noticeably easier to scan.',
+      },
+      {
+        kind: 'p',
+        text: 'At the top end, a version 40 code at the lowest error correction holds roughly 7,089 digits, 4,296 alphanumeric characters or 2,953 bytes. Those numbers are theoretical: a code that dense needs a good printer and a steady camera, and almost nothing that belongs in a QR code is that long.',
+      },
+      { kind: 'h2', text: 'Error correction, and the logo in the middle' },
+      {
+        kind: 'p',
+        text: 'QR codes use Reed-Solomon coding, the same family of mathematics that protected data on CDs. The payload is split into blocks and each block gets extra symbols that let a decoder rebuild missing or wrong modules. You choose how much of the code is given over to that redundancy.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Level L recovers about 7% of the code. Use it when the code is on a screen or clean paper and you want the smallest version.',
+          'Level M recovers about 15%. The usual default and the right answer for most printed material.',
+          'Level Q recovers about 25%. For labels that get handled, or a small logo overlay.',
+          'Level H recovers about 30%. For industrial use, curved surfaces, and codes with a large logo in the centre.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'That redundancy is exactly why a logo can sit in the middle of a code. You are not adding the logo, you are damaging the code and relying on the error correction to cover it. The rule is simple: keep the covered area inside the budget of the level you chose, never cover a finder pattern or the timing lines, and test the result with more than one phone before printing ten thousand of them.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Generate a code, pick the correction level and check it before you print:',
+        slug: 'qr-generator',
+      },
+      { kind: 'h2', text: 'Masking, and why two codes for the same text differ' },
+      {
+        kind: 'p',
+        text: 'Large blank areas and long runs of identical modules confuse scanners, and a pattern that accidentally resembles a finder is worse. So after laying out the data, the encoder applies one of eight mask patterns, an XOR over the data region, and scores the result against penalty rules. The mask that scores best is kept and its number recorded in the format information. Two encoders can legitimately choose differently, which is why the same URL can produce two visually different codes that both scan.',
+      },
+      { kind: 'h2', text: 'Why a code will not scan' },
+      {
+        kind: 'ol',
+        items: [
+          'No quiet zone. The specification requires four modules of clear space on every side. Designers crop it away constantly, and it is the single most common cause of a code that works on screen and fails in print.',
+          'Too small for the distance. A rough rule is that the code should be about a tenth of the scanning distance: a poster read from two metres needs roughly twenty centimetres of code.',
+          'Inverted colours. Light modules on a dark background break many scanners. Dark on light, with real contrast, always.',
+          'Low contrast or a busy photo behind it. Red on black and pastel on white both fail, and so does a code printed over an image.',
+          'Ink spread or low print resolution, which merges adjacent modules. Print at 300 dpi or better and keep modules at least 0.4 mm.',
+          'Stretching. A QR code must stay square; scaling one axis destroys the module grid.',
+          'A payload that the scanner will not act on. Some camera apps show a bare text payload but only offer to open recognised URL schemes.',
+        ],
+      },
+      { kind: 'h2', text: 'Static and dynamic codes' },
+      {
+        kind: 'p',
+        text: 'A static code contains the destination itself. It works forever, needs no service, and cannot be changed or tracked. A dynamic code contains a short link belonging to a redirect service, which forwards to the real destination. That buys you editable targets and scan analytics, and it costs you a permanent dependency: if the service goes away or the subscription lapses, every printed code becomes dead, including the ones already on a wall.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'A QR code is a link you cannot read before you follow it, which is why fake codes stuck over parking meters and restaurant menus work so well. Treat one like a shortened link from a stranger: check the domain your phone previews before you tap, and never enter payment details on a page you reached only by scanning something in the street.',
+      },
+      { kind: 'h2', text: 'Making one that lasts' },
+      {
+        kind: 'ul',
+        items: [
+          'Keep the payload short. A shorter URL means a lower version and a code that scans first time.',
+          'Choose level M for print, level H only if you are covering part of it.',
+          'Leave the quiet zone, keep it square, and keep it dark on light.',
+          'Test on a cheap phone, at the real size, on the real material, before the print run.',
+        ],
+      },
+    ],
+    related: ['qr-generator', 'url-encoder', 'image-converter'],
+    relatedGuides: ['base64-explained', 'character-encoding-explained'],
+  },
+  {
+    slug: 'markdown-explained',
+    title: 'Markdown explained: one syntax, a dozen incompatible dialects',
+    description:
+      'Why the same file renders differently on GitHub and in your notes app, which rules are actually standard, and the five bits of syntax that trip everyone up.',
+    category: 'Text',
+    readingMinutes: 9,
+    updated: '2026-09-14',
+    published: '2026-09-14',
+    intro: [
+      'Markdown was written in 2004 by John Gruber, with input from Aaron Swartz, as a way to write for the web without writing HTML. The goal was that the plain text should be readable as it stands, so the markup had to look like the conventions people already used in email: a line of dashes under a heading, asterisks around a word for emphasis.',
+      'It succeeded so completely that it now runs documentation, chat apps, static sites, note tools and issue trackers. What it never had was a specification, and that is the source of every incompatibility you have run into.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Why there is more than one Markdown' },
+      {
+        kind: 'p',
+        text: 'The original release was a Perl script and a page of prose describing what it did. Anything the prose left unsaid, the script decided, and it decided some things inconsistently. How many spaces indent a nested list? What happens to an asterisk inside a word? Is a list immediately after a paragraph a list at all? Different implementations answered differently, and all of them could claim to be Markdown.',
+      },
+      {
+        kind: 'p',
+        text: 'In 2014 a group including developers from GitHub, Reddit and Stack Overflow published CommonMark: a genuine specification with hundreds of test cases, pinning down every ambiguity. Most modern renderers are CommonMark-based. GitHub Flavored Markdown, the dialect most people actually type, is CommonMark plus a small set of extensions.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Tables, written with pipes. Not in CommonMark at all; an extension everywhere it exists.',
+          'Task list items, the checkbox syntax with square brackets.',
+          'Strikethrough with double tildes.',
+          'Autolinks: a bare URL becomes a link without angle brackets around it.',
+          'Footnotes, definition lists, math and diagrams, all of which vary by renderer.',
+        ],
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'If a file must render identically in two places, stay inside CommonMark plus tables, and test the file in both. Everything beyond that is a per-tool feature, however common it feels.',
+      },
+      { kind: 'h2', text: 'The syntax that is safe everywhere' },
+      {
+        kind: 'code',
+        code: '# Heading 1\n## Heading 2\n\nA paragraph with *emphasis*, **strong** and `inline code`.\n\n- a bullet\n- another\n  - nested, indented two spaces\n\n1. first\n2. second\n\n> a blockquote\n\n[a link](https://example.com)\n![an image](/logo.png)\n\n```js\nconst fenced = "a code block with a language";\n```',
+        caption: 'The common core. Every renderer worth using handles all of this the same way.',
+      },
+      {
+        kind: 'p',
+        text: 'Two choices inside that core are worth making deliberately. Use asterisks rather than underscores for emphasis, because underscores inside a word are treated differently across dialects and snake_case identifiers get mangled. And always give a fenced code block a language: it is what turns on syntax highlighting, and on some renderers it is what stops the block being reflowed.',
+      },
+      { kind: 'h2', text: 'The five things that catch people' },
+      {
+        kind: 'ol',
+        items: [
+          'A single newline is not a line break. Markdown joins consecutive lines into one paragraph. To force a break you end the line with two spaces, or a backslash, or a blank line for a new paragraph. Chat apps and issue trackers often break on a single newline instead, which is why pasted text reflows into a wall.',
+          'Ordered list numbers are ignored after the first. Writing 1. three times renders 1, 2, 3. The first number sets the start, the rest are decoration, so you can renumber a long list by leaving it alone.',
+          'A list needs a blank line before it. Without one, strict renderers treat the bullets as more of the preceding paragraph.',
+          'Indentation inside a list item must line up with the item text, not with a fixed four spaces. Get it wrong and a paragraph escapes its bullet, or a code block becomes a nested list.',
+          'Raw HTML is allowed, and is the usual escape hatch, but most public sites strip it. Anything you write in HTML may simply vanish when the file is rendered somewhere with a sanitiser.',
+        ],
+      },
+      {
+        kind: 'tool',
+        lead: 'Write it with a live preview and see exactly what renders:',
+        slug: 'markdown-editor',
+      },
+      { kind: 'h2', text: 'Front matter is not Markdown' },
+      {
+        kind: 'p',
+        text: 'The block of YAML between two lines of three dashes at the top of a file is a convention from static site generators, not part of any Markdown specification. Jekyll, Hugo, Astro and most note apps read it for the title, date and tags. A renderer that does not know about it shows those lines as content, which is why a README with front matter looks broken on some hosts.',
+      },
+      { kind: 'h2', text: 'Turning it into something else' },
+      {
+        kind: 'p',
+        text: 'Markdown converts to HTML by design, and the conversion is lossless in the direction that matters: every construct has an HTML equivalent. Going the other way is lossy, because most HTML has no Markdown form and ends up as raw tags or is dropped.',
+      },
+      {
+        kind: 'p',
+        text: 'For a PDF, the usual route is Markdown to HTML, then print. That keeps links live and text selectable, and it means your CSS controls the page. Converting to a Word document is the awkward case: headings and lists map cleanly, but code blocks and tables come across as whatever the converter guesses, so check them by hand.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Paste the generated HTML and check how it renders before you publish it:',
+        slug: 'html-preview',
+      },
+      { kind: 'h2', text: 'Why it won' },
+      {
+        kind: 'p',
+        text: 'A Markdown file is plain text. It diffs line by line in version control, so a review shows the sentence that changed rather than a paragraph of markup. It is readable without a renderer, which matters in a terminal, a code comment or an email. It has no version to migrate and no application that owns it. Those properties are worth far more than the dialect inconsistencies cost, which is why a format with no specification for its first decade became the default way technical people write.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Stick to the common core, and add tables when you need them.',
+          'Use asterisks for emphasis and label every code fence.',
+          'Remember that one newline joins lines, and use blank lines generously.',
+          'Preview in the tool that will actually render it before you ship it.',
+        ],
+      },
+    ],
+    related: ['markdown-editor', 'html-preview', 'word-counter', 'text-diff'],
+    relatedGuides: ['character-encoding-explained', 'regex-explained'],
+  },
+  {
+    slug: 'unix-time-and-time-zones-explained',
+    title: 'Unix time, UTC and time zones: why your timestamp is an hour out',
+    description:
+      'What the epoch really counts, how to tell seconds from milliseconds, why a time zone is not an offset, and the one rule that prevents most date bugs.',
+    category: 'Time',
+    readingMinutes: 11,
+    updated: '2026-09-14',
+    published: '2026-09-14',
+    intro: [
+      'A timestamp looks like the simplest value in a system: one number, no ambiguity. Then a report comes out an hour wrong twice a year, a meeting moves itself, a birthday lands on the wrong day for users in Auckland, and it turns out the number was never as simple as it looked.',
+      'This guide covers what Unix time actually measures, how time zones really work, and where to put the boundary between an instant and a local time so that the bugs stop.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'What the epoch counts' },
+      {
+        kind: 'p',
+        text: 'Unix time is the number of seconds since midnight UTC on the 1st of January 1970. It is an instant, not a date: the same number refers to the same moment everywhere on Earth, and the calendar date attached to it depends entirely on where you are standing.',
+      },
+      {
+        kind: 'p',
+        text: 'It is not, strictly, a count of elapsed seconds. POSIX defines every day as exactly 86,400 seconds, so leap seconds are not counted. When one is inserted, the same Unix timestamp is used twice or a second is stretched, depending on the system. In practice this matters only to people measuring intervals across a leap second, and it will matter less over time: the international bodies responsible agreed in 2022 to stop inserting leap seconds by 2035.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'A timestamp of exactly 0 rendering as 1st January 1970 is almost never a real date. It is a null, an empty string or a failed parse that became zero on the way through.',
+      },
+      { kind: 'h2', text: 'Seconds, milliseconds, or something else' },
+      {
+        kind: 'p',
+        text: 'The unit is not part of the value, so you have to infer it, and the digit count is a reliable tell for any date near the present.',
+      },
+      {
+        kind: 'code',
+        code: '1789390800          10 digits  seconds        2026-09-14\n1789390800000       13 digits  milliseconds   2026-09-14\n1789390800000000    16 digits  microseconds   2026-09-14\n\n1789390800 read as milliseconds -> 1970-01-21, three weeks after the epoch',
+        caption:
+          'The classic failure: a seconds value handed to a millisecond API lands in January 1970, not in the future.',
+      },
+      {
+        kind: 'p',
+        text: 'Unix tools, Go and most databases use seconds. JavaScript, Java and Excel-bound exports use milliseconds. Some observability systems use microseconds or nanoseconds. The mismatch is so common that it is worth asserting the unit at the boundary rather than hoping the two sides agree.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Paste a number and see the date, the unit and the zone at once:',
+        slug: 'timestamp-converter',
+      },
+      { kind: 'h2', text: '2038, and the bug that is still ahead of us' },
+      {
+        kind: 'p',
+        text: 'A signed 32-bit integer runs out at 03:14:07 UTC on the 19th of January 2038, and then wraps to a negative number: December 1901. Sixty-four-bit systems have not had this problem for years, but 32-bit time is still shipping today in embedded controllers, industrial equipment and file formats that were fixed long ago. Anything that calculates a date thirty years out has already met it.',
+      },
+      {
+        kind: 'p',
+        text: 'Treating the same field as unsigned buys until 2106 and breaks every date before 1970, which is why it is a fix only for systems that never store the past.',
+      },
+      { kind: 'h2', text: 'A time zone is not an offset' },
+      {
+        kind: 'p',
+        text: 'This is the distinction that most date bugs come down to. An offset, such as +01:00, is a fact about one moment. A time zone, such as Europe/London, is a set of rules covering all of history: which offset applies in which period, when daylight saving starts and ends, and every time a government has changed its mind. London is +00:00 in winter and +01:00 in summer, and was on permanent summer time for part of the 1970s.',
+      },
+      {
+        kind: 'p',
+        text: 'Those rules live in the IANA time zone database, updated several times a year as countries announce changes, and shipped with your operating system and language runtime. An old container image carries an old copy of that database, which is a real and regularly rediscovered source of wrong times.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Abbreviations such as CST and IST are ambiguous. IST is India, Ireland and Israel; CST is at least three different offsets. Never store one.',
+          'GMT and UTC are not quite the same thing. UTC is the standard; GMT is a time zone that happens to sit on it in winter.',
+          'Offsets are not always whole hours. India is +05:30, Nepal +05:45, and parts of Australia are +08:45.',
+        ],
+      },
+      { kind: 'h2', text: 'The two hours that break code' },
+      {
+        kind: 'p',
+        text: 'Where daylight saving starts, an hour does not exist. In London on the last Sunday in March, 01:30 is simply not a valid local time, and asking for it gets you either an error or a silently adjusted value. Where it ends, an hour happens twice: 01:30 occurs once at +01:00 and again an hour later at +00:00. A local time on that morning is genuinely ambiguous, and any log sorted by local time is out of order for one hour a year.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Do not add 24 hours to get tomorrow. On the two transition days a local day is 23 or 25 hours long. Add one day using a calendar-aware library, in a named zone, and let it work out the arithmetic.',
+      },
+      { kind: 'h2', text: 'Store the instant, or the plan, but know which' },
+      {
+        kind: 'p',
+        text: 'Something that already happened is an instant: store it in UTC. A log line, an audit record, a payment, a message. The moment is fixed and converting it to any zone for display is a presentation concern.',
+      },
+      {
+        kind: 'p',
+        text: 'Something scheduled in the future is not an instant, it is an intention. A 09:00 meeting in Berlin next November means whatever 09:00 in Berlin turns out to be. If you convert it to UTC when it is created and a government then changes its daylight saving rules, your stored instant is still correct and the meeting is now at the wrong time. Store the local time and the zone identifier, and resolve to an instant when you need one.',
+      },
+      {
+        kind: 'p',
+        text: 'And a date without a time is not a timestamp at all. A birthday, an invoice date or a public holiday should be stored as a plain date. Turning one into midnight in a zone is how a birthday becomes the day before for anyone living east of you.',
+      },
+      { kind: 'h2', text: 'Writing them down: ISO 8601 and RFC 3339' },
+      {
+        kind: 'code',
+        code: '2026-09-14T09:00:00Z         an instant, UTC, unambiguous\n2026-09-14T11:00:00+02:00    the same instant, written with an offset\n2026-09-14T09:00:00          no zone: means nothing on its own\n2026-09-14                   a date, not a moment\n14/09/2026                   ambiguous; never store it',
+        caption:
+          'RFC 3339 is the strict, machine-friendly subset of ISO 8601. Use it for anything that crosses a system boundary.',
+      },
+      {
+        kind: 'p',
+        text: 'Note that even a string with an offset has lost information. It records what the offset was, not which zone it came from, so you cannot use it to work out what the next occurrence should be. For recurring events, keep the zone identifier alongside.',
+      },
+      { kind: 'h2', text: 'Language traps worth knowing' },
+      {
+        kind: 'ul',
+        items: [
+          'In JavaScript, a date-only string is parsed as UTC while a date and time without a zone is parsed as local. That difference alone moves values by a day.',
+          'Formatting for display uses the browser or server zone, which means a report generated on a machine in another region is wrong in a way that never reproduces locally.',
+          'Databases differ on whether a timestamp column stores a zone at all. Postgres timestamptz converts to UTC on write; plain timestamp does not, and quietly keeps whatever local value it was given.',
+          'Excel and CSV exports drop the zone entirely and often the seconds with it.',
+        ],
+      },
+      { kind: 'h2', text: 'The short version' },
+      {
+        kind: 'ul',
+        items: [
+          'Store past events as UTC instants, and convert only for display.',
+          'Store future events as a local time plus an IANA zone identifier.',
+          'Store dates as dates.',
+          'Never store an offset or an abbreviation in place of a zone, and keep your time zone database current.',
+        ],
+      },
+    ],
+    related: ['timestamp-converter', 'cron-explainer', 'json-formatter'],
+    relatedGuides: ['cron-expressions-guide', 'xlsx-files-explained'],
+  },
+  {
+    slug: 'sql-dialects-explained',
+    title: 'SQL dialects: why the same query runs on Postgres and fails on MySQL',
+    description:
+      'Quoting, string concatenation, LIMIT versus TOP, upserts, GROUP BY strictness and NULL rules. What the standard says and where each database goes its own way.',
+    category: 'Databases',
+    readingMinutes: 11,
+    updated: '2026-09-14',
+    published: '2026-09-14',
+    intro: [
+      'SQL has been a standard since 1986 and is revised every few years. No database implements it fully, several contradict it deliberately, and every one of them adds syntax the standard has no opinion about. The result is that SQL is portable in the way English is portable: the sentences are recognisable, and the details will still get you into trouble.',
+      'This guide walks through the places where the dialects actually diverge, so you can tell at a glance which database a query was written for and what it takes to move it.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Quoting, and the case of your identifiers' },
+      {
+        kind: 'p',
+        text: 'The standard says a bare identifier is folded to uppercase and a double-quoted one is taken literally. Postgres folds to lowercase instead, which is compatible in effect but not in letter. MySQL quotes with backticks by default; SQL Server uses square brackets and accepts double quotes only when a session setting is on.',
+      },
+      {
+        kind: 'code',
+        code: 'SELECT "userId" FROM "Users"   -- Postgres, standard\nSELECT `userId` FROM `Users`   -- MySQL\nSELECT [userId] FROM [Users]   -- SQL Server',
+        caption: 'Three ways to say the same thing, none of which the other two will parse.',
+      },
+      {
+        kind: 'p',
+        text: 'The knock-on effect catches people migrating. In Postgres, a table created as Users without quotes is really called users, and a later query for "Users" fails. On MySQL, whether table names are case-sensitive depends on the file system, so a query that works on a developer Mac breaks on a Linux server.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'The cheapest way to avoid all of it is to name things in lower_snake_case and never quote an identifier. Then every database agrees with every other, and nothing depends on the operating system.',
+      },
+      { kind: 'h2', text: 'Joining strings' },
+      {
+        kind: 'ul',
+        items: [
+          'The standard operator is a double pipe, and Postgres, Oracle, SQLite and DB2 all use it.',
+          'MySQL reads a double pipe as a logical OR unless a compatibility mode is set, and expects CONCAT instead.',
+          'SQL Server uses a plus sign, which also means addition, so the types decide what happens.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'CONCAT is the portable answer today: every one of the major databases has it, and most of them treat NULL arguments more kindly than the operator does. With the operator, one NULL in the expression makes the whole result NULL, which is a bug that only appears when a column is empty.',
+      },
+      { kind: 'h2', text: 'Getting the first ten rows' },
+      {
+        kind: 'code',
+        code: 'SELECT * FROM orders ORDER BY id LIMIT 10 OFFSET 20;              -- Postgres, MySQL, SQLite\nSELECT TOP 10 * FROM orders ORDER BY id;                          -- SQL Server\nSELECT * FROM orders ORDER BY id\n  OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY;                         -- the standard; also Postgres, SQL Server, Oracle',
+        caption:
+          'The standard form is the wordiest and the most portable. LIMIT is the one everybody actually types.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'A LIMIT without an ORDER BY has no defined meaning. The database may return any rows it likes, and it will return different ones once the data grows or the plan changes. Pagination built this way silently skips and repeats rows.',
+      },
+      { kind: 'h2', text: 'Inserting a row that might already exist' },
+      {
+        kind: 'p',
+        text: 'Every database solved the upsert problem, and no two solved it the same way. This is usually the single biggest edit when a query moves.',
+      },
+      {
+        kind: 'code',
+        code: 'INSERT INTO t (id, n) VALUES (1, 5)\n  ON CONFLICT (id) DO UPDATE SET n = EXCLUDED.n;   -- Postgres, SQLite\n\nINSERT INTO t (id, n) VALUES (1, 5)\n  ON DUPLICATE KEY UPDATE n = VALUES(n);           -- MySQL\n\nMERGE INTO t USING ... WHEN MATCHED THEN UPDATE    -- the standard; SQL Server, Oracle, Postgres 15+',
+        caption: 'Three upserts. MERGE is standard and is by far the most verbose of the three.',
+      },
+      { kind: 'h2', text: 'Generated keys and dates' },
+      {
+        kind: 'ul',
+        items: [
+          'Auto-numbering: SERIAL or the standard GENERATED AS IDENTITY in Postgres, AUTO_INCREMENT in MySQL, IDENTITY(1,1) in SQL Server, and a sequence with a trigger in older Oracle.',
+          'The current time: CURRENT_TIMESTAMP is standard and works nearly everywhere. NOW() is Postgres and MySQL, GETDATE() is SQL Server, SYSDATE is Oracle.',
+          'Date arithmetic has no common form at all. Postgres adds an interval, MySQL has DATE_ADD, SQL Server has DATEADD with its own unit keywords.',
+          'Booleans: Postgres has a real boolean type, MySQL stores one as a small integer where any non-zero value is true, and SQL Server has BIT and no boolean expression you can select directly.',
+        ],
+      },
+      {
+        kind: 'tool',
+        lead: 'Paste a query from another system and make it readable before you port it:',
+        slug: 'sql-formatter',
+      },
+      { kind: 'h2', text: 'GROUP BY, and how strict your database is' },
+      {
+        kind: 'p',
+        text: 'The standard says every selected column must be aggregated or grouped. Postgres enforces that, with a sensible relaxation: if you group by a primary key, the other columns of that table are allowed, because they are functionally determined by it.',
+      },
+      {
+        kind: 'p',
+        text: 'MySQL historically allowed anything and returned an arbitrary value from the group, which is a query that looks like it works and is wrong in a way no test catches. Since version 5.7 the ONLY_FULL_GROUP_BY mode is on by default, so those old queries now fail loudly. That is an improvement, and it is also why upgrading MySQL breaks reports.',
+      },
+      { kind: 'h2', text: 'NULL is not a value' },
+      {
+        kind: 'p',
+        text: 'Every dialect agrees on three-valued logic: NULL compared to anything, including NULL, is neither true nor false but unknown, and only true rows come back. So a condition of NOT IN against a set containing a NULL returns nothing at all, which is the most quietly destructive rule in SQL.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Use IS NULL and IS NOT NULL for the tests, never an equals sign.',
+          'Oracle treats an empty string as NULL, so a column can be neither empty nor present. No other major database does this, and it breaks migrations both ways.',
+          'MySQL adds a NULL-safe equality operator; the standard spelling is IS NOT DISTINCT FROM, which Postgres also has.',
+          'Sorting differs: Postgres puts NULLs last ascending, MySQL and SQL Server put them first. Say NULLS FIRST or NULLS LAST if it matters.',
+        ],
+      },
+      { kind: 'h2', text: 'The features that only some of them have' },
+      {
+        kind: 'ul',
+        items: [
+          'RETURNING, to get the inserted row back in one statement: Postgres and SQLite, plus an OUTPUT clause in SQL Server, nothing in MySQL.',
+          'JSON functions exist everywhere now and share almost no syntax. Postgres has a whole operator vocabulary, MySQL has function calls, SQL Server has JSON_VALUE and OPENJSON.',
+          'Window functions and common table expressions are standard and now near-universal, including SQLite and MySQL 8. Recursive CTEs need the RECURSIVE keyword on some and forbid it on others.',
+          'Full-text search, array types, regular expressions and string functions are all vendor territory.',
+        ],
+      },
+      { kind: 'h2', text: 'Writing SQL that travels' },
+      {
+        kind: 'ul',
+        items: [
+          'Lower-case unquoted identifiers, and no reliance on case sensitivity.',
+          'CONCAT for strings, CURRENT_TIMESTAMP for the time, explicit CAST for types.',
+          'ORDER BY on every query with a LIMIT, and explicit column lists rather than a star.',
+          'Keep the upsert, the date arithmetic and the JSON access in one place, because they are the parts you will rewrite.',
+          'If you only ever target one database, use its features properly. Portability has a real cost and is worth paying only when a migration is actually plausible.',
+        ],
+      },
+    ],
+    related: ['sql-formatter', 'code-formatter', 'json-formatter', 'uuid-generator'],
+    relatedGuides: ['uuid-versions-explained', 'json-schema-explained'],
+  },
+  {
+    slug: 'json-schema-explained',
+    title: 'JSON Schema explained: describing data before it breaks something',
+    description:
+      'How to write a schema that actually rejects bad data, why additionalProperties and format catch everyone out, and the difference between anyOf and oneOf.',
+    category: 'Data formats',
+    readingMinutes: 10,
+    updated: '2026-09-14',
+    published: '2026-09-14',
+    intro: [
+      'JSON has no types beyond the six it can spell. Nothing in a payload says that id must be present, that email should look like an address, or that status is one of four words. JSON Schema is the contract that adds those rules, written as JSON itself so the same file can validate data, generate types, document an API and drive a form.',
+      'Most schemas people write are weaker than they look. This guide covers the vocabulary you actually need and the defaults that let invalid data through while the validator reports success.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'A schema is a document that describes a document' },
+      {
+        kind: 'code',
+        code: '{\n  "$schema": "https://json-schema.org/draft/2020-12/schema",\n  "type": "object",\n  "properties": {\n    "id":     { "type": "string", "format": "uuid" },\n    "email":  { "type": "string", "format": "email" },\n    "age":    { "type": "integer", "minimum": 0, "maximum": 130 },\n    "status": { "enum": ["active", "invited", "suspended", "closed"] }\n  },\n  "required": ["id", "email", "status"],\n  "additionalProperties": false\n}',
+        caption:
+          'A complete schema. Every keyword in it is doing work, and two of them are load-bearing.',
+      },
+      {
+        kind: 'p',
+        text: 'Validation is a set of assertions, and anything not asserted is allowed. That single sentence explains most of the surprises below: a schema does not describe your data, it describes the checks you asked for.',
+      },
+      { kind: 'h2', text: 'The three defaults that let bad data through' },
+      {
+        kind: 'ol',
+        items: [
+          'Listing a property does not make it required. properties describes shape; required is a separate array of names. A schema with ten properties and no required array validates the empty object.',
+          'Extra properties are allowed unless you say otherwise. Without additionalProperties set to false, a typo such as emial passes validation, the real field is absent, and nothing complains.',
+          'format is an annotation, not a check. In the specification, a validator is permitted to ignore format entirely, and several do by default. If an email really must be an address, either turn format assertion on explicitly or add a pattern.',
+        ],
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'additionalProperties: false does not see through composition. If you combine schemas with allOf, the false applies only to the properties named in the same schema object, so every field contributed by the other branch counts as additional and fails. This is the most reported confusion in JSON Schema, and the usual fix is unevaluatedProperties: false instead.',
+      },
+      { kind: 'h2', text: 'The vocabulary worth knowing' },
+      {
+        kind: 'ul',
+        items: [
+          'type, with the seven names: object, array, string, number, integer, boolean and null. It also accepts an array of names, which is how a nullable field is written.',
+          'Strings take minLength, maxLength and pattern, which is a regular expression.',
+          'Numbers take minimum, maximum, the exclusive variants and multipleOf.',
+          'Arrays take items for the element schema, minItems, maxItems and uniqueItems. In the 2020-12 draft, a fixed-length tuple uses prefixItems instead of the old array form of items.',
+          'enum restricts a value to a list; const pins it to exactly one, which is what you use to tag a variant.',
+          '$defs holds reusable subschemas and $ref points at them, so a shared address definition is written once.',
+        ],
+      },
+      {
+        kind: 'code',
+        code: '"tags":     { "type": "array", "items": { "type": "string" }, "uniqueItems": true },\n"nickname": { "type": ["string", "null"] },\n"address":  { "$ref": "#/$defs/address" }',
+        caption:
+          'Nullability must be explicit. A field typed as string rejects null, which is a frequent source of false failures against real data.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Check the shape of a real payload before you write a schema for it:',
+        slug: 'json-formatter',
+      },
+      { kind: 'h2', text: 'Combining schemas, and the anyOf trap' },
+      {
+        kind: 'p',
+        text: 'Four keywords combine subschemas, and choosing the wrong one produces errors that are almost impossible to read.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'allOf: every subschema must pass. Used for mixing in a shared base.',
+          'anyOf: at least one must pass. This is what you usually want for a union.',
+          'oneOf: exactly one must pass. If two branches both accept the value, validation fails even though the data is fine.',
+          'not: the subschema must fail. Rarely needed and rarely readable.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'oneOf is the one that bites. A union of two object shapes that differ only in their optional fields will match both branches for a minimal object, and the validator reports that the data matched too many schemas. The fix is to make the branches genuinely exclusive with a const discriminator on a shared field, or to use anyOf and accept that the error messages get vaguer.',
+      },
+      {
+        kind: 'code',
+        code: '"oneOf": [\n  { "properties": { "kind": { "const": "card" }, "last4": { "type": "string" } },\n    "required": ["kind", "last4"] },\n  { "properties": { "kind": { "const": "bank" }, "iban":  { "type": "string" } },\n    "required": ["kind", "iban"] }\n]',
+        caption:
+          'A discriminated union. The const on kind makes exactly one branch possible for any value.',
+      },
+      { kind: 'h2', text: 'Conditional rules' },
+      {
+        kind: 'p',
+        text: 'if, then and else express a dependency between fields: when the country is the United States, a state becomes required. The if subschema is used only as a test and never contributes an error of its own, which is why a failing conditional produces a message about then rather than about the field you were thinking of. Keep the condition as small as possible, usually a single const, so the output stays legible.',
+      },
+      { kind: 'h2', text: 'Which draft you are writing' },
+      {
+        kind: 'p',
+        text: 'Draft-07 is still the most widely supported and is a perfectly reasonable target. The 2019-09 and 2020-12 drafts renamed definitions to $defs, split the tuple form of items into prefixItems, and added unevaluatedProperties. Tooling support varies, so declare the draft with $schema and check that your validator actually implements it rather than silently ignoring the keywords it does not know.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'OpenAPI is the other place you meet these keywords. Version 3.0 used a modified subset with its own nullable flag; 3.1 aligned with JSON Schema 2020-12, so a schema can finally be shared between an API description and a runtime validator.',
+      },
+      { kind: 'h2', text: 'What a schema is worth' },
+      {
+        kind: 'ul',
+        items: [
+          'Rejecting bad data at the edge, once, instead of in every function that touches it.',
+          'Generating types, so the compiler and the validator cannot drift apart.',
+          'Documenting the payload in a form that is checked rather than a form that goes stale.',
+          'Constraining generated output, which is how structured responses from language models are made reliable.',
+        ],
+      },
+      {
+        kind: 'tool',
+        lead: 'Go the other way and turn a sample payload into typed interfaces:',
+        slug: 'json-to-types',
+      },
+      {
+        kind: 'p',
+        text: 'Write the schema against real payloads rather than against the documentation, keep it in version control beside the code that produces the data, and add additionalProperties: false the day you write it. A schema that never rejects anything is documentation with extra steps.',
+      },
+    ],
+    related: ['json-formatter', 'json-to-types', 'json-csv'],
+    relatedGuides: ['sql-dialects-explained', 'regex-explained'],
+  },
+  {
+    slug: 'ocr-explained',
+    title: 'How OCR works, and why it still gets things wrong',
+    description:
+      'The pipeline that turns a picture of a page into text, why 0 and O are the least of your problems, and what a searchable PDF really contains.',
+    category: 'Documents',
+    readingMinutes: 10,
+    updated: '2026-09-14',
+    published: '2026-09-14',
+    intro: [
+      'A scanned page is a photograph. There are no letters in it, only dark pixels arranged in shapes that a human reads as letters. Optical character recognition is the process of guessing, from those shapes, what was typed, and the word guessing is doing real work: every stage of it is a probability rather than a lookup.',
+      'Understanding the pipeline tells you why the same document scans perfectly at one setting and produces nonsense at another, and what to change when it does.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'The pipeline' },
+      {
+        kind: 'ol',
+        items: [
+          'Clean-up. The image is converted to greyscale and then to pure black and white, a step called binarisation. Getting the threshold right is what separates faint text from the page; getting it wrong either erases thin strokes or fills the page with speckle.',
+          'Deskew and dewarp. A page scanned at two degrees off square is straightened, and a photographed book page, which curves away at the spine, is flattened.',
+          'Layout analysis. The engine finds blocks of text, columns, images, captions and tables, and decides the reading order. This is the stage that decides whether a two-column article comes out as prose or as interleaved nonsense.',
+          'Line and word segmentation. Blocks are cut into lines, lines into words, and words into character candidates.',
+          'Recognition. Each line is turned into characters. Modern engines do this with a neural network that reads a whole line at a time rather than matching one glyph at a time.',
+          'Language correction. A dictionary and a statistical language model nudge unlikely sequences towards likely ones, which fixes real errors and occasionally invents new ones.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'The last two stages are where the technology changed. Older engines compared each shape against a library of glyph features, which made them fragile with unusual fonts. Since Tesseract 4 the standard approach has been a recurrent network trained on whole text lines, which handles shape ambiguity by using context. That is why a modern engine reads a blurry word correctly and then misreads a clean product code: the code has no context to lean on.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'This is also why OCR is confidently wrong. The engine returns the most probable reading, not a warning. Most engines can report a per-word confidence score, and anything below about 80 is worth a human eye.',
+      },
+      { kind: 'h2', text: 'The scan matters more than the engine' },
+      {
+        kind: 'p',
+        text: 'Input quality dominates. No engine recovers detail that was never captured, and most failures are decided before the software is involved.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Resolution: 300 dpi is the working standard for ordinary body text. At 150 dpi small print loses the gaps inside letters, and 600 dpi rarely improves accuracy while quadrupling the file.',
+          'Compression: heavy JPEG makes ringing artefacts around every stroke, which binarisation turns into speckle. Scan to PNG or a lossless TIFF if you can.',
+          'Lighting: a phone photo has a shadow gradient across the page, so one global threshold either blows out one side or fills in the other. Use a document scanning mode that corrects for it.',
+          'Geometry: skew, perspective and page curl all break line segmentation before recognition begins.',
+          'Colour: a greyscale scan of black text is better than a colour one, and a scan of a coloured or patterned background is worse than both.',
+        ],
+      },
+      {
+        kind: 'tool',
+        lead: 'Straighten and clean a phone photo of a page before you run it through anything:',
+        slug: 'document-scanner',
+      },
+      { kind: 'h2', text: 'What it reliably gets wrong' },
+      {
+        kind: 'ul',
+        items: [
+          'Glyph pairs that genuinely look alike: 0 and O, 1 and l and I, 5 and S, 8 and B, and rn read as m. Language models fix these in words and cannot fix them in reference numbers.',
+          'Tables. Recognition of the text is usually fine; the structure is what is lost, because nothing in the image says which cell a number belongs to except its position.',
+          'Multi-column layouts, where the reading order can cross columns line by line.',
+          'Handwriting, which is a different problem with a different name and much lower accuracy.',
+          'Mixed languages and mixed scripts on one page, unless you tell the engine to expect them.',
+          'Superscripts, footnote markers, hyphenated line breaks and ligatures, which all end up in the text stream somewhere.',
+          'Anything stylised: logos, display type, condensed fonts and text over an image.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'Setting the language correctly is the single highest-value option, because the correction stage uses it. Running an English model over a German document produces plausible English words where German ones were, which is far harder to spot than gibberish.',
+      },
+      { kind: 'h2', text: 'What a searchable PDF actually contains' },
+      {
+        kind: 'p',
+        text: 'OCR does not replace the scan. A searchable PDF keeps the original page image exactly as it was and adds a second layer: the recognised text, positioned over the matching words and drawn in invisible mode, so it can be selected, searched and copied while remaining unseen. What you look at is the picture; what you search is the guess.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'The file gets larger, because it now holds both the image and the text.',
+          'Copying from it gives you the OCR output, errors included, which is why pasted text from a scan sometimes contains words that are not on the page.',
+          'The text layer can be wrong without anything looking wrong, since the image is unchanged.',
+        ],
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Redaction on a scanned document has to remove both layers. A black box drawn over a name in the image still leaves the name in the text layer underneath, fully searchable and trivially recoverable. Use a tool that removes the content rather than one that draws over it.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Add a searchable text layer to a scanned PDF:',
+        slug: 'pdf-ocr',
+      },
+      { kind: 'h2', text: 'Getting a good result' },
+      {
+        kind: 'ol',
+        items: [
+          'Scan flat and square, in greyscale, at 300 dpi, to a lossless format.',
+          'Crop to the page and remove the scanner lid border, which otherwise becomes a giant black region for layout analysis to puzzle over.',
+          'Tell the engine the language, and the page orientation if it is not upright.',
+          'Read the output beside the original once, at speed, looking for lines that make no sense.',
+          'Check every number by hand. Digits carry no context and are where the real cost of an error sits.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'And if the document exists as a real digital file somewhere, find it instead. OCR is a recovery technique for pages whose original is gone. Text that was never rasterised needs no guessing, and a PDF exported from a word processor already contains its own text, however much it looks like a scan.',
+      },
+    ],
+    related: ['pdf-ocr', 'document-scanner', 'pdf-viewer', 'pdf-redact'],
+    relatedGuides: ['pdf-internals-explained', 'image-formats-explained'],
+  },
 ];
 
 /** Fast slug → guide lookup for the detail route. */
