@@ -1,0 +1,100 @@
+/* The loaded logo, its name, and the way out ------------------------------ */
+.source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.source__img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 0 0 / 12px 12px;
+}
+
+.source__meta {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.source__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Options ------------------------------------------------------------------- */
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem 1.25rem;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.field__input--colour {
+  height: 2.5rem;
+  padding: 0.2rem;
+  cursor: var(--cursor-pointer);
+}
+
+/* The generated set ---------------------------------------------------------- */
+.set {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 1rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.icon__tile {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 9rem;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  background: repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 0 0 / 12px 12px;
+}
+
+.icon__tile--dark {
+  background: var(--surface-2);
+}
+
+.icon__img {
+  image-rendering: auto;
+}
+
+.icon__name {
+  font-family: var(--mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* Snippet ------------------------------------------------------------------- */
+.snippet {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: var(--surface-1);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.5;
+}

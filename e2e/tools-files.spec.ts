@@ -204,6 +204,25 @@ test('pdf-organizer shows one thumbnail per page', async ({ page }) => {
   expectClean(watch);
 });
 
+test('favicon-generator renders the full icon set and zips it', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'favicon-generator', 'Favicon Generator');
+
+  await uploadFiles(page, ['sample-photo.jpg']);
+  await expect(page.getByTestId('icon-preview')).toHaveCount(7, { timeout: 60_000 });
+
+  // The head snippet follows the colour picked, and the short name follows the name.
+  await page.locator('#fav-name').fill('Bakery Orders Tracker');
+  await expect(page.locator('#fav-short')).toHaveValue('Bakery');
+  await expect(page.getByTestId('head-snippet')).toContainText('rel="manifest"');
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download ZIP' }).click();
+  expect((await download).suggestedFilename()).toBe('sample-photo-favicons.zip');
+
+  expectClean(watch);
+});
+
 /**
  * The two Office viewers convert through the `office-convert` Fly service, which
  * is not reachable from a local `ng serve`. Against localhost the meaningful

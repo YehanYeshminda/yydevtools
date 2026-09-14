@@ -1,0 +1,141 @@
+<app-tool-page slug="favicon-generator">
+  One logo in, every icon a website needs out: favicon.ico, the PNG sizes for tabs, iOS and Android,
+  a maskable icon, the web manifest and the lines to paste into your head. Nothing is uploaded.
+</app-tool-page>
+
+<div class="panel">
+  @if (!hasSource()) {
+    <app-dropzone accept="image/*,.svg,.heic,.heif" (filesSelected)="open($event)">
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matAppsOutline" />
+      <span class="dropzone__title">Drop your logo here, or click to choose</span>
+      <span class="dropzone__hint">
+        A square SVG or PNG at 512 px or more gives the sharpest set. JPEG, WebP and HEIC work too.
+      </span>
+    </app-dropzone>
+    @if (opening()) {
+      <span class="working" role="status">
+        <app-spinner />
+        Reading…
+      </span>
+    }
+  } @else {
+    <div class="source">
+      <img class="source__img" [src]="sourceUrl()" alt="" />
+      <div class="source__meta">
+        <span class="source__name">{{ sourceName() }}</span>
+        <span class="field__hint">{{ sourceSize() }}</span>
+      </div>
+      <button matButton (click)="clear()">
+        <ng-icon name="matClearOutline" />
+        Start over
+      </button>
+    </div>
+
+    <div class="options">
+      <div class="field">
+        <label class="field__label" for="fav-name">App name</label>
+        <input
+          id="fav-name"
+          class="field__input"
+          type="text"
+          autocomplete="off"
+          [value]="name()"
+          (input)="onName($event)"
+        />
+      </div>
+      <div class="field">
+        <label class="field__label" for="fav-short">Short name</label>
+        <input
+          id="fav-short"
+          class="field__input"
+          type="text"
+          autocomplete="off"
+          maxlength="12"
+          [value]="shortName()"
+          (input)="onShortName($event)"
+        />
+        <span class="field__hint">Under the icon on a home screen. 12 characters at most.</span>
+      </div>
+      <div class="field">
+        <label class="field__label" for="fav-theme">Theme colour</label>
+        <input
+          id="fav-theme"
+          class="field__input field__input--colour"
+          type="color"
+          [value]="theme()"
+          (input)="onTheme($event)"
+        />
+        <span class="field__hint">Tints the browser chrome on Android.</span>
+      </div>
+      <div class="field">
+        <label class="field__label" for="fav-bg">Background</label>
+        <input
+          id="fav-bg"
+          class="field__input field__input--colour"
+          type="color"
+          [value]="background()"
+          (input)="onBackground($event)"
+        />
+        <span class="field__hint"
+          >Behind the iOS and maskable icons, which cannot be transparent.</span
+        >
+      </div>
+      <mat-checkbox [checked]="fillAll()" (change)="setFillAll($event.checked)">
+        Fill every icon with the background
+      </mat-checkbox>
+    </div>
+
+    @if (building()) {
+      <span class="working" role="status">
+        <app-spinner />
+        Rendering…
+      </span>
+    }
+
+    <ul class="set" aria-label="Generated icons">
+      @for (icon of icons(); track icon.spec.name) {
+        <li class="icon" data-testid="icon-preview">
+          <span class="icon__tile" [class.icon__tile--dark]="icon.spec.fill">
+            <img
+              class="icon__img"
+              [src]="icon.url"
+              [width]="icon.spec.size > 128 ? 128 : icon.spec.size"
+              [height]="icon.spec.size > 128 ? 128 : icon.spec.size"
+              [alt]="icon.spec.name + ' preview'"
+            />
+          </span>
+          <span class="icon__name">{{ icon.spec.name }}</span>
+          <span class="field__hint">{{ icon.spec.size }} × {{ icon.spec.size }}</span>
+        </li>
+      }
+    </ul>
+
+    <div class="actions">
+      <button matButton="filled" (click)="download()" [disabled]="!ready()">
+        <ng-icon name="matDownloadOutline" />
+        Download ZIP
+      </button>
+      <button matButton (click)="copySnippet()">
+        <ng-icon name="matContentCopyOutline" />
+        Copy head snippet
+      </button>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Paste into your &lt;head&gt;</span>
+      <pre class="snippet" data-testid="head-snippet"><code>{{ snippet() }}</code></pre>
+      <span class="field__hint">
+        The ZIP also holds favicon.ico, site.webmanifest and this snippet as head-snippet.html. Put
+        the files at the root of your site.
+      </span>
+    </div>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Icons are scaled to fit and centred. The maskable icon keeps your artwork inside the 80% safe
+    zone so a round or squircle mask does not clip it.
+  </p>
+</div>
+
+<app-tool-content slug="favicon-generator" />

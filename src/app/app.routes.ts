@@ -78,6 +78,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/favicon-generator',
+    loadComponent: () =>
+      import('./tools/favicon-generator/favicon-generator').then((m) => m.FaviconGeneratorTool),
+    title: 'Favicon Generator — Every icon size from one logo — YYDevTools',
+    data: {
+      description:
+        'Make favicon.ico, PNG icons for tabs, iOS and Android, a maskable icon, the web manifest ' +
+        'and the head tags from one logo. Runs in your browser — nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/json-csv',
     loadComponent: () => import('./tools/json-csv/json-csv').then((m) => m.JsonCsvTool),
     title: 'JSON to CSV and CSV to JSON Converter — YYDevTools',

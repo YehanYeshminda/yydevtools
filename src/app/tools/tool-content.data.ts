@@ -1035,6 +1035,69 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['hash-generator', 'jwt-decoder', 'image-compressor'],
   },
 
+  'favicon-generator': {
+    slug: 'favicon-generator',
+    intro: [
+      'A website is asked for its icon in more sizes than anyone remembers: the tab wants 16 and 32 pixels, an iOS home screen wants 180, Android and the web manifest want 192 and 512, and a "maskable" variant is needed so the launcher can cut it into a circle without lopping off your logo. This tool takes one image and produces the whole set, packaged as a ZIP with the favicon.ico, the site.webmanifest and the exact lines to paste into your head.',
+      'Give it a square logo — an SVG or a PNG of 512 pixels or more gives the sharpest result — and it renders each size on your device, scaled to fit and centred. Choose the theme colour that tints the browser on Android, and the background that sits behind the icons that cannot be transparent. Nothing is uploaded; the ZIP is built in your browser.',
+    ],
+    steps: [
+      'Drop your logo onto the page. Square artwork works best; anything else is centred with space around it.',
+      'Set the app name and, if the automatic short name is not right, the short name shown under the icon on a home screen.',
+      'Pick the theme colour and the background colour. Tick "Fill every icon" if your logo has no background of its own and you do not want transparent tab icons.',
+      'Check the previews, then download the ZIP.',
+      'Copy the files to the root of your site and paste the head snippet into every page, or into your layout template.',
+    ],
+    features: [
+      'favicon.ico bundling 16, 32 and 48 pixel versions, plus PNGs at every size browsers ask for.',
+      'A maskable 512 icon with the artwork kept inside the 80% safe zone.',
+      'site.webmanifest and the head tags generated with your name and colours already filled in.',
+      'SVG logos are shipped alongside, so modern browsers get a vector tab icon.',
+      'Runs entirely in your browser — nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Which icon each platform actually uses',
+        body: [
+          'Browsers pick a tab icon from the link tags in order of preference. Chrome, Firefox, Safari and Edge all prefer an SVG when one is offered, which stays crisp at any zoom and on any display density. Without one they take the PNG that best matches the size they need, and the .ico remains the fallback that every browser, and a surprising number of tools that fetch a site’s icon, still understand.',
+          'iOS ignores all of that and looks for apple-touch-icon.png, which it expects to be opaque: transparency comes out black. Android and desktop "install this site" prompts read the web manifest and take the 192 and 512 pixel entries, using the one marked maskable when the launcher applies a shape. That is why the set has both a plain 512 and a maskable 512 — they are the same artwork with different amounts of breathing room.',
+        ],
+      },
+      {
+        heading: 'The maskable safe zone, and why the logo looks small',
+        body: [
+          'A maskable icon is one the launcher is allowed to crop — into a circle on one phone, a rounded square on another, a squircle on a third. The specification defines a safe zone: a circle whose diameter is 80% of the icon. Anything outside it may be cut away, so the generator scales your artwork to sit inside that circle on a solid background.',
+          'The result looks small next to the other previews, and that is correct. On the device the mask removes the margin and the logo fills the shape. If you supply a logo that already includes its own coloured background out to the edges, the plain and maskable icons will look nearly identical, which is also fine.',
+        ],
+      },
+      {
+        heading: 'Getting a sharp result',
+        body: [
+          'Icons are downsampled from your source, never upsampled, so the source needs to be at least as large as the biggest icon: 512 pixels. A vector SVG is best because every size is rendered from geometry. A JPEG works but its compression artefacts and lack of transparency show at small sizes, so prefer a PNG with a transparent background if you want a tab icon that sits cleanly on light and dark browser themes.',
+          'At 16 pixels almost any logo becomes a smudge. If yours has fine detail or text, consider a simplified mark for the small sizes — the generator is happy to run twice and you can keep the 16 and 32 pixel files from the second pass.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Do I need all of these files?',
+        a: 'For a plain website, favicon.ico and one PNG are enough for the tab. The apple-touch-icon matters as soon as anyone adds your site to an iPhone home screen, and the manifest with its 192 and 512 icons is what makes a site installable on Android and desktop. Since the ZIP contains everything, the simplest answer is to copy the lot.',
+      },
+      {
+        q: 'Why is my iOS icon on a coloured background?',
+        a: 'iOS does not support transparency in home screen icons and renders any transparent area black. The generator paints your chosen background colour behind the apple-touch-icon so the result is predictable. Pick a colour that matches your logo, or white.',
+      },
+      {
+        q: 'Can I use a non-square image?',
+        a: 'Yes. It is scaled to fit inside the square and centred, leaving transparent space (or the background colour, for the filled icons) on the shorter sides. A square source avoids the letterboxing.',
+      },
+      {
+        q: 'Where do the files go on my site?',
+        a: 'At the root, so they are reachable as /favicon.ico, /site.webmanifest and so on — the head snippet uses those root paths. If you must put them in a folder, edit the paths in the snippet and inside site.webmanifest to match.',
+      },
+    ],
+    related: ['image-resize', 'image-converter', 'image-compressor', 'qr-generator'],
+  },
   'json-csv': {
     slug: 'json-csv',
     intro: [

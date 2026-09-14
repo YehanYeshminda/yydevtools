@@ -150,6 +150,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'favicon-generator',
+    name: 'Favicon Generator',
+    description:
+      'One logo in, every icon out: favicon.ico, the PNG sizes for tabs, iOS and Android, a maskable icon, the manifest and the head tags.',
+    icon: 'matAppsOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'color-converter',
     name: 'Color Converter',
     description: 'Convert HEX, RGB, HSL, OKLCH and LAB, generate palettes and check WCAG contrast.',
