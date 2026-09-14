@@ -49,6 +49,16 @@
                                                                                                            "input":  "public"
                                                                                                        },
                                                                                                        {
+                                                                                                           "glob":  "*-latin*-wght-normal.woff2",
+                                                                                                           "input":  "node_modules/@fontsource-variable/geist/files",
+                                                                                                           "output":  "fonts"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "glob":  "*-latin*-wght-normal.woff2",
+                                                                                                           "input":  "node_modules/@fontsource-variable/jetbrains-mono/files",
+                                                                                                           "output":  "fonts"
+                                                                                                       },
+                                                                                                       {
                                                                                                            "glob":  "*.wasm",
                                                                                                            "input":  "node_modules/@jsquash/jpeg/codec/enc",
                                                                                                            "output":  "wasm"

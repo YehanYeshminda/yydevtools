@@ -24,6 +24,22 @@ test.describe('app shell', () => {
     expectClean(watch);
   });
 
+  test('fonts are self-hosted, with no request to Google', async ({ page }) => {
+    const hosts = new Set<string>();
+    page.on('request', (request) => hosts.add(new URL(request.url()).hostname));
+    await page.goto('/');
+
+    // The faces actually load from here — not merely "no Google", which a
+    // broken @font-face would also satisfy by falling back to system-ui.
+    await page.waitForFunction(() => document.fonts.ready.then(() => true));
+    expect(await page.evaluate(() => document.fonts.check('16px Geist'))).toBe(true);
+    expect(await page.evaluate(() => document.fonts.check('16px "JetBrains Mono"'))).toBe(true);
+
+    expect(
+      [...hosts].filter((host) => host.endsWith('googleapis.com') || host.endsWith('gstatic.com')),
+    ).toEqual([]);
+  });
+
   test('Browse menu opens and lists every category with a count', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /^Browse/ }).click();
