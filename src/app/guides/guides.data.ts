@@ -1680,6 +1680,11 @@ export const GUIDES: Guide[] = [
         text: 'Open docProps/core.xml and you will find the creator, the last person to modify the file, the revision number and the creation and modification times. app.xml adds the total editing time in minutes and sometimes the company name the copy of Word was registered to. Comments live in their own file and tracked changes are recorded inline, so a document sent with revisions "hidden" rather than accepted still contains every deleted sentence. Images under media keep whatever metadata they had when they were inserted, including a phone photo’s location.',
       },
       {
+        kind: 'tool',
+        lead: 'See exactly what a document names, and download a copy without it:',
+        slug: 'file-inspector',
+      },
+      {
         kind: 'callout',
         tone: 'warn',
         text: 'Before a document leaves your organisation, run Word’s Document Inspector (File, Info, Check for Issues) or export to PDF with comments and markup turned off. A .docx sent as-is can reveal who wrote it, how long it took, what was deleted, and the internal name the file started with.',
@@ -1699,7 +1704,7 @@ export const GUIDES: Guide[] = [
         ],
       },
     ],
-    related: ['word-viewer', 'office-to-pdf', 'pdf-convert'],
+    related: ['file-inspector', 'word-viewer', 'office-to-pdf', 'pdf-convert'],
     relatedGuides: ['pdf-internals-explained', 'photo-metadata-privacy'],
   },
   {
@@ -1923,7 +1928,7 @@ export const GUIDES: Guide[] = [
         ],
       },
     ],
-    related: ['excel-viewer', 'json-csv', 'csv-viewer', 'office-to-pdf'],
+    related: ['excel-viewer', 'file-inspector', 'json-csv', 'csv-viewer', 'office-to-pdf'],
     relatedGuides: ['csv-explained', 'docx-files-explained'],
   },
   {

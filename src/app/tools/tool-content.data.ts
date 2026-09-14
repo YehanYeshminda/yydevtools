@@ -1098,6 +1098,74 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['image-resize', 'image-converter', 'image-compressor', 'qr-generator'],
   },
+  'file-inspector': {
+    slug: 'file-inspector',
+    intro: [
+      'A file’s name is a claim, not a fact. The extension is whatever the last program or person called it, and the type your browser reports is looked up from that extension, so neither can tell you why a download will not open or what an attachment really contains. The bytes can. Almost every format begins with a fixed signature, and this tool reads it and says plainly what the file is, when the name disagrees, and which of the tools on this site will open it.',
+      'It then goes one layer deeper for the formats that carry metadata. A PDF records who wrote it, which program made it and when; a Word, Excel or PowerPoint file records the author, the last editor, the company the software was registered to and the total time spent editing; a photo records the camera and often the place. All of that is listed, the identifying parts are flagged, and a clean copy is one click away. Checksums are computed alongside so you can verify a download against a published hash. Nothing is uploaded.',
+    ],
+    steps: [
+      'Drop any file onto the page, or click to choose one. Anything up to 100 MB works.',
+      'Read the verdict: what the contents actually are, the first bytes that prove it, and a warning if the name says something else.',
+      'Compare a checksum with the one the publisher gave you, or copy one to record it.',
+      'Look through the metadata. Fields that identify a person, a company or a moment are marked.',
+      'Click Download clean copy to get the same file without them, or Open in the viewer to read it.',
+    ],
+    features: [
+      'Identifies well over a hundred formats from their bytes — images, documents, archives, audio, video, fonts, executables and databases — plus text encodings and line endings.',
+      'Flags a file whose extension lies, and says what to rename it to.',
+      'CRC32, MD5, SHA-1, SHA-256, SHA-384 and SHA-512, computed off the main thread.',
+      'Reads PDF document information and XMP, Office core and app properties, comment and tracked-change authors, and image Exif.',
+      'Strips PDF and Office metadata without touching the content, and image metadata without re-compressing the pixels.',
+      'Hands the file straight to the right viewer on this site.',
+    ],
+    sections: [
+      {
+        heading: 'How a file is identified',
+        body: [
+          'Most binary formats start with a signature, a few fixed bytes chosen so that a program can recognise the file before reading any further: a PDF begins with %PDF-, a PNG with an eight-byte sequence that includes the letters PNG, a ZIP with PK. The tool checks those first. Some signatures cover a whole family, so it looks further in: a ZIP that contains a word folder is a Word document, one with an AndroidManifest is an app, and an old-style Office file names its streams inside an OLE container. Video and modern image formats declare a brand a few bytes in, which is how HEIC, AVIF, MP4 and QuickTime are told apart.',
+          'Text has no signature, so a file that matches nothing is tested for being text: no null bytes and almost no control characters. It is then classified from what it starts with — a JSON bracket, an XML declaration, an HTML doctype, a PEM header, a shebang — and its encoding and line endings are reported, since those are the usual reason a text file behaves oddly on another machine.',
+        ],
+      },
+      {
+        heading: 'What a mismatch means',
+        body: [
+          'When the extension and the bytes disagree, the bytes win: the file is what its contents say, and the name is wrong. This happens innocently all the time. A camera app saves HEIC photos under .jpg, a download is saved with the wrong name, an export routine uses a fixed extension, a file is renamed to get past an attachment filter. The fix is nearly always to rename it to the extension shown and open it with the program for that type.',
+          'The same check catches the less innocent case. An executable named invoice.pdf is a classic trick, and the signature at the front of the file gives it away instantly. If something arrives by email and this tool says it is a Windows program, do not open it.',
+        ],
+      },
+      {
+        heading: 'What the clean copy does and does not remove',
+        body: [
+          'For a PDF, the document information dictionary is emptied and the XMP metadata stream and any application-private data are removed, then the file is re-saved with its pages exactly as they were. For a Word, Excel or PowerPoint file, the author, last editor, company, manager, dates, revision and editing time are removed from the two properties parts and the embedded thumbnail is dropped; every other part of the package is copied across unchanged. For a JPEG or PNG, the metadata segments are cut out of the container and the compressed image data is copied byte for byte, so nothing is re-encoded.',
+          'Comments and tracked changes are different. Their authors are part of the document body, not the properties, so the tool reports them and leaves them in place. Accept or reject the changes and delete the comments in Word before sharing, or convert to PDF and clean that instead. Text inside the document that mentions a name is, of course, untouched.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is the file uploaded anywhere?',
+        a: 'No. Sniffing, hashing, metadata reading and the clean copy all run in your browser. The file never leaves the tab, which is the whole point of a tool whose job is to find what a file gives away.',
+      },
+      {
+        q: 'Which checksum should I use to verify a download?',
+        a: 'Whichever the publisher printed. SHA-256 is the usual choice today. MD5 and SHA-1 are still widely published and are fine for confirming a file arrived intact, but they are not proof against a deliberate substitution, so treat a matching MD5 as "not corrupted" rather than "not tampered with".',
+      },
+      {
+        q: 'Why does the clean PDF have a different size?',
+        a: 'Removing the metadata means re-saving the document, and the writer lays the objects out differently from whatever produced the original. The pages, fonts and images are the same objects; only the structure around them is rewritten. A few kilobytes either way is normal.',
+      },
+      {
+        q: 'It says the PDF is encrypted. Can it still be cleaned?',
+        a: 'Not here. The document information is encrypted with the rest of the file, so it cannot be read or removed without the password. Remove the password with Unlock PDF first, then bring the result back.',
+      },
+      {
+        q: 'Can it tell what is inside an archive?',
+        a: 'It identifies the archive format, and for ZIP-based packages it looks at the member names to tell a Word file from an EPUB from an Android app. It does not list or extract the contents, and it does not scan for malware.',
+      },
+    ],
+    related: ['exif-viewer', 'hash-generator', 'pdf-viewer', 'word-viewer', 'pdf-redact'],
+  },
   'json-csv': {
     slug: 'json-csv',
     intro: [

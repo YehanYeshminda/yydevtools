@@ -363,6 +363,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'file-inspector',
+    name: 'File Inspector',
+    description:
+      'What is this file? Its real type from the bytes, its checksums, and the author, company and history a PDF or Office file carries — with a button to strip them.',
+    icon: 'matFingerprintOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'csv-viewer',
     name: 'CSV Viewer',
     description:

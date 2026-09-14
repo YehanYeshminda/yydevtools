@@ -1,0 +1,217 @@
+<app-tool-page slug="file-inspector">
+  Drop any file and find out what it really is from its bytes, get its checksums, and see the
+  author, company and history a PDF or Office document carries — then download a copy without them.
+</app-tool-page>
+
+<div class="panel">
+  @if (!hasFile()) {
+    <app-dropzone (filesSelected)="inspect($event)">
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matFingerprintOutline" />
+      <span class="dropzone__title">Drop any file here, or click to choose</span>
+      <span class="dropzone__hint">
+        Any type, up to 100 MB — it is read in this tab and never uploaded
+      </span>
+    </app-dropzone>
+  } @else {
+    <div class="workspace">
+      <!-- File facts ---------------------------------------------------- -->
+      <aside class="side">
+        <dl class="facts">
+          <div class="fact">
+            <dt>File</dt>
+            <dd class="fact__name">{{ name() }}</dd>
+          </div>
+          <div class="fact">
+            <dt>Size</dt>
+            <dd>{{ formatBytes(size()) }} ({{ size() }} bytes)</dd>
+          </div>
+          @if (sniffed(); as found) {
+            <div class="fact">
+              <dt>Contents</dt>
+              <dd data-testid="verdict">{{ found.kind.name }}</dd>
+            </div>
+            <div class="fact">
+              <dt>Extension</dt>
+              <dd>{{ found.extension ? '.' + found.extension : 'none' }}</dd>
+            </div>
+          }
+          <div class="fact">
+            <dt>Browser says</dt>
+            <dd>{{ browserType() || 'nothing — no registered type' }}</dd>
+          </div>
+          @if (pages(); as count) {
+            <div class="fact">
+              <dt>Pages</dt>
+              <dd>{{ count }}</dd>
+            </div>
+          }
+        </dl>
+
+        <div class="actions">
+          @if (opener(); as tool) {
+            <button matButton="filled" (click)="openInTool()">
+              <ng-icon name="matOpenInNewOutline" />
+              Open in {{ tool.name }}
+            </button>
+          }
+          <button matButton (click)="copyAll()">
+            <ng-icon name="matContentCopyOutline" />
+            Copy report
+          </button>
+          <button matButton (click)="reset()">
+            <ng-icon name="matRefreshOutline" />
+            Choose another
+          </button>
+        </div>
+      </aside>
+
+      <!-- Findings ---------------------------------------------------- -->
+      <div class="findings">
+        @if (sniffed(); as found) {
+          <!-- The verdict, and the bytes it rests on ------------------- -->
+          <section class="verdict" [class.verdict--wrong]="found.mismatch">
+            <h2 class="verdict__title">
+              <ng-icon
+                aria-hidden="true"
+                [name]="found.mismatch ? 'matWarningOutline' : 'matCheckCircleOutline'"
+              />
+              @if (found.mismatch) {
+                Not what its name says
+              } @else {
+                {{ found.kind.name }}
+              }
+            </h2>
+            @if (found.mismatch) {
+              <p class="verdict__text" data-testid="mismatch">{{ found.mismatch }}</p>
+            }
+            @for (note of found.notes; track note) {
+              <p class="verdict__text">{{ note }}</p>
+            }
+            <p class="verdict__hex">
+              <span class="verdict__hexlabel">First bytes</span>
+              <code>{{ found.header }}</code>
+            </p>
+          </section>
+        }
+
+        <!-- Checksums --------------------------------------------------- -->
+        <section class="group">
+          <h3 class="group__title">Checksums</h3>
+          @if (digests(); as list) {
+            <dl class="group__rows">
+              @for (digest of list; track digest.algorithm) {
+                <div class="group__row digest">
+                  <dt>{{ digest.algorithm }}</dt>
+                  <dd [attr.data-testid]="'digest-' + digest.algorithm">{{ digest.hex }}</dd>
+                  <button
+                    matIconButton
+                    class="digest__copy"
+                    [attr.aria-label]="'Copy ' + digest.algorithm"
+                    (click)="copy(digest)"
+                  >
+                    <ng-icon name="matContentCopyOutline" />
+                  </button>
+                </div>
+              }
+            </dl>
+          } @else {
+            <app-skeleton [lines]="4" />
+          }
+        </section>
+
+        <!-- Metadata ---------------------------------------------------- -->
+        @if (loading()) {
+          <app-skeleton [lines]="5" />
+        } @else if (error(); as message) {
+          <p class="status status--err" role="alert">
+            <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+            {{ message }}
+          </p>
+        } @else if (!fieldCount() && !warnings().length) {
+          <p class="status status--ok" role="status">
+            <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
+            @if (
+              sniffed()?.kind?.family === 'image' ||
+              sniffed()?.kind?.family === 'pdf' ||
+              sniffed()?.kind?.family === 'office'
+            ) {
+              No embedded metadata: this file names no author, no application and no dates.
+            } @else {
+              This kind of file has no embedded metadata this tool can read. The type and the
+              checksums above are the whole story.
+            }
+          </p>
+        } @else {
+          @if (!identifying() && fieldCount()) {
+            <p class="status status--ok" role="status">
+              <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
+              Nothing identifying: no author, company, editor or dates — only technical detail about
+              how the file was made, listed below.
+            </p>
+          }
+
+          @if (warnings().length) {
+            <section class="risk" [class.risk--located]="identifying() > 0">
+              <h2 class="risk__title">
+                <ng-icon aria-hidden="true" name="matWarningOutline" />
+                What this file gives away
+              </h2>
+              <ul class="risk__list">
+                @for (warning of warnings(); track warning) {
+                  <li>{{ warning }}</li>
+                }
+              </ul>
+            </section>
+          }
+
+          <section class="strip">
+            @if (stripped(); as clean) {
+              <div class="strip__row">
+                <div class="strip__text">
+                  <strong class="strip__title">Remove it</strong>
+                  <span class="strip__hint">{{ clean.summary }}</span>
+                </div>
+                <button matButton="filled" (click)="downloadClean()">
+                  <ng-icon name="matDownloadOutline" />
+                  Download clean copy
+                </button>
+              </div>
+            } @else if (stripNote(); as note) {
+              <p class="note">
+                <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+                <span class="note__text">{{ note }}</span>
+              </p>
+            }
+          </section>
+
+          @for (group of groups(); track group.name) {
+            <section class="group">
+              <h3 class="group__title">
+                {{ group.name }}
+                @if (group.sensitive) {
+                  <span class="group__flag">identifying</span>
+                }
+              </h3>
+              <dl class="group__rows">
+                @for (field of group.fields; track field.label) {
+                  <div class="group__row">
+                    <dt>{{ field.label }}</dt>
+                    <dd>{{ field.value }}</dd>
+                  </div>
+                }
+              </dl>
+            </section>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+  The file is read inside this tab and never uploaded. Checksums are computed here, and the clean
+  copy is built here.
+</p>
+
+<app-tool-content slug="file-inspector" />

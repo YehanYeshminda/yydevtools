@@ -69,6 +69,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **PDF Convert** | Turn a PDF into an editable Word or rich-text file. *(hosted)* |
 | **PDF OCR** | Make a scanned PDF searchable — short English files entirely in the browser. *(long files hosted)* |
 | **PDF Compress** | Shrink a PDF by downsampling the images inside it. *(hosted)* |
+| **File Inspector** | What is this file? Its real type from the bytes, its checksums, and the author, company and history a PDF or Office file carries — with a button to strip them. |
 | **CSV Viewer** | Open a CSV as a searchable table with the delimiter detected, and export it as JSON. |
 | **Word Viewer** | Open and read a .docx with its layout, tables and images intact, and copy the text out. |
 | **Excel Viewer** | Open an .xlsx workbook and read its sheets with formatting intact. *(hosted)* |

@@ -477,6 +477,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/file-inspector',
+    loadComponent: () =>
+      import('./tools/file-inspector/file-inspector').then((m) => m.FileInspectorTool),
+    title: 'What is this file? — File Inspector & Metadata Cleaner — YYDevTools',
+    data: {
+      description:
+        'Find out what a file really is from its bytes, get its MD5 and SHA checksums, see the ' +
+        'author and history a PDF or Office file carries, and download a clean copy. Nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/color-converter',
     loadComponent: () =>
       import('./tools/color-converter/color-converter').then((m) => m.ColorConverterTool),

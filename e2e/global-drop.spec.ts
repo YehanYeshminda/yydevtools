@@ -63,7 +63,7 @@ test('a drop beside a tool’s zone still lands in that tool', async ({ page }) 
   expectClean(watch);
 });
 
-test('a file no tool opens says so instead of leaving the site', async ({ page }) => {
+test('a file no viewer opens lands in the File Inspector', async ({ page }) => {
   await page.goto('/about');
   const transfer = await dataTransfer(page, 'sample.csv', 'application/x-unknown');
   await page.evaluate((t) => {
@@ -73,8 +73,9 @@ test('a file no tool opens says so instead of leaving the site', async ({ page }
     (t as DataTransfer).items.add(new File([file], 'mystery.xyz', { type: '' }));
   }, transfer);
 
-  await dragIn(page, transfer, 'Drop to open in the right tool');
+  await dragIn(page, transfer, 'Drop to open in File Inspector');
   await page.dispatchEvent('h1', 'drop', { dataTransfer: transfer });
-  await expect(page.getByText('Nothing here opens "mystery.xyz".')).toBeVisible();
-  await expect(page).toHaveURL(/\/about$/);
+  await expect(page).toHaveURL(/\/tools\/file-inspector$/);
+  await expect(page.getByTestId('verdict')).toHaveText('Plain text (UTF-8)', { timeout: 30_000 });
+  await expect(page.getByText('mystery.xyz')).toBeVisible();
 });

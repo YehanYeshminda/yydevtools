@@ -17,11 +17,17 @@ const DROP_TARGETS: { slug: string; ext: RegExp; mime?: RegExp }[] = [
   { slug: 'image-compressor', ext: /\.(heic|heif)$/, mime: /^image\// },
 ];
 
-export function toolForFile(name: string, type: string): string | null {
+/**
+ * Anything no viewer claims goes to the inspector, which opens every file and
+ * answers the question a stray drop is usually asking: what is this?
+ */
+const FALLBACK = 'file-inspector';
+
+export function toolForFile(name: string, type: string): string {
   const lower = name.toLowerCase();
   return (
     DROP_TARGETS.find((target) => target.ext.test(lower))?.slug ??
     DROP_TARGETS.find((target) => target.mime?.test(type))?.slug ??
-    null
+    FALLBACK
   );
 }

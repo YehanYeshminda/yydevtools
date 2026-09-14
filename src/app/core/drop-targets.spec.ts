@@ -14,8 +14,8 @@ describe('toolForFile', () => {
     expect(toolForFile('photo', 'application/pdf')).toBe('pdf-viewer');
   });
 
-  it('has no opinion about the rest', () => {
-    expect(toolForFile('archive.zip', 'application/zip')).toBeNull();
-    expect(toolForFile('', '')).toBeNull();
+  it('sends everything else to the inspector', () => {
+    expect(toolForFile('archive.zip', 'application/zip')).toBe('file-inspector');
+    expect(toolForFile('', '')).toBe('file-inspector');
   });
 });

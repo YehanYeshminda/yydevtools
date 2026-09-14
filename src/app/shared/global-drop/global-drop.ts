@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { toolForFile } from '../../core/drop-targets';
 import { FileHandoff } from '../../core/file-handoff';
@@ -67,7 +66,6 @@ import { TOOLS } from '../../tools/tools.data';
 })
 export class GlobalDrop {
   private readonly handoff = inject(FileHandoff);
-  private readonly snackBar = inject(MatSnackBar);
 
   protected readonly over = signal(false);
   protected readonly message = signal('');
@@ -124,12 +122,7 @@ export class GlobalDrop {
     }
 
     const file = files[0];
-    const slug = toolForFile(file.name, file.type);
-    if (!slug) {
-      this.snackBar.open(`Nothing here opens "${file.name}".`, 'Dismiss', { duration: 5000 });
-      return;
-    }
-    this.handoff.sendFile(file, slug);
+    this.handoff.sendFile(file, toolForFile(file.name, file.type));
   }
 
   /** What the drop will do, from the little a browser reveals mid-drag: the MIME type. */

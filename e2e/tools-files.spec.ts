@@ -1,4 +1,8 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+
 import { expect, test } from '@playwright/test';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 
 import { expectClean, fixture, gotoTool, uploadFiles, watchConsole } from './helpers';
 
@@ -521,4 +525,86 @@ test.describe('hosted operations accept a file and show their pre-flight state',
       expectClean(watch);
     });
   }
+});
+
+test('file-inspector names the type, flags a lying extension, hashes and cleans a PDF', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'file-inspector', 'File Inspector');
+
+  // A PDF handed over under a .docx name: the bytes win.
+  const pdf = readFileSync(fixture('sample.pdf'));
+  await page.locator('input[type="file"]').first().setInputFiles({
+    name: 'report.docx',
+    mimeType: 'application/octet-stream',
+    buffer: pdf,
+  });
+  await expect(page.getByTestId('verdict')).toHaveText('PDF document');
+  await expect(page.getByTestId('mismatch')).toContainText(
+    'says .docx, but the contents are a PDF',
+  );
+  await expect(page.getByTestId('digest-SHA-256')).toHaveText(
+    createHash('sha256').update(pdf).digest('hex'),
+    { timeout: 30_000 },
+  );
+  await expect(page.getByTestId('digest-MD5')).toHaveText(
+    createHash('md5').update(pdf).digest('hex'),
+  );
+
+  // The fixture carries a title and pdf-lib's producer string.
+  await expect(page.getByText('Annual Report')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/pdf-lib/).first()).toBeVisible();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download clean copy' }).click();
+  const saved = await download;
+  expect(saved.suggestedFilename()).toBe('report-clean.docx');
+  const clean = readFileSync(await saved.path());
+  expect(clean.subarray(0, 5).toString()).toBe('%PDF-');
+  expect(clean.includes('Annual Report')).toBe(false);
+  expect(clean.includes('pdf-lib')).toBe(false);
+
+  expectClean(watch);
+});
+
+test('file-inspector reads and strips Word document properties', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'file-inspector', 'File Inspector');
+
+  const docx = zipSync({
+    '[Content_Types].xml': strToU8('<Types/>'),
+    '_rels/.rels': strToU8('<Relationships/>'),
+    'word/document.xml': strToU8('<w:document/>'),
+    'docProps/core.xml': strToU8(
+      '<cp:coreProperties><dc:creator>Priya Natarajan</dc:creator><cp:lastModifiedBy>Sam</cp:lastModifiedBy></cp:coreProperties>',
+    ),
+    'docProps/app.xml': strToU8(
+      '<Properties><Company>Acme</Company><Words>12</Words></Properties>',
+    ),
+  });
+  await page
+    .locator('input[type="file"]')
+    .first()
+    .setInputFiles({
+      name: 'memo.docx',
+      mimeType: '',
+      buffer: Buffer.from(docx),
+    });
+
+  await expect(page.getByTestId('verdict')).toHaveText('Word document (.docx)');
+  await expect(page.getByText('Author: Priya Natarajan')).toBeVisible();
+  await expect(page.getByText('Company: Acme')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open in Word Viewer' })).toBeVisible();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download clean copy' }).click();
+  const saved = await download;
+  expect(saved.suggestedFilename()).toBe('memo-clean.docx');
+  const clean = unzipSync(new Uint8Array(readFileSync(await saved.path())));
+  expect(strFromU8(clean['docProps/core.xml'])).not.toContain('Priya');
+  expect(strFromU8(clean['docProps/app.xml'])).toContain('<Words>12</Words>');
+  expect(strFromU8(clean['docProps/app.xml'])).not.toContain('Acme');
+
+  expectClean(watch);
 });

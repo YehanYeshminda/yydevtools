@@ -1,0 +1,98 @@
+/* Layout, facts, risk card, strip row and grouped tables come from the EXIF
+   viewer's sheet. Only the verdict card and the checksum rows live here. */
+
+.verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 14px;
+  background: var(--surface-1);
+}
+
+/* A name that lies about the contents is the headline finding, and gets the
+   error palette so it cannot be missed. */
+.verdict--wrong {
+  border-color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.verdict__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+}
+
+.verdict__title ng-icon {
+  font-size: 1.35rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  color: var(--star);
+}
+
+.verdict--wrong .verdict__title ng-icon {
+  color: inherit;
+}
+
+.verdict__text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.verdict__hex {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+}
+
+.verdict__hexlabel {
+  color: var(--on-var);
+}
+
+.verdict--wrong .verdict__hexlabel {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.verdict__hex code {
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+/* Checksum rows: the digest plus a copy button on the end. */
+.digest {
+  align-items: center;
+}
+
+.digest dt {
+  width: 6rem;
+}
+
+.digest__copy {
+  flex: none;
+  margin: -0.35rem -0.35rem -0.35rem 0;
+}
+
+@media (max-width: 560px) {
+  .digest {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .digest dt {
+    width: 100%;
+  }
+
+  .digest dd {
+    flex: 1 1 0;
+  }
+}
