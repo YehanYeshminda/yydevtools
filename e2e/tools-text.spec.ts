@@ -84,6 +84,24 @@ test('jwt-decoder splits a token into header and claims', async ({ page }) => {
   expectClean(watch);
 });
 
+test('jwt-decoder share link carries the token but never the key', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await gotoTool(page, 'jwt-decoder', 'JWT Decoder');
+
+  await page.getByRole('button', { name: 'Try an example' }).click();
+  await expect(page.getByText('Signature verified.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Copy link' }).click();
+  const link = await page.evaluate(() => navigator.clipboard.readText());
+  expect(link).toContain('/tools/jwt-decoder#s=');
+
+  // A fresh tab, as the recipient would have: no session storage to lean on.
+  const other = await context.newPage();
+  await other.goto(link);
+  await expect(other.getByText('Ada Lovelace').first()).toBeVisible();
+  await expect(other.locator('#jwt-key')).toHaveValue('');
+});
+
 test('jwt-editor loads a token into editable header and payload', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'jwt-editor', 'JWT Editor');
@@ -115,6 +133,30 @@ test('hash-generator produces the known SHA-256 of "abc"', async ({ page }) => {
   await expect(page.getByText('900150983cd24fb0d6963f7d28e17f72')).toBeVisible(); // MD5
 
   expectClean(watch);
+});
+
+test('hash-generator share link carries the text but never the HMAC key', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await gotoTool(page, 'hash-generator', 'Hash Generator');
+
+  await page.locator('#hash-input').fill('abc');
+  await page.locator('#hmac-key').fill('hunter2');
+  await expect(page.getByRole('heading', { name: 'HMAC digests' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Copy link' }).click();
+  const link = await page.evaluate(() => navigator.clipboard.readText());
+  expect(link).toContain('/tools/hash-generator#s=');
+
+  // A fresh tab, as the recipient would have: no session storage to lean on.
+  const other = await context.newPage();
+  await other.goto(link);
+  await expect(other.locator('#hash-input')).toHaveValue('abc');
+  await expect(other.locator('#hmac-key')).toHaveValue('');
+  // Plain digests, because the key did not travel.
+  await expect(other.getByText('900150983cd24fb0d6963f7d28e17f72')).toBeVisible();
 });
 
 test('text-diff finds the changed line', async ({ page }) => {

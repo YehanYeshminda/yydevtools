@@ -49,9 +49,7 @@
     <app-dropzone [multiple]="true" (filesSelected)="addFiles($event)">
       <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
       <span class="dropzone__title">Drop files here, or click to choose</span>
-      <span class="dropzone__hint">
-        Any file type — up to {{ maxFiles }} files, 250 MB each
-      </span>
+      <span class="dropzone__hint"> Any file type — up to {{ maxFiles }} files, 250 MB each </span>
     </app-dropzone>
 
     @if (hasFiles()) {
@@ -164,7 +162,9 @@
 
   <!-- HMAC key (optional) --------------------------------------------- -->
   <div class="field">
-    <label class="field__label" for="hmac-key">HMAC key <span class="field__opt">(optional)</span></label>
+    <label class="field__label" for="hmac-key"
+      >HMAC key <span class="field__opt">(optional)</span></label
+    >
     <input
       id="hmac-key"
       class="field__input"
@@ -189,6 +189,7 @@
       <ng-icon name="matClearOutline" />
       Clear
     </button>
+    <app-share-link [state]="shared" />
     <app-try-example (loadExample)="loadExample()" />
     @if (hashing()) {
       <span class="working" role="status">

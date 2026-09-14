@@ -1,9 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { syncToolState } from '../../core/tool-state';
 import { VerifyResult, verifyJwt } from './jwt-verify';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { TryExample } from '../../shared/try-example/try-example';
@@ -63,7 +72,7 @@ export type DecodeResult =
 
 @Component({
   selector: 'app-jwt-decoder',
-  imports: [ToolPage, ToolContent, TryExample, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, TryExample, ShareLink, MatButtonModule, NgIcon],
   templateUrl: './jwt-decoder.html',
   styleUrl: './jwt-decoder.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,6 +84,26 @@ export class JwtDecoderTool {
   /** Shared secret (HS) or PEM public key (RS, PS, ES) for verification. */
   protected readonly key = signal('');
   protected readonly verifyState = signal<VerifyState>({ kind: 'idle' });
+
+  /**
+   * The token travels in a link — it is what people paste into chat to ask
+   * "what is in this?" anyway, and a link is only made when the button is
+   * pressed. The verification key never does; it survives a reload of this tab
+   * and nothing more.
+   */
+  protected readonly shared = syncToolState({
+    key: 'jwt-decoder',
+    snapshot: () => ({ token: this.token(), key: this.key() }),
+    omitFromLink: ['key'],
+    restore: (state) => {
+      if (typeof state.token === 'string') {
+        this.token.set(state.token);
+      }
+      if (typeof state.key === 'string') {
+        this.key.set(state.key);
+      }
+    },
+  });
 
   /** Guards against a slow verify resolving after a newer one. */
   private verifyId = 0;

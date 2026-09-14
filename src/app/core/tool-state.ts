@@ -24,8 +24,9 @@
  * type — a link exists only when you press the button that makes one, so state
  * cannot leak into browser history or a screen-share by accident.
  *
- * Tools whose state is a credential (JWT Decoder, the Hash Generator's HMAC
- * key) do not use this at all. See `tool-state.md` in the tool list below.
+ * Tools whose state includes a credential (the JWT Decoder's verification key,
+ * the Hash Generator's HMAC key) keep it out of the link with `omitFromLink`:
+ * it survives a reload of the tab and nothing more.
  */
 import {
   Injector,
@@ -156,7 +157,10 @@ export function syncToolState<T extends object>(options: ToolStateOptions<T>): T
             return;
           }
           current.set(json);
-          const handle = setTimeout(() => writeStorage(storageKey, json, initialJson), WRITE_DEBOUNCE_MS);
+          const handle = setTimeout(
+            () => writeStorage(storageKey, json, initialJson),
+            WRITE_DEBOUNCE_MS,
+          );
           onCleanup(() => clearTimeout(handle));
         },
         { injector },

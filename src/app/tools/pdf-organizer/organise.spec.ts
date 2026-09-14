@@ -8,8 +8,10 @@ import {
   movePage,
   pagesForDocument,
   removePages,
+  restorePages,
   reversePages,
   rotatePages,
+  takePages,
   type Page,
 } from './organise';
 
@@ -117,6 +119,15 @@ describe('removePages', () => {
   it('can empty the list', () => {
     expect(removePages(threePages(), new Set(['p0', 'p1', 'p2']))).toEqual([]);
   });
+
+  it('comes back at the old positions after an undo', () => {
+    const pages = threePages();
+    const removed = takePages(pages, new Set(['p0', 'p2']));
+    const after = removePages(pages, new Set(['p0', 'p2']));
+    expect(ids(restorePages(after, removed))).toEqual(['p0', 'p1', 'p2']);
+    // Even when the survivors were rearranged in between.
+    expect(ids(restorePages([], removed))).toEqual(['p0', 'p2']);
+  });
 });
 
 describe('insertBlankAfter', () => {
@@ -152,10 +163,7 @@ describe('reversePages', () => {
 
 describe('countByDocument', () => {
   it('counts source pages per document and ignores blanks', () => {
-    const pages = [
-      ...pagesForDocument(0, [size, size], 0),
-      ...pagesForDocument(1, [size], 2),
-    ];
+    const pages = [...pagesForDocument(0, [size, size], 0), ...pagesForDocument(1, [size], 2)];
     const withBlank = insertBlankAfter(pages, 0, 'b1');
     expect([...countByDocument(withBlank).entries()].sort()).toEqual([
       [0, 2],

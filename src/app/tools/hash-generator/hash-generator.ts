@@ -12,6 +12,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClipboardService } from '../../core/clipboard.service';
 import { downloadText } from '../../core/download';
 import { formatBytes } from '../../core/format';
+import { syncToolState } from '../../core/tool-state';
+import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { Spinner } from '../../shared/spinner/spinner';
 import { HashWorkerClient, type Digest } from './hash-worker.client';
@@ -52,7 +54,16 @@ const SAMPLE_TEXT = 'The quick brown fox jumps over the lazy dog';
 
 @Component({
   selector: 'app-hash-generator',
-  imports: [ToolPage, Dropzone, ToolContent, TryExample, MatButtonModule, NgIcon, Spinner],
+  imports: [
+    ToolPage,
+    Dropzone,
+    ToolContent,
+    TryExample,
+    ShareLink,
+    MatButtonModule,
+    NgIcon,
+    Spinner,
+  ],
   templateUrl: './hash-generator.html',
   styleUrls: ['../tool-shell.css', './hash-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,6 +90,38 @@ export class HashGeneratorTool implements OnDestroy {
   protected readonly algorithm = signal(DEFAULT_ALGORITHM);
   /** Compared against every digest, to answer "is this the file I expected?". */
   protected readonly expected = signal('');
+
+  /**
+   * The text, the case switch and the expected checksum travel in a link. The
+   * HMAC key survives a reload of this tab and nothing more — it is a secret in
+   * anyone else's hands. Files cannot travel at all.
+   */
+  protected readonly shared = syncToolState({
+    key: 'hash-generator',
+    snapshot: () => ({
+      text: this.text(),
+      uppercase: this.uppercase(),
+      expected: this.expected(),
+      hmacKey: this.hmacKey(),
+    }),
+    omitFromLink: ['hmacKey'],
+    restore: (state) => {
+      if (typeof state.uppercase === 'boolean') {
+        this.uppercase.set(state.uppercase);
+      }
+      if (typeof state.expected === 'string') {
+        this.expected.set(state.expected);
+      }
+      if (typeof state.hmacKey === 'string') {
+        this.hmacKey.set(state.hmacKey);
+      }
+      if (typeof state.text === 'string' && state.text !== '') {
+        this.source.set('text');
+        this.text.set(state.text);
+        void this.hashText(state.text);
+      }
+    },
+  });
 
   protected readonly hmacMode = computed(() => this.hmacKey() !== '');
   protected readonly hasFiles = computed(() => this.files().length > 0);
@@ -332,7 +375,9 @@ export class HashGeneratorTool implements OnDestroy {
   }
 
   protected downloadChecksums(): void {
-    const algorithm = this.algorithm().toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const algorithm = this.algorithm()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '');
     downloadText(`${this.checksumFile()}\n`, `checksums.${algorithm}.txt`);
   }
 

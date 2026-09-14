@@ -24,8 +24,10 @@ import {
   movePage,
   pagesForDocument,
   removePages,
+  restorePages,
   reversePages,
   rotatePages,
+  takePages,
   type Page,
 } from './organise';
 import { PdfDocumentRenderer } from '../../core/pdf-render';
@@ -55,14 +57,7 @@ const THUMB_EDGE = 260;
 
 @Component({
   selector: 'app-pdf-organizer',
-  imports: [ToolPage, 
-    Dropzone,
-    ToolContent,
-    DragDropModule,
-    MatButtonModule,
-    NgIcon,
-    Spinner,
-  ],
+  imports: [ToolPage, Dropzone, ToolContent, DragDropModule, MatButtonModule, NgIcon, Spinner],
   templateUrl: './pdf-organizer.html',
   styleUrls: ['../tool-shell.css', './pdf-organizer.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -220,9 +215,7 @@ export class PdfOrganizerTool implements OnDestroy {
 
   // --- Page operations --------------------------------------------------
   protected thumbFor(page: Page): string | null {
-    return page.kind === 'source'
-      ? (this.thumbs().get(`${page.doc}:${page.index}`) ?? null)
-      : null;
+    return page.kind === 'source' ? (this.thumbs().get(`${page.doc}:${page.index}`) ?? null) : null;
   }
 
   protected sourceLabel(page: Page): string {
@@ -247,8 +240,25 @@ export class PdfOrganizerTool implements OnDestroy {
   }
 
   protected removeOne(id: string): void {
-    this.pages.update((pages) => removePages(pages, new Set([id])));
-    this.deselect(id);
+    this.remove(new Set([id]));
+  }
+
+  /**
+   * Deletes with a way back. There is no confirmation — a dialog on every
+   * delete is worse than the mistake — so the toast carries an Undo instead.
+   */
+  private remove(ids: ReadonlySet<string>): void {
+    const removed = takePages(this.pages(), ids);
+    if (!removed.length) {
+      return;
+    }
+    this.pages.update((pages) => removePages(pages, ids));
+    this.selected.update((current) => new Set([...current].filter((id) => !ids.has(id))));
+    const count = removed.length;
+    this.snackBar
+      .open(`Deleted ${count} ${count === 1 ? 'page' : 'pages'}`, 'Undo', { duration: 8000 })
+      .onAction()
+      .subscribe(() => this.pages.update((pages) => restorePages(pages, removed)));
   }
 
   protected insertBlank(index: number): void {
@@ -274,14 +284,6 @@ export class PdfOrganizerTool implements OnDestroy {
     });
   }
 
-  private deselect(id: string): void {
-    this.selected.update((current) => {
-      const next = new Set(current);
-      next.delete(id);
-      return next;
-    });
-  }
-
   protected selectAll(): void {
     this.selected.set(new Set(this.pages().map((page) => page.id)));
   }
@@ -295,8 +297,7 @@ export class PdfOrganizerTool implements OnDestroy {
   }
 
   protected removeSelected(): void {
-    this.pages.update((pages) => removePages(pages, this.selected()));
-    this.clearSelection();
+    this.remove(this.selected());
   }
 
   // --- Export -----------------------------------------------------------

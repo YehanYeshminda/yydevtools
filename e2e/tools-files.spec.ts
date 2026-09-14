@@ -191,6 +191,16 @@ test('pdf-organizer shows one thumbnail per page', async ({ page }) => {
   // Three pages in, three page cards out.
   await expect(page.locator('.grid > *')).toHaveCount(3, { timeout: 60_000 });
 
+  // Deleting is one click and undoable; the page returns to where it was.
+  await page.getByRole('button', { name: 'Delete Page 1 of sample.pdf' }).click();
+  await expect(page.locator('.grid > *')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(page.locator('.grid > *')).toHaveCount(3);
+  await expect(page.locator('.grid > *').first()).toHaveAttribute(
+    'aria-label',
+    'Page 1 of sample.pdf, position 1 of 3',
+  );
+
   expectClean(watch);
 });
 

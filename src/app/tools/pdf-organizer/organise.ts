@@ -82,6 +82,31 @@ export function removePages(pages: readonly Page[], ids: ReadonlySet<string>): P
   return ids.size === 0 ? (pages as Page[]) : pages.filter((page) => !ids.has(page.id));
 }
 
+/** A page with the position it held before it was removed, so Undo can put it back. */
+export interface RemovedPage {
+  page: Page;
+  index: number;
+}
+
+/** The pages `ids` name, paired with where they sit in `pages`. */
+export function takePages(pages: readonly Page[], ids: ReadonlySet<string>): RemovedPage[] {
+  return pages.flatMap((page, index) => (ids.has(page.id) ? [{ page, index }] : []));
+}
+
+/**
+ * Puts removed pages back at their old positions.
+ *
+ * Applied to whatever the list is *now*, not a snapshot, so an Undo does not
+ * silently revert a rotation or a move made in the seconds after the delete.
+ */
+export function restorePages(pages: readonly Page[], removed: readonly RemovedPage[]): Page[] {
+  const next = [...pages];
+  for (const { page, index } of removed) {
+    next.splice(Math.min(index, next.length), 0, page);
+  }
+  return next;
+}
+
 /**
  * Inserts a blank page after `index` (use -1 for the very start).
  *
