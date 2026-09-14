@@ -33,6 +33,7 @@ export const SEND_TARGETS: readonly SendTarget[] = [
   { slug: 'base64-converter', label: 'Base64 Converter', field: 'text' },
   { slug: 'case-converter', label: 'Case Converter', field: 'input' },
   { slug: 'text-diff', label: 'Text Diff', field: 'original' },
+  { slug: 'json-diff', label: 'JSON Diff', field: 'original' },
   { slug: 'regex-tester', label: 'Regex Tester', field: 'text' },
   { slug: 'word-counter', label: 'Word Counter', field: 'text' },
 ];

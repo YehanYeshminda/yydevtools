@@ -193,6 +193,35 @@ test('text-diff finds the changed line', async ({ page }) => {
   expectClean(watch);
 });
 
+test('json-diff reports the changed field by path and ignores key order', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'json-diff', 'JSON Diff');
+
+  await setEditorText(
+    editorByLabel(page, 'Original JSON'),
+    '{"user": {"name": "Ada", "email": "ada@example.com"}, "plan": "free"}',
+  );
+  await setEditorText(
+    editorByLabel(page, 'Changed JSON'),
+    '{"plan": "free", "user": {"email": "ada@lovelace.org", "name": "Ada", "city": "London"}}',
+  );
+
+  await expect(page.getByText('1 changed')).toBeVisible();
+  await expect(page.getByText('+1 added')).toBeVisible();
+  const changes = page.locator('.change');
+  await expect(changes).toHaveCount(2);
+  await expect(changes.first()).toContainText('user.email');
+  await expect(changes.first()).toContainText('"ada@lovelace.org"');
+  await expect(changes.last()).toContainText('user.city');
+
+  // The tree view marks the same change on the merged document.
+  await page.getByRole('button', { name: 'Tree' }).click();
+  await expect(page.locator('.cell--remove')).toContainText('"email": "ada@example.com"');
+  await expect(page.locator('.cell--add').first()).toContainText('"email": "ada@lovelace.org"');
+
+  expectClean(watch);
+});
+
 test('regex-tester highlights matches and counts them', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'regex-tester', 'Regex Tester');

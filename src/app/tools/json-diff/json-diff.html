@@ -1,0 +1,169 @@
+<app-tool-page slug="json-diff">
+  Compare two JSON documents by structure, not by line: reordered keys are not changes, a value that
+  changed type is, and every difference comes with its path. Nothing leaves your browser.
+</app-tool-page>
+
+<div class="panel">
+  <!-- Inputs ---------------------------------------------------------- -->
+  <div class="pair">
+    <div class="field">
+      <span class="field__label">Original</span>
+      <app-code-editor
+        label="Original JSON"
+        language="json"
+        placeholder="Paste the original JSON…"
+        minHeight="14rem"
+        [wrap]="false"
+        [(value)]="original"
+      />
+      @if (leftError(); as message) {
+        <p class="status status--err" role="alert">
+          <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+          {{ message }}
+        </p>
+      }
+    </div>
+    <div class="field">
+      <span class="field__label">Changed</span>
+      <app-code-editor
+        label="Changed JSON"
+        language="json"
+        placeholder="Paste the changed JSON…"
+        minHeight="14rem"
+        [wrap]="false"
+        [(value)]="changed"
+      />
+      @if (rightError(); as message) {
+        <p class="status status--err" role="alert">
+          <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+          {{ message }}
+        </p>
+      }
+    </div>
+  </div>
+
+  <!-- Options --------------------------------------------------------- -->
+  <div class="controls">
+    <div class="tabs" role="group" aria-label="Result view">
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="view() === 'changes'"
+        [attr.aria-pressed]="view() === 'changes'"
+        (click)="setView('changes')"
+      >
+        <ng-icon aria-hidden="true" name="matFactCheckOutline" />
+        Changes
+      </button>
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="view() === 'tree'"
+        [attr.aria-pressed]="view() === 'tree'"
+        (click)="setView('tree')"
+      >
+        <ng-icon aria-hidden="true" name="matNotesOutline" />
+        Tree
+      </button>
+    </div>
+
+    <div class="chips">
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="ignoreArrayOrder()"
+        [attr.aria-pressed]="ignoreArrayOrder()"
+        (click)="toggleArrayOrder()"
+      >
+        <ng-icon
+          aria-hidden="true"
+          [name]="ignoreArrayOrder() ? 'matCheckOutline' : 'matAddOutline'"
+        />
+        Ignore array order
+      </button>
+    </div>
+
+    <div class="actions">
+      <button matButton (click)="swap()">
+        <ng-icon name="matSwapVertOutline" />
+        Swap
+      </button>
+      <button matButton (click)="clear()">
+        <ng-icon name="matClearOutline" />
+        Clear
+      </button>
+      <app-try-example (loadExample)="loadExample()" />
+      <app-share-link [state]="shared" />
+      <app-send-to [text]="original()" from="json-diff" />
+    </div>
+  </div>
+
+  <!-- Summary --------------------------------------------------------- -->
+  @if (result(); as diff) {
+    @if (identical()) {
+      <p class="status status--ok" role="status">
+        <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
+        The two documents are equivalent. Key order and formatting differ at most.
+      </p>
+    } @else {
+      <p class="summary" role="status">
+        <span class="summary__stat summary__stat--add">+{{ diff.stats.added }} added</span>
+        <span class="summary__stat summary__stat--remove">−{{ diff.stats.removed }} removed</span>
+        <span class="summary__stat summary__stat--change">{{ diff.stats.changed }} changed</span>
+        <span class="summary__stat">{{ diff.stats.unchanged }} unchanged</span>
+      </p>
+
+      @if (view() === 'changes') {
+        <ol class="changes" aria-label="Changes">
+          @for (change of diff.changes; track change.path + change.kind) {
+            <li
+              class="change"
+              [class.change--added]="change.kind === 'added'"
+              [class.change--removed]="change.kind === 'removed'"
+              [class.change--changed]="change.kind === 'changed'"
+            >
+              <span class="change__kind">{{ change.kind }}</span>
+              <code class="change__path">{{ pathOf(change) }}</code>
+              <span class="change__values">
+                @if (change.kind !== 'added') {
+                  <code class="change__value change__value--before">{{ show(change.before) }}</code>
+                }
+                @if (change.kind === 'changed') {
+                  <span class="change__arrow" aria-hidden="true">→</span>
+                }
+                @if (change.kind !== 'removed') {
+                  <code class="change__value change__value--after">{{ show(change.after) }}</code>
+                }
+              </span>
+            </li>
+          }
+        </ol>
+      } @else {
+        <div class="diff diff--unified" role="table" aria-label="Annotated document">
+          @for (line of diff.lines; track $index) {
+            <div
+              class="cell"
+              [class.cell--add]="line.kind === 'add'"
+              [class.cell--remove]="line.kind === 'remove'"
+              role="row"
+            >
+              <span class="cell__sign" aria-hidden="true">{{
+                line.kind === 'add' ? '+' : line.kind === 'remove' ? '−' : ''
+              }}</span>
+              <code class="cell__text">{{ line.text }}</code>
+            </div>
+          }
+        </div>
+      }
+    }
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Objects are compared by key, so order never counts. Arrays are compared by position unless
+    "Ignore array order" is on, which matches items by an id-like key when they have one and by
+    value when they do not.
+  </p>
+</div>
+
+<app-tool-content slug="json-diff" />

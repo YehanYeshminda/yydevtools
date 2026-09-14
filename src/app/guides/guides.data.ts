@@ -2546,7 +2546,7 @@ export const GUIDES: Guide[] = [
         text: 'Write the schema against real payloads rather than against the documentation, keep it in version control beside the code that produces the data, and add additionalProperties: false the day you write it. A schema that never rejects anything is documentation with extra steps.',
       },
     ],
-    related: ['json-formatter', 'json-to-types', 'json-csv'],
+    related: ['json-formatter', 'json-to-types', 'json-diff', 'json-csv'],
     relatedGuides: ['sql-dialects-explained', 'regex-explained'],
   },
   {

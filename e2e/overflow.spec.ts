@@ -90,6 +90,14 @@ test('text-diff keeps a long changed line inside the diff', async ({ page }) => 
   await expectFitsAtEveryWidth(page);
 });
 
+test('json-diff keeps a long changed value inside the change list', async ({ page }) => {
+  await gotoTool(page, 'json-diff', 'JSON Diff');
+  await setEditorText(editorByLabel(page, 'Original JSON'), `{"token": "${TOKEN}"}`);
+  await setEditorText(editorByLabel(page, 'Changed JSON'), `{"token": "${TOKEN}!"}`);
+  await expect(page.locator('.change')).toHaveCount(1);
+  await expectFitsAtEveryWidth(page);
+});
+
 test('json-formatter keeps a long string value inside the result', async ({ page }) => {
   await gotoTool(page, 'json-formatter', 'JSON Formatter');
   await setEditorText(editorByLabel(page, 'JSON input'), `{"token":"${TOKEN}"}`);

@@ -509,6 +509,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/json-diff',
+    loadComponent: () => import('./tools/json-diff/json-diff').then((m) => m.JsonDiffTool),
+    title: 'JSON Diff — Compare two JSON documents by structure — YYDevTools',
+    data: {
+      description:
+        'Semantic JSON diff: compare two JSON documents by key and value rather than by line, ' +
+        'with the path of every added, removed and changed field. Runs in your browser, free.',
+    },
+  },
+  {
     path: 'tools/regex-tester',
     loadComponent: () => import('./tools/regex-tester/regex-tester').then((m) => m.RegexTesterTool),
     title: 'Regex Tester — YYDevTools',

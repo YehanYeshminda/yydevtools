@@ -24,6 +24,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **JWT Editor** | Edit a JWT's claims and re-sign it into a new, valid token (HS/RS/PS/ES). |
 | **Hash Generator** | MD5, CRC32, SHA and keyed HMAC digests of text or many files, plus checksum verification. |
 | **Text Diff** | Compare two blocks of text line by line, in a split or unified view. |
+| **JSON Diff** | Compare two JSON payloads by structure: reordered keys are not changes, type changes are, and every difference comes with its path. |
 | **Regex Tester** | Test a regular expression live, with match highlighting and capture groups. |
 | **Cron Explainer** | Read a cron expression in plain English and preview its next run times. |
 | **QR Code Generator** | QR codes for links, Wi-Fi, contact cards, events or locations — as PNG or SVG. |

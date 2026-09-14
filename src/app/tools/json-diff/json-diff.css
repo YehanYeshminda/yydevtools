@@ -1,0 +1,114 @@
+/* Inputs, controls, summary and the tree grid come from the Text Diff sheet.
+   Only the change list lives here. */
+
+.summary__stat--change {
+  color: var(--star);
+  font-weight: 600;
+}
+
+.changes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 0.85rem;
+}
+
+.change {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(8rem, 1fr) minmax(0, 2fr);
+  gap: 0.25rem 0.75rem;
+  align-items: baseline;
+  padding: 0.5rem 0.85rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  border-inline-start: 3px solid transparent;
+}
+
+.change:last-child {
+  border-bottom: none;
+}
+
+.change--added {
+  border-inline-start-color: var(--mat-sys-primary);
+}
+
+.change--removed {
+  border-inline-start-color: var(--mat-sys-error);
+}
+
+.change--changed {
+  border-inline-start-color: var(--star);
+}
+
+.change__kind {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--on-var);
+}
+
+.change--added .change__kind {
+  color: var(--mat-sys-primary);
+}
+
+.change--removed .change__kind {
+  color: var(--mat-sys-error);
+}
+
+.change--changed .change__kind {
+  color: var(--star);
+}
+
+.change__path,
+.change__value {
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.change__path {
+  color: var(--on);
+  font-weight: 600;
+}
+
+.change__values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  min-width: 0;
+}
+
+.change__value {
+  padding: 0.05rem 0.4rem;
+  border-radius: 6px;
+  white-space: pre-wrap;
+}
+
+.change__value--before {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.change__value--after {
+  background: color-mix(in srgb, var(--mat-sys-primary) 16%, transparent);
+}
+
+.change__arrow {
+  color: var(--on-var);
+}
+
+@media (max-width: 640px) {
+  .change {
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+  }
+
+  .change__values {
+    grid-column: 1 / -1;
+  }
+}

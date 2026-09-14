@@ -58,6 +58,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'json-diff',
+    name: 'JSON Diff',
+    description:
+      'Compare two JSON payloads by structure: reordered keys are not changes, type changes are, and every difference comes with its path.',
+    icon: 'matCompareArrowsOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'regex-tester',
     name: 'Regex Tester',
     description: 'Test a regular expression live, with match highlighting and capture groups.',

@@ -368,6 +368,70 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['jwt-decoder', 'base64-converter', 'uuid-generator'],
   },
 
+  'json-diff': {
+    slug: 'json-diff',
+    intro: [
+      'Two JSON documents that differ in one value can differ in every line: a serialiser that orders keys differently, a formatter that reindents, a trailing comma. A line diff reports all of that and buries the change you were looking for. This tool parses both documents and compares the values themselves, so key order and whitespace never count, and what it reports is the list of fields that were added, removed or changed, each with its full path.',
+      'It is built for API work. Paste the response before a deploy and the response after; paste the config that works and the config that does not; paste what the documentation says and what the server actually returned. A value that changed from the number 5 to the string "5" is reported as a change of type, which a text diff cannot see and which is the kind of thing that breaks a client. Everything runs in your browser.',
+    ],
+    steps: [
+      'Paste the original JSON on the left and the changed JSON on the right. Both must parse; an error under either editor tells you where it did not.',
+      'Read the list of changes. Each row shows whether the field was added, removed or changed, the path to it, and the value before and after.',
+      'Switch to the Tree view to see the whole merged document with the changed lines marked, when the context around a change matters.',
+      'Turn on "Ignore array order" if the lists you are comparing are sets rather than sequences.',
+      'Use the share link to send the comparison to someone, or Send to another tool to format or convert one side.',
+    ],
+    features: [
+      'Compares by key and value: reordered keys, whitespace and formatting are never reported as changes.',
+      'Every change carries a path, such as user.address.city or items[id=42].price, so you can find it in the real document.',
+      'A change of type — a number becoming a string, a value becoming null — is reported as a change, not as a removal and an addition.',
+      'Arrays are compared by position by default, or as sets: items with an id-like key are matched by it, and everything else by value.',
+      'A Tree view renders the merged document with the changed lines marked, in the same style as the Text Diff.',
+      'Runs entirely in your browser; nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Why a line diff is the wrong tool for JSON',
+        body: [
+          'JSON is a tree, and there are many equally valid texts for the same tree. Two programs serialising the same object will happily disagree about key order, indentation, whether a space follows a colon and whether a number is written 5 or 5.0. A line diff compares the texts, so it reports every one of those as a change. In a response with fifty keys, the one real difference is a needle in a haystack of noise, and it is easy to miss altogether.',
+          'A structural diff throws the text away and compares the values. Two objects are equal if they have the same keys with equal values, in any order. Two arrays are equal if their items are equal in sequence, or, when you say so, as a set. What is left is the list of genuine differences, and that list is usually short.',
+        ],
+      },
+      {
+        heading: 'How arrays are compared',
+        body: [
+          'By default an array is a sequence: the first item is compared with the first, the second with the second, and a longer side has additions or removals at the end. That is right for ordered data and wrong for lists that are really sets, where a reordering is not a change.',
+          'With "Ignore array order" on, the tool first looks for an identity. If every item on both sides is an object carrying the same conventional key with unique values — id, _id, uuid, key, slug, code or name, in that order of preference — items are matched by that key, and the path shows it, as in users[id=42].email. Otherwise items are matched by value: an item present on both sides is unchanged, one only on the left is removed and one only on the right is added. Matching by value cannot pair up two objects that differ in one field, so for lists of objects without an id the positional comparison is often the more readable one.',
+        ],
+      },
+      {
+        heading: 'Reading the paths',
+        body: [
+          'Paths use dot notation for object keys and square brackets for array indexes: order.items[2].sku is the sku of the third item in the order. A key that is not a plain identifier is quoted, as in headers["content-type"]. When the root value itself changes — two documents that are a string and a number, say — the path is shown as (root).',
+          "The paths are deliberately the same shape a JSONPath query would use, so a change reported here can be pasted, with a leading $., into the JSON Formatter's JSONPath box to pull that value out of the full document.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is 1 the same as 1.0? Is "1" the same as 1?',
+        a: 'JSON.parse turns 1 and 1.0 into the same number, so they are equal here, as they are to any JSON consumer. The string "1" and the number 1 are different values and are reported as a change of type. That is usually the finding that matters.',
+      },
+      {
+        q: 'Why does reordering an array show as several changes?',
+        a: 'Arrays are sequences by default, so moving an item changes what sits at each position. Turn on "Ignore array order" to compare the lists as sets, which reports only the items that were actually added or removed.',
+      },
+      {
+        q: 'Can it compare YAML, or two JSON files on disk?',
+        a: 'It reads JSON text only. Convert YAML with the JSON Formatter first and send the result across, or open a file with the JSON Formatter and use its Send to button to bring the text here.',
+      },
+      {
+        q: 'How large a document can it handle?',
+        a: 'Comparison is linear in the size of the two documents and runs in your browser, so a few megabytes is fine. The Tree view renders every line, which gets slow well before the comparison does; for very large documents, stay on the Changes view.',
+      },
+    ],
+    related: ['json-formatter', 'text-diff', 'json-to-types', 'json-csv'],
+  },
   'text-diff': {
     slug: 'text-diff',
     intro: [
