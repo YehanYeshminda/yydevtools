@@ -18,14 +18,17 @@ test.describe('home workbench', () => {
     const count = page.locator('.work__count');
     await expect(count).toBeVisible();
     const text = (await count.textContent()) ?? '';
-    const [shown, total] = text.match(/(\d+)\s*\/\s*(\d+)/)!.slice(1).map(Number);
+    const [shown, total] = text
+      .match(/(\d+)\s*\/\s*(\d+)/)!
+      .slice(1)
+      .map(Number);
     expect(shown).toBe(total);
     expect(await page.locator('.card').count()).toBe(shown);
 
     expectClean(watch);
   });
 
-  test('the rail\'s privacy claim matches the catalogue', async ({ page }) => {
+  test("the rail's privacy claim matches the catalogue", async ({ page }) => {
     await page.goto('/');
     const note = page.locator('.rail__note');
     const claim = (await note.textContent())!.match(/(\d+) of (\d+)/)!;
@@ -42,7 +45,9 @@ test.describe('home workbench', () => {
     expect(local).toBeGreaterThan(total / 2);
   });
 
-  test('the rail lists every category, and the totals add up to the catalogue', async ({ page }) => {
+  test('the rail lists every category, and the totals add up to the catalogue', async ({
+    page,
+  }) => {
     await page.goto('/');
     const items = page.locator('.rail__item');
     await expect(items).toHaveCount(4); // All + three categories
@@ -54,7 +59,9 @@ test.describe('home workbench', () => {
 
   test('a category filter narrows the grid and retitles the page', async ({ page }) => {
     await page.goto('/');
-    const total = Number((await page.locator('.work__count').textContent())!.match(/\/\s*(\d+)/)![1]);
+    const total = Number(
+      (await page.locator('.work__count').textContent())!.match(/\/\s*(\d+)/)![1],
+    );
 
     await page.locator('.rail__item', { hasText: 'Documents' }).click();
 
@@ -77,7 +84,9 @@ test.describe('home workbench', () => {
     await expect(page.locator('.work__count')).toContainText(`showing ${shown}`);
 
     for (const name of await page.locator('.card__name').allTextContents()) {
-      expect(name.toLowerCase()).toMatch(/pdf|image|document|convert|ocr|compress|split|merge|organiz|viewer/);
+      expect(name.toLowerCase()).toMatch(
+        /pdf|image|document|convert|ocr|compress|split|merge|organiz|viewer|inspect/,
+      );
     }
   });
 
@@ -106,7 +115,9 @@ test.describe('home workbench', () => {
     await expect(rail.getByRole('link', { name: /Cron Explainer/ })).toBeVisible();
 
     await page.reload();
-    await expect(page.locator('.rail__fav').getByRole('link', { name: /Cron Explainer/ })).toBeVisible();
+    await expect(
+      page.locator('.rail__fav').getByRole('link', { name: /Cron Explainer/ }),
+    ).toBeVisible();
 
     await card.getByRole('button', { name: /Remove Cron Explainer from favorites/ }).click();
     await expect(page.locator('.rail__fav')).toBeHidden();
@@ -121,7 +132,9 @@ test.describe('home workbench', () => {
     await expect(page.locator('.rail__fav')).toBeVisible();
     // One card only — the redesign dropped the separate favourites section.
     await expect(page.locator('.card', { hasText: 'Cron Explainer' })).toHaveCount(1);
-    const section = page.locator('.section', { has: page.locator('.card', { hasText: 'Cron Explainer' }) });
+    const section = page.locator('.section', {
+      has: page.locator('.card', { hasText: 'Cron Explainer' }),
+    });
     await expect(section.locator('.section__tag')).toHaveText('Developer');
   });
 
@@ -129,15 +142,18 @@ test.describe('home workbench', () => {
     await seedFavorites(page, ['json-formatter']);
     await page.goto('/');
 
-    await page.locator('.rail__fav').getByRole('link', { name: /JSON Formatter/ }).click();
+    await page
+      .locator('.rail__fav')
+      .getByRole('link', { name: /JSON Formatter/ })
+      .click();
     await expect(page).toHaveURL(/\/tools\/json-formatter/);
   });
 
   test('every card links to a route that resolves', async ({ page }) => {
     await page.goto('/');
-    const hrefs = await page.locator('.card__link').evaluateAll((links) =>
-      links.map((a) => (a as HTMLAnchorElement).getAttribute('href')!),
-    );
+    const hrefs = await page
+      .locator('.card__link')
+      .evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).getAttribute('href')!));
     expect(hrefs.length).toBeGreaterThan(30);
 
     for (const href of hrefs) {
