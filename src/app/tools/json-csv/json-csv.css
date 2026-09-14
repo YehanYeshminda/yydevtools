@@ -1,0 +1,31 @@
+/* Direction tabs and the per-direction option share a row, wrapping when narrow. */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+app-dropzone {
+  margin-bottom: 0.75rem;
+}
+
+.output-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.output-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.note code {
+  font-family: var(--mono);
+}

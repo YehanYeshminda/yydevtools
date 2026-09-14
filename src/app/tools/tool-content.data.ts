@@ -1035,6 +1035,69 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['hash-generator', 'jwt-decoder', 'image-compressor'],
   },
 
+  'json-csv': {
+    slug: 'json-csv',
+    intro: [
+      'APIs speak JSON and spreadsheets speak CSV, and a great deal of everyday work is moving data between the two: an export from a service that needs to land in Excel, a sheet of records that has to become the body of a request. This tool converts in both directions and works out which one you need from what you paste — a leading bracket or brace is JSON, anything else is treated as CSV.',
+      'The awkward part of the conversion is that JSON nests and CSV does not. Rather than refusing nested data or dumping it as an unreadable blob, nested objects become dot-separated columns such as address.city, and those same columns fold back into objects when the CSV comes the other way. Column order follows the order the keys were first seen, so the sheet reads the way the data was written. Everything runs on your device; nothing you paste is uploaded.',
+    ],
+    steps: [
+      'Paste JSON or CSV into the input, or drop a .json or .csv file onto the page.',
+      'Leave the direction on Auto, or force JSON → CSV or CSV → JSON.',
+      'For CSV output, pick the delimiter your spreadsheet expects: comma, semicolon or tab.',
+      'For JSON output, keep "Detect numbers and booleans" on to get 42 and true rather than "42" and "true".',
+      'Copy the result, download it as a file, or press Swap to convert it straight back.',
+    ],
+    features: [
+      'Both directions from one box, with the direction detected from the input.',
+      'Nested objects flatten to dot columns and unflatten again on the way back.',
+      'Values that need it are quoted correctly, including embedded quotes and line breaks.',
+      'The delimiter of an incoming CSV is sniffed, so semicolon and tab files just work.',
+      'Runs entirely in your browser — nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'How nested JSON becomes a flat table',
+        body: [
+          'A CSV row is a flat list of cells, so a record like {"name": "Ada", "address": {"city": "London"}} has to lose a level. The convention this tool uses — and the one most import tools recognise — is the dot path: the record becomes two columns, name and address.city. Deeper nesting just makes longer paths. On the way back, any column name containing a dot is split and rebuilt as nested objects, so a round trip through a spreadsheet returns the shape you started with.',
+          'Arrays are the one thing that does not flatten cleanly. A list of tags inside a record could become tags.0, tags.1 and so on, but that produces a ragged, hard-to-read sheet whose column count depends on the longest list. Instead a list of scalars is written as JSON text inside a single cell, which survives a spreadsheet unchanged and is easy to parse again. A top-level array of arrays is treated as a table that already has its shape and is written row for row.',
+        ],
+      },
+      {
+        heading: 'Why the JSON side has a "detect types" switch',
+        body: [
+          'CSV has no types. Every cell is text, and whether 007 is a number or an identifier that happens to look like one is something only you know. With detection on, cells that parse as numbers or as true/false become JSON numbers and booleans, which is what most people want for a sheet of figures. With it off, everything stays a string — the safer choice for postcodes, phone numbers, product codes and anything with leading zeros, where turning "00420" into 420 silently corrupts the data.',
+          'Blank cells become empty strings either way, rather than null, because a spreadsheet cannot express the difference between "no value" and "empty text" and guessing would be wrong half the time.',
+        ],
+      },
+      {
+        heading: 'Delimiters, quoting and the Excel question',
+        body: [
+          'Despite the name, plenty of CSV files are not separated by commas. In much of Europe, where the comma is the decimal mark, Excel writes and expects semicolons; tab-separated files are common in data exports. Incoming files are sniffed so all three open correctly, and for output you choose the delimiter to match the program that will read it.',
+          'Whichever delimiter is used, a value containing it, a quote mark or a line break has to be wrapped in double quotes, with any quotes inside doubled. The tool follows that rule (RFC 4180) exactly, which is what stops a single address with a comma from shifting every column after it one place to the right.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'What JSON shapes can be converted to CSV?',
+        a: 'An array of objects is the normal case: one row per object, one column per distinct key. A single object becomes a one-row table. An array of plain values becomes a single "value" column, and an array of arrays is written row for row without a header. Anything else — a bare number, say — is reported rather than guessed at.',
+      },
+      {
+        q: 'What happens to records that are missing a field?',
+        a: 'The column exists because some record has it, and the records that do not simply get an empty cell. Coming back from CSV, those empty cells become empty strings on every record, so the objects all share the same keys — which is usually what downstream code expects.',
+      },
+      {
+        q: 'Will my leading zeros survive?',
+        a: 'Going to CSV, yes: values are written as they are. Coming back to JSON, turn off "Detect numbers and booleans" and every cell stays a string, zeros included. With detection on, a cell like 00420 would become the number 420.',
+      },
+      {
+        q: 'Is my data uploaded anywhere?',
+        a: 'No. The conversion is plain JavaScript running in your browser; nothing leaves the page. The "Copy link" button puts your input in the part of the URL that browsers never send to a server, so even sharing a link does not upload it.',
+      },
+    ],
+    related: ['csv-viewer', 'json-formatter', 'json-to-types', 'excel-viewer'],
+  },
   'url-encoder': {
     slug: 'url-encoder',
     intro: [

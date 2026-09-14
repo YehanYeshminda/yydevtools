@@ -1,0 +1,122 @@
+<app-tool-page slug="json-csv">
+  Turn a JSON array into a spreadsheet-ready CSV, or a CSV into clean JSON objects. Nested fields
+  become dot columns and back again. Everything runs in your browser.
+</app-tool-page>
+
+<div class="panel">
+  <div class="controls">
+    <div class="tabs" role="group" aria-label="Direction">
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="choice() === 'auto'"
+        [attr.aria-pressed]="choice() === 'auto'"
+        (click)="setChoice('auto')"
+      >
+        Auto
+      </button>
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="choice() === 'to-csv'"
+        [attr.aria-pressed]="choice() === 'to-csv'"
+        (click)="setChoice('to-csv')"
+      >
+        JSON → CSV
+      </button>
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="choice() === 'to-json'"
+        [attr.aria-pressed]="choice() === 'to-json'"
+        (click)="setChoice('to-json')"
+      >
+        CSV → JSON
+      </button>
+    </div>
+
+    @if (direction() === 'to-csv') {
+      <div class="chips" role="group" aria-label="CSV delimiter">
+        @for (option of delimiters; track option.value) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="delimiter() === option.value"
+            [attr.aria-pressed]="delimiter() === option.value"
+            (click)="setDelimiter(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    } @else {
+      <mat-checkbox [checked]="typed()" (change)="typed.set($event.checked)">
+        Detect numbers and booleans
+      </mat-checkbox>
+    }
+  </div>
+
+  <app-dropzone accept=".csv,.tsv,.json,.txt" (filesSelected)="open($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
+    <span class="dropzone__title">Drop a .csv or .json file here, or paste below</span>
+  </app-dropzone>
+
+  <app-code-editor
+    label="Input"
+    [language]="direction() === 'to-csv' ? 'json' : 'text'"
+    placeholder="Paste JSON or CSV…"
+    minHeight="12rem"
+    [(value)]="input"
+  />
+
+  <div class="actions">
+    <button matButton (click)="swap()" [disabled]="!hasOutput()">
+      <ng-icon name="matSwapVertOutline" />
+      Swap
+    </button>
+    <button matButton (click)="clear()" [disabled]="!input()">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+    <app-try-example (loadExample)="loadExample()" />
+    <app-share-link [state]="shared" />
+    <app-send-to [text]="result().output || input()" from="json-csv" />
+  </div>
+
+  @if (result().error; as error) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      {{ error }}
+    </p>
+  } @else if (hasOutput()) {
+    <div class="output-head">
+      <span class="field__label" data-testid="json-csv-summary">{{ summary() }}</span>
+      <span class="output-head__actions">
+        <button matButton (click)="copy()">
+          <ng-icon name="matContentCopyOutline" />
+          Copy
+        </button>
+        <button matButton="filled" (click)="download()">
+          <ng-icon name="matDownloadOutline" />
+          Download {{ direction() === 'to-csv' ? '.csv' : '.json' }}
+        </button>
+      </span>
+    </div>
+    <app-code-editor
+      label="Result"
+      [language]="direction() === 'to-csv' ? 'text' : 'json'"
+      minHeight="12rem"
+      [readOnly]="true"
+      [value]="result().output"
+    />
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Nested objects become dot-separated columns such as <code>address.city</code>, and turn back
+    into objects when the CSV comes back this way. Lists inside a record are kept as JSON in the
+    cell.
+  </p>
+</div>
+
+<app-tool-content slug="json-csv" />

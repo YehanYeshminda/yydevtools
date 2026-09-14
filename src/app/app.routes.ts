@@ -78,6 +78,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/json-csv',
+    loadComponent: () => import('./tools/json-csv/json-csv').then((m) => m.JsonCsvTool),
+    title: 'JSON to CSV and CSV to JSON Converter — YYDevTools',
+    data: {
+      description:
+        'Convert a JSON array to CSV for a spreadsheet, or a CSV file to JSON objects. Nested ' +
+        'fields become dot columns and back. Runs in your browser — nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/url-encoder',
     loadComponent: () => import('./tools/url-encoder/url-encoder').then((m) => m.UrlEncoderTool),
     title: 'URL Encoder / Decoder — YYDevTools',

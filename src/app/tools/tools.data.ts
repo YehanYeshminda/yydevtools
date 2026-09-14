@@ -182,6 +182,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'json-csv',
+    name: 'JSON ↔ CSV Converter',
+    description:
+      'Turn a JSON array into a spreadsheet-ready CSV or a CSV into JSON objects, nested fields included.',
+    icon: 'matTableChartOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'image-compressor',
     name: 'Image Compressor',
     description:

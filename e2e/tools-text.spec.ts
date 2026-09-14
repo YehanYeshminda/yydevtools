@@ -49,6 +49,27 @@ test('json-formatter reports where a broken document failed', async ({ page }) =
   await expect(page.locator('.panel').first()).toContainText(/invalid|unexpected|parse/i);
 });
 
+test('json-csv converts both ways and folds nested fields', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'json-csv', 'JSON ↔ CSV Converter');
+
+  await setEditorText(
+    editorByLabel(page, 'Input'),
+    '[{"name":"Ada","age":36,"address":{"city":"London"}},{"name":"Bob","age":41}]',
+  );
+  const result = editorByLabel(page, 'Result');
+  await expect.poll(() => getEditorText(result)).toContain('name,age,address.city');
+  await expect.poll(() => getEditorText(result)).toContain('Bob,41,');
+  await expect(page.getByTestId('json-csv-summary')).toHaveText('2 rows · 3 columns');
+
+  // Round trip: the CSV goes back in and the dot column becomes an object again.
+  await page.getByRole('button', { name: 'Swap' }).click();
+  await expect.poll(() => getEditorText(result)).toMatch(/"city":\s*"London"/);
+  await expect.poll(() => getEditorText(result)).toMatch(/"age":\s*36/);
+
+  expectClean(watch);
+});
+
 test('json-to-types turns JSON into a TypeScript interface', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'json-to-types', 'JSON to Types');

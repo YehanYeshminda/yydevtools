@@ -50,6 +50,13 @@ test('url-encoder keeps a long path segment inside the parts table', async ({ pa
   await expectFitsAtEveryWidth(page);
 });
 
+test('json-csv keeps a long cell inside the result editor', async ({ page }) => {
+  await gotoTool(page, 'json-csv', 'JSON ↔ CSV Converter');
+  await setEditorText(editorByLabel(page, 'Input'), `[{"token":"${TOKEN}"}]`);
+  await expect(page.getByTestId('json-csv-summary')).toHaveText('1 row · 1 column');
+  await expectFitsAtEveryWidth(page);
+});
+
 test('base64-converter keeps the result and the hints inside the panes', async ({ page }) => {
   await gotoTool(page, 'base64-converter', 'Base64 Converter');
   await page.locator('#b64-text').fill(TOKEN);
