@@ -955,3 +955,88 @@ test('the pomodoro keeps running after you leave its page', async ({ page }) => 
 
   expectClean(watch);
 });
+
+test('a phase can be set to anything up to six hours, and says so when it clamps', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pomodoro', 'Pomodoro Timer & Stopwatch');
+
+  const focus = page.locator('#len-work');
+  const time = page.getByTestId('time');
+  await expect(focus).toHaveAttribute('max', '360');
+
+  await focus.fill('360');
+  await expect(time).toHaveText('6:00:00');
+
+  // Past the ceiling the clock clamps, and the field is corrected to the length
+  // actually in use rather than left claiming the number that was typed.
+  await focus.fill('400');
+  await focus.blur();
+  await expect(focus).toHaveValue('360');
+  await expect(time).toHaveText('6:00:00');
+
+  // A second over-long value clamps to the same minute as the first, so the
+  // bound signal does not change and only the correction puts the field right.
+  await focus.fill('999');
+  await focus.blur();
+  await expect(focus).toHaveValue('360');
+
+  await focus.fill('0');
+  await focus.blur();
+  await expect(focus).toHaveValue('1');
+  await expect(time).toHaveText('1:00');
+
+  expectClean(watch);
+});
+
+test('switching phase or mode asks before it throws a session away', async ({ page }) => {
+  const watch = watchConsole(page);
+  // No faked clock here on purpose: what this needs is a session in progress,
+  // which one click gives it, and the dialog's own open and close run on timers
+  // that a faked clock would hold still.
+  await gotoTool(page, 'pomodoro', 'Pomodoro Timer & Stopwatch');
+
+  const phases = page.getByRole('group', { name: 'Phase' });
+  const modes = page.getByRole('group', { name: 'Mode' });
+  const ask = page.getByRole('alertdialog');
+  const time = page.getByTestId('time');
+  const phase = page.getByTestId('phase');
+
+  await page.getByTestId('toggle').click();
+  await expect(time).toHaveText(/24:5\d/);
+
+  // The question names what is at stake rather than asking whether you are
+  // sure, and the buttons say what they do.
+  await phases.getByRole('button', { name: 'Long break' }).click();
+  await expect(ask).toBeVisible();
+  await expect(ask).toContainText('Switch to Long break?');
+  await expect(ask).toContainText(/Focus, 24:\d\d left/);
+
+  // Backing out leaves the session exactly where it was.
+  await ask.getByRole('button', { name: 'Keep going' }).click();
+  await expect(ask).toHaveCount(0);
+  await expect(phase).toHaveText('Focus');
+  await expect(time).toHaveText(/24:\d\d/);
+
+  // Saying yes does what the button always did.
+  await phases.getByRole('button', { name: 'Short break' }).click();
+  await ask.getByRole('button', { name: 'Switch anyway' }).click();
+  await expect(phase).toHaveText('Short break');
+  await expect(time).toHaveText('5:00');
+
+  // The mode tabs discard just as much, so they ask too.
+  await page.getByTestId('toggle').click();
+  await modes.getByRole('button', { name: 'Stopwatch' }).click();
+  await expect(ask).toContainText('Switch to Stopwatch?');
+  await ask.getByRole('button', { name: 'Keep going' }).click();
+  await expect(phase).toHaveText('Short break');
+
+  // With nothing to lose there is nothing to ask.
+  await page.getByRole('button', { name: 'Reset' }).click();
+  await modes.getByRole('button', { name: 'Stopwatch' }).click();
+  await expect(time).toHaveText('0:00.00');
+  await expect(ask).toHaveCount(0);
+
+  expectClean(watch);
+});

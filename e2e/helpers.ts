@@ -60,12 +60,32 @@ export function expectClean(watch: ConsoleWatch): void {
   expect(watch.errors, `console errors:\n${watch.errors.join('\n')}`).toEqual([]);
 }
 
-/** Navigates to a tool and waits for its masthead to be painted. */
+/**
+ * Waits until Angular has hydrated the page.
+ *
+ * Every tool is prerendered, so its controls exist and accept input a long time
+ * before the component bound to them is alive, and anything sent into that gap
+ * is lost: `withEventReplay()` does not cover it, because the tool hydrates
+ * from a lazy route chunk that lands after the replay has run. Proved by
+ * holding the scripts back — a file set on the dropzone vanished, and text
+ * filled into an input never reached the signal behind it.
+ *
+ * `[ngh]` is Angular's own marker: the server stamps it on every hydratable
+ * component and the client removes each one as that component hydrates, so none
+ * left means the page is live. Waiting on a heading proves nothing — the
+ * heading is prerendered too.
+ */
+export async function waitForHydration(page: Page): Promise<void> {
+  await expect(page.locator('[ngh]')).toHaveCount(0);
+}
+
+/** Navigates to a tool and waits for its masthead to be painted — and for it to work. */
 export async function gotoTool(page: Page, slug: string, name?: string): Promise<void> {
   await page.goto(`/tools/${slug}`);
   const heading = page.locator('.head__title');
   await expect(heading).toBeVisible();
   if (name) await expect(heading).toHaveText(name);
+  await waitForHydration(page);
 }
 
 /**
@@ -151,20 +171,13 @@ export function editorByLabel(page: Page, label: string): Locator {
 /**
  * Uploads one or more fixtures into the first file input on the page.
  *
- * Waits for hydration first. The tool pages are prerendered, so the dropzone's
- * input exists — and accepts files — a long time before the component that
- * listens to it does, and a `change` fired into that gap is simply lost:
- * `withEventReplay()` does not rescue it, because the tool hydrates from a
- * lazy route chunk that lands after the replay. Measured directly: with the
- * scripts held back, setting a file left the page exactly as the suite found
- * it on a bad day — dropzone still up, no spinner, no error, the upload gone.
- *
- * `[ngh]` is Angular's own marker: the server stamps it on every hydratable
- * component and the client removes each one as it hydrates, so none left means
- * the page is live. Cheaper and truer than waiting on anything tool-specific.
+ * Gated on hydration in its own right, not only through `gotoTool`: a handful
+ * of tests reach a tool by `page.goto` or by following a link, and a file set
+ * before the dropzone is live is swallowed without a trace. See
+ * `waitForHydration`.
  */
 export async function uploadFiles(page: Page, names: string[]): Promise<void> {
-  await expect(page.locator('[ngh]')).toHaveCount(0);
+  await waitForHydration(page);
   const input = page.locator('input[type="file"]').first();
   await input.setInputFiles(names.map(fixture));
 }

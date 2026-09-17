@@ -175,3 +175,37 @@ for (const theme of ['dark', 'light'] as const) {
     }
   });
 }
+
+/**
+ * The site's one confirmation, which only exists while a timer is running.
+ *
+ * A modal is the surface where accessibility is easiest to get wrong — the
+ * focus trap, the name, the description, and a filled button whose label takes
+ * its colour from a token rather than from the class beside it, which is how
+ * the passport toggle came to ship at 1.04:1.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`the confirmation dialog has no AXE violations in the ${theme} theme`, async ({ page }) => {
+    await gotoTool(page, 'pomodoro', 'Pomodoro Timer & Stopwatch');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await page.getByTestId('toggle').click();
+    await page
+      .getByRole('group', { name: 'Phase' })
+      .getByRole('button', { name: 'Short break' })
+      .click();
+    await expect(page.getByRole('alertdialog')).toBeVisible();
+
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+    ).toEqual([]);
+  });
+}
