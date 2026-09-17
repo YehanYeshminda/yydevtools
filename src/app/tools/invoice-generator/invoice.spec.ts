@@ -4,6 +4,7 @@ import {
   formatDate,
   formatMoney,
   fractionDigits,
+  imageFormat,
   isoDate,
   lineTotal,
   nextNumber,
@@ -169,5 +170,27 @@ describe('fileStemFor', () => {
 
   it('falls back when nothing survives', () => {
     expect(fileStemFor('receipt', '###')).toBe('receipt-document');
+  });
+});
+
+describe('imageFormat', () => {
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00]);
+  const jpg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+
+  it('recognises a PNG and a JPEG by their signature', () => {
+    expect(imageFormat(png)).toBe('png');
+    expect(imageFormat(jpg)).toBe('jpg');
+  });
+
+  it('refuses anything else, whatever it is called', () => {
+    // A WebP: the browser will happily report this as image/png if the file
+    // has been renamed, which is exactly the case this exists to catch.
+    expect(imageFormat(new Uint8Array([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57]))).toBeNull();
+    expect(imageFormat(new Uint8Array([0x3c, 0x73, 0x76, 0x67]))).toBeNull();
+  });
+
+  it('does not read past the end of a truncated file', () => {
+    expect(imageFormat(new Uint8Array([0x89, 0x50]))).toBeNull();
+    expect(imageFormat(new Uint8Array(0))).toBeNull();
   });
 });

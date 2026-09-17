@@ -947,17 +947,20 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   'invoice-generator': {
     slug: 'invoice-generator',
     intro: [
-      'Fill in who it is from, who it is for, what you did and what it costs, and download a clean PDF invoice. Switch the document type to Receipt and the same form produces a receipt instead — the due date becomes the date it was paid.',
+      'Fill in who it is from, who it is for, what you did and what it costs, and watch the finished page build itself beside the form. What you are looking at is the PDF, rasterised — not an impression of it that could drift from the file you download. Switch the document type to Receipt and the same form produces a receipt instead — the due date becomes the date it was paid.',
       'There is no account and no upload. The PDF is assembled in your browser, which means your client list, your rates and your bank details stay on your machine. This is the one tool on the site with no share link, deliberately.',
     ],
     steps: [
       'Choose Invoice or Receipt, and set the number and dates.',
       'Fill in the From and To blocks. Both take several lines, so an address fits.',
       'Add your line items: what it was, how many, and the unit price.',
+      'Add a logo if you have one — a PNG or a JPEG, which sits above the title.',
       'Set the tax name and rate if you charge tax, then download the PDF.',
     ],
     features: [
       'Invoice or receipt from the same form.',
+      'A live preview of the real page, redrawn as you type.',
+      'Your own logo on the letterhead, scaled to fit without distorting it.',
       'Line items with fractional quantities, for hours as well as units.',
       'Ten currencies, each formatted the way it is actually written.',
       'A named tax at any rate — VAT, GST, sales tax, or none.',
@@ -997,7 +1000,11 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
       {
         q: 'Can I put my logo on it?',
-        a: 'Not here. The PDF is a normal PDF though, so any editor will let you place one — and the From block takes as many lines as you need, which covers most of what a logo would say.',
+        a: 'Yes — choose a PNG or a JPEG and it is drawn above the title. It is fitted into a box of about 150 by 55 points and never scaled up, so a wordmark comes out the right shape and a small icon stays sharp rather than blurring. SVG and WebP are refused, because a PDF cannot carry them without a separate decoder, and the check is on the file\u2019s actual bytes rather than its name.',
+      },
+      {
+        q: 'Is the preview exactly what I will get?',
+        a: 'It is the file. The same code builds both, and what you see is that PDF rendered back onto a canvas — so if it looks right on screen it is right in the download. Only the first page is shown; the line above it says when there is more than one.',
       },
       {
         q: 'Does it handle hours, not just items?',
@@ -1096,7 +1103,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     slug: 'pomodoro',
     intro: [
       'Two timers that share a screen. The Pomodoro side runs focus sessions with breaks that arrive without being asked for, counts how many you have done, and sends you off for a longer break after every fourth. The stopwatch side counts up, with laps.',
-      'Both measure against the clock rather than by counting ticks, which matters the moment you switch tabs: browsers throttle background timers hard, and anything that counts its own intervals finishes late by however long you were away. Nothing is saved and nothing is sent anywhere — a reload starts over.',
+      'Both measure against the clock rather than by counting ticks, which matters the moment you switch tabs: browsers throttle background timers hard, and anything that counts its own intervals finishes late by however long you were away. Leaving the page does not stop it either: the timer keeps running and the site header shows what is left, so you can start a session and go and use something else. Nothing is saved and nothing is sent anywhere — a reload starts over.',
     ],
     steps: [
       'Pick Pomodoro or Stopwatch.',
@@ -1110,6 +1117,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'A count of completed sessions, and a way to start the cycle over.',
       'A stopwatch with laps, showing both the split and the running total.',
       'Timed against the wall clock, so a throttled background tab still ends on time.',
+      'Keeps running while you use the other tools, with the time left shown in the header.',
       'A synthesised chime rather than an audio file — no request, no licence, no delay.',
     ],
     sections: [

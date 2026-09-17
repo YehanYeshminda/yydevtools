@@ -31,7 +31,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Barcode Generator** | Code 128, EAN-13, EAN-8, UPC-A, Code 39 and ITF-14, with check digits calculated. |
 | **Slug Generator** | A list of titles into URL slugs — accents folded, length capped, collisions numbered. |
 | **Colour Palette Extractor** | The dominant colours of a photo or logo, with the share each one covers. |
-| **Invoice & Receipt Generator** | Fill in an invoice or receipt and download the PDF. Ten currencies, tax, line items. |
+| **Invoice & Receipt Generator** | Fill in an invoice or receipt with a live preview and your logo, and download the PDF. |
 | **PDF Visual Diff** | Compare two PDFs page by page and see which pixels moved. |
 | **Text Cleaner** | Strip invisible characters, straighten curly quotes, trim, sort and de-duplicate lines. |
 | **Lorem Ipsum Generator** | Generate placeholder text by paragraph, sentence, word or list item, as text, HTML or Markdown. |
@@ -63,7 +63,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Video Trimmer & GIF Maker** | Cut a clip, drop the sound, pull out the audio as an MP3, or turn it into a GIF. ffmpeg runs in your browser. |
 | **Image Resizer & Cropper** | Crop with a draggable box, resize to exact pixels or a file size, and save as JPEG, PNG or WebP. |
 | **EXIF Viewer** | See the camera, timestamp and GPS location hidden in a photo, then strip it out without re-compressing. |
-| **Pomodoro Timer & Stopwatch** | Focus sessions with automatic breaks, or a stopwatch with laps. |
+| **Pomodoro Timer & Stopwatch** | Focus sessions with automatic breaks, or a stopwatch with laps. Keeps running across the site. |
 | **Unit Converter** | Length, weight, temperature, volume, speed, area, data and time, with every unit at once. |
 | **Age & Date Difference Calculator** | An age from a date of birth, or the span between two dates, in calendar units and totals. |
 | **Timestamp Converter** | Convert between Unix timestamps and human-readable dates. |

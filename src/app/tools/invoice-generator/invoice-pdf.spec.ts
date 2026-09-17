@@ -1,6 +1,6 @@
 import { PDFDocument } from '@cantoo/pdf-lib';
 
-import { renderInvoice, type InvoiceDocument } from './invoice-pdf';
+import { logoSize, renderInvoice, type InvoiceDocument } from './invoice-pdf';
 import { type LineItem } from './invoice';
 
 const base: InvoiceDocument = {
@@ -84,5 +84,50 @@ describe('renderInvoice', () => {
       items: [{ description: long, quantity: 1, unitPrice: 10 }],
     });
     expect(await pageCount(bytes)).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('logoSize', () => {
+  it('fits a wide wordmark to the box width', () => {
+    expect(logoSize(600, 120)).toEqual({ width: 150, height: 30 });
+  });
+
+  it('fits a tall mark to the box height instead, keeping it square', () => {
+    const { width, height } = logoSize(400, 400);
+    expect(width).toBeCloseTo(55);
+    expect(height).toBeCloseTo(55);
+  });
+
+  // The clamp, which only shows on something inside the box on both axes.
+  // Without it this would be scaled up 2.75x to 110 x 55 and look it.
+  it('never enlarges something smaller than the box', () => {
+    expect(logoSize(40, 20)).toEqual({ width: 40, height: 20 });
+  });
+
+  it('refuses a degenerate size rather than dividing by zero', () => {
+    expect(logoSize(0, 100)).toEqual({ width: 0, height: 0 });
+    expect(logoSize(Number.NaN, 100)).toEqual({ width: 0, height: 0 });
+  });
+});
+
+/**
+ * A 1x1 PNG, spelled out rather than fetched: the point is that a real image
+ * goes through pdf-lib's embedPng and comes out the other side, which no
+ * fixture file is needed to prove.
+ */
+const PNG_1X1 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+describe('renderInvoice with a logo', () => {
+  const logoBytes = Uint8Array.from(atob(PNG_1X1), (char) => char.charCodeAt(0));
+
+  it('embeds the image and still produces one page', async () => {
+    const bytes = await renderInvoice({ ...base, logo: { bytes: logoBytes, format: 'png' } });
+    expect(await pageCount(bytes)).toBe(1);
+    expect(bytes.length).toBeGreaterThan((await renderInvoice(base)).length);
+  });
+
+  it('is unaffected by a null logo', async () => {
+    expect(await pageCount(await renderInvoice({ ...base, logo: null }))).toBe(1);
   });
 });

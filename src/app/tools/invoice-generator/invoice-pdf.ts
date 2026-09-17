@@ -8,7 +8,20 @@
 
 import { PDFDocument, PDFFont, StandardFonts, rgb } from '@cantoo/pdf-lib';
 
-import { formatDate, formatMoney, lineTotal, toMinor, totalsFor, type LineItem } from './invoice';
+import {
+  formatDate,
+  formatMoney,
+  lineTotal,
+  toMinor,
+  totalsFor,
+  type LineItem,
+  type LogoFormat,
+} from './invoice';
+
+export interface InvoiceLogo {
+  bytes: Uint8Array;
+  format: LogoFormat;
+}
 
 export interface InvoiceDocument {
   kind: 'invoice' | 'receipt';
@@ -23,6 +36,33 @@ export interface InvoiceDocument {
   taxRate: number;
   items: readonly LineItem[];
   notes: string;
+  /** Drawn above the title, if there is one. PNG or JPEG only. */
+  logo?: InvoiceLogo | null;
+}
+
+/**
+ * The box the logo is fitted into, in points.
+ *
+ * Wide and short, because that is the shape of a wordmark. Anything taller is
+ * scaled down to fit rather than cropped, so a square mark comes out 55pt
+ * square rather than 150 wide and squashed.
+ */
+const LOGO_BOX = { width: 150, height: 55 };
+
+/**
+ * The size a logo is drawn at: contained in LOGO_BOX, aspect kept, never
+ * enlarged.
+ *
+ * The clamp at 1 is the part worth having a name. A 60px favicon stretched to
+ * 150pt is a blurry mess, and the person who uploaded it blames the invoice
+ * rather than the file.
+ */
+export function logoSize(width: number, height: number): { width: number; height: number } {
+  if (!(width > 0) || !(height > 0)) {
+    return { width: 0, height: 0 };
+  }
+  const scale = Math.min(LOGO_BOX.width / width, LOGO_BOX.height / height, 1);
+  return { width: width * scale, height: height * scale };
 }
 
 const PAGE = { width: 595.28, height: 841.89 };
@@ -130,6 +170,17 @@ export async function renderInvoice(doc: InvoiceDocument): Promise<Uint8Array> {
   };
 
   // --- Header ----------------------------------------------------------
+  if (doc.logo) {
+    const image =
+      doc.logo.format === 'png'
+        ? await pdf.embedPng(doc.logo.bytes)
+        : await pdf.embedJpg(doc.logo.bytes);
+    const { width, height } = logoSize(image.width, image.height);
+    y -= height;
+    page.drawImage(image, { x: MARGIN, y, width, height });
+    y -= 14;
+  }
+
   y -= 24;
   text(doc.kind === 'receipt' ? 'RECEIPT' : 'INVOICE', 0, 24, bold);
   rightText(doc.number, content, 12, bold);

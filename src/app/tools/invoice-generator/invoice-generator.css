@@ -1,3 +1,97 @@
+/* Form beside preview. `minmax(0, …)` on the form column rather than `1fr`
+   alone, because the line-items table would otherwise set the column's minimum
+   width to its own content and push the preview off the side. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+/* Below this the two columns are each too narrow to be worth having, so the
+   preview goes under the form. */
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  /* Follows you down the form: the point of a live preview is seeing the
+     effect of the field you are in, whichever one that is. Offset by the app
+     bar's own height, or it slides under the sticky header on the way down. */
+  position: sticky;
+  top: calc(var(--app-bar-h) + 1rem);
+}
+
+.preview__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.preview__title {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--on);
+}
+
+.preview__pages {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--on-var);
+}
+
+/* Always paper-white, in both themes: this is a picture of a printed page, and
+   a dark-grey invoice preview would be a picture of nothing anyone will get. */
+.preview__frame {
+  border: 1px solid var(--outline);
+  border-radius: var(--r-field);
+  background: #ffffff;
+  overflow: hidden;
+  /* A4 until the first render arrives, so the column does not jump. */
+  aspect-ratio: 1 / 1.414;
+}
+
+.preview__page {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Hidden until it has been drawn once — a 300x150 default canvas stretched
+     across the frame is a grey smear, not a preview. */
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.preview__page--ready {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview__page {
+    transition: none;
+  }
+}
+
+.logo-name {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--on-var);
+  overflow-wrap: anywhere;
+}
+
 .control {
   display: flex;
   flex-direction: column;
@@ -91,7 +185,10 @@
   vertical-align: middle;
 }
 
-.items__num {
+/* Two classes deep so it beats `.items th`, which sets text-align: left for the
+   description column. Without that the numeric headings sat hard left while the
+   figures under them sat right, and nothing lined up with its own column. */
+.items .items__num {
   text-align: right;
 }
 

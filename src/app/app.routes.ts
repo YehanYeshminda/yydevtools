@@ -642,8 +642,8 @@ export const routes: Routes = [
     title: 'Invoice & Receipt Generator — Free PDF Invoices — YYDevTools',
     data: {
       description:
-        'Make an invoice or a receipt and download it as a PDF. Ten currencies, tax, line items ' +
-        'and notes. No account, and nothing is uploaded.',
+        'Make an invoice or a receipt with a live preview and your own logo, and download it as ' +
+        'a PDF. Ten currencies, tax, line items and notes. No account, and nothing is uploaded.',
     },
   },
   {

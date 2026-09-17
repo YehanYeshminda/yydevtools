@@ -113,7 +113,7 @@ export const TOOLS: Tool[] = [
     slug: 'invoice-generator',
     name: 'Invoice & Receipt Generator',
     description:
-      'Fill in an invoice or a receipt and download it as a PDF — no account, nothing uploaded.',
+      'Fill in an invoice or a receipt, watch it build live, add your logo and download the PDF.',
     icon: 'matReceiptLongOutline',
     category: 'Document',
     ready: true,

@@ -165,3 +165,38 @@ export function fileStemFor(kind: string, number: string): string {
     .replace(/^-+|-+$/g, '');
   return `${kind}-${cleaned || 'document'}`.slice(0, 60);
 }
+
+/** The image formats pdf-lib can embed without a third-party decoder. */
+export type LogoFormat = 'png' | 'jpg';
+
+/**
+ * A logo has to be embedded, so it also has to be sane before it is stored.
+ *
+ * 2 MB is already far more than a letterhead needs, and every byte of it ends
+ * up inside every invoice the visitor produces.
+ */
+export const MAX_LOGO_BYTES = 2 * 1024 * 1024;
+
+/**
+ * What kind of image these bytes actually are, or null for anything else.
+ *
+ * Sniffed from the bytes rather than read off `File.type`, which the browser
+ * fills in from the file extension. A WebP renamed to .png arrives claiming to
+ * be a PNG, and pdf-lib does not fail gracefully on it — it throws part-way
+ * through building the document, so the invoice is lost rather than the logo.
+ */
+export function imageFormat(bytes: Uint8Array): LogoFormat | null {
+  if (
+    bytes.length > 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47
+  ) {
+    return 'png';
+  }
+  if (bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return 'jpg';
+  }
+  return null;
+}
