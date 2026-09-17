@@ -736,6 +736,74 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['case-converter', 'word-counter', 'text-diff', 'file-inspector'],
   },
+  'base-converter': {
+    slug: 'base-converter',
+    intro: [
+      'Binary, octal, decimal and hexadecimal side by side, plus any base up to 36, and a row of bits you can click to flip. Type in whichever base you are holding the number in — or paste it with a 0x, 0b or 0o prefix and let the prefix decide.',
+      'Everything is computed on arbitrary-precision integers, which matters more than it sounds. A converter written with ordinary JavaScript numbers starts losing the low bits of anything above 9,007,199,254,740,991, and it does it silently: a 64-bit hash or snowflake ID comes back the right length and the wrong value.',
+    ],
+    steps: [
+      'Type or paste the number. A 0x, 0b or 0o prefix sets the base by itself; otherwise pick the base with the tabs.',
+      'Read it in binary, octal, decimal and hex, all at once, grouped for legibility.',
+      'Set the last row to any base from 2 to 36 if you need one of the unusual ones.',
+      'Use the bit view to see the two’s-complement representation at 8, 16, 32 or 64 bits — and click a bit to flip it and watch every other row follow.',
+    ],
+    features: [
+      'Binary, octal, decimal and hexadecimal at once, plus any base from 2 to 36.',
+      'Arbitrary precision, so 64-bit values keep every digit.',
+      'A 0x, 0b or 0o prefix overrides the selected base.',
+      'Underscores and spaces in the input are ignored, so pasted values work as written.',
+      'A clickable two’s-complement bit view at 8, 16, 32 or 64 bits, with a set-bit count.',
+      'Negative numbers, represented the way hardware represents them.',
+      'Runs in your browser; nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Why hexadecimal, and why octal survives',
+        body: [
+          'Hexadecimal exists because one hex digit is exactly four bits, so a byte is always two digits and a 32-bit value is always eight. Nothing has to be counted: the boundaries between digits and the boundaries between nibbles are the same boundaries. That is why colours, memory addresses, hashes and byte dumps are all written in hex, and why converting between hex and binary is the one base conversion you can do in your head.',
+          'Octal is the same trick with three bits instead of four, and it is a relic of machines with 12, 24 and 36-bit words, where three divided evenly and four did not. It survives in exactly one place most people meet: Unix file permissions, where three bits of read, write and execute per group is precisely one octal digit — which is why chmod 755 is a sentence rather than a number.',
+        ],
+      },
+      {
+        heading: 'Two’s complement, and why -1 is all ones',
+        body: [
+          'A negative number in a fixed number of bits has to be encoded, and the encoding almost every machine uses is two’s complement: the value sits 2^width below where an unsigned reading would put it. So in eight bits, 11111111 is -1, 10000000 is -128, and the range runs from -128 to 127 rather than symmetrically around zero.',
+          'The reason it won over the more obvious sign-and-magnitude is that addition does not need to know about signs. 11111111 plus 00000001 overflows to 00000000, which is exactly -1 + 1 = 0, using the same adder as any other sum. It also means there is one zero rather than two, and it is why the smallest negative number has no positive counterpart — a fact that produces a genuine bug roughly once per career, when negating it overflows back to itself.',
+        ],
+      },
+      {
+        heading: 'The number that is too big for a number',
+        body: [
+          'JavaScript has one numeric type, a 64-bit double, and it represents integers exactly only up to 2^53 - 1. Past that, consecutive integers start sharing a representation. A tool that parses input with parseInt and converts with toString will therefore round a 64-bit value on the way in and produce a confident, wrong answer — the sort of bug that survives review because the output looks entirely reasonable.',
+          'This page uses BigInt for every step: parsing, conversion and the bit view. There is no upper limit on the base conversions at all; the bit view stops at 64 bits only because that is the widest register anyone is usually asking about.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'What is the biggest number it can handle?',
+        a: 'For the base conversions, there is no practical limit — the arithmetic is arbitrary precision. The bit view is offered at 8, 16, 32 and 64 bits, and tells you when a value is too large for the width you have selected rather than truncating it.',
+      },
+      {
+        q: 'Why does switching the base change my input?',
+        a: 'Because that is almost always what is meant. With 255 on screen in decimal, switching to hexadecimal rewrites it as ff rather than re-reading the digits 2, 5 and 5 as a hex number. If you do want the digits read differently, type them with a prefix instead.',
+      },
+      {
+        q: 'How are negative numbers shown?',
+        a: 'The converted rows keep a minus sign, because that is how a number is written. The bit view uses two’s complement, because that is how a machine stores it — so -1 at eight bits is eight ones, not a sign bit and a 1.',
+      },
+      {
+        q: 'Does it handle fractions?',
+        a: 'No. This converts integers. Fractional values in another base raise questions about precision and repeating expansions that a converter cannot answer without guessing, and getting them silently wrong is worse than not offering them.',
+      },
+      {
+        q: 'Why are underscores allowed?',
+        a: 'Because several languages permit them in numeric literals — 1_000_000 in JavaScript, Python, Rust and Java — and refusing a value you can legally paste out of your own source would be pedantry. Spaces are ignored for the same reason, since binary is often written in groups.',
+      },
+    ],
+    related: ['base64-converter', 'hash-generator', 'color-converter', 'timestamp-converter'],
+  },
   'age-calculator': {
     slug: 'age-calculator',
     intro: [

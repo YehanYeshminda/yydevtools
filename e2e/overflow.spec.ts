@@ -137,3 +137,13 @@ test('text-cleaner keeps a long token inside both editors', async ({ page }) => 
   await expect(page.getByTestId('summary')).toBeVisible();
   await expectFitsAtEveryWidth(page);
 });
+
+test('base-converter keeps a 256-bit value inside every row', async ({ page }) => {
+  await gotoTool(page, 'base-converter', 'Number Base Converter');
+  // A 64-hex-digit value: unbreakable, and the binary row it produces is 256
+  // characters long, which is the widest thing this tool can ever render.
+  await page.getByRole('button', { name: 'Hexadecimal', exact: true }).click();
+  await page.locator('#base-input').fill('f'.repeat(64));
+  await expect(page.locator('.row__value').first()).toBeVisible();
+  await expectFitsAtEveryWidth(page);
+});

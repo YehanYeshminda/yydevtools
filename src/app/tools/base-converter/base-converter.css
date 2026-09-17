@@ -1,0 +1,88 @@
+.value {
+  font-family: var(--mono);
+  font-size: 1.1rem;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.tabs {
+  align-self: flex-start;
+}
+
+/* The "any base" row carries its own number input inside the label column. */
+.other {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.other__input {
+  width: 3.5rem;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--outline);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--on);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+
+.bits-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Bits wrap in groups of eight, which is why the gap between every eighth
+   pair is wider — a 32-bit value should read as four bytes, not 32 boxes. */
+.bits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.bit {
+  width: 1.75rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--outline);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--on-dim);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  cursor: var(--cursor-pointer);
+}
+
+.bit:nth-child(8n + 1):not(:first-child) {
+  margin-left: 0.6rem;
+}
+
+.bit--on {
+  color: var(--on-brand);
+  background: var(--brand);
+  border-color: var(--brand);
+  font-weight: 700;
+}
+
+.bit:hover {
+  border-color: var(--brand);
+}
+
+.bit:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.row__value {
+  font-family: var(--mono);
+}

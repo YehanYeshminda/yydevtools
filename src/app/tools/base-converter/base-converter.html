@@ -1,0 +1,152 @@
+<app-tool-page slug="base-converter">
+  Convert a number between binary, octal, decimal, hexadecimal and any base up to 36, with a bit
+  view you can click.
+</app-tool-page>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="base-input">Number</label>
+    <input
+      id="base-input"
+      class="field__input value"
+      type="text"
+      spellcheck="false"
+      autocomplete="off"
+      autocapitalize="off"
+      placeholder="255, 0xff, 0b1010, 1_000_000…"
+      [value]="input()"
+      (input)="onInput($any($event.target).value)"
+    />
+    <span class="field__hint">
+      A <code>0x</code>, <code>0b</code> or <code>0o</code> prefix sets the base itself. Underscores
+      and spaces are ignored.
+    </span>
+  </div>
+
+  <div class="control">
+    <span class="control__label" id="base-label">Read it as</span>
+    <div class="tabs" role="group" aria-labelledby="base-label">
+      @for (base of bases; track base) {
+        <button
+          type="button"
+          class="tab"
+          [class.tab--active]="inputBase() === base"
+          [attr.aria-pressed]="inputBase() === base"
+          (click)="setInputBase(base)"
+        >
+          {{ baseLabels[base] }}
+        </button>
+      }
+    </div>
+    @if (prefixBase(); as prefix) {
+      <span class="field__hint">
+        The prefix wins: this is being read as {{ baseLabels[prefix] }}.
+      </span>
+    }
+  </div>
+
+  <div class="actions">
+    <button matButton (click)="clear()">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+    <app-share-link [state]="shared" />
+    <app-send-to [text]="input()" from="base-converter" />
+  </div>
+
+  @if (invalid()) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      That is not a number in base {{ inputBase() }}.
+    </p>
+  } @else if (!empty()) {
+    <ul class="rows">
+      @for (row of rows(); track row.base) {
+        <li class="row">
+          <span class="row__label">{{ row.label }}</span>
+          <p class="row__value">{{ row.grouped }}</p>
+          <button
+            type="button"
+            matIconButton
+            (click)="copy(row)"
+            [attr.aria-label]="'Copy ' + row.label"
+          >
+            <ng-icon name="matContentCopyOutline" />
+          </button>
+        </li>
+      }
+      <li class="row">
+        <label class="row__label other" for="other-base">
+          Base
+          <input
+            id="other-base"
+            class="other__input"
+            type="number"
+            [attr.min]="minBase"
+            [attr.max]="maxBase"
+            inputmode="numeric"
+            [value]="otherBase()"
+            (input)="setOtherBase($any($event.target).value)"
+          />
+        </label>
+        <p class="row__value">{{ otherValue() }}</p>
+        <button type="button" matIconButton (click)="copyOther()" aria-label="Copy the other base">
+          <ng-icon name="matContentCopyOutline" />
+        </button>
+      </li>
+    </ul>
+
+    <section class="bits-section">
+      <div class="control">
+        <span class="control__label" id="width-label">Bits</span>
+        <div class="tabs" role="group" aria-labelledby="width-label">
+          @for (option of widths; track option) {
+            <button
+              type="button"
+              class="tab"
+              [class.tab--active]="width() === option"
+              [attr.aria-pressed]="width() === option"
+              (click)="setWidth(option)"
+            >
+              {{ option }}
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (showBits()) {
+        <div class="bits" data-testid="bits">
+          @for (bit of bits(); track $index) {
+            <button
+              type="button"
+              class="bit"
+              [class.bit--on]="bit"
+              [attr.aria-pressed]="bit"
+              [attr.aria-label]="'Bit ' + (width() - 1 - $index)"
+              (click)="flip($index)"
+            >
+              {{ bit ? 1 : 0 }}
+            </button>
+          }
+        </div>
+        <p class="field__hint">
+          Most significant bit first; a negative value is shown in two’s complement.
+          {{ setBits() }} of {{ width() }} set. Click one to flip it.
+        </p>
+      } @else if (tooWideFor()) {
+        <p class="field__hint">
+          This value does not fit in {{ width() }} bits as a signed number. Pick a wider one.
+        </p>
+      }
+    </section>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Arithmetic is done on arbitrary-precision integers, so a full 64-bit value keeps every digit. A
+    converter built on ordinary JavaScript numbers loses the low bits of anything above
+    9,007,199,254,740,991 without saying so.
+  </p>
+</div>
+
+<app-tool-content slug="base-converter" />

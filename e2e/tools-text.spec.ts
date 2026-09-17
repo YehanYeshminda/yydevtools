@@ -465,6 +465,42 @@ test('url-encoder encodes a value and breaks a URL into parts', async ({ page })
   expectClean(watch);
 });
 
+test('base-converter converts, honours a prefix and flips a bit', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'base-converter', 'Number Base Converter');
+
+  const input = page.locator('#base-input');
+  await input.fill('255');
+  await expect(page.getByText('1111 1111')).toBeVisible();
+  await expect(page.getByText('377', { exact: true })).toBeVisible();
+
+  // A byte is eight bits, even though signed eight-bit stops at 127 — the bit
+  // view is for looking at a pattern, and this one reads as 255 or as -1.
+  await expect(page.getByTestId('bits').locator('.bit')).toHaveCount(8);
+
+  // Flipping the lowest bit of 255 gives 254, not -2.
+  await page.getByTestId('bits').locator('.bit').nth(7).click();
+  await expect(input).toHaveValue('254');
+
+  // A prefix beats the selected base.
+  await input.fill('0xdeadbeef');
+  await expect(page.getByText('3 735 928 559')).toBeVisible();
+  await expect(page.getByText(/prefix wins/)).toBeVisible();
+
+  // Above 2^53, where a converter built on doubles quietly rounds.
+  await input.fill('18446744073709551615');
+  await expect(page.getByText('ffff ffff ffff ffff')).toBeVisible();
+
+  // Switching the base rewrites the value rather than re-reading the digits,
+  // so an invalid one has to be typed after the switch.
+  await page.getByRole('button', { name: 'Binary', exact: true }).click();
+  await expect(input).toHaveValue(/^[01]+$/);
+  await input.fill('99');
+  await expect(page.getByRole('alert')).toContainText('not a number in base 2');
+
+  expectClean(watch);
+});
+
 test('age-calculator measures a span both ways round', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'age-calculator', 'Age & Date Difference Calculator');

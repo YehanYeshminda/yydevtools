@@ -47,6 +47,7 @@ the homepage grid, search, command palette and this table all come from it.
 
 | Tool | Description |
 | --- | --- |
+| **Number Base Converter** | Binary, octal, decimal, hex and any base up to 36, with a clickable bit view. |
 | **Base64 Converter** | Encode and decode text or files to and from Base64. |
 | **JSON ↔ CSV Converter** | Turn a JSON array into a spreadsheet-ready CSV or a CSV into JSON objects, nested fields included. |
 | **URL Encoder / Decoder** | Percent-encode or decode URLs and query values, and break a URL into its parts. |

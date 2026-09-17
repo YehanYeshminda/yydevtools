@@ -603,6 +603,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/base-converter',
+    loadComponent: () =>
+      import('./tools/base-converter/base-converter').then((m) => m.BaseConverterTool),
+    title: 'Number Base Converter — Binary, Octal, Decimal, Hex — YYDevTools',
+    data: {
+      description:
+        'Convert a number between binary, octal, decimal, hexadecimal and any base up to 36, ' +
+        'with a two’s-complement bit view you can click. Free, in your browser.',
+    },
+  },
+  {
     path: 'tools/age-calculator',
     loadComponent: () =>
       import('./tools/age-calculator/age-calculator').then((m) => m.AgeCalculatorTool),

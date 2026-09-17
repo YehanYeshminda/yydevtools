@@ -203,6 +203,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'base-converter',
+    name: 'Number Base Converter',
+    description:
+      'Convert between binary, octal, decimal, hexadecimal and any base up to 36, with a clickable bit view.',
+    icon: 'matSyncAltOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'base64-converter',
     name: 'Base64 Converter',
     description: 'Encode and decode text or files to and from Base64.',
