@@ -980,6 +980,74 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['hash-generator', 'timestamp-converter', 'jwt-decoder'],
   },
 
+  'secret-link': {
+    slug: 'secret-link',
+    intro: [
+      'Sending someone a password is the part of the job with no good answer. Email keeps a copy forever, in two mailboxes and on whatever backs them up. Chat keeps a copy and syncs it to everyone\'s phone. A shared document keeps a copy and a revision history. None of those were built to hold a secret for five minutes and then forget it, which is what you actually want.',
+      'This makes a link that works exactly once. The secret is encrypted in your browser before anything is sent; the ciphertext goes to the server and the key stays in the part of the URL after the # — the fragment, which browsers do not send in requests. The recipient opens the link, the ciphertext is handed over and deleted in the same moment, and their browser does the decryption. Send the link by whatever channel you like: what is left behind in that mailbox or chat is a URL that no longer opens anything.',
+    ],
+    steps: [
+      'Paste the password, key or recovery code in.',
+      'Choose how long it should survive unopened — an hour, a day or a week. If nobody opens it by then it is deleted unread.',
+      'Create the link and copy the whole thing, including everything after the #.',
+      'Send it however you normally would. The link is useless once used, so the copy left in the chat log is harmless.',
+      'The recipient clicks Reveal, reads the secret, and the link stops working.',
+    ],
+    features: [
+      'AES-256-GCM encryption in the browser, before anything leaves the tab.',
+      'The decryption key travels in the URL fragment, which is never sent to a server.',
+      'Opens once: the ciphertext is deleted as it is handed over.',
+      'Expires on its own after an hour, a day or a week, whether or not it was ever opened.',
+      'Revealed on a click, not on page load, so link previews and mail scanners cannot burn it.',
+      'Nothing to sign up for, and nothing stored that could identify who sent what.',
+    ],
+    sections: [
+      {
+        heading: 'Why the fragment matters',
+        body: [
+          'Everything after the # in a URL is the fragment. It was designed to point at a place within a page, and browsers treat it as purely local: it is not included in the request line, not in any header, and not in the Referer sent to the next site. A server literally cannot see it, and neither can the proxies and load balancers in between, because it never goes on the wire.',
+          'That is what the key rides in. The server that stores your ciphertext therefore has no way to obtain the key, not through a subpoena, a breach or a change of heart — there is nothing on that side to hand over. The id of the entry is in the fragment too, which it does not strictly need to be; keeping it out of the path just keeps it out of server logs and browser history sync at no cost.',
+        ],
+      },
+      {
+        heading: 'What "opens once" really means',
+        body: [
+          'The ciphertext is deleted at the moment it is handed out, and the delete is waited for before the response is sent. In every ordinary case a second click gets nothing, which is the behaviour you want: if a recipient says the link did not work, that is a reason to treat the secret as compromised and rotate it.',
+          'The honest caveat is that this is built on Cloudflare KV, which is eventually consistent rather than transactional. It is not an atomic compare-and-delete, so two requests arriving in the same instant at different edge locations could in principle both succeed. Closing that last gap needs a different storage primitive and a great deal more machinery. Treat "opens once" as a strong operational property, not a cryptographic guarantee.',
+        ],
+      },
+      {
+        heading: 'What it protects against, and what it does not',
+        body: [
+          'It protects against the secret persisting: in a mailbox, in a chat history, in a backup, in a screenshot of a thread someone scrolls past a year later. It protects against the server operator reading it, because the server never has the key. It protects against a scanner or a link previewer consuming it, because revealing takes a click.',
+          'It does not protect against someone who is reading the channel you sent the link over at the time you send it — if an attacker is in the mailbox, they can open the link before your colleague does. The compensation is that you find out: the recipient reports a dead link, and you know immediately that something is wrong rather than months later. It also cannot help if the recipient pastes the secret somewhere permanent, which is a conversation rather than a feature.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Can you read my secret?',
+        a: 'No. The encryption happens in your browser and the key is never sent — it only ever exists in your tab and, via the fragment, in the recipient\'s. What is stored is a blob that nobody holding it can decrypt.',
+      },
+      {
+        q: 'What if I send the link and the recipient never opens it?',
+        a: 'It is deleted when the expiry you chose runs out, unread. Nothing has to sweep it up and nothing is left behind.',
+      },
+      {
+        q: 'The recipient says the link does not work. What happened?',
+        a: 'Either it was already opened, or it expired, or the link was truncated somewhere in transit — some chat clients and mail systems cut long URLs, and losing the part after the # loses the key. If neither of the last two explains it, assume someone else opened it and rotate the secret.',
+      },
+      {
+        q: 'How large can the secret be?',
+        a: 'Up to 32,000 characters, which is a long way past any password or private key. It is not a file transfer: there is no attachment, only text.',
+      },
+      {
+        q: 'Is there a record of who created or opened a link?',
+        a: 'Nothing is stored beyond the ciphertext and its expiry — no account, no sender, no recipient, no log tying one to the other. Requests are rate limited by IP like the rest of the API, which is the only thing that looks at where a request came from, and it keeps a count rather than a history.',
+      },
+    ],
+    related: ['password-generator', 'key-generator', 'hash-generator', 'jwt-decoder'],
+  },
   'password-generator': {
     slug: 'password-generator',
     intro: [

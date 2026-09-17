@@ -37,6 +37,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **UUID Generator** | Random v4 or time-ordered v7 UUIDs in bulk. |
 | **Certificate Decoder** | Decode an X.509 certificate or chain — subject, issuer, expiry, key, SANs, fingerprints, extensions. *(hosted)* |
 | **Key Generator** | Generate an RSA or EC key pair in the browser — the private key never leaves the device. |
+| **One-Time Secret** | Send a password or key as a link that opens once. Encrypted in your browser; the key never reaches the server. |
 | **Password Generator** | Strong random passwords or EFF passphrases, with a strength and crack-time check. |
 | **Color Converter** | Convert HEX, RGB, HSL, OKLCH and LAB, generate palettes and check WCAG contrast. |
 | **Favicon Generator** | One logo in, every icon out: favicon.ico, the PNG sizes for tabs, iOS and Android, a maskable icon, the manifest and the head tags. |

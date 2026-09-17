@@ -112,6 +112,12 @@
     //   npx wrangler secret put CURRENTS_API_KEY
     // and put a local copy in .dev.vars for `wrangler dev`.
   },
+  // Ciphertext for the one-time secret links. Only opaque blobs land here: the
+  // browser encrypts before sending and the key travels in the URL fragment,
+  // which is never sent to a server. Entries carry a TTL and are deleted on the
+  // first read, so the namespace empties itself.
+  "kv_namespaces": [{ "binding": "SECRETS", "id": "bdbc972594c34402a8b3cae823368f53" }],
+
   // Per-IP rate limit for the /api/* operations, so nobody can hammer the
   // (metered-compute) Fly services. Keyed by CF-Connecting-IP in worker/index.ts.
   // Note: the limiter is per-Cloudflare-location and eventually consistent — an

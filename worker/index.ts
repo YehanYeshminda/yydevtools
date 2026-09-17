@@ -11,6 +11,7 @@
 
 import { ServiceError, serviceEndpoint, forwardToService } from './services';
 import { allowRequest } from './rate-limit';
+import { createSecret, isId, takeSecret, validateCreate, type SecretStore } from './secrets';
 import { getNews } from './news';
 import { cacheControlFor } from './asset-cache';
 import { withSecurityHeaders } from './security-headers';
@@ -39,6 +40,12 @@ export interface Env {
 
   /** CurrentsAPI key for the news feed — a secret (`wrangler secret put CURRENTS_API_KEY`). */
   CURRENTS_API_KEY?: string;
+
+  /**
+   * Ciphertext for the one-time secret links. Only ever holds blobs the Worker
+   * cannot read: the key never leaves the sender's browser.
+   */
+  SECRETS?: KVNamespace;
 
   /** Coarse per-location rate limiter for the API operations (Cloudflare binding). */
   API_RATE_LIMITER?: RateLimiter;
@@ -331,10 +338,9 @@ async function handleWarm(request: Request, env: Env, ctx: ExecutionContext): Pr
   // One canonical key per service, so a query-string variation cannot bypass
   // the dedupe and turn this into a way to hammer the machines.
   const cache = caches.default;
-  const cacheKey = new Request(
-    new URL(`/api/warm?service=${service}`, request.url).toString(),
-    { method: 'GET' },
-  );
+  const cacheKey = new Request(new URL(`/api/warm?service=${service}`, request.url).toString(), {
+    method: 'GET',
+  });
   const hit = await cache.match(cacheKey);
   if (hit) {
     return hit;
@@ -355,6 +361,64 @@ async function handleWarm(request: Request, env: Env, ctx: ExecutionContext): Pr
   );
   ctx.waitUntil(cache.put(cacheKey, response.clone()));
   return response;
+}
+
+/**
+ * Stores one encrypted blob for a one-time link.
+ *
+ * Everything here is opaque: the browser encrypted the secret and keeps the
+ * key, so this endpoint could not read what it is storing even if it wanted to.
+ */
+async function handleSecretCreate(request: Request, env: Env): Promise<Response> {
+  if (!env.SECRETS) {
+    return fail('NOT_CONFIGURED', 'One-time secret links are not available right now.');
+  }
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return fail('INVALID_INPUT', 'Expected a JSON body.');
+  }
+
+  const checked = validateCreate(body);
+  if (!checked.ok) {
+    return fail('INVALID_INPUT', checked.message);
+  }
+
+  const stored = await createSecret(env.SECRETS as SecretStore, checked);
+  return Response.json(stored);
+}
+
+/**
+ * Hands out a blob once and deletes it.
+ *
+ * POST rather than GET on purpose: chat clients, mail scanners and link
+ * previewers fetch URLs they are shown, and a GET here would let them burn the
+ * secret before the recipient ever opened the page.
+ */
+async function handleSecretRead(request: Request, env: Env): Promise<Response> {
+  if (!env.SECRETS) {
+    return fail('NOT_CONFIGURED', 'One-time secret links are not available right now.');
+  }
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return fail('INVALID_INPUT', 'Expected a JSON body.');
+  }
+
+  const id = (body as { id?: unknown })?.id;
+  if (!isId(id)) {
+    return fail('INVALID_INPUT', 'That is not a valid link.');
+  }
+
+  const secret = await takeSecret(env.SECRETS as SecretStore, id);
+  if (!secret) {
+    // Opened already, expired, or never existed — deliberately the same answer
+    // for all three, so nobody can probe for which ids once existed.
+    return fail('NOT_FOUND', 'This link has already been opened, or it has expired.');
+  }
+  return Response.json(secret);
 }
 
 async function handleApi(
@@ -402,6 +466,13 @@ async function handleApi(
   }
 
   const url = new URL(request.url);
+
+  if (path === '/api/secret/create') {
+    return handleSecretCreate(request, env);
+  }
+  if (path === '/api/secret/read') {
+    return handleSecretRead(request, env);
+  }
 
   if (path === '/api/pdf/compress') {
     const level = (url.searchParams.get('level') ?? 'MEDIUM').toUpperCase();

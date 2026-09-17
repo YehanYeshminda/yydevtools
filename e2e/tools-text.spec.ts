@@ -540,3 +540,55 @@ test('text-cleaner strips invisible characters and tidies the lines', async ({ p
 
   expectClean(watch);
 });
+
+/**
+ * One-time secret links need the Worker, which a bare `ng serve` is not.
+ *
+ * Rather than gate on an env var, this branches on what the page actually does:
+ * point it at a deployment (or at `wrangler dev`) and it asserts the whole
+ * create-open-burn round trip; against a dev server with no API behind it, it
+ * asserts the tool fails loudly instead of hanging, which is the only honest
+ * thing it can do there. Either way the assertion is real, and nobody has to
+ * remember which flag to set.
+ */
+test('secret-link seals a secret, opens it once, and burns it', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'secret-link', 'One-Time Secret');
+
+  const secret = 'correct horse battery staple';
+  await page.locator('#secret').fill(secret);
+  await page.getByRole('button', { name: 'Create one-time link' }).click();
+
+  const link = page.getByTestId('link');
+  const failed = page.getByTestId('error');
+  await expect(link.or(failed).first()).toBeVisible({ timeout: 30_000 });
+
+  if ((await link.count()) === 0) {
+    // No API here. It said so instead of spinning forever, which is the point.
+    await expect(failed).toBeVisible();
+    return;
+  }
+
+  const url = await link.inputValue();
+  // The key rides in the fragment, so it is in the link and nowhere else.
+  const [, fragment] = url.split('#');
+  expect(fragment).toMatch(/^[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/);
+
+  // Opening is a click, not a page load: a previewer that fetches the URL must
+  // not be able to burn it.
+  await page.goto(url);
+  await expect(page.getByTestId('waiting')).toBeVisible();
+  await expect(page.getByTestId('revealed')).toHaveCount(0);
+
+  await page.getByTestId('reveal').click();
+  await expect(page.getByTestId('revealed')).toHaveValue(secret, { timeout: 30_000 });
+
+  // Second time round it is gone. Reload rather than navigate: the URL has not
+  // changed, so a goto would be a same-document hop and the app would never
+  // re-bootstrap.
+  await page.reload();
+  await page.getByTestId('reveal').click();
+  await expect(failed).toContainText('already been opened', { timeout: 30_000 });
+
+  expectClean(watch);
+});

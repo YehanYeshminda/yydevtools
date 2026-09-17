@@ -475,6 +475,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/secret-link',
+    loadComponent: () => import('./tools/secret-link/secret-link').then((m) => m.SecretLinkTool),
+    title: 'One-Time Secret Link — Share a password safely — YYDevTools',
+    data: {
+      description:
+        'Share a password or API key as a link that works exactly once. Encrypted in your ' +
+        'browser with AES-256-GCM; the key travels in the URL fragment and never reaches a server.',
+    },
+  },
+  {
     path: 'tools/password-generator',
     loadComponent: () =>
       import('./tools/password-generator/password-generator').then((m) => m.PasswordGeneratorTool),

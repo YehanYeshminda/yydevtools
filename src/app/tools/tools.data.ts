@@ -159,6 +159,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'secret-link',
+    name: 'One-Time Secret',
+    description:
+      'Send a password or key as a link that opens once. Encrypted in your browser; the key never reaches the server.',
+    icon: 'matLockClockOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'password-generator',
     name: 'Password Generator',
     description:
