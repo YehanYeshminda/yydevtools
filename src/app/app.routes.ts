@@ -603,6 +603,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/age-calculator',
+    loadComponent: () =>
+      import('./tools/age-calculator/age-calculator').then((m) => m.AgeCalculatorTool),
+    title: 'Age Calculator & Date Difference — YYDevTools',
+    data: {
+      description:
+        'Work out an age from a date of birth, or the difference between any two dates, in ' +
+        'years, months and days and in total days, weeks, weekdays and hours. Free, in your browser.',
+    },
+  },
+  {
     path: 'tools/lorem-ipsum',
     loadComponent: () => import('./tools/lorem-ipsum/lorem-ipsum').then((m) => m.LoremIpsumTool),
     title: 'Lorem Ipsum Generator — Placeholder text — YYDevTools',

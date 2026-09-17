@@ -736,6 +736,74 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['case-converter', 'word-counter', 'text-diff', 'file-inspector'],
   },
+  'age-calculator': {
+    slug: 'age-calculator',
+    intro: [
+      'Two dates, and the two answers people actually want from them. The calendar span — "34 years, 2 months and 11 days" — is what an age is, what a length of service is, and what a form is asking for. The totals — days, weeks, months, weekdays, hours, minutes — are what you need when you are counting down to something, working out a deadline, or checking a figure someone else produced.',
+      'Type a date of birth to get an age, or put any two dates in to get the distance between them. The second field starts at today, so an age needs one date and nothing else. Everything is worked out in the page; no dates are sent anywhere.',
+    ],
+    steps: [
+      'Put the earlier date — a date of birth, a start date, an anniversary — in the first field.',
+      'Leave the second field at today for an age, or set it to any other date to measure a span.',
+      'Read the calendar span at the top and the totals underneath.',
+      'Copy the whole result, or share the link to bring the same two dates back.',
+    ],
+    features: [
+      'Years, months and days, counted the way calendars and paperwork count them.',
+      'Totals in days, weeks, months, weekdays, hours and minutes.',
+      'The weekday the first date fell on.',
+      'A countdown to the next anniversary of it.',
+      'Handles leap years, 29 February birthdays and month lengths correctly.',
+      'Works in both directions: a future date in the second field counts down instead of up.',
+      'Runs in your browser; nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'What "a month later" means',
+        body: [
+          'A month is not a fixed length, so "one month after 31 January" has to be decided rather than calculated. The answer used by calendars, payroll systems and most legal definitions is the same day of the next month, and where that day does not exist, the last day of the month instead — so 31 January plus a month is 28 or 29 February, not 2 or 3 March.',
+          'This matters more than it sounds, because the obvious way to write the calculation gets it wrong. Subtracting the year, month and day fields separately and borrowing when the day goes negative breaks on 31 January to 1 March: the month it borrows from is February, which is shorter than the day being borrowed for, and the result is still negative. Counting whole months forward from the earlier date and measuring the remainder avoids the problem entirely, which is how it is done here.',
+        ],
+      },
+      {
+        heading: 'Birthdays on 29 February',
+        body: [
+          'Someone born on 29 February has a birthday that exists in one year out of four, so the other three have to be decided by convention. England and Wales, and most of the United States, treat the birthday as 28 February — you are a year older as soon as the last day of February has passed. New Zealand, Taiwan and some other jurisdictions use 1 March. There is no universal answer.',
+          'This calculator uses the 28 February convention, because it follows from the same "clamp to the last day that exists" rule as every other month calculation, and because it is the more common one. The next-anniversary line is the exception: it points at 1 March in a common year, since 29 February has not arrived and the date on the calendar closest to it that has not gone by is the 1st.',
+        ],
+      },
+      {
+        heading: 'Why the day count and the month count disagree',
+        body: [
+          'A span of "1 month" can be 28, 29, 30 or 31 days, so the months total and the days total are answers to different questions rather than two views of the same number. 12 months is exactly a year in the calendar sense and 365 or 366 days in the counting sense, and both are correct.',
+          'The weekday total is the one worth reading carefully. It counts Mondays to Fridays in the range and knows nothing about public holidays, which vary by country and sometimes by region, so treat it as a ceiling on working days rather than a figure to put in a contract.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Does it handle leap years?',
+        a: 'Yes, in both directions. A span that crosses 29 February includes it in the day count, and a year that does not have one is 365 days. Leap years are also why the months and days totals do not divide into each other cleanly.',
+      },
+      {
+        q: 'What if I put the later date first?',
+        a: 'It measures the span the other way round and says so, rather than showing a negative number. Someone counting down to a date and someone counting up from one want the same answer.',
+      },
+      {
+        q: 'Does the time of day matter?',
+        a: 'No. Everything is calendar days at local midnight, which is what an age is. It also sidesteps a real hazard: a date typed as text and read as UTC comes out a day early anywhere west of Greenwich, so the dates here are built as local ones deliberately.',
+      },
+      {
+        q: 'Are public holidays counted in the weekday total?',
+        a: 'No. It counts Monday to Friday and nothing else, because holidays differ by country and by region. It is an upper bound on working days, not a payroll figure.',
+      },
+      {
+        q: 'Do my dates leave the page?',
+        a: 'No. The calculation is a few lines of arithmetic in your browser, and a date of birth is exactly the sort of thing that should not be sent to a server to be subtracted.',
+      },
+    ],
+    related: ['timestamp-converter', 'cron-explainer', 'word-counter', 'qr-generator'],
+  },
   'lorem-ipsum': {
     slug: 'lorem-ipsum',
     intro: [

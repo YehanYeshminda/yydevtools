@@ -307,6 +307,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'age-calculator',
+    name: 'Age & Date Difference Calculator',
+    description:
+      'Work out an age, or the span between two dates, in years, months and days and in total days, weeks and hours.',
+    icon: 'matEventOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'word-counter',
     name: 'Word & Character Counter',
     description:

@@ -1,0 +1,100 @@
+<app-tool-page slug="age-calculator">
+  Work out an age, or the distance between any two dates — in years, months and days, and in total
+  days, weeks, months, weekdays, hours and minutes.
+</app-tool-page>
+
+<div class="panel">
+  <div class="dates">
+    <div class="field">
+      <label class="field__label" for="age-from">Date of birth, or the first date</label>
+      <input
+        id="age-from"
+        class="field__input"
+        type="date"
+        [value]="from()"
+        (input)="setFrom($any($event.target).value)"
+      />
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="age-to">Second date</label>
+      <input
+        id="age-to"
+        class="field__input"
+        type="date"
+        [value]="to()"
+        (input)="setTo($any($event.target).value)"
+      />
+      <span class="field__hint">Starts at today. Put a future date here to count down to it.</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button matButton (click)="useToday()">
+      <ng-icon name="matEventOutline" />
+      Second date = today
+    </button>
+    <button matButton (click)="swap()">
+      <ng-icon name="matSwapVertOutline" />
+      Swap
+    </button>
+    <button matButton [disabled]="!ready()" (click)="copy()">
+      <ng-icon name="matContentCopyOutline" />
+      Copy result
+    </button>
+    <button matButton (click)="clear()">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+    <app-share-link [state]="shared" />
+  </div>
+
+  @if (ready()) {
+    <div class="result" data-testid="result">
+      <p class="result__headline">{{ headline() }}</p>
+      @if (reversed()) {
+        <p class="result__note">
+          The second date is the earlier one, so the span is measured the other way round.
+        </p>
+      }
+    </div>
+
+    <ul class="rows">
+      @for (total of totals(); track total.label) {
+        <li class="row">
+          <span class="row__label">{{ total.label }}</span>
+          <p class="row__value">{{ total.value }}</p>
+        </li>
+      }
+    </ul>
+
+    <div class="facts">
+      <p class="fact">
+        <ng-icon class="fact__icon" aria-hidden="true" name="matEventOutline" />
+        That first date was a <strong>{{ startWeekday() }}</strong
+        >.
+      </p>
+      @if (anniversary(); as next) {
+        <p class="fact">
+          <ng-icon class="fact__icon" aria-hidden="true" name="matScheduleOutline" />
+          @if (next.daysAway === 0) {
+            The anniversary is <strong>today</strong>.
+          } @else {
+            Next anniversary in <strong>{{ next.daysAway }} days</strong>, on {{ next.date }}.
+          }
+        </p>
+      }
+    </div>
+  } @else {
+    <p class="field__hint">Pick a date to see the answer.</p>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Ages are counted the way calendars and paperwork count them: a month later is the same day of
+    the next month, and where that day does not exist the last day of the month is used — so someone
+    born on 29 February turns a year older on 28 February in a common year.
+  </p>
+</div>
+
+<app-tool-content slug="age-calculator" />

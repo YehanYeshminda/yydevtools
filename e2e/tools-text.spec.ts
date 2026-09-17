@@ -465,6 +465,36 @@ test('url-encoder encodes a value and breaks a URL into parts', async ({ page })
   expectClean(watch);
 });
 
+test('age-calculator measures a span both ways round', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'age-calculator', 'Age & Date Difference Calculator');
+
+  await page.locator('#age-from').fill('1990-05-10');
+  await page.locator('#age-to').fill('2024-05-09');
+
+  const result = page.getByTestId('result');
+  // 29 days, not 30: the last whole month lands on 10 April, which has 30 days.
+  await expect(result).toContainText('33 years, 11 months and 29 days');
+  await expect(page.getByText('12,418')).toBeVisible();
+  await expect(page.getByText(/was a Thursday/)).toBeVisible();
+
+  // A leap-day birthday turns in February in a common year.
+  await page.locator('#age-from').fill('2000-02-29');
+  await page.locator('#age-to').fill('2025-02-28');
+  await expect(result).toContainText('25 years');
+
+  // The later date first is measured the other way round rather than refused.
+  await page.getByRole('button', { name: 'Swap' }).click();
+  await expect(result).toContainText('25 years');
+  await expect(result).toContainText('the other way round');
+
+  // Clearing a date drops back to the prompt rather than showing a stale span.
+  await page.locator('#age-from').fill('');
+  await expect(page.getByText('Pick a date to see the answer.')).toBeVisible();
+
+  expectClean(watch);
+});
+
 test('timestamp-converter converts a known epoch second', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'timestamp-converter', 'Timestamp Converter');

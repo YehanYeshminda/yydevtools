@@ -1,0 +1,53 @@
+.dates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+}
+
+/* The answer is the reason the page exists, so it gets the accent treatment
+   the status lines use rather than being one more row in the list. */
+.result {
+  padding: 1.1rem 1.25rem;
+  background: var(--surface-1);
+  border-left: 2px solid var(--brand);
+}
+
+.result__headline {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--on);
+  font-variant-numeric: tabular-nums;
+}
+
+.result__note {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: var(--on-var);
+}
+
+.row__value {
+  font-variant-numeric: tabular-nums;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.fact {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--on-var);
+}
+
+.fact__icon {
+  font-size: 1.05rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  vertical-align: -0.2em;
+  margin-right: 0.35rem;
+  color: var(--brand);
+}
