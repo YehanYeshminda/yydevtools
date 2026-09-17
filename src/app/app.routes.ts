@@ -636,6 +636,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/invoice-generator',
+    loadComponent: () =>
+      import('./tools/invoice-generator/invoice-generator').then((m) => m.InvoiceGeneratorTool),
+    title: 'Invoice & Receipt Generator — Free PDF Invoices — YYDevTools',
+    data: {
+      description:
+        'Make an invoice or a receipt and download it as a PDF. Ten currencies, tax, line items ' +
+        'and notes. No account, and nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/pomodoro',
     loadComponent: () => import('./tools/pomodoro/pomodoro').then((m) => m.PomodoroTool),
     title: 'Pomodoro Timer & Stopwatch — YYDevTools',

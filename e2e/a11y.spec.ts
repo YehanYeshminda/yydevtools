@@ -19,6 +19,19 @@ const audit = (page: Page) =>
     .exclude('iframe[name^="aswift"]')
     .exclude('#google_esf');
 
+/**
+ * Waits for the loading veil to take itself out of the DOM.
+ *
+ *  is a fixed, decorative full-screen layer that fades and removes
+ * itself about a second and a half in. An audit that lands while it is still
+ * fading measures text blended through a partial opacity and reports a
+ * contrast failure against the veil rather than against the page — which is
+ * what made this suite fail on a different surface every run.
+ */
+async function expectSplashGone(page: Page): Promise<void> {
+  await expect(page.locator('#splash')).toHaveCount(0);
+}
+
 const SURFACES: Array<[string, string]> = [
   ['home', '/'],
   ['tool (text)', '/tools/json-formatter'],
@@ -36,6 +49,7 @@ for (const theme of ['dark', 'light'] as const) {
       await page.goto(path);
       await setTheme(page, theme);
       await expect(page.locator('h1').first()).toBeVisible();
+      await expectSplashGone(page);
 
       const results = await audit(page).analyze();
       const summary = results.violations.map(
@@ -105,6 +119,7 @@ for (const theme of ['dark', 'light'] as const) {
   }) => {
     await gotoTool(page, 'palette-extractor', 'Colour Palette Extractor');
     await setTheme(page, theme);
+    await expectSplashGone(page);
     await uploadFiles(page, ['sample.png']);
     await expect(page.locator('.swatch').first()).toBeVisible();
 

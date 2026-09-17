@@ -944,6 +944,80 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['color-converter', 'image-converter', 'background-remover', 'favicon-generator'],
   },
+  'invoice-generator': {
+    slug: 'invoice-generator',
+    intro: [
+      'Fill in who it is from, who it is for, what you did and what it costs, and download a clean PDF invoice. Switch the document type to Receipt and the same form produces a receipt instead — the due date becomes the date it was paid.',
+      'There is no account and no upload. The PDF is assembled in your browser, which means your client list, your rates and your bank details stay on your machine. This is the one tool on the site with no share link, deliberately.',
+    ],
+    steps: [
+      'Choose Invoice or Receipt, and set the number and dates.',
+      'Fill in the From and To blocks. Both take several lines, so an address fits.',
+      'Add your line items: what it was, how many, and the unit price.',
+      'Set the tax name and rate if you charge tax, then download the PDF.',
+    ],
+    features: [
+      'Invoice or receipt from the same form.',
+      'Line items with fractional quantities, for hours as well as units.',
+      'Ten currencies, each formatted the way it is actually written.',
+      'A named tax at any rate — VAT, GST, sales tax, or none.',
+      'Amounts computed in whole pence, so the total always matches the lines.',
+      'Nothing uploaded, no account, no watermark.',
+    ],
+    sections: [
+      {
+        heading: 'What has to be on an invoice',
+        body: [
+          'The specifics vary by country, but the common core is short: who is charging, who is being charged, a unique invoice number, the date it was issued, a description of what was supplied, the amount, and any tax charged with the rate that produced it. The number matters more than it looks — it is what both sides use to refer to the document, and duplicates cause exactly the confusion you would expect. The Next button increments the trailing digits and keeps their padding, so INV-0007 becomes INV-0008 rather than INV-8.',
+          'If you are registered for VAT, GST or an equivalent, your registration number almost certainly has to appear as well. There is no separate field for it here because the From block takes as many lines as you need: put it under your address, where it belongs.',
+          'A receipt is the same document after the fact. It confirms that money was received rather than requesting it, which is why switching the type here changes the heading and turns the due date into the date paid. If you are issuing a receipt for something already invoiced, keeping the invoice number on it saves everyone a search.',
+        ],
+      },
+      {
+        heading: 'Why the total always matches the lines',
+        body: [
+          'Money in floating point is the classic quiet bug: 0.1 plus 0.2 is 0.30000000000000004, and an invoice summed that way can print a total a penny away from the sum of its own rows. Every amount here is held as a whole number of minor units — pence, cents, sen — converted once when you type it and once when it is printed, never in between.',
+          'How many minor units a currency has is not two for everyone. Yen has none, so ¥1,500 is 1500 of them; Bahraini dinar has three. The scale is read from the currency rather than assumed, which is why switching currency reformats every figure rather than just changing the symbol.',
+          'Each line is rounded once, at the end. Rounding the unit price first and multiplying afterwards turns three units at 0.005 into nothing instead of a penny — a small error, but exactly the sort that makes a client query an invoice.',
+        ],
+      },
+      {
+        heading: 'What this deliberately does not do',
+        body: [
+          'No logo. Adding one means embedding an image, sizing it and deciding what happens to a huge one, and the invoice reads perfectly well without it. If you need branding on it, the PDF opens in any editor.',
+          'No client list and no history. Nothing is stored on a server, and what the page keeps is kept in session storage — scoped to this tab and gone when you close it — so an accidental refresh does not lose your work and nothing is left behind on a shared machine.',
+          'One tax rate, applied to the whole invoice. Mixed rates on a single document are a real requirement in some trades and a rarity in most; a second rate would mean a per-line tax column that most people would have to ignore.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is any of this uploaded?',
+        a: 'No. The PDF is built in this tab, and there is no server to send it to. That is also why this page has no share link: the state on it is a client\u2019s name, address and what they are being charged.',
+      },
+      {
+        q: 'Can I put my logo on it?',
+        a: 'Not here. The PDF is a normal PDF though, so any editor will let you place one — and the From block takes as many lines as you need, which covers most of what a logo would say.',
+      },
+      {
+        q: 'Does it handle hours, not just items?',
+        a: 'Yes. Quantities can be fractional, so 6.5 hours at an hourly rate works exactly as you would expect.',
+      },
+      {
+        q: 'What happens to non-Latin characters?',
+        a: 'The PDF uses a standard built-in font, which covers the Latin alphabet and Western European accents. Characters outside that — Greek, Cyrillic, Chinese, Sinhala — are replaced with a question mark rather than causing the export to fail. If you need them, say so and a Unicode font can be embedded.',
+      },
+      {
+        q: 'Can I charge two different tax rates on one invoice?',
+        a: 'Not on one document here. One rate applies to the whole invoice; for mixed rates, issue separate invoices or edit the PDF.',
+      },
+      {
+        q: 'Is a PDF from here a legally valid invoice?',
+        a: 'A PDF is just a format — validity depends on it carrying what your tax authority requires, which varies. The fields here cover the usual core, and the From block is free-form for anything else you must include, such as a VAT registration number.',
+      },
+    ],
+    related: ['pdf-merge', 'pdf-watermark', 'pdf-organizer', 'word-viewer'],
+  },
   pomodoro: {
     slug: 'pomodoro',
     intro: [

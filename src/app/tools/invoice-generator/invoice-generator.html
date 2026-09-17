@@ -1,0 +1,269 @@
+<app-tool-page slug="invoice-generator">
+  Fill in an invoice or a receipt and download it as a PDF. Nothing is uploaded, and no account is
+  needed.
+</app-tool-page>
+
+<div class="panel">
+  <div class="control">
+    <span class="control__label" id="kind-label">Document</span>
+    <div class="tabs" role="group" aria-labelledby="kind-label">
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="kind() === 'invoice'"
+        [attr.aria-pressed]="kind() === 'invoice'"
+        (click)="setKind('invoice')"
+      >
+        Invoice
+      </button>
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="kind() === 'receipt'"
+        [attr.aria-pressed]="kind() === 'receipt'"
+        (click)="setKind('receipt')"
+      >
+        Receipt
+      </button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="field">
+      <label class="field__label" for="inv-number">Number</label>
+      <div class="field__row">
+        <input
+          id="inv-number"
+          class="field__input"
+          type="text"
+          autocomplete="off"
+          [value]="number()"
+          (input)="setText('number', $any($event.target).value)"
+        />
+        <button type="button" matButton (click)="bumpNumber()">
+          <ng-icon name="matAddOutline" />
+          Next
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="inv-issued">Issue date</label>
+      <input
+        id="inv-issued"
+        class="field__input"
+        type="date"
+        [value]="issueDate()"
+        (input)="setIssueDate($any($event.target).value)"
+      />
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="inv-second">{{ secondLabel() }}</label>
+      <input
+        id="inv-second"
+        class="field__input"
+        type="date"
+        [value]="secondDate()"
+        (input)="setSecondDate($any($event.target).value)"
+      />
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="inv-currency">Currency</label>
+      <select
+        id="inv-currency"
+        class="field__input"
+        [value]="currency()"
+        (change)="setCurrency($any($event.target).value)"
+      >
+        @for (option of currencies; track option.code) {
+          <option [value]="option.code">{{ option.label }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="grid grid--two">
+    <div class="field">
+      <label class="field__label" for="inv-from">From</label>
+      <textarea
+        id="inv-from"
+        class="field__input party"
+        rows="4"
+        spellcheck="false"
+        [value]="from()"
+        (input)="setText('from', $any($event.target).value)"
+      ></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="inv-to">{{ toLabel() }}</label>
+      <textarea
+        id="inv-to"
+        class="field__input party"
+        rows="4"
+        spellcheck="false"
+        [value]="to()"
+        (input)="setText('to', $any($event.target).value)"
+      ></textarea>
+    </div>
+  </div>
+
+  <div class="items-scroll">
+    <table class="items" data-testid="items">
+      <caption class="items__caption">
+        Line items
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Description</th>
+          <th scope="col" class="items__num">Qty</th>
+          <th scope="col" class="items__num">Unit price</th>
+          <th scope="col" class="items__num">Amount</th>
+          <th scope="col"><span class="visually-hidden">Remove</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.id) {
+          <tr>
+            <td>
+              <input
+                class="field__input"
+                type="text"
+                placeholder="What it is for"
+                [attr.aria-label]="'Description, line ' + ($index + 1)"
+                [value]="row.description"
+                (input)="updateItem(row.id, 'description', $any($event.target).value)"
+              />
+            </td>
+            <td class="items__num">
+              <input
+                class="field__input items__input"
+                type="number"
+                step="0.01"
+                min="0"
+                [attr.aria-label]="'Quantity, line ' + ($index + 1)"
+                [value]="row.quantity"
+                (input)="updateItem(row.id, 'quantity', $any($event.target).value)"
+              />
+            </td>
+            <td class="items__num">
+              <input
+                class="field__input items__input"
+                type="number"
+                step="0.01"
+                min="0"
+                [attr.aria-label]="'Unit price, line ' + ($index + 1)"
+                [value]="row.unitPrice"
+                (input)="updateItem(row.id, 'unitPrice', $any($event.target).value)"
+              />
+            </td>
+            <td class="items__num items__amount">{{ row.amountText }}</td>
+            <td>
+              <button
+                type="button"
+                matIconButton
+                [attr.aria-label]="'Remove line ' + ($index + 1)"
+                (click)="removeItem(row.id)"
+              >
+                <ng-icon name="matDeleteOutline" />
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="actions actions--start">
+    <button type="button" matButton (click)="addItem()">
+      <ng-icon name="matAddOutline" />
+      Add a line
+    </button>
+  </div>
+
+  <div class="grid grid--tax">
+    <div class="field">
+      <label class="field__label" for="inv-tax-label">Tax name</label>
+      <input
+        id="inv-tax-label"
+        class="field__input"
+        type="text"
+        autocomplete="off"
+        [value]="taxLabel()"
+        (input)="setText('taxLabel', $any($event.target).value)"
+      />
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="inv-tax-rate">Rate %</label>
+      <input
+        id="inv-tax-rate"
+        class="field__input"
+        type="number"
+        step="0.1"
+        min="0"
+        [value]="taxRate()"
+        (input)="setTaxRate($any($event.target).value)"
+      />
+    </div>
+
+    <dl class="totals" data-testid="totals">
+      <div class="totals__row">
+        <dt>Subtotal</dt>
+        <dd>{{ subtotalText() }}</dd>
+      </div>
+      @if (totals().tax !== 0) {
+        <div class="totals__row">
+          <dt>{{ taxLabel() }} {{ taxRate() }}%</dt>
+          <dd>{{ taxText() }}</dd>
+        </div>
+      }
+      <div class="totals__row totals__row--grand">
+        <dt>Total</dt>
+        <dd data-testid="grand-total">{{ totalText() }}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="field">
+    <label class="field__label" for="inv-notes">Notes</label>
+    <textarea
+      id="inv-notes"
+      class="field__input"
+      rows="2"
+      [value]="notes()"
+      (input)="setText('notes', $any($event.target).value)"
+    ></textarea>
+  </div>
+
+  @if (error(); as message) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      {{ message }}
+    </p>
+  }
+
+  <div class="actions">
+    <button matButton="filled" [disabled]="busy()" (click)="download()">
+      @if (busy()) {
+        <app-spinner />
+      } @else {
+        <ng-icon name="matPictureAsPdfOutline" />
+      }
+      Download PDF
+    </button>
+    <span class="field__hint">
+      {{ issuedText() }} · {{ secondLabel() }} {{ secondText() }} · {{ totalText() }}
+    </span>
+  </div>
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+    The PDF is built in this tab. Your details, your client's details and the amounts are never
+    uploaded, and this page is deliberately the one tool here with no share link.
+  </p>
+</div>
+
+<app-tool-content slug="invoice-generator" />

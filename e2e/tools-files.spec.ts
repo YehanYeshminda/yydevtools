@@ -794,3 +794,64 @@ test('palette-extractor pulls the colours out of an image', async ({ page }) => 
 
   expectClean(watch);
 });
+
+test('invoice-generator totals the lines and downloads a PDF', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'invoice-generator', 'Invoice & Receipt Generator');
+
+  const total = page.getByTestId('grand-total');
+  const rows = page.locator('.items tbody tr');
+
+  // 1800 plus 6.5 hours at 85 is 2352.50, and 20% VAT on that is 470.50.
+  await expect(rows).toHaveCount(2);
+  await expect(total).toHaveText('\u00a32,823.00');
+
+  // Currency is not just a symbol swap: yen has no minor units at all, so
+  // every figure on the page reformats.
+  await page.locator('#inv-currency').selectOption('JPY');
+  await expect(total).toHaveText('\u00a52,824');
+  await page.locator('#inv-currency').selectOption('GBP');
+
+  // A line added, priced and removed leaves the total where it started.
+  await page.getByRole('button', { name: 'Add a line' }).click();
+  await expect(rows).toHaveCount(3);
+  await page.getByLabel('Unit price, line 3').fill('0.1');
+  await page.getByLabel('Quantity, line 3').fill('2');
+  await expect(total).toHaveText('\u00a32,823.24');
+  await page.getByRole('button', { name: 'Remove line 3' }).click();
+  await expect(total).toHaveText('\u00a32,823.00');
+
+  // A zero rate drops the tax row rather than printing "VAT 0%".
+  await page.locator('#inv-tax-rate').fill('0');
+  await expect(page.getByTestId('totals').locator('.totals__row')).toHaveCount(2);
+  await expect(total).toHaveText('\u00a32,352.50');
+  await page.locator('#inv-tax-rate').fill('20');
+
+  // Receipt is the same form with the two labels that change.
+  await page
+    .getByRole('group', { name: 'Document' })
+    .getByRole('button', { name: 'Receipt' })
+    .click();
+  await expect(page.getByText('Paid on', { exact: true })).toBeVisible();
+  await expect(page.getByText('Received from', { exact: true })).toBeVisible();
+  await page
+    .getByRole('group', { name: 'Document' })
+    .getByRole('button', { name: 'Invoice' })
+    .click();
+
+  // Next keeps the padding: INV-0001 becomes INV-0002, not INV-2.
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.locator('#inv-number')).toHaveValue('INV-0002');
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download PDF' }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe('invoice-inv-0002.pdf');
+
+  const path = await file.path();
+  const bytes = readFileSync(path);
+  expect(bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+  expect(bytes.length).toBeGreaterThan(1000);
+
+  expectClean(watch);
+});

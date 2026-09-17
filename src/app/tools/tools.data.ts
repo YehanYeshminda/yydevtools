@@ -110,6 +110,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'invoice-generator',
+    name: 'Invoice & Receipt Generator',
+    description:
+      'Fill in an invoice or a receipt and download it as a PDF — no account, nothing uploaded.',
+    icon: 'matReceiptLongOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'text-cleaner',
     name: 'Text Cleaner',
     description:

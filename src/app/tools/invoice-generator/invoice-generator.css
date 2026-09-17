@@ -1,0 +1,175 @@
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.tabs {
+  align-self: flex-start;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+}
+
+.grid--two {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+/* Tax name, rate and the totals block: the totals take the rest of the row and
+   sit against the right edge, where the eye looks for them on an invoice. */
+.grid--tax {
+  grid-template-columns: minmax(8rem, 1fr) minmax(5rem, 0.5fr) minmax(14rem, 2fr);
+  align-items: end;
+}
+
+.field__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.field__row .field__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The button beside the number keeps its own width. Left to shrink it wrapped
+   to one letter a line inside the narrow grid column. */
+.field__row button {
+  flex: none;
+  white-space: nowrap;
+}
+
+.party {
+  min-height: 5.5rem;
+  font-family: var(--font);
+}
+
+.actions--start {
+  justify-content: flex-start;
+}
+
+/* Line items ------------------------------------------------------------ */
+.items-scroll {
+  overflow-x: auto;
+}
+
+.items {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.items__caption {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+  text-align: left;
+  padding-bottom: 0.5rem;
+}
+
+.items th {
+  padding: 0 0.4rem 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--on-dim);
+  border-bottom: 1px solid var(--outline-2);
+}
+
+.items td {
+  padding: 0.35rem 0.4rem;
+  vertical-align: middle;
+}
+
+.items__num {
+  text-align: right;
+}
+
+.items__input {
+  max-width: 7rem;
+  text-align: right;
+}
+
+.items__amount {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--on);
+  white-space: nowrap;
+}
+
+/* The remove column's header. Named for screen readers, blank on screen —
+   a visible "Remove" above a column of icon buttons is noise. */
+.items th:last-child span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Totals ---------------------------------------------------------------- */
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  background: var(--surface-1);
+  border: 1px solid var(--outline-2);
+  border-radius: 8px;
+}
+
+.totals__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--on-var);
+}
+
+.totals__row dt,
+.totals__row dd {
+  margin: 0;
+}
+
+.totals__row dd {
+  font-family: var(--mono);
+}
+
+.totals__row--grand {
+  margin-top: 0.2rem;
+  padding-top: 0.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--on);
+  border-top: 1px solid var(--outline-2);
+}
+
+@media (max-width: 720px) {
+  /* The table is the one thing here that cannot stack: a line item only makes
+     sense as a row. It scrolls sideways in its own box instead. */
+  .items {
+    min-width: 34rem;
+  }
+
+  .grid--tax {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .totals {
+    grid-column: 1 / -1;
+  }
+}

@@ -163,3 +163,13 @@ test('slug-generator keeps a long slug inside its row', async ({ page }) => {
   await expect(page.locator('.slug-row__slug').first()).toBeVisible();
   await expectFitsAtEveryWidth(page);
 });
+
+test('invoice-generator keeps a long line description inside the table', async ({ page }) => {
+  await gotoTool(page, 'invoice-generator', 'Invoice & Receipt Generator');
+  // The one table here that cannot stack: a line item only means anything as a
+  // row, so it scrolls in its own box rather than pushing the page open.
+  await page.getByLabel('Description, line 1').fill(TOKEN);
+  await page.locator('#inv-to').fill(TOKEN);
+  await expect(page.getByTestId('grand-total')).toBeVisible();
+  await expectFitsAtEveryWidth(page);
+});
