@@ -32,6 +32,7 @@ import { ConsentBanner } from './shared/consent-banner/consent-banner';
 import { NavProgress } from './shared/nav-progress/nav-progress';
 import { NewsFeed } from './shared/news-feed/news-feed';
 import { GlobalDrop } from './shared/global-drop/global-drop';
+import { PomodoroService } from './tools/pomodoro/pomodoro.service';
 import { CATEGORY_META, Tool } from './tools/tool.model';
 import { TOOLS, TOOL_CATEGORIES } from './tools/tools.data';
 
@@ -106,6 +107,7 @@ const THEME_MENU_POSITION: readonly ConnectedPosition[] = [
 export class App {
   protected readonly theme = inject(ThemeService);
   protected readonly consent = inject(ConsentService);
+  protected readonly timer = inject(PomodoroService);
   protected readonly year = new Date().getFullYear();
   protected readonly themeOptions = THEME_OPTIONS;
   protected readonly themeMenuPosition = THEME_MENU_POSITION;
@@ -177,6 +179,9 @@ export class App {
     const path = this.currentPath();
     return path !== '/news' && path !== '/404';
   });
+
+  /** The timer's own page already shows the clock; the bar would just repeat it. */
+  protected readonly onTimerPage = computed(() => this.currentPath() === '/tools/pomodoro');
 
   constructor() {
     inject(SeoService).init();

@@ -66,6 +66,28 @@
       <kbd class="search-trigger__key" aria-hidden="true">{{ shortcutHint() }}</kbd>
     </button>
 
+    <!-- The running Pomodoro, wherever you have wandered off to. The timer's
+         state lives in a root service rather than in the tool component, so a
+         session survives leaving the page; without something in the bar there
+         would be no sign of that, and no way back to it. Absent entirely when
+         nothing is running, which is also its state during prerender — so the
+         served HTML and the hydrated DOM agree. -->
+    @if (timer.active() && !onTimerPage()) {
+      <a
+        class="bar-btn timer-pill"
+        routerLink="/tools/pomodoro"
+        [class.timer-pill--paused]="!timer.running()"
+        [attr.aria-label]="timer.label() + '. Open the timer'"
+      >
+        <ng-icon
+          class="timer-pill__icon"
+          aria-hidden="true"
+          [name]="timer.running() ? 'matTimerOutline' : 'matPauseOutline'"
+        />
+        <span class="timer-pill__time">{{ timer.shortDisplay() }}</span>
+      </a>
+    }
+
     <button
       type="button"
       class="bar-btn theme-toggle"
@@ -88,7 +110,11 @@
           >
             <ng-icon class="theme-menu__icon" aria-hidden="true" [name]="option.icon" />
             <span>{{ option.label }}</span>
-            <ng-icon class="theme-menu__check" aria-hidden="true" [name]="theme.preference() === option.value ? 'matCheckOutline' : ''" />
+            <ng-icon
+              class="theme-menu__check"
+              aria-hidden="true"
+              [name]="theme.preference() === option.value ? 'matCheckOutline' : ''"
+            />
           </button>
         }
       </div>
@@ -124,9 +150,27 @@
           Browse
           <ng-icon class="nav-menu__caret" aria-hidden="true" name="matChevronRightOutline" />
         </button>
-        <a class="nav-menu__item" cdkMenuItem routerLink="/guides" routerLinkActive="nav-menu__item--active">Guides</a>
-        <a class="nav-menu__item" cdkMenuItem routerLink="/news" routerLinkActive="nav-menu__item--active">News</a>
-        <a class="nav-menu__item" cdkMenuItem routerLink="/about" routerLinkActive="nav-menu__item--active">About</a>
+        <a
+          class="nav-menu__item"
+          cdkMenuItem
+          routerLink="/guides"
+          routerLinkActive="nav-menu__item--active"
+          >Guides</a
+        >
+        <a
+          class="nav-menu__item"
+          cdkMenuItem
+          routerLink="/news"
+          routerLinkActive="nav-menu__item--active"
+          >News</a
+        >
+        <a
+          class="nav-menu__item"
+          cdkMenuItem
+          routerLink="/about"
+          routerLinkActive="nav-menu__item--active"
+          >About</a
+        >
         <a
           class="nav-menu__item"
           cdkMenuItem
