@@ -736,6 +736,75 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['case-converter', 'word-counter', 'text-diff', 'file-inspector'],
   },
+  'lorem-ipsum': {
+    slug: 'lorem-ipsum',
+    intro: [
+      'Placeholder text exists so that a layout can be judged before the copy is written. Fill a design with "content goes here" repeated and every line is the same length, every paragraph the same shape, and the layout looks fine right up until real sentences arrive and break it. Lorem Ipsum has irregular word lengths and irregular sentence lengths, which is the entire point: it stresses a column the way prose does.',
+      'This generates as much of it as you need — by paragraph, by sentence, by word or as list items — and hands it over as plain text, as HTML already wrapped in tags, or as Markdown. It runs in your browser, so there is nothing to wait for and nothing is sent anywhere.',
+    ],
+    steps: [
+      'Choose what to count: paragraphs, sentences, words or list items.',
+      'Set how many. The text updates as you type.',
+      'Pick the format — plain text to paste into a document, HTML to paste into a page, Markdown for a README or a CMS.',
+      'Leave the classic opening on if you want the familiar "Lorem ipsum dolor sit amet…", or switch it off to start somewhere in the middle.',
+      'Copy it, download it, or send it to another tool.',
+    ],
+    features: [
+      'Paragraphs, sentences, words or list items, up to 200 paragraphs or 5,000 words.',
+      'Plain text, HTML wrapped in <p> or <ul> tags, or Markdown.',
+      'The traditional opening phrase, on or off.',
+      'Changing the length extends or trims what is on screen rather than rewriting it; Shuffle is what asks for different words.',
+      'A word and character count for whatever is currently generated.',
+      'Runs entirely in your browser; nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Why this particular nonsense',
+        body: [
+          'Lorem Ipsum is not random letters. It is a passage from Cicero’s *de Finibus Bonorum et Malorum*, written in 45 BC, which a printer in the 1500s cut up and scrambled to make a type specimen — the standard way of showing a typeface without anyone reading the words. "Lorem" is not even a Latin word; it is the tail of *dolorem*, left behind when the opening was truncated.',
+          'It survived because the scrambling is useful. The word lengths and the letter frequencies still sit close to Latin, and Latin sits close enough to English, French, Spanish and Italian that a column of Lorem Ipsum wraps roughly where a column of real copy would. Text that is too regular flatters a layout; text in a language you can read distracts from it. Lorem Ipsum is deliberately neither.',
+        ],
+      },
+      {
+        heading: 'When placeholder text is the wrong tool',
+        body: [
+          'Filler is for testing shape, not content, and it hides two kinds of problem. The first is length: real headlines are not all the same length, real names are sometimes one word and sometimes five, and a design that only ever saw even grey paragraphs will break on the first product with a long title. Test the extremes with real strings, not with more filler.',
+          'The second is meaning. A layout full of Lorem Ipsum cannot tell you whether the reading order makes sense, whether the heading hierarchy is right, or whether the page answers the question it was built to answer. Those are content decisions, and filler text is specifically designed to be impossible to evaluate. Use it to check the frame, then replace it early.',
+          'The one genuine hazard is forgetting. "Lorem ipsum" has shipped to production on more sites than anyone would like to admit, which is why it is worth grepping for before a release — it is a distinctive enough string that a single search finds every instance.',
+        ],
+      },
+      {
+        heading: 'Text, HTML and Markdown',
+        body: [
+          'Plain text separates paragraphs with a blank line, which is what a text editor, a design tool or a spreadsheet cell expects. HTML wraps each paragraph in a <p> tag, or the whole list in a <ul> with an <li> per item, so it can be pasted straight into a template without any tidying. Markdown leaves paragraphs as bare blocks — which is exactly what Markdown wants — and writes list items as dash lines.',
+          'List items are generated slightly differently from sentences: they get no full stop, because that is how list items are conventionally written. It is a small thing, but filler that looks like chopped-up prose reads as a mistake in a mockup.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Why does the text stay the same when I change the count?',
+        a: 'That is deliberate. Generation is seeded, so raising the count adds to the passage you already have and lowering it trims from the end, which lets you settle on a length without the words moving around. Press Shuffle when you actually want different text.',
+      },
+      {
+        q: 'Is Lorem Ipsum bad for SEO?',
+        a: 'Only if it reaches a live page, where it is meaningless content on a URL you presumably wanted to rank. On a staging site or in a design file it is invisible to search engines and harmless. The risk is shipping it, not generating it.',
+      },
+      {
+        q: 'Can I use it for a language that is not Latin-alphabet?',
+        a: 'It is a poor fit. Chinese, Japanese, Arabic, Hindi and Thai have different character widths, different line-breaking rules and, in some cases, a different direction, so a column that looks right filled with Lorem Ipsum can be entirely wrong filled with the real thing. Test those layouts with sample text in the actual script.',
+      },
+      {
+        q: 'How much can it generate?',
+        a: 'Up to 200 paragraphs, 500 sentences, 5,000 words or 200 list items. The ceilings are about the editor rather than the generator — laying out an enormous block of text is the slow part, not producing it.',
+      },
+      {
+        q: 'Does the text leave my browser?',
+        a: 'No. The word list and the generator are part of the page, so nothing is requested and nothing is uploaded.',
+      },
+    ],
+    related: ['text-cleaner', 'word-counter', 'case-converter', 'markdown-editor'],
+  },
   'case-converter': {
     slug: 'case-converter',
     intro: [

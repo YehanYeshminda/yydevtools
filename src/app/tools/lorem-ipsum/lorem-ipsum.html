@@ -1,0 +1,115 @@
+<app-tool-page slug="lorem-ipsum">
+  Generate placeholder text — paragraphs, sentences, words or list items, as plain text, HTML or
+  Markdown. Nothing is uploaded.
+</app-tool-page>
+
+<div class="panel">
+  <div class="controls">
+    <div class="control">
+      <span class="control__label" id="unit-label">Generate</span>
+      <div class="tabs" role="group" aria-labelledby="unit-label">
+        @for (option of units; track option.value) {
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="unit() === option.value"
+            [attr.aria-pressed]="unit() === option.value"
+            (click)="setUnit(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="control">
+      <label class="control__label" for="lorem-count">How many</label>
+      <input
+        id="lorem-count"
+        class="field__input count"
+        type="number"
+        min="1"
+        inputmode="numeric"
+        [attr.max]="maxCount()"
+        [value]="count()"
+        (input)="setCount($any($event.target).value)"
+      />
+      <span class="field__hint">Up to {{ maxCount() }}.</span>
+    </div>
+
+    <div class="control">
+      <span class="control__label" id="format-label">Format</span>
+      <div class="tabs" role="group" aria-labelledby="format-label">
+        @for (option of formats; track option.value) {
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="format() === option.value"
+            [attr.aria-pressed]="format() === option.value"
+            (click)="setFormat(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      <span class="field__hint">{{ formatHint() }}</span>
+    </div>
+
+    <div class="control">
+      <span class="control__label" id="start-label">Opening</span>
+      <div class="chips" role="group" aria-labelledby="start-label">
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="classic()"
+          [attr.aria-pressed]="classic()"
+          (click)="toggleClassic()"
+        >
+          <ng-icon aria-hidden="true" [name]="classic() ? 'matCheckOutline' : 'matAddOutline'" />
+          Start with “Lorem ipsum dolor sit amet…”
+        </button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button matButton="filled" (click)="copy()">
+        <ng-icon name="matContentCopyOutline" />
+        Copy
+      </button>
+      <button matButton (click)="shuffle()">
+        <ng-icon name="matAutorenewOutline" />
+        Shuffle
+      </button>
+      <button matButton (click)="download()">
+        <ng-icon name="matDownloadOutline" />
+        Download
+      </button>
+      <app-share-link [state]="shared" />
+      <app-send-to [text]="output()" from="lorem-ipsum" />
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="field__label">Placeholder text</span>
+    <app-code-editor
+      label="Generated placeholder text"
+      minHeight="18rem"
+      [readOnly]="true"
+      [value]="output()"
+    />
+  </div>
+
+  <p class="summary" role="status" data-testid="summary">
+    <span class="summary__stat">{{ counts().words }} words</span>
+    <span class="summary__stat">{{ counts().characters }} characters</span>
+  </p>
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Changing the count extends or trims the text you already have rather than rewriting it, so you
+    can settle on a length without the passage moving under you. Shuffle is what asks for different
+    words.
+  </p>
+</div>
+
+<app-tool-content slug="lorem-ipsum" />

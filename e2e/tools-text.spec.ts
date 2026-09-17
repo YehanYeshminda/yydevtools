@@ -541,6 +541,44 @@ test('text-cleaner strips invisible characters and tidies the lines', async ({ p
   expectClean(watch);
 });
 
+test('lorem-ipsum generates placeholder text in every unit and format', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'lorem-ipsum', 'Lorem Ipsum Generator');
+
+  const result = editorByLabel(page, 'Generated placeholder text');
+  await expect.poll(() => getEditorText(result)).toContain('Lorem ipsum dolor sit amet');
+
+  // The seed is the whole design: raising the count has to extend the passage
+  // rather than rewrite it, or settling on a length means chasing the text.
+  const before = await getEditorText(result);
+  await page.locator('#lorem-count').fill('5');
+  await expect.poll(() => getEditorText(result)).not.toBe(before);
+  expect(await getEditorText(result)).toContain(before.trim());
+
+  await page.getByRole('button', { name: 'HTML', exact: true }).click();
+  await expect.poll(() => getEditorText(result)).toContain('<p>Lorem ipsum');
+
+  await page.getByRole('button', { name: 'List items' }).click();
+  await expect.poll(() => getEditorText(result)).toContain('<li>Lorem ipsum');
+
+  await page.getByRole('button', { name: 'Markdown' }).click();
+  await expect.poll(() => getEditorText(result)).toContain('- Lorem ipsum');
+
+  // Shuffle is the only control that is allowed to rewrite the words.
+  const shuffled = await getEditorText(result);
+  await page.getByRole('button', { name: 'Shuffle' }).click();
+  await expect.poll(() => getEditorText(result)).not.toBe(shuffled);
+
+  await page.getByRole('button', { name: /Start with/ }).click();
+  await expect.poll(() => getEditorText(result)).not.toContain('Lorem ipsum dolor sit amet');
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download' }).click();
+  expect((await download).suggestedFilename()).toBe('lorem-ipsum.md');
+
+  expectClean(watch);
+});
+
 /**
  * One-time secret links need the Worker, which a bare `ng serve` is not.
  *

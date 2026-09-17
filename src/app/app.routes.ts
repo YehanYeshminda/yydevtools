@@ -603,6 +603,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/lorem-ipsum',
+    loadComponent: () => import('./tools/lorem-ipsum/lorem-ipsum').then((m) => m.LoremIpsumTool),
+    title: 'Lorem Ipsum Generator — Placeholder text — YYDevTools',
+    data: {
+      description:
+        'Generate Lorem Ipsum placeholder text by paragraph, sentence, word or list item, as ' +
+        'plain text, HTML or Markdown. Runs in your browser, free.',
+    },
+  },
+  {
     path: 'tools/case-converter',
     loadComponent: () =>
       import('./tools/case-converter/case-converter').then((m) => m.CaseConverterTool),

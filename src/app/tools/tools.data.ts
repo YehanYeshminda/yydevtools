@@ -101,6 +101,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'lorem-ipsum',
+    name: 'Lorem Ipsum Generator',
+    description:
+      'Generate placeholder text by paragraph, sentence, word or list item, as text, HTML or Markdown.',
+    icon: 'matNotesOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'case-converter',
     name: 'Case Converter',
     description: 'Convert text between camelCase, snake_case, kebab-case, PascalCase and a slug.',

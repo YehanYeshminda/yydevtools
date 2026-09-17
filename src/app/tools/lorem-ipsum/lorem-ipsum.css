@@ -1,0 +1,41 @@
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 14px;
+  background: var(--surface-1);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+/* Each group sizes to its options rather than stretching across the panel. */
+.tabs {
+  align-self: flex-start;
+}
+
+/* Wide enough for four digits, which is as far as any of the maxima go. */
+.count {
+  width: 7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--on-var);
+  font-variant-numeric: tabular-nums;
+}
