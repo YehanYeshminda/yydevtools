@@ -317,11 +317,12 @@
 /* Footnote -------------------------------------------------------------- */
 /* A quiet callout with a left accent bar rather than an icon+box. */
 .note {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
+  /* Not a flex row. The icon is placed out of flow and the padding leaves room
+     for it, so the text stays one ordinary paragraph — a note containing a
+     link or a <code> span flows as prose instead of breaking into columns. */
+  position: relative;
   margin: 0;
-  padding: 0.7rem 0.8rem;
+  padding: 0.7rem 0.8rem 0.7rem 2.4rem;
   font-size: 0.85rem;
   line-height: 1.55;
   color: var(--on-var);
@@ -329,23 +330,29 @@
   border-left: 2px solid var(--brand);
 }
 
+/* A note's link is a short authored label, never user input, so holding it on
+   one line costs nothing and keeps the click target a single rectangle instead
+   of a word at the end of one line and a word at the start of the next. */
+.note a {
+  white-space: nowrap;
+}
+
 .note__icon {
+  position: absolute;
+  /* 0.8rem clears the box padding; 0.8rem down is that padding plus the 0.1rem
+     the old layout nudged the icon by, to sit on the first line's cap height. */
+  left: 0.8rem;
+  top: 0.8rem;
   font-size: 1.1rem;
   width: 1.1rem;
   height: 1.1rem;
-  flex: none;
-  margin-top: 0.1rem;
   color: var(--brand);
 }
 
-/* Wrapper for a note whose text contains inline markup — a link, <strong>, a
-   <code> span. `.note` is a flex container, so such a note written as bare text
-   would have each run and each element become its own flex item, turning one
-   sentence into a row of columns. Wrapping the text keeps it a single item. */
-.note__text {
-  flex: 1 1 auto;
-  min-width: 0;
-}
+/* Two dozen templates wrap a note's text in <span class="note__text">. That was
+   once required, because each run and each inline element became its own flex
+   item. It needs no rule now; the spans are inert and are left alone rather
+   than edited out of every template that has one. */
 
 /* Monthly allowance line, for the tools that call the hosted service ----- */
 .quota {
