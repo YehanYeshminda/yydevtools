@@ -204,6 +204,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/passport-photo',
+    loadComponent: () =>
+      import('./tools/passport-photo/passport-photo').then((m) => m.PassportPhotoTool),
+    title: 'Passport Photo Maker — Official ID photo sizes — YYDevTools',
+    data: {
+      description:
+        'Crop a photo to UK, US, EU, Indian, Canadian, Chinese, Australian or Japanese passport ' +
+        'size with head-position guides, then print one or a sheet. Runs in your browser, free.',
+    },
+  },
+  {
     path: 'tools/image-resize',
     loadComponent: () => import('./tools/image-resize/image-resize').then((m) => m.ImageResizeTool),
     title: 'Image Resizer & Cropper — Crop and resize online — YYDevTools',

@@ -1,0 +1,131 @@
+/* The crop stage, its box and its handles come from the Image Resizer's sheet.
+   The head guides, the result panel and the print controls live here. */
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 18rem);
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+/* Head guides ----------------------------------------------------------- */
+
+/* Drawn inside the crop box, so they move and scale with it. The box already
+   carries the dimmed surround, which is what makes these readable. */
+.guide {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px dashed var(--brand);
+  pointer-events: none;
+}
+
+.guide--eyes {
+  border-top-style: dotted;
+  opacity: 0.7;
+}
+
+.guide__label {
+  position: absolute;
+  top: -0.55rem;
+  right: 0.25rem;
+  padding: 0 0.3rem;
+  border-radius: 4px;
+  background: var(--brand);
+  color: var(--mat-sys-on-primary, #000);
+  font: var(--mat-sys-label-small);
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+}
+
+/* Result ---------------------------------------------------------------- */
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+/* A white card behind the photo: these are printed on white paper, and a dark
+   surround makes a light background look like a crop that went wrong. */
+.preview__image {
+  display: block;
+  width: 100%;
+  max-width: 14rem;
+  height: auto;
+  padding: 0.5rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.preview__caption {
+  font: var(--mat-sys-body-small);
+  color: var(--on-var);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Print controls -------------------------------------------------------- */
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 14px;
+  background: var(--surface-1);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.tabs {
+  align-self: flex-start;
+}
+
+.summary {
+  margin: 0.75rem 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--on-var);
+  overflow-wrap: anywhere;
+}
+
+/* The photo ran, the answer is only probably wrong: neither ok nor error. */
+.status--warn {
+  border-color: color-mix(in srgb, var(--star) 45%, transparent);
+  background: color-mix(in srgb, var(--star) 12%, transparent);
+  color: var(--on);
+}
+
+.status--warn .status__icon {
+  color: var(--star);
+}
+
+@media (max-width: 860px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .preview__image {
+    max-width: 10rem;
+  }
+}

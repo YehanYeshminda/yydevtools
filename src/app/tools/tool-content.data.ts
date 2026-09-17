@@ -1855,6 +1855,75 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['image-converter', 'image-resize', 'image-compressor', 'exif-viewer'],
   },
+  'passport-photo': {
+    slug: 'passport-photo',
+    intro: [
+      'A passport photo is not a crop, it is a measurement. Every authority publishes a paper size and, more importantly, a head size: the United Kingdom wants the head to be 29 to 34 mm of a 45 mm photo, the United States wants it between 1 and 1 3/8 inches of a 2 inch square. Get the head wrong and the application comes back, however good the photograph is. This tool draws those measurements onto your photo as guide lines, so you line the crop up with the head rather than guessing.',
+      'It then gives you the file at exactly the pixel size the print needs — 413 by 531 pixels for a 35 by 45 mm photo at 300 dpi — and, if you want, a sheet of copies laid out to fill a 6 by 4 print with a gap to cut along. A photo booth charges several pounds for the same thing. Nothing is uploaded: the photo is cropped and resized in this tab.',
+    ],
+    steps: [
+      "Drop in a straight-on head-and-shoulders photo. A phone camera at arm's length against a plain wall is fine.",
+      "Pick the document. The crop box changes shape to match it and the guide lines move to that authority's head measurements.",
+      'Drag the box so the top of the head sits on the Crown line and the bottom of the chin on the Chin line. The Eyes line is a cross-check: on a real face the eyes land there when the rest is right.',
+      'Choose 300 or 600 dpi, and a print size if you want a sheet of copies.',
+      'Download the single photo for an online application, or the sheet to take to a print shop.',
+    ],
+    features: [
+      'Eight formats covering most requests, each with its own paper size and published head range.',
+      "Guide lines for the crown, the eyes and the chin, positioned from the authority's own measurements.",
+      "The crop box is locked to the format's shape, so the proportions cannot drift while you drag.",
+      'Output at exactly the printed pixel size for 300 or 600 dpi.',
+      'Print sheets for 6 x 4, 7 x 5 and A4, laid out with a 2 mm gap to cut along, turned whichever way fits more.',
+      'Warns when the part you have selected is smaller than the print needs and would come out soft.',
+      'Runs entirely in your browser; the photo is never uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Why head size is the measurement that matters',
+        body: [
+          'Paper size is easy and everybody gets it right. Head size is what applications are rejected for. The reason authorities care is facial recognition: the systems that compare your photo with the one on file need a predictable number of pixels between the eyes, and that only works if the head fills a known share of the frame. A photo that is correct to the millimetre on paper but has the subject too far from the camera is useless to them.',
+          "That is why the guide lines here are drawn from the published head range rather than from the middle of the frame. The head sits at the centre of each authority's permitted range, with the leftover space split so there is more below the chin than above the crown — which is how every official example photo is framed, because a portrait with the head centred reads as a mugshot.",
+        ],
+      },
+      {
+        heading: 'Resolution, and why 300 dpi is usually right',
+        body: [
+          'A printed photo is measured in millimetres, so the pixel count depends entirely on the resolution it will be printed at. At 300 dots per inch — what every photo lab uses — a 35 by 45 mm photo is 413 by 531 pixels. At 600 dpi it is 827 by 1063. Both are the same photo; only the printing differs.',
+          'Six hundred is worth choosing only if your source photo actually has that much detail in the cropped area and the printer can use it. If the crop is smaller than the output, the tool says so: it is enlarging pixels that are not there, which looks acceptable on a screen and soft on paper. The fix is a closer or higher-resolution photograph, not a higher dpi.',
+        ],
+      },
+      {
+        heading: 'What this tool does not check',
+        body: [
+          'It is a cropping tool, not an assessor. It cannot tell you whether your expression is neutral, whether your eyes are open, whether there is a shadow behind your head, whether your glasses are reflecting the flash or whether the background is plain enough. Those are the other half of the rules and they are judged by a person or by software at the other end.',
+          'The background is the one you can fix here: most authorities want a plain, light, uniform one. Run the photo through the Background Remover first and put yourself on plain white, then bring the result back here to crop it. Everything else is down to the photograph.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is my photo uploaded anywhere?',
+        a: 'No. The image is decoded, cropped and re-encoded in your browser. There is no endpoint here that accepts a photo, which is rather the point for a document that identifies you.',
+      },
+      {
+        q: 'My country is not in the list. Can I still use it?',
+        a: "Very probably. A large number of countries use 35 by 45 mm with a head between 29 and 34 mm, which is the first entry — check your authority's published figures against it. If the paper size matches and the head range is close, the result will be accepted.",
+      },
+      {
+        q: 'Why is my photo flagged as too small?',
+        a: 'Because the area you have selected has fewer pixels than the print needs, so it is being enlarged. A 35 by 45 mm photo at 300 dpi needs at least 413 pixels across the crop. Take the photo closer, or use a higher-resolution camera; dropping to 300 dpi also helps if you were at 600.',
+      },
+      {
+        q: 'How many copies fit on a sheet?',
+        a: 'Eight 35 by 45 mm photos fit a 6 by 4 print, four across and two down, with 2 mm between them. A4 holds considerably more. The count is shown next to the print size, and the sheet is turned whichever way round fits more.',
+      },
+      {
+        q: 'Can I use it for something that is not a passport?',
+        a: 'Yes. The square format is there for profile pictures and staff badges, where nothing official applies but a consistent head position still looks better than an arbitrary crop.',
+      },
+    ],
+    related: ['background-remover', 'image-resize', 'image-compressor', 'image-converter'],
+  },
   'image-resize': {
     slug: 'image-resize',
     intro: [

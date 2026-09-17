@@ -227,6 +227,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'passport-photo',
+    name: 'Passport Photo Maker',
+    description:
+      'Crop a photo to an official passport or ID size with head-position guides, then print one or a sheet.',
+    icon: 'matBadgeOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'image-compressor',
     name: 'Image Compressor',
     description:

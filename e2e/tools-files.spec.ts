@@ -649,3 +649,39 @@ test('background-remover cuts a subject out and mattes it onto a colour', async 
 
   expectClean(watch);
 });
+
+test('passport-photo crops to an official size and lays out a print sheet', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'passport-photo', 'Passport Photo Maker');
+
+  await uploadFiles(page, ['sample-photo.jpg']);
+
+  // UK/EU is the default: 35 x 45 mm, which is 413 x 531 pixels at 300 dpi.
+  await expect(page.getByTestId('photo')).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByTestId('photo-size')).toContainText('413 × 531 px');
+  await expect(page.getByTestId('sheet-count')).toContainText('8 copies per sheet');
+
+  // A 640 x 480 source cannot fill a 413-pixel-wide crop once the box is the
+  // right shape, so the soft-print warning is the correct answer here.
+  await expect(page.getByTestId('too-small')).toBeVisible();
+
+  // Switching the document changes the shape, the pixels and the sheet at once.
+  await page.getByRole('button', { name: 'United States', exact: true }).click();
+  await expect(page.getByTestId('photo-size')).toContainText('600 × 600 px');
+  await expect(page.getByTestId('sheet-count')).toContainText('2 copies per sheet');
+
+  const photo = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download photo' }).click();
+  expect((await photo).suggestedFilename()).toBe('passport-photo-50.8x50.8mm-300dpi.jpg');
+
+  const sheet = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download sheet' }).click();
+  const saved = await sheet;
+  expect(saved.suggestedFilename()).toBe('passport-photo-50.8x50.8mm-sheet-6x4-300dpi.jpg');
+  // A real JPEG, not an empty file or a canvas that never painted.
+  const bytes = readFileSync(await saved.path());
+  expect(bytes.subarray(0, 2)).toEqual(Buffer.from([0xff, 0xd8]));
+  expect(bytes.byteLength).toBeGreaterThan(1000);
+
+  expectClean(watch);
+});

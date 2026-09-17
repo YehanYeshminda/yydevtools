@@ -50,6 +50,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **URL Encoder / Decoder** | Percent-encode or decode URLs and query values, and break a URL into its parts. |
 | **Image Compressor** | Shrink JPEG, PNG and HEIC images in bulk — by quality or to a target size, with Exif control. |
 | **Background Remover** | Cut the background out of a photo and save a transparent PNG, or put the subject on a colour. Runs in your browser. |
+| **Passport Photo Maker** | Crop to an official passport or ID size with head-position guides, then print one or a sheet. |
 | **Image Converter** | Convert between HEIC, JPEG, PNG, WebP and AVIF in bulk — iPhone photos included — without uploading them. |
 | **Image Resizer & Cropper** | Crop with a draggable box, resize to exact pixels or a file size, and save as JPEG, PNG or WebP. |
 | **EXIF Viewer** | See the camera, timestamp and GPS location hidden in a photo, then strip it out without re-compressing. |

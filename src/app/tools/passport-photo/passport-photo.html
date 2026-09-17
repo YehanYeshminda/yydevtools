@@ -1,0 +1,199 @@
+<app-tool-page slug="passport-photo">
+  Crop a photo to an official passport or ID size, with guide lines showing where the head has to
+  sit, then print one or a sheet of them. Everything happens on your device.
+</app-tool-page>
+
+<div class="panel">
+  @if (hasImage()) {
+    <!-- Format ------------------------------------------------------------ -->
+    <div class="control">
+      <span class="control__label" id="spec-label">Document</span>
+      <div class="chips" role="group" aria-labelledby="spec-label">
+        @for (option of specs; track option.key) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="specKey() === option.key"
+            [attr.aria-pressed]="specKey() === option.key"
+            (click)="setSpec(option.key)"
+          >
+            {{ option.name }}
+          </button>
+        }
+      </div>
+      <span class="field__hint">{{ spec().note }}</span>
+    </div>
+
+    <div class="workspace">
+      <!-- Crop stage ---------------------------------------------------- -->
+      <section class="cropper" aria-label="Crop">
+        <div
+          class="frame"
+          #frame
+          (pointermove)="pointerMove($event)"
+          (pointerup)="pointerUp($event)"
+          (pointercancel)="pointerUp($event)"
+        >
+          <img class="frame__image" [src]="previewUrl()" alt="" draggable="false" />
+          <div
+            class="box"
+            [style.left]="cropStyle().left"
+            [style.top]="cropStyle().top"
+            [style.width]="cropStyle().width"
+            [style.height]="cropStyle().height"
+            (pointerdown)="boxDown($event)"
+          >
+            @if (showGuides()) {
+              <span class="guide guide--crown" [style.top]="guideLines().crown">
+                <span class="guide__label">Crown</span>
+              </span>
+              <span class="guide guide--eyes" [style.top]="guideLines().eyes">
+                <span class="guide__label">Eyes</span>
+              </span>
+              <span class="guide guide--chin" [style.top]="guideLines().chin">
+                <span class="guide__label">Chin</span>
+              </span>
+            }
+            <button
+              type="button"
+              class="handle handle--nw"
+              aria-label="Drag the top-left corner"
+              (pointerdown)="cornerDown($event, 'nw')"
+            ></button>
+            <button
+              type="button"
+              class="handle handle--ne"
+              aria-label="Drag the top-right corner"
+              (pointerdown)="cornerDown($event, 'ne')"
+            ></button>
+            <button
+              type="button"
+              class="handle handle--sw"
+              aria-label="Drag the bottom-left corner"
+              (pointerdown)="cornerDown($event, 'sw')"
+            ></button>
+            <button
+              type="button"
+              class="handle handle--se"
+              aria-label="Drag the bottom-right corner"
+              (pointerdown)="cornerDown($event, 'se')"
+            ></button>
+          </div>
+        </div>
+        <p class="field__hint">
+          Drag the box to move it and a corner to resize it. Line the top of the head up with
+          <strong>Crown</strong> and the bottom of the chin with <strong>Chin</strong>; the box
+          keeps the {{ spec().name }} shape for you.
+        </p>
+      </section>
+
+      <!-- Result -------------------------------------------------------- -->
+      <section class="result" aria-label="Result">
+        <figure class="preview">
+          @if (resultUrl(); as src) {
+            <img class="preview__image" [src]="src" alt="The finished photo" data-testid="photo" />
+          }
+          <figcaption class="preview__caption" data-testid="photo-size">
+            {{ spec().widthMm }} × {{ spec().heightMm }} mm · {{ pixels().width }} ×
+            {{ pixels().height }} px
+          </figcaption>
+        </figure>
+
+        @if (tooSmall()) {
+          <p class="status status--warn" role="status" data-testid="too-small">
+            <ng-icon class="status__icon" aria-hidden="true" name="matWarningOutline" />
+            The part you have selected is smaller than the print needs, so it is being enlarged and
+            will look soft on paper. Use a closer or higher-resolution photo, or drop to 300 dpi.
+          </p>
+        }
+      </section>
+    </div>
+
+    <!-- Print options --------------------------------------------------- -->
+    <div class="controls">
+      <div class="control">
+        <span class="control__label" id="dpi-label">Print resolution</span>
+        <div class="tabs" role="group" aria-labelledby="dpi-label">
+          @for (option of dpis; track option) {
+            <button
+              type="button"
+              class="tab"
+              [class.tab--active]="dpi() === option"
+              [attr.aria-pressed]="dpi() === option"
+              (click)="setDpi(option)"
+            >
+              {{ option }} dpi
+            </button>
+          }
+        </div>
+        <span class="field__hint">
+          300 dpi is what every photo lab accepts. 600 dpi doubles the pixels and the file size.
+        </span>
+      </div>
+
+      <div class="control">
+        <label class="control__label" for="sheet">Print sheet</label>
+        <select
+          id="sheet"
+          class="field__input"
+          [value]="sheetKey()"
+          (change)="setSheet($any($event.target).value)"
+        >
+          @for (option of sheets; track option.key) {
+            <option [value]="option.key">{{ option.name }}</option>
+          }
+        </select>
+        @if (layout(); as plan) {
+          <span class="field__hint" data-testid="sheet-count">
+            {{ plan.count }} copies per sheet, {{ plan.columns }} × {{ plan.rows }}, with a 2 mm gap
+            to cut along.
+          </span>
+        }
+      </div>
+
+      <div class="actions">
+        <button matButton="filled" [disabled]="!resultUrl()" (click)="download()">
+          <ng-icon name="matDownloadOutline" />
+          Download photo
+        </button>
+        <button matButton [disabled]="!resultUrl() || working()" (click)="downloadSheet()">
+          <ng-icon name="matGridOnOutline" />
+          Download sheet
+        </button>
+        <button
+          matButton
+          [class.chip--on]="showGuides()"
+          [attr.aria-pressed]="showGuides()"
+          (click)="toggleGuides()"
+        >
+          <ng-icon name="matStraightenOutline" />
+          {{ showGuides() ? 'Hide' : 'Show' }} guides
+        </button>
+        <button matButton (click)="reset()">
+          <ng-icon name="matClearOutline" />
+          Start over
+        </button>
+      </div>
+    </div>
+
+    <p class="summary">{{ name() }} · {{ imageWidth() }} × {{ imageHeight() }} px</p>
+  } @else {
+    <app-dropzone accept="image/*" (filesSelected)="addFiles($event)">
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matBadgeOutline" />
+      <span class="dropzone__title">Drop a photo here, or click to choose</span>
+      <span class="dropzone__hint">
+        A straight-on head-and-shoulders photo works best — JPEG, PNG, WebP or AVIF
+      </span>
+    </app-dropzone>
+  }
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+  The photo is cropped and resized in this tab and never uploaded. Most authorities also want a
+  plain, light background — the
+  <a routerLink="/tools/background-remover">Background Remover</a> will give you one, and you can
+  bring the result straight back here.
+</p>
+
+<app-tool-content slug="passport-photo" />
