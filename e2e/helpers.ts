@@ -155,6 +155,33 @@ export async function getEditorText(root: Locator): Promise<string> {
 }
 
 /**
+ * Polls until the editor holds text that `ready` accepts, and returns it.
+ *
+ * Exists because `getEditorText` answers '' while CodeMirror is swapping in,
+ * and '' is not a value any tool produced. A wait phrased as "until it differs
+ * from what it was" is satisfied by exactly that empty moment, so the poll
+ * passes, the assertion after it reads the same '' and fails — which is how
+ * lorem-ipsum failed against production while passing locally, where the swap
+ * is over before the first read. Every wait goes through here and is phrased as
+ * something the text must *be*.
+ */
+export async function editorTextWhen(
+  root: Locator,
+  ready: (text: string) => boolean,
+): Promise<string> {
+  let last = '';
+  await expect
+    .poll(async () => {
+      last = await getEditorText(root);
+      return last !== '' && ready(last)
+        ? 'ready'
+        : `not ready, holding ${JSON.stringify(last.slice(0, 80))}`;
+    })
+    .toBe('ready');
+  return last;
+}
+
+/**
  * Finds a shared code editor by the `label` its tool gave it — which becomes
  * the aria-label on both CodeMirror's content and the fallback textarea.
  *

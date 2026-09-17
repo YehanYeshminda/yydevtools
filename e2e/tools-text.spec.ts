@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import {
   editorByLabel,
+  editorTextWhen,
   expectClean,
   getEditorText,
   gotoTool,
@@ -736,8 +737,8 @@ test('lorem-ipsum generates placeholder text in every unit and format', async ({
   // rather than rewrite it, or settling on a length means chasing the text.
   const before = await getEditorText(result);
   await page.locator('#lorem-count').fill('5');
-  await expect.poll(() => getEditorText(result)).not.toBe(before);
-  expect(await getEditorText(result)).toContain(before.trim());
+  const extended = await editorTextWhen(result, (text) => text.includes(before.trim()));
+  expect(extended.length).toBeGreaterThan(before.length);
 
   await page.getByRole('button', { name: 'HTML', exact: true }).click();
   await expect.poll(() => getEditorText(result)).toContain('<p>Lorem ipsum');
@@ -751,10 +752,10 @@ test('lorem-ipsum generates placeholder text in every unit and format', async ({
   // Shuffle is the only control that is allowed to rewrite the words.
   const shuffled = await getEditorText(result);
   await page.getByRole('button', { name: 'Shuffle' }).click();
-  await expect.poll(() => getEditorText(result)).not.toBe(shuffled);
+  await editorTextWhen(result, (text) => text !== shuffled);
 
   await page.getByRole('button', { name: /Start with/ }).click();
-  await expect.poll(() => getEditorText(result)).not.toContain('Lorem ipsum dolor sit amet');
+  await editorTextWhen(result, (text) => !text.includes('Lorem ipsum dolor sit amet'));
 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download' }).click();
@@ -917,7 +918,14 @@ test('the pomodoro keeps running after you leave its page', async ({ page }) => 
 
   await page.getByTestId('toggle').click();
   await page.clock.fastForward('01:00');
-  await expect(page.getByTestId('time')).toContainText('24:0');
+  // A minute in, and nowhere near the 25 it started at. Not pinned to 24:00:
+  // page.clock.install() freezes nothing between calls, it only stops the clock
+  // running away, so the real seconds spent loading the page count too — and
+  // against the deployment there are several times more of them than there are
+  // locally, which is how this read 23:45 in production and 24:00 here.
+  const started = clockSeconds(await page.getByTestId('time').innerText());
+  expect(started).toBeLessThan(25 * 60 - 45);
+  expect(started).toBeGreaterThan(20 * 60);
 
   // No readout in the bar on the timer's own page: it would only repeat the
   // clock already filling the screen.
@@ -928,7 +936,9 @@ test('the pomodoro keeps running after you leave its page', async ({ page }) => 
 
   const pill = page.locator('.timer-pill');
   await expect(pill).toBeVisible();
-  await expect(pill).toHaveAttribute('aria-label', /Focus, 24:0\d left/);
+  await expect(pill).toHaveAttribute('aria-label', /Focus, \d+:\d\d left\. Open the timer/);
+  // The same session, carried over rather than started again.
+  expect(clockSeconds(await pill.innerText())).toBeLessThanOrEqual(started);
 
   // Still counting down while you are somewhere else entirely.
   const left = clockSeconds(await pill.innerText());
