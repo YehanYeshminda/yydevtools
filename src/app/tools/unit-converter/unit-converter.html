@@ -1,0 +1,117 @@
+<app-tool-page slug="unit-converter">
+  Convert length, weight, temperature, volume, speed, area, data and time — one pair at a time, or
+  every unit at once.
+</app-tool-page>
+
+<div class="panel">
+  <div class="control">
+    <span class="control__label" id="category-label">Measuring</span>
+    <div class="chips" role="group" aria-labelledby="category-label">
+      @for (option of categories; track option.id) {
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="categoryId() === option.id"
+          [attr.aria-pressed]="categoryId() === option.id"
+          (click)="setCategory(option.id)"
+        >
+          {{ option.name }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="convert">
+    <div class="field">
+      <label class="field__label" for="unit-value">Value</label>
+      <input
+        id="unit-value"
+        class="field__input amount"
+        type="text"
+        inputmode="decimal"
+        spellcheck="false"
+        autocomplete="off"
+        [value]="input()"
+        (input)="setInput($any($event.target).value)"
+      />
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="unit-from">From</label>
+      <select
+        id="unit-from"
+        class="field__input"
+        [value]="from()"
+        (change)="setFrom($any($event.target).value)"
+      >
+        @for (unit of units(); track unit.id) {
+          <option [value]="unit.id">{{ unit.name }} ({{ unit.symbol }})</option>
+        }
+      </select>
+    </div>
+
+    <button
+      type="button"
+      class="swap"
+      matIconButton
+      aria-label="Swap the two units"
+      (click)="swap()"
+    >
+      <ng-icon name="matSwapHorizOutline" />
+    </button>
+
+    <div class="field">
+      <label class="field__label" for="unit-to">To</label>
+      <select
+        id="unit-to"
+        class="field__input"
+        [value]="to()"
+        (change)="setTo($any($event.target).value)"
+      >
+        @for (unit of units(); track unit.id) {
+          <option [value]="unit.id">{{ unit.name }} ({{ unit.symbol }})</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (invalid()) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      That is not a number.
+    </p>
+  } @else if (valid()) {
+    <div class="result" data-testid="result">
+      <p class="result__headline">
+        {{ input() }} {{ fromSymbol() }} = <strong>{{ resultText() }} {{ toSymbol() }}</strong>
+      </p>
+    </div>
+
+    <div class="actions">
+      <button matButton="filled" (click)="copy()">
+        <ng-icon name="matContentCopyOutline" />
+        Copy result
+      </button>
+      <app-share-link [state]="shared" />
+    </div>
+
+    <ul class="rows" data-testid="all">
+      @for (row of all(); track row.unit.id) {
+        <li class="row" [class.row--source]="row.unit.id === from()">
+          <span class="row__label">{{ row.unit.symbol }}</span>
+          <p class="row__value">{{ row.text }}</p>
+          <span class="row__name">{{ row.unit.name }}</span>
+        </li>
+      }
+    </ul>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Where a name means two different things, both are listed rather than one being chosen for you: a
+    US gallon is about 17% smaller than a UK one, a short ton about 10% lighter than a long one, and
+    a megabyte is 1,000,000 bytes where a mebibyte is 1,048,576.
+  </p>
+</div>
+
+<app-tool-content slug="unit-converter" />

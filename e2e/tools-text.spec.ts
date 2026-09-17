@@ -478,6 +478,46 @@ test('url-encoder encodes a value and breaks a URL into parts', async ({ page })
   expectClean(watch);
 });
 
+test('unit-converter converts across categories, temperature included', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'unit-converter', 'Unit Converter');
+
+  const result = page.getByTestId('result');
+  await expect(result).toContainText('1 cm = 0.3937007874 in');
+
+  await page.locator('#unit-value').fill('1');
+  await page.locator('#unit-from').selectOption('mi');
+  await page.locator('#unit-to').selectOption('km');
+  await expect(result).toContainText('1.609344 km');
+
+  // Temperature is the one category that is not a ratio. −40 is the point
+  // where the two scales cross, and it comes out right by accident far less
+  // often than 0 or 100 do.
+  await page.getByRole('button', { name: 'Temperature' }).click();
+  await page.locator('#unit-value').fill('-40');
+  await expect(result).toContainText('-40 °C = -40 °F');
+  await page.locator('#unit-value').fill('100');
+  await expect(result).toContainText('212 °F');
+
+  // The 1000 and 1024 families are separate units, not a rounding choice.
+  await page.getByRole('button', { name: 'Data' }).click();
+  await page.locator('#unit-value').fill('1');
+  await page.locator('#unit-from').selectOption('gib');
+  await page.locator('#unit-to').selectOption('gb');
+  await expect(result).toContainText('1.073741824 GB');
+
+  // The table underneath covers every unit of the category.
+  await expect(page.getByTestId('all').locator('.row')).toHaveCount(10);
+
+  await page.getByRole('button', { name: 'Swap the two units' }).click();
+  await expect(result).toContainText('1 GB =');
+
+  await page.locator('#unit-value').fill('not a number');
+  await expect(page.getByRole('alert')).toContainText('not a number');
+
+  expectClean(watch);
+});
+
 test('base-converter converts, honours a prefix and flips a bit', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'base-converter', 'Number Base Converter');

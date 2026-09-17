@@ -316,6 +316,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'unit-converter',
+    name: 'Unit Converter',
+    description:
+      'Convert length, weight, temperature, volume, speed, area, data and time, with every unit shown at once.',
+    icon: 'matStraightenOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'age-calculator',
     name: 'Age & Date Difference Calculator',
     description:

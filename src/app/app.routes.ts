@@ -603,6 +603,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/unit-converter',
+    loadComponent: () =>
+      import('./tools/unit-converter/unit-converter').then((m) => m.UnitConverterTool),
+    title: 'Unit Converter — Length, Weight, Temperature & more — YYDevTools',
+    data: {
+      description:
+        'Convert length, weight, temperature, volume, speed, area, data and time between metric ' +
+        'and imperial units, with every unit shown at once. Free, in your browser.',
+    },
+  },
+  {
     path: 'tools/base-converter',
     loadComponent: () =>
       import('./tools/base-converter/base-converter').then((m) => m.BaseConverterTool),

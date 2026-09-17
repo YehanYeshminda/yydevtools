@@ -736,6 +736,76 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['case-converter', 'word-counter', 'text-diff', 'file-inspector'],
   },
+  'unit-converter': {
+    slug: 'unit-converter',
+    intro: [
+      'Length, weight, temperature, volume, speed, area, data and time, converted between metric and imperial and back. Pick what you are measuring, type a number, and read the pair you asked for — or the whole category at once, which is usually the faster way to find the unit you actually wanted.',
+      'The awkward cases are named rather than quietly decided for you. A US gallon and a UK gallon are both here, so are the short and long tons, so are the 1000-based and 1024-based data units. Everything runs in the page; nothing is sent anywhere.',
+    ],
+    steps: [
+      'Choose the category — length, weight, temperature and the rest.',
+      'Type the value and pick the two units. Use the swap button to reverse them.',
+      'Read the answer, or scan the table underneath for the same value in every unit of that category.',
+      'Copy the result, or share the link to bring the same conversion back.',
+    ],
+    features: [
+      'Eight categories and around seventy units.',
+      'Every unit of a category shown at once, not just the pair you selected.',
+      'Both gallons, both pints, both fluid ounces, both tons — named, not guessed.',
+      'Decimal and binary data units (MB and MiB) kept apart.',
+      'Temperature handled as the affine scale it is, so −40 °C and −40 °F agree.',
+      'Runs in your browser; nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Why temperature is not like the others',
+        body: [
+          'Every other conversion here is a ratio: a mile is 1,609.344 metres, and that is true of one mile, a hundred miles and a thousandth of a mile. Multiply and you are done. Temperature scales do not work that way, because they do not share a zero. Zero Celsius is 32 Fahrenheit, not zero Fahrenheit, so the conversion is a multiplication and an addition — an affine transform rather than a linear one.',
+          'That difference is why a table of conversion factors, which is how nearly every unit converter is built inside, cannot express temperature, and why temperature has to be special-cased. A converter that forgets is easy to spot: ask it for 0 °C in Fahrenheit and it will say 0.',
+          'The one point where the Celsius and Fahrenheit scales cross is −40. It is a useful thing to check any converter with, because it comes out right by accident far less often than 0 or 100 do.',
+        ],
+      },
+      {
+        heading: 'The units that share a name',
+        body: [
+          'A US gallon is 3.785 litres and a UK gallon is 4.546 — about 17% larger. The same split runs through pints and fluid ounces, and it is the reason a recipe written in one country goes wrong in the other in a way that is hard to see: the numbers all look plausible. Both are offered here rather than a single "gallon" that would be right for half the readers.',
+          'Tons are worse, because the gap is smaller and so less likely to be noticed. A US short ton is 907 kg, a UK long ton 1,016 kg, and a metric tonne 1,000 kg — three different masses, two of them spelled the same way in most writing.',
+          'Data units have their own version of this argument. A kilobyte was 1,024 bytes by convention for decades; the standards bodies then defined the kilobyte as 1,000 and introduced the kibibyte for 1,024. Both conventions are still in daily use — which is why a "500 GB" drive shows up as about 465 GiB in a file manager, and why both families are listed separately here.',
+        ],
+      },
+      {
+        heading: 'How the numbers are rounded',
+        body: [
+          'Results are shown to ten significant digits and then trimmed of trailing zeros, rather than to a fixed number of decimal places. Within one category the same conversion can produce 0.03 and 30,000,000, and a fixed decimal count would either round the small answers to nothing or pad the large ones with digits the conversion never justified.',
+          'Very large and very small results switch to exponent notation for the same reason. A number with twenty leading zeros is not more precise for being written out in full, only harder to read.',
+          'One thing worth knowing: the arithmetic is done in ordinary binary floating point, so a conversion and its reverse can differ in the last digit or two. That is a property of the number format rather than of the factors, which are exact.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Which gallon does it use?',
+        a: 'Whichever you pick. Both the US and UK gallons are listed by name, along with both pints and both fluid ounces, because choosing one for you is how a recipe or a fuel figure ends up 17% out.',
+      },
+      {
+        q: 'Is a megabyte 1,000,000 or 1,048,576 bytes?',
+        a: 'Both conventions are in use, so both are listed. A megabyte (MB) here is 1,000,000 bytes and a mebibyte (MiB) is 1,048,576. Drive manufacturers use the first and most operating systems report the second, which is the whole reason a new drive looks smaller than the box said.',
+      },
+      {
+        q: 'How long is a month?',
+        a: 'There is no fixed answer, so the month and year in the Time category are the average Gregorian ones — 30.44 days and 365.2425 days. For a specific span between two dates, use the Age & Date Difference Calculator instead, which counts the actual calendar.',
+      },
+      {
+        q: 'Why does the reverse conversion sometimes differ in the last digit?',
+        a: 'Because the arithmetic uses binary floating point, where most decimal fractions cannot be represented exactly. The error is around one part in 10^15 and is invisible at any precision a measurement actually has.',
+      },
+      {
+        q: 'Are the values sent anywhere?',
+        a: 'No. The conversion tables and the arithmetic are part of the page, so nothing is requested and nothing is uploaded.',
+      },
+    ],
+    related: ['age-calculator', 'base-converter', 'timestamp-converter', 'color-converter'],
+  },
   'base-converter': {
     slug: 'base-converter',
     intro: [
