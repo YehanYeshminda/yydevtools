@@ -264,6 +264,13 @@
 
 .chip--on,
 .chip--on:hover {
+  /* Spelled twice on purpose. On a plain .chip the `color` below is the whole
+     story; on a Material button it is not, because
+     `.mat-mdc-button:not(:disabled)` sets the label colour and outranks a
+     single class — which left brand-yellow text on a brand-yellow background,
+     an unreadable 1.04:1. Setting Material's own token is the only way to
+     reach the label, and it costs nothing on the elements that ignore it. */
+  --mat-button-text-label-text-color: var(--on-brand);
   color: var(--on-brand);
   background: var(--brand);
   border-color: var(--brand);
@@ -279,6 +286,36 @@
 /* The container and drag state live in shared/dropzone. Only the projected
    content is styled here, because projected nodes keep this stylesheet's
    encapsulation rather than the dropzone component's. */
+
+/* A file input dressed as a button, for the "add more files" and "choose a
+   logo" affordances. Lived in image-pdf.css until the invoice generator wanted
+   the same control; both stylesheets already include this one. */
+.add-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 999px;
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-label-large);
+  cursor: var(--cursor-pointer);
+}
+
+.add-more:hover {
+  background: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+}
+
+.add-more:focus-within {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.add-more ng-icon {
+  font-size: 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+}
 
 /* Still needed by the standalone "add more files" inputs, which are plain
    labelled inputs rather than drop targets. Clipped rather than hidden so the

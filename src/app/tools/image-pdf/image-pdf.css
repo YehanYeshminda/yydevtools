@@ -122,31 +122,3 @@
 .grid--pages {
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 }
-
-/* "Add more images" is a labelled input styled to sit beside the buttons. */
-.add-more {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--mat-sys-outline);
-  border-radius: 999px;
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-label-large);
-  cursor: var(--cursor-pointer);
-}
-
-.add-more:hover {
-  background: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
-}
-
-.add-more:focus-within {
-  outline: 2px solid var(--mat-sys-primary);
-  outline-offset: 2px;
-}
-
-.add-more ng-icon {
-  font-size: 1.15rem;
-  width: 1.15rem;
-  height: 1.15rem;
-}

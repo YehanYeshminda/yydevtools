@@ -22,9 +22,12 @@
   pointer-events: none;
 }
 
+/* Faded on the rule itself rather than on the whole guide: `opacity` here
+   would take the label down with it, and it is already only just clear of the
+   contrast floor. */
 .guide--eyes {
   border-top-style: dotted;
-  opacity: 0.7;
+  border-top-color: color-mix(in srgb, var(--brand) 70%, transparent);
 }
 
 .guide__label {
@@ -34,7 +37,11 @@
   padding: 0 0.3rem;
   border-radius: 4px;
   background: var(--brand);
-  color: var(--mat-sys-on-primary, #000);
+  /* --on-brand, not --mat-sys-on-primary: the Material token flips with the
+     theme, so in light mode this was near-white on brand yellow. --brand is
+     the same colour in both themes and --on-brand is the ink that goes with
+     it, which is what every other brand-filled control here uses. */
+  color: var(--on-brand);
   font: var(--mat-sys-label-small);
   font-size: 0.62rem;
   letter-spacing: 0.02em;
