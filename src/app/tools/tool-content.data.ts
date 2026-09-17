@@ -736,6 +736,76 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['case-converter', 'word-counter', 'text-diff', 'file-inspector'],
   },
+  'barcode-generator': {
+    slug: 'barcode-generator',
+    intro: [
+      'Six of the barcodes you are most likely to need: Code 128 for anything at all, EAN-13 and EAN-8 for retail packaging, UPC-A for North America, Code 39 for the older industrial systems that still expect it, and ITF-14 for the carton a retail item ships in. Type a value, pick a size, and download it as SVG or PNG.',
+      'Check digits are worked out for you. Type the twelve digits of an EAN-13 and the thirteenth is added; type all thirteen and the tool checks the one you typed and tells you what it should have been, which is usually how you find out a digit was mistyped.',
+    ],
+    steps: [
+      'Pick the format. Each one says what it is for, and starts with a valid example.',
+      'Type the value. Anything the format cannot hold is explained rather than silently dropped.',
+      'Adjust the bar width and height if the barcode has to fit a particular label.',
+      'Download the SVG for print, or the PNG for a screen or a document that will not take vectors.',
+    ],
+    features: [
+      'Code 128, EAN-13, EAN-8, UPC-A, Code 39 and ITF-14.',
+      'Check digits calculated, and verified when you supply your own.',
+      'SVG output, which stays sharp at any size.',
+      'PNG output rendered at three times screen size.',
+      'The printed number underneath, on or off.',
+      'Runs in your browser; no value is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Which format you actually want',
+        body: [
+          'Code 128 is the default answer for anything that is not going through a supermarket till. It holds the full ASCII set, packs digits two to a bar-group so numeric codes stay short, and is what most labelling, shipping and asset-tracking systems expect. If nobody has told you which symbology to use, this is the one.',
+          'EAN-13 and UPC-A are the retail barcodes, and they are not free-form: the number identifies a company and a product, and the company prefix is issued by GS1. You can generate a valid-looking EAN-13 here for a mock-up or a test, but a real product needs a real allocation — an invented one belongs to somebody else.',
+          'Code 39 is older, holds a restricted character set, and produces a much wider barcode for the same data. It survives because defence, automotive and some healthcare systems standardised on it decades ago and it is self-checking. Use it when something tells you to, not by choice. ITF-14 is the outer-case code: it wraps the EAN-13 of the item inside with a packaging indicator.',
+        ],
+      },
+      {
+        heading: 'The check digit, and why it matters',
+        body: [
+          'The last digit of an EAN-13, EAN-8, UPC-A or ITF-14 is not part of the identifier — it is a checksum. The other digits are weighted 3 and 1 alternately from the right, summed, and the result subtracted from the next multiple of ten. A scanner recomputes it and rejects the read if it disagrees, which is what stops a misread bar becoming a different product.',
+          'The weighting direction is the part that is easy to get wrong, and getting it wrong produces a check digit that happens to be right about one time in ten — often enough that a hand-rolled implementation can pass a casual test and fail in production. The digits here are checked against published real-world barcodes.',
+          'If you type the full-length value yourself and the check digit does not match, the tool says what it should have been rather than drawing the barcode. That is not a limitation being imposed: a symbology with a wrong check digit is not a valid barcode, no scanner would read it, and the mismatch almost always means a digit was copied wrong.',
+        ],
+      },
+      {
+        heading: 'Printing a barcode that actually scans',
+        body: [
+          'The commonest reason a barcode will not scan is that it was resized as a bitmap. Scaling a PNG up makes the bar edges fuzzy and the widths inconsistent, and bar width is the entire signal — a scanner measures the ratio between narrow and wide bars. Use the SVG whenever the barcode is going into a document or to a printer; it is vector, so the edges stay exact at any size.',
+          'The other reason is the quiet zone: the blank margin either side. It is part of the symbol, not decoration around it, and cropping tight to the bars will break the read. The margin is included in both downloads here — do not trim it.',
+          'Finally, keep it dark on light. A barcode inverted for a dark background looks fine on screen and reads as nothing under a laser scanner, which is why the preview here is always on white regardless of the site theme.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Can I use a barcode from here on a product I sell?',
+        a: 'For Code 128 and Code 39, yes — those are yours to assign. EAN-13 and UPC-A are different: the number encodes a company prefix issued by GS1, so a retail product needs a real allocation. What you generate here is valid as a barcode; whether the number is yours to use is a separate question.',
+      },
+      {
+        q: 'Why does it add a digit to what I typed?',
+        a: 'EAN-13, EAN-8, UPC-A and ITF-14 end in a calculated check digit. Type the value without it and the tool completes it; type the full length and it verifies what you typed instead.',
+      },
+      {
+        q: 'SVG or PNG?',
+        a: 'SVG for anything that will be printed or resized, because the bar widths stay exact. PNG for a screen, a chat message, or a system that will not take a vector — it is rendered at three times screen size so it survives being placed in a document.',
+      },
+      {
+        q: 'Why can Code 39 not take lower case?',
+        a: 'Because the symbology does not have it. Code 39 encodes 43 characters: digits, capitals, space and - . $ / + %. There is an extended mode that escapes the rest as pairs, but many scanners are not configured for it, so a barcode using it may read as nonsense.',
+      },
+      {
+        q: 'Is the value sent anywhere?',
+        a: 'No. The barcode is drawn in the page, and both downloads are produced in your browser.',
+      },
+    ],
+    related: ['qr-generator', 'hash-generator', 'uuid-generator', 'favicon-generator'],
+  },
   pomodoro: {
     slug: 'pomodoro',
     intro: [

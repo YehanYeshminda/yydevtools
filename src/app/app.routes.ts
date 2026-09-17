@@ -603,6 +603,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/barcode-generator',
+    loadComponent: () =>
+      import('./tools/barcode-generator/barcode-generator').then((m) => m.BarcodeGeneratorTool),
+    title: 'Barcode Generator — EAN, UPC, Code 128 & Code 39 — YYDevTools',
+    data: {
+      description:
+        'Generate a Code 128, EAN-13, EAN-8, UPC-A, Code 39 or ITF-14 barcode and download it as ' +
+        'SVG or PNG. Check digits calculated. Free, in your browser.',
+    },
+  },
+  {
     path: 'tools/pomodoro',
     loadComponent: () => import('./tools/pomodoro/pomodoro').then((m) => m.PomodoroTool),
     title: 'Pomodoro Timer & Stopwatch — YYDevTools',

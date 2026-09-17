@@ -1,0 +1,140 @@
+<app-tool-page slug="barcode-generator">
+  Make a Code 128, EAN-13, EAN-8, UPC-A, Code 39 or ITF-14 barcode and download it as SVG or PNG.
+  Check digits are worked out for you.
+</app-tool-page>
+
+<div class="panel">
+  <div class="control">
+    <span class="control__label" id="format-label">Format</span>
+    <div class="chips" role="group" aria-labelledby="format-label">
+      @for (option of formats; track option.id) {
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="formatId() === option.id"
+          [attr.aria-pressed]="formatId() === option.id"
+          (click)="setFormat(option.id)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+    <span class="field__hint">{{ format().hint }}</span>
+  </div>
+
+  <div class="field">
+    <label class="field__label" for="barcode-value">Value</label>
+    <input
+      id="barcode-value"
+      class="field__input value"
+      type="text"
+      spellcheck="false"
+      autocomplete="off"
+      autocapitalize="characters"
+      [value]="value()"
+      (input)="setValue($any($event.target).value)"
+    />
+    @if (completed()) {
+      <span class="field__hint" data-testid="completed">
+        Check digit added: encoding <code>{{ encoded() }}</code>
+      </span>
+    }
+  </div>
+
+  @if (problem(); as message) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      {{ message }}
+    </p>
+  } @else if (renderError(); as message) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      {{ message }}
+    </p>
+  }
+
+  <div class="preview" [class.preview--empty]="!drawn()">
+    <!-- JsBarcode draws straight into this element, so it is a real <svg> in
+         the template rather than markup bound from a signal. -->
+    <svg
+      #svg
+      class="preview__svg"
+      data-testid="barcode"
+      [attr.role]="drawn() ? 'img' : 'presentation'"
+      [attr.aria-label]="drawn() ? label() : null"
+    ></svg>
+  </div>
+
+  <div class="controls">
+    <div class="control">
+      <span class="control__label" id="width-label">Bar width</span>
+      <div class="tabs" role="group" aria-labelledby="width-label">
+        @for (option of widths; track option) {
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="barWidth() === option"
+            [attr.aria-pressed]="barWidth() === option"
+            (click)="setWidth(option)"
+          >
+            {{ option }}×
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="control">
+      <span class="control__label" id="height-label">Height</span>
+      <div class="tabs" role="group" aria-labelledby="height-label">
+        @for (option of heights; track option) {
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="height() === option"
+            [attr.aria-pressed]="height() === option"
+            (click)="setHeight(option)"
+          >
+            {{ option }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="control">
+      <span class="control__label" id="text-label">Number</span>
+      <div class="chips" role="group" aria-labelledby="text-label">
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="showText()"
+          [attr.aria-pressed]="showText()"
+          (click)="toggleText()"
+        >
+          <ng-icon aria-hidden="true" [name]="showText() ? 'matCheckOutline' : 'matAddOutline'" />
+          Print it underneath
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button matButton="filled" [disabled]="!drawn()" (click)="downloadSvg()">
+      <ng-icon name="matDownloadOutline" />
+      Download SVG
+    </button>
+    <button matButton [disabled]="!drawn()" (click)="downloadPng()">
+      <ng-icon name="matImageOutline" />
+      Download PNG
+    </button>
+    <app-share-link [state]="shared" />
+  </div>
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Download the SVG if the barcode is going into a document or to a printer: it stays sharp at any
+    size, and a barcode that has been scaled from a bitmap is the usual reason one will not scan.
+    The PNG is rendered at three times screen size for the same reason.
+  </p>
+</div>
+
+<app-tool-content slug="barcode-generator" />

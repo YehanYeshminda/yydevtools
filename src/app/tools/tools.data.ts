@@ -92,6 +92,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'barcode-generator',
+    name: 'Barcode Generator',
+    description:
+      'Make a Code 128, EAN-13, EAN-8, UPC-A, Code 39 or ITF-14 barcode, with the check digit worked out.',
+    icon: 'matBarcodeOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'text-cleaner',
     name: 'Text Cleaner',
     description:

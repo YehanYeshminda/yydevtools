@@ -147,3 +147,12 @@ test('base-converter keeps a 256-bit value inside every row', async ({ page }) =
   await expect(page.locator('.row__value').first()).toBeVisible();
   await expectFitsAtEveryWidth(page);
 });
+
+test('barcode-generator keeps a very wide barcode inside the preview', async ({ page }) => {
+  await gotoTool(page, 'barcode-generator', 'Barcode Generator');
+  // Code 128 takes any text, so a long token produces a barcode several
+  // thousand pixels wide. It has to scroll or scale, not push the page open.
+  await page.locator('#barcode-value').fill(TOKEN);
+  await expect(page.getByTestId('barcode').locator('rect').first()).toBeVisible();
+  await expectFitsAtEveryWidth(page);
+});

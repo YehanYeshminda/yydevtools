@@ -1,0 +1,58 @@
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.tabs {
+  align-self: flex-start;
+}
+
+.value {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
+/* Always on white, in both themes. A barcode is ink on paper: a scanner wants
+   dark bars on a light ground, and inverting it for dark mode would produce a
+   picture that looks right on screen and reads as nothing under a laser. */
+.preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 9rem;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid var(--outline-2);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.preview--empty {
+  background: var(--surface-1);
+}
+
+.preview__svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.field__hint code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  padding: 0.1em 0.3em;
+  background: var(--surface-2);
+  border-radius: 4px;
+}

@@ -814,3 +814,38 @@ test('secret-link seals a secret, opens it once, and burns it', async ({ page })
 
   expectClean(watch);
 });
+
+test('barcode-generator draws every format and completes the check digit', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'barcode-generator', 'Barcode Generator');
+
+  const bars = page.getByTestId('barcode').locator('rect');
+  const formats = page.getByRole('group', { name: 'Format' });
+
+  // Code 128 starts drawn, from the sample value.
+  await expect(bars.first()).toBeVisible();
+
+  await formats.getByRole('button', { name: 'EAN-13' }).click();
+  // The sample is twelve digits; the thirteenth is worked out here, not typed.
+  await expect(page.getByTestId('completed')).toContainText('5012345678900');
+  await expect(bars.first()).toBeVisible();
+
+  // A wrong check digit is refused rather than drawn, because JsBarcode will
+  // not encode one either — and the message says what it should have been.
+  await page.locator('#barcode-value').fill('5012345678901');
+  await expect(page.getByRole('alert')).toContainText('should be 0, not 1');
+  await expect(bars).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Download SVG' })).toBeDisabled();
+
+  await page.locator('#barcode-value').fill('501234567890');
+  await expect(bars.first()).toBeVisible();
+
+  // The remaining four, each of which has its own encoder in the library.
+  for (const name of ['EAN-8', 'UPC-A', 'Code 39', 'ITF-14']) {
+    await formats.getByRole('button', { name, exact: true }).click();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(bars.first()).toBeVisible();
+  }
+
+  expectClean(watch);
+});
