@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 
 import { expectClean, fixture, gotoTool, uploadFiles, watchConsole } from './helpers';
@@ -228,21 +228,51 @@ test('favicon-generator renders the full icon set and zips it', async ({ page })
 });
 
 /**
- * The two Office viewers convert through the `office-convert` Fly service, which
- * is not reachable from a local `ng serve`. Against localhost the meaningful
- * assertion is that the tool degrades honestly — it says the service is not
- * running instead of hanging or throwing. Point E2E_BASE_URL at a deployment and
- * the same test asserts the real render.
+ * Whether there is a Worker in front of whatever this suite is pointed at.
+ *
+ * Several tools do their real work through `/api/*` — the Office viewers, the
+ * certificate decoder, PDF protect and unlock. A bare `ng serve` has no Worker
+ * and therefore no `/api`, and against that the meaningful assertion is that
+ * the tool degrades honestly: it says the service is not running instead of
+ * hanging or throwing. Against a deployment the same test asserts the real
+ * result.
+ *
+ * Asked of the server rather than inferred from E2E_BASE_URL being set, which
+ * was the old test and was wrong the moment that variable pointed at a local
+ * dev server on a spare port — seven tests then demanded a service that was
+ * never there and failed for the environment rather than for the code. The
+ * probe runs once per worker process and is shared by every test in it.
+ *
+ * `/api/warm` is a plain GET that answers in JSON. The content type is what is
+ * checked: a dev server answers an unknown path with the prerendered 404 page,
+ * which is HTML and, on some setups, a 200.
  */
-const HOSTED_OFFICE = !!process.env.E2E_BASE_URL;
+let apiProbe: Promise<boolean> | null = null;
 
-test('word-viewer renders a .docx', async ({ page }) => {
+function hostedApi(request: APIRequestContext): Promise<boolean> {
+  apiProbe ??= request
+    .get('/api/warm?service=office', { timeout: 30_000 })
+    .then((response) => {
+      const type = response.headers()['content-type'] ?? '';
+      return response.ok() && type.includes('json');
+    })
+    .catch(() => {
+      // A thrown request is a blip, not an answer. Forget it, so the next test
+      // asks again rather than running a whole worker's tests in the degraded
+      // branch because one fetch happened to fail.
+      apiProbe = null;
+      return false;
+    });
+  return apiProbe;
+}
+
+test('word-viewer renders a .docx', async ({ page, request }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'word-viewer', 'Word Viewer');
 
   await uploadFiles(page, ['sample.docx']);
 
-  if (HOSTED_OFFICE) {
+  if (await hostedApi(request)) {
     // Not getByText on the document's words: DocumentEditor paints the page to a
     // <canvas>, so they are never in the DOM and no text locator can see them —
     // the editor element's only text content is the ruler's tick numbers. What
@@ -262,13 +292,13 @@ test('word-viewer renders a .docx', async ({ page }) => {
   expectClean(watch);
 });
 
-test('excel-viewer renders an .xlsx', async ({ page }) => {
+test('excel-viewer renders an .xlsx', async ({ page, request }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'excel-viewer', 'Excel Viewer');
 
   await uploadFiles(page, ['sample.xlsx']);
 
-  if (HOSTED_OFFICE) {
+  if (await hostedApi(request)) {
     await expect(page.getByText('Region').first()).toBeVisible({ timeout: 90_000 });
     await expect(page.getByText('1284').first()).toBeVisible();
   } else {
@@ -397,7 +427,7 @@ test('pdf-sign places a typed signature and downloads the signed file', async ({
   expectClean(watch);
 });
 
-test('certificate-decoder reads a chain', async ({ page }) => {
+test('certificate-decoder reads a chain', async ({ page, request }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'certificate-decoder', 'Certificate Decoder');
 
@@ -405,7 +435,7 @@ test('certificate-decoder reads a chain', async ({ page }) => {
   // "YYDevTools E2E Root CA", both valid until 2036.
   await uploadFiles(page, ['sample-chain.pem']);
 
-  if (HOSTED_OFFICE) {
+  if (await hostedApi(request)) {
     await expect(page.getByRole('heading', { name: /e2e\.yydevtools\.com/ })).toBeVisible({
       timeout: 45_000,
     });
@@ -422,13 +452,13 @@ test('certificate-decoder reads a chain', async ({ page }) => {
   expectClean(watch);
 });
 
-test('powerpoint-viewer renders a .pptx', async ({ page }) => {
+test('powerpoint-viewer renders a .pptx', async ({ page, request }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'powerpoint-viewer', 'PowerPoint Viewer');
 
   await uploadFiles(page, ['sample.pptx']);
 
-  if (HOSTED_OFFICE) {
+  if (await hostedApi(request)) {
     // Two slides in, two pages out — the count comes from the rendered PDF.
     await expect(page.getByText(/2 slides/)).toBeVisible({ timeout: 90_000 });
     await expect(page.locator('app-pdf-preview iframe')).toBeVisible();
@@ -441,14 +471,14 @@ test('powerpoint-viewer renders a .pptx', async ({ page }) => {
   expectClean(watch);
 });
 
-test('office-to-pdf converts a .docx', async ({ page }) => {
+test('office-to-pdf converts a .docx', async ({ page, request }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'office-to-pdf', 'Office to PDF');
 
   await uploadFiles(page, ['sample.docx']);
   await expect(page.getByText(/sample\.docx/).first()).toBeVisible();
 
-  if (HOSTED_OFFICE) {
+  if (await hostedApi(request)) {
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: /Convert/ }).click();
     expect((await download).suggestedFilename()).toBe('sample.pdf');
@@ -462,14 +492,14 @@ test('office-to-pdf converts a .docx', async ({ page }) => {
   expectClean(watch);
 });
 
-test('pdf-protect encrypts a PDF', async ({ page }) => {
+test('pdf-protect encrypts a PDF', async ({ page, request }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'pdf-protect', 'Protect PDF');
 
   await uploadFiles(page, ['sample.pdf']);
   await page.getByLabel('Password to open the file').fill('e2e-secret');
 
-  if (HOSTED_OFFICE) {
+  if (await hostedApi(request)) {
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: /Protect & download/ }).click();
     expect((await download).suggestedFilename()).toBe('sample-protected.pdf');
@@ -483,7 +513,7 @@ test('pdf-protect encrypts a PDF', async ({ page }) => {
   expectClean(watch);
 });
 
-test('pdf-unlock removes the password from a protected PDF', async ({ page }) => {
+test('pdf-unlock removes the password from a protected PDF', async ({ page, request }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'pdf-unlock', 'Unlock PDF');
 
@@ -491,7 +521,7 @@ test('pdf-unlock removes the password from a protected PDF', async ({ page }) =>
   await uploadFiles(page, ['sample-locked.pdf']);
   await page.getByLabel('Current password').fill('e2e-secret');
 
-  if (HOSTED_OFFICE) {
+  if (await hostedApi(request)) {
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: /Unlock & download/ }).click();
     expect((await download).suggestedFilename()).toBe('sample-locked-unlocked.pdf');
@@ -960,6 +990,95 @@ test('pdf-diff calls out a page that exists in only one file', async ({ page }) 
     return canvas ? canvas.width * canvas.height : 0;
   });
   expect(drawn).toBeGreaterThan(0);
+
+  expectClean(watch);
+});
+
+/** Pixels on the invoice preview that are not paper-white. */
+async function previewInk(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="preview"]');
+    const context = canvas?.getContext('2d');
+    // A canvas still at its 300x150 default has not been drawn into yet.
+    if (!canvas || !context || canvas.width <= 300) return -1;
+    const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+    let marked = 0;
+    for (let at = 0; at < data.length; at += 4) {
+      if (data[at] < 245 || data[at + 1] < 245 || data[at + 2] < 245) marked++;
+    }
+    return marked;
+  });
+}
+
+/** Clicks Download PDF and hands back the bytes that arrived. */
+async function downloadedPdf(page: Page): Promise<Buffer> {
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download PDF' }).click();
+  return readFileSync(await (await download).path());
+}
+
+test('invoice-generator previews the real PDF and takes a logo', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'invoice-generator', 'Invoice & Receipt Generator');
+
+  // The preview is the document itself, rasterised — A4 at 1.5x is 892 x 1262.
+  await expect.poll(() => previewInk(page), { timeout: 45_000 }).toBeGreaterThan(1000);
+  expect(
+    await page.getByTestId('preview').evaluate((el: HTMLCanvasElement) => [el.width, el.height]),
+  ).toEqual([892, 1262]);
+  await expect(page.getByTestId('preview-pages')).toHaveText('One page');
+
+  // It follows the form: more on the page is more ink on the preview.
+  const plain = await previewInk(page);
+  await page.locator('#inv-notes').fill(`${'Terms and conditions apply. '.repeat(12)}`);
+  await expect.poll(() => previewInk(page), { timeout: 20_000 }).toBeGreaterThan(plain);
+
+  // A file that is not a PNG or a JPEG is refused on its bytes, whatever the
+  // name on it says — pdf-lib would otherwise throw part-way through and lose
+  // the whole invoice rather than the logo.
+  await page.getByTestId('logo-input').setInputFiles({
+    name: 'letterhead.png',
+    mimeType: 'image/png',
+    buffer: readFileSync(fixture('sample.csv')),
+  });
+  await expect(page.getByRole('alert')).toContainText('PNG or a JPEG');
+  await expect(page.getByTestId('logo-name')).toHaveCount(0);
+
+  // The same document without a logo, to weigh the next one against.
+  const plainPdf = await downloadedPdf(page);
+  expect(plainPdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+
+  // A real image is taken on, and turns up in the preview.
+  const withoutLogo = await previewInk(page);
+  await page.getByTestId('logo-input').setInputFiles(fixture('sample-photo.jpg'));
+  await expect(page.getByTestId('logo-name')).toHaveText('sample-photo.jpg');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect.poll(() => previewInk(page), { timeout: 20_000 }).toBeGreaterThan(withoutLogo);
+
+  // And in the file, which is bigger for carrying it. Weighed against the
+  // same invoice rather than a round number, so the assertion is "the image
+  // is in there" and not "a PDF is about this big".
+  const withLogo = await downloadedPdf(page);
+  expect(withLogo.length).toBeGreaterThan(plainPdf.length + 1000);
+
+  // Removing it puts the page back the way it was.
+  await page.getByRole('button', { name: 'Remove the logo' }).click();
+  await expect(page.getByTestId('logo-name')).toHaveCount(0);
+  await expect.poll(() => previewInk(page), { timeout: 20_000 }).toBeLessThan(withoutLogo + 500);
+
+  expectClean(watch);
+});
+
+test('invoice-generator says so when the invoice runs to a second page', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'invoice-generator', 'Invoice & Receipt Generator');
+  await expect(page.getByTestId('preview-pages')).toHaveText('One page', { timeout: 45_000 });
+
+  // Enough lines to push the totals off the bottom of the first page.
+  for (let line = 0; line < 34; line++) {
+    await page.getByRole('button', { name: 'Add a line' }).click();
+  }
+  await expect(page.getByTestId('preview-pages')).toHaveText('Page 1 of 2', { timeout: 30_000 });
 
   expectClean(watch);
 });

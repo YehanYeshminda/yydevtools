@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { TOOLS } from '../src/app/tools/tools.data';
 import { expectClean, expectNoHorizontalOverflow, watchConsole } from './helpers';
@@ -23,7 +25,9 @@ test.describe('every tool page', () => {
       await expect(page.locator('.head__title')).toHaveText(tool.name);
       await expect(page.locator('.head__sub')).not.toBeEmpty();
       await expect(page.locator('.head__icon ng-icon')).toBeVisible();
-      await expect(page.getByRole('button', { name: new RegExp(`${tool.name} to favourites`) })).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: new RegExp(`${tool.name} to favourites`) }),
+      ).toBeVisible();
 
       // Breadcrumb: All tools / Category / This tool.
       const crumbs = page.locator('.breadcrumb');
@@ -72,6 +76,35 @@ test.describe('every tool page', () => {
     await page.getByRole('button', { name: /Add Regex Tester to favourites/ }).click();
 
     await page.goto('/');
-    await expect(page.locator('.rail__fav').getByRole('link', { name: /Regex Tester/ })).toBeVisible();
+    await expect(
+      page.locator('.rail__fav').getByRole('link', { name: /Regex Tester/ }),
+    ).toBeVisible();
   });
+});
+
+/**
+ * The gate on shipping a tool nobody exercises.
+ *
+ * The pass above proves every page routes and renders; it would stay green for
+ * a tool whose one button threw. This insists each catalogue entry is also
+ * named somewhere in a behavioural spec, so adding a tool without a test fails
+ * the suite rather than going out untested.
+ *
+ * A mention is the bar, not a measure of depth — a slug is only ever written in
+ * these files to drive the thing. Deliberately a text search: parsing the specs
+ * to find out what they cover would be a worse job than reading them.
+ */
+test('every tool is exercised by a behavioural spec, not just this smoke pass', () => {
+  const specs = readdirSync(__dirname)
+    .filter((name) => name.endsWith('.spec.ts') && name !== 'tools-smoke.spec.ts')
+    .map((name) => readFileSync(join(__dirname, name), 'utf8'))
+    .join('\n');
+
+  const untested = READY.filter((tool) => !specs.includes(`'${tool.slug}'`)).map(
+    (tool) => tool.slug,
+  );
+
+  expect(untested, `these tools ship with no behavioural e2e test: ${untested.join(', ')}`).toEqual(
+    [],
+  );
 });

@@ -900,3 +900,58 @@ test('slug-generator slugs a list, folds accents and numbers the collisions', as
 
   expectClean(watch);
 });
+
+/** "23:04" as 1384. */
+function clockSeconds(text: string): number {
+  const parts = text.trim().split(':').map(Number);
+  return parts.reduce((total, part) => total * 60 + part, 0);
+}
+
+test('the pomodoro keeps running after you leave its page', async ({ page }) => {
+  const watch = watchConsole(page);
+  // The clock is faked so a 25-minute session takes none, but it still ticks
+  // in real time between calls — so every assertion below is about how far it
+  // moved, never about an exact reading, which would flake by a second.
+  await page.clock.install();
+  await gotoTool(page, 'pomodoro', 'Pomodoro Timer & Stopwatch');
+
+  await page.getByTestId('toggle').click();
+  await page.clock.fastForward('01:00');
+  await expect(page.getByTestId('time')).toContainText('24:0');
+
+  // No readout in the bar on the timer's own page: it would only repeat the
+  // clock already filling the screen.
+  await expect(page.locator('.timer-pill')).toHaveCount(0);
+
+  // Leaving the way a visitor actually leaves — a link, not a reload.
+  await page.locator('.breadcrumb').getByRole('link', { name: 'All tools' }).click();
+
+  const pill = page.locator('.timer-pill');
+  await expect(pill).toBeVisible();
+  await expect(pill).toHaveAttribute('aria-label', /Focus, 24:0\d left/);
+
+  // Still counting down while you are somewhere else entirely.
+  const left = clockSeconds(await pill.innerText());
+  await page.clock.fastForward('01:00');
+  await expect
+    .poll(async () => left - clockSeconds(await pill.innerText()))
+    .toBeGreaterThanOrEqual(60);
+
+  // And it is the way back, with the session intact rather than restarted.
+  const carried = clockSeconds(await pill.innerText());
+  await pill.click();
+  await expect(page.getByTestId('time')).toBeVisible();
+  expect(clockSeconds(await page.getByTestId('time').innerText())).toBeLessThanOrEqual(carried);
+  await expect(page.locator('.timer-pill')).toHaveCount(0);
+
+  // Pausing leaves it in the bar — a session you stepped away from is exactly
+  // the one you need a route back to — but says so, and stops counting.
+  await page.getByTestId('toggle').click();
+  await page.locator('.breadcrumb').getByRole('link', { name: 'All tools' }).click();
+  await expect(pill).toHaveClass(/timer-pill--paused/);
+  const frozen = await pill.innerText();
+  await page.clock.fastForward('05:00');
+  await expect(pill).toHaveText(frozen);
+
+  expectClean(watch);
+});

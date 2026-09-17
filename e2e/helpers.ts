@@ -80,20 +80,27 @@ export async function setEditorText(root: Locator, text: string): Promise<void> 
   const cm = root.locator('.cm-content').first();
   const fallback = root.locator('textarea.editor__fallback').first();
 
-  await expect(cm.or(fallback).first()).toBeVisible();
+  // Which editor is on screen is re-decided on every attempt, not once up
+  // front. Deciding once races the upgrade: the fill starts against the
+  // textarea, CodeMirror mounts and detaches it mid-action, and Playwright then
+  // waits out the whole test timeout for an element that is never coming back.
+  // Both branches are idempotent, so a retry simply overwrites its own work.
+  await expect(async () => {
+    await expect(cm.or(fallback).first()).toBeVisible({ timeout: 2_000 });
 
-  if (await cm.isVisible().catch(() => false)) {
-    await cm.click();
-    await page.keyboard.press('ControlOrMeta+a');
-    await page.keyboard.press('Delete');
-    // `insertText`, not `pressSequentially`. Per-key typing runs CodeMirror's
-    // closeBrackets extension, which auto-inserts a matching `>` or quote and
-    // silently corrupts XML and JSON fixtures. insertText delivers one input
-    // event, which is also what a paste does.
-    await page.keyboard.insertText(text);
-    return;
-  }
-  await fallback.fill(text);
+    if (await cm.isVisible().catch(() => false)) {
+      await cm.click({ timeout: 2_000 });
+      await page.keyboard.press('ControlOrMeta+a');
+      await page.keyboard.press('Delete');
+      // `insertText`, not `pressSequentially`. Per-key typing runs CodeMirror's
+      // closeBrackets extension, which auto-inserts a matching `>` or quote and
+      // silently corrupts XML and JSON fixtures. insertText delivers one input
+      // event, which is also what a paste does.
+      await page.keyboard.insertText(text);
+      return;
+    }
+    await fallback.fill(text, { timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
 }
 
 /**
@@ -107,6 +114,16 @@ export async function setEditorText(root: Locator, text: string): Promise<void> 
  */
 export async function getEditorText(root: Locator): Promise<string> {
   const cm = root.locator('.cm-content').first();
+  // Ride out the swap. For the instant CodeMirror replaces the textarea neither
+  // is visible, and a read landing there used to come back '' — which a caller
+  // that has already polled its way to a result reads as "the tool produced
+  // nothing" rather than "ask again". Short, because an output editor that
+  // genuinely has not been rendered yet is the other reason to see neither, and
+  // that case is meant to return '' quickly so the caller's poll can continue.
+  await expect(cm.or(root.locator('textarea').first()).first())
+    .toBeVisible({ timeout: 1_500 })
+    .catch(() => undefined);
+
   if (await cm.isVisible().catch(() => false)) {
     return (await cm.innerText().catch(() => '')).trim();
   }
@@ -131,8 +148,23 @@ export function editorByLabel(page: Page, label: string): Locator {
   });
 }
 
-/** Uploads one or more fixtures into the first file input on the page. */
+/**
+ * Uploads one or more fixtures into the first file input on the page.
+ *
+ * Waits for hydration first. The tool pages are prerendered, so the dropzone's
+ * input exists — and accepts files — a long time before the component that
+ * listens to it does, and a `change` fired into that gap is simply lost:
+ * `withEventReplay()` does not rescue it, because the tool hydrates from a
+ * lazy route chunk that lands after the replay. Measured directly: with the
+ * scripts held back, setting a file left the page exactly as the suite found
+ * it on a bad day — dropzone still up, no spinner, no error, the upload gone.
+ *
+ * `[ngh]` is Angular's own marker: the server stamps it on every hydratable
+ * component and the client removes each one as it hydrates, so none left means
+ * the page is live. Cheaper and truer than waiting on anything tool-specific.
+ */
 export async function uploadFiles(page: Page, names: string[]): Promise<void> {
+  await expect(page.locator('[ngh]')).toHaveCount(0);
   const input = page.locator('input[type="file"]').first();
   await input.setInputFiles(names.map(fixture));
 }

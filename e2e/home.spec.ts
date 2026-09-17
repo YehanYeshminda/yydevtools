@@ -83,10 +83,12 @@ test.describe('home workbench', () => {
     expect(shown).toBeGreaterThan(3);
     await expect(page.locator('.work__count')).toContainText(`showing ${shown}`);
 
-    for (const name of await page.locator('.card__name').allTextContents()) {
-      expect(name.toLowerCase()).toMatch(
-        /pdf|image|document|convert|ocr|compress|split|merge|organiz|viewer|inspect/,
-      );
+    // The filter reads the name *and* the description, so the invariant is
+    // that the term is somewhere on every card left standing — not that every
+    // one of them is called something PDF-shaped. Asserting the latter made
+    // this fail the day a tool's description mentioned the PDF it produces.
+    for (const card of await page.locator('.card').all()) {
+      expect((await card.innerText()).toLowerCase()).toContain('pdf');
     }
   });
 

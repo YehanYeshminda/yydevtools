@@ -36,6 +36,9 @@ const SURFACES: Array<[string, string]> = [
   ['home', '/'],
   ['tool (text)', '/tools/json-formatter'],
   ['tool (file)', '/tools/pdf-merge'],
+  // Two columns, a file picker and a canvas carrying a rendered document —
+  // none of which the other two tool surfaces have.
+  ['tool (live preview)', '/tools/invoice-generator'],
   ['guides index', '/guides'],
   ['about', '/about'],
   ['privacy', '/privacy'],
@@ -133,5 +136,42 @@ for (const theme of ['dark', 'light'] as const) {
             .join(' | ')}`,
       ),
     ).toEqual([]);
+  });
+}
+
+/**
+ * The passport tool's action row, which only exists once a photo is loaded.
+ *
+ * Its guides toggle is a Material button wearing the .chip--on class, and that
+ * combination shipped unreadable: the class set `color`, but
+ * `.mat-mdc-button:not(:disabled)` sets the label colour and outranks it, so
+ * the label stayed brand-yellow on a brand-yellow fill at 1.04:1. Nothing
+ * audited that surface, because the audits all ran on an empty page.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`passport-photo's result controls have no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'passport-photo', 'Passport Photo Maker');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+    await uploadFiles(page, ['sample-photo.jpg']);
+    await expect(page.getByTestId('photo')).toBeVisible({ timeout: 45_000 });
+
+    // Both states of the toggle: it is the "on" one that was unreadable.
+    const guides = page.getByRole('button', { name: /guides/ });
+    for (let pass = 0; pass < 2; pass++) {
+      const results = await audit(page).analyze();
+      expect(
+        results.violations.map(
+          (violation) =>
+            `${violation.id}: ${violation.nodes
+              .map((node) => node.target.join(' '))
+              .slice(0, 6)
+              .join(' | ')}`,
+        ),
+      ).toEqual([]);
+      await guides.click();
+    }
   });
 }
