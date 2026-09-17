@@ -1722,6 +1722,74 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['image-compressor', 'exif-viewer', 'image-pdf'],
   },
 
+  'background-remover': {
+    slug: 'background-remover',
+    intro: [
+      'Removing a background used to mean either an afternoon with the pen tool or handing your photo to a website that wanted an account and an upload. This does it in a few seconds, and the photo never leaves the tab: a segmentation model is downloaded once, runs on your own device, and produces a PNG with everything except the subject made transparent.',
+      'That matters more for some photos than others. A product shot is a product shot, but a picture of a child, a passport page, a whiteboard covered in something confidential or an ID document is not a thing to upload to a free service in exchange for a cut-out. Here there is nothing to upload to: the model runs in your browser, and turning off the network after the first load changes nothing about whether the tool works.',
+    ],
+    steps: [
+      'Drop a photo in, or click to choose one. JPEG, PNG, WebP and AVIF all work, up to 20 MB.',
+      'Wait for the model on the first run. It is about 19 MB of runtime and weights, downloaded once and then cached by the browser; later photos start straight away.',
+      'Look at the result against the checkerboard, which is what transparency looks like.',
+      'Leave the background transparent, or pick a colour to put behind the subject — white for a catalogue listing, a brand colour for a slide.',
+      'Download the PNG. It is always a PNG: no other common format keeps an alpha channel.',
+    ],
+    features: [
+      'Runs entirely in your browser. The photo is never uploaded, and nothing is sent anywhere after the model is fetched.',
+      'Produces a real alpha channel, not a white rectangle — the cut-out drops onto any background in any editor.',
+      'Puts the subject on a solid colour in one click, which is what product shots and ID photos usually need.',
+      'Tells you what share of the frame the subject kept, so an obviously wrong cut-out is obvious.',
+      'Works offline once the model is cached, like the rest of the site.',
+    ],
+    sections: [
+      {
+        heading: 'What the model is, and what it is not',
+        body: [
+          'The model is U^2-Net in its portable form — about 4.5 MB of weights released under the Apache licence. It was trained for salient object detection: given a photo, predict which pixels belong to the thing the photo is of. That is exactly the question a background remover asks, which is why the same network sits underneath a lot of open-source tools that do this.',
+          'It is the small version, and the size is not an accident. The full model is 176 MB, and the commercial models that beat it are either larger still or licensed for non-commercial use only, neither of which can ship here. The portable model is genuinely weaker on fine detail: individual strands of hair, chain-link, foliage against a busy background, and the gap between an arm and a body are where it gives up first. On a clear subject against a background it can distinguish, it is very good.',
+          'If a cut-out comes back wrong, the usual cause is that the photo has no single salient subject — a landscape, a group, a flat lay of ten objects. Cropping tighter around the one thing you want is the fix that works most often.',
+        ],
+      },
+      {
+        heading: 'Why the first run is slow and the rest are not',
+        body: [
+          'The first photo pays for two downloads: the ONNX Runtime WebAssembly build that executes the network, and the weights themselves. Together they are around 19 MB. Both are served from this site rather than a third-party CDN, both are cached by the browser, and neither is fetched again until the cache is cleared.',
+          'After that, the work is the inference itself, which happens on a single CPU thread in a web worker. Multi-threading would be faster, but it needs SharedArrayBuffer, which needs the whole site to be cross-origin isolated, which would break every tool here that embeds a document preview. A few seconds on one thread is the better trade.',
+        ],
+      },
+      {
+        heading: 'Getting a better cut-out',
+        body: [
+          'Photograph or crop so the subject is the obvious subject: one thing, filling a reasonable part of the frame, with the background clearly behind it rather than touching it in colour and texture. Even lighting helps more than resolution does — the mask is computed at 320 by 320 whatever you feed it, so a 48-megapixel photo is no more accurate than a good 2-megapixel one, only slower to composite.',
+          'Where the edge matters more than speed, use this as a first pass and fix the last few percent in an editor. The PNG carries a real alpha channel, so a brush on the mask in GIMP, Photoshop or Affinity starts from the cut-out rather than from scratch.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Are my photos uploaded?',
+        a: 'No. The model and its runtime are downloaded to your browser, and the photo is decoded, segmented and composited there. There is no endpoint here that accepts an image.',
+      },
+      {
+        q: 'Why is the download a PNG and not a JPEG?',
+        a: 'JPEG has no alpha channel, so a cut-out saved as one arrives with a solid background — usually black — and the transparency is gone. If you want a JPEG with a coloured background, pick the colour here and convert the PNG with the Image Converter.',
+      },
+      {
+        q: 'It cut off part of my subject. Can I fix it?',
+        a: 'Not in this tool: there is no brush, and adding one is a different piece of software. Cropping closer to the subject and trying again fixes most cases. Otherwise the PNG is a good starting mask to refine in an image editor.',
+      },
+      {
+        q: 'Does it work on hair, fur or glass?',
+        a: 'Partly. The portable model resolves soft edges as a soft alpha rather than as strands, so hair comes out as an approximate silhouette. Transparent objects are harder still — the model has no notion of what is behind the glass, and will usually treat the whole object as opaque.',
+      },
+      {
+        q: 'Is there a size limit?',
+        a: 'Files up to 20 MB, and anything longer than 4096 pixels on its long edge is scaled down to that first. The mask is 320 by 320 regardless, so the cap costs no accuracy and saves the tab from decoding several hundred megabytes of pixels.',
+      },
+    ],
+    related: ['image-converter', 'image-resize', 'image-compressor', 'exif-viewer'],
+  },
   'image-resize': {
     slug: 'image-resize',
     intro: [

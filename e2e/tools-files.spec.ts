@@ -608,3 +608,44 @@ test('file-inspector reads and strips Word document properties', async ({ page }
 
   expectClean(watch);
 });
+
+/**
+ * The background remover downloads about 19 MB of runtime and weights before it
+ * can answer, so this one test is allowed several minutes. It is the only proof
+ * that the model, the worker and the compositing actually meet.
+ */
+test('background-remover cuts a subject out and mattes it onto a colour', async ({ page }) => {
+  test.slow();
+  const watch = watchConsole(page);
+  await gotoTool(page, 'background-remover', 'Background Remover');
+
+  await uploadFiles(page, ['sample-photo.jpg']);
+
+  const result = page.getByTestId('result');
+  await expect(result).toBeVisible({ timeout: 180_000 });
+  await expect(page.getByText(/sample-photo\.jpg · 640 × 480/)).toBeVisible();
+
+  // The mask has to be a mask: a cut-out that kept everything or nothing is the
+  // model failing, and the page says so out loud when it happens.
+  await expect(page.getByText(/subject covers \d+%/)).toBeVisible();
+  await expect(page.locator('.status--warn')).toHaveCount(0);
+
+  // Transparent by default, which is what the checkerboard behind it means.
+  await expect(result).toHaveClass(/shot__image--checkered/);
+
+  await page.getByRole('button', { name: 'Colour', exact: true }).click();
+  await expect(result).not.toHaveClass(/shot__image--checkered/);
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download PNG' }).click();
+  const saved = await download;
+  expect(saved.suggestedFilename()).toBe('sample-photo-background.png');
+  // A real PNG, not an empty file or a canvas that never painted.
+  const bytes = readFileSync(await saved.path());
+  expect(bytes.subarray(0, 8)).toEqual(
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+  );
+  expect(bytes.byteLength).toBeGreaterThan(1000);
+
+  expectClean(watch);
+});

@@ -209,6 +209,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'background-remover',
+    name: 'Background Remover',
+    description:
+      'Cut the background out of a photo and save a transparent PNG, or put the subject on a colour. The model runs in your browser.',
+    icon: 'matAutoFixHighOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'image-compressor',
     name: 'Image Compressor',
     description:

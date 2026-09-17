@@ -193,6 +193,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/background-remover',
+    loadComponent: () =>
+      import('./tools/background-remover/background-remover').then((m) => m.BackgroundRemoverTool),
+    title: 'Background Remover — Transparent PNG from a photo — YYDevTools',
+    data: {
+      description:
+        'Remove the background from a photo and download a transparent PNG, or drop the subject ' +
+        'onto a colour. The segmentation model runs in your browser, so nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/image-resize',
     loadComponent: () => import('./tools/image-resize/image-resize').then((m) => m.ImageResizeTool),
     title: 'Image Resizer & Cropper — Crop and resize online — YYDevTools',

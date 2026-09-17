@@ -1,0 +1,137 @@
+<app-tool-page slug="background-remover">
+  Cut the background out of a photo and download a transparent PNG, or drop the subject onto a
+  colour of your choosing. The model runs inside this tab — your photo is never uploaded.
+</app-tool-page>
+
+<div class="panel">
+  @if (hasImage()) {
+    <div class="workspace">
+      <!-- Before and after -------------------------------------------- -->
+      <div class="pair">
+        <figure class="shot">
+          <img class="shot__image" [src]="sourceUrl()" alt="The original photo" />
+          <figcaption class="shot__caption">Original</figcaption>
+        </figure>
+
+        <figure class="shot">
+          @if (busy()) {
+            <div class="shot__pending" role="status">
+              <app-spinner />
+              <p class="shot__stage">
+                @if (stage() === 'loading') {
+                  Downloading the model — about 19 MB, once. It is cached for next time.
+                } @else {
+                  Finding the subject…
+                }
+              </p>
+            </div>
+          } @else if (resultUrl()) {
+            <img
+              class="shot__image shot__image--result"
+              [class.shot__image--checkered]="backdrop() === 'transparent'"
+              [src]="resultUrl()"
+              alt="The photo with its background removed"
+              data-testid="result"
+            />
+          }
+          <figcaption class="shot__caption">
+            Background removed
+            @if (ready()) {
+              <span class="shot__meta">· subject covers {{ keptPercent() }}%</span>
+            }
+          </figcaption>
+        </figure>
+      </div>
+
+      @if (suspect()) {
+        <p class="status status--warn" role="status">
+          <ng-icon class="status__icon" aria-hidden="true" name="matWarningOutline" />
+          That does not look like a clean cut-out. This model wants one clear subject against a
+          background it can tell apart — a busy scene, or a person who fills the frame, will confuse
+          it.
+        </p>
+      }
+
+      @if (error(); as message) {
+        <p class="status status--err" role="alert">
+          <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+          {{ message }}
+        </p>
+      }
+
+      <!-- Controls ---------------------------------------------------- -->
+      <div class="controls">
+        <div class="control">
+          <span class="control__label" id="backdrop-label">Behind the subject</span>
+          <div class="chips" role="group" aria-labelledby="backdrop-label">
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="backdrop() === 'transparent'"
+              [attr.aria-pressed]="backdrop() === 'transparent'"
+              [disabled]="!ready()"
+              (click)="setBackdrop('transparent')"
+            >
+              <ng-icon aria-hidden="true" name="matCropFreeOutline" />
+              Transparent
+            </button>
+            <button
+              type="button"
+              class="chip"
+              [class.chip--on]="backdrop() === 'colour'"
+              [attr.aria-pressed]="backdrop() === 'colour'"
+              [disabled]="!ready()"
+              (click)="setBackdrop('colour')"
+            >
+              <ng-icon aria-hidden="true" name="matPaletteOutline" />
+              Colour
+            </button>
+            <label class="swatch" [class.swatch--on]="backdrop() === 'colour'">
+              <input
+                type="color"
+                class="swatch__input"
+                [value]="colour()"
+                [disabled]="!ready()"
+                (input)="onColourInput($event)"
+                aria-label="Background colour"
+              />
+              <span class="swatch__chip" [style.background]="colour()" aria-hidden="true"></span>
+              {{ colour() }}
+            </label>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button matButton="filled" [disabled]="!ready()" (click)="download()">
+            <ng-icon name="matDownloadOutline" />
+            Download PNG
+          </button>
+          <button matButton (click)="reset()">
+            <ng-icon name="matClearOutline" />
+            Start over
+          </button>
+        </div>
+      </div>
+
+      <p class="summary">
+        {{ name() }} · {{ width() }} × {{ height() }} · {{ formatBytes(size()) }}
+      </p>
+    </div>
+  } @else {
+    <app-dropzone accept="image/*" (filesSelected)="addFiles($event)">
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matContentCutOutline" />
+      <span class="dropzone__title">Drop a photo here, or click to choose</span>
+      <span class="dropzone__hint">
+        JPEG, PNG, WebP or AVIF — one image at a time, up to {{ formatBytes(maxBytes) }}
+      </span>
+    </app-dropzone>
+  }
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+  The segmentation model is downloaded once and then runs on your own device, so the photo — and
+  anything identifiable in it — never leaves this tab.
+</p>
+
+<app-tool-content slug="background-remover" />

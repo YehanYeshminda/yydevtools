@@ -79,6 +79,7 @@
       "!/wasm/*",
       "!/tesseract/*",
       "!/pdfjs/*",
+      "!/models/*",
     ],
   },
   // Custom domains — wrangler creates the DNS records if yydevtools.com is on

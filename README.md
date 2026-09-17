@@ -48,6 +48,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **JSON ↔ CSV Converter** | Turn a JSON array into a spreadsheet-ready CSV or a CSV into JSON objects, nested fields included. |
 | **URL Encoder / Decoder** | Percent-encode or decode URLs and query values, and break a URL into its parts. |
 | **Image Compressor** | Shrink JPEG, PNG and HEIC images in bulk — by quality or to a target size, with Exif control. |
+| **Background Remover** | Cut the background out of a photo and save a transparent PNG, or put the subject on a colour. Runs in your browser. |
 | **Image Converter** | Convert between HEIC, JPEG, PNG, WebP and AVIF in bulk — iPhone photos included — without uploading them. |
 | **Image Resizer & Cropper** | Crop with a draggable box, resize to exact pixels or a file size, and save as JPEG, PNG or WebP. |
 | **EXIF Viewer** | See the camera, timestamp and GPS location hidden in a photo, then strip it out without re-compressing. |
@@ -141,5 +142,8 @@ with `npx wrangler secret put <NAME>` and are never committed.
 - [Angular Material](https://material.angular.dev/) + [ng-icons](https://ng-icons.github.io/ng-icons/)
 - [pdf-lib](https://pdf-lib.js.org/) and a vendored [pdf.js](https://mozilla.github.io/pdf.js/) for client-side PDF work
 - mozjpeg / libwebp WASM codecs for image compression
+- [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/) running
+  [U²-Net](https://github.com/xuebinqin/U-2-Net) (Apache-2.0, see
+  `public/models/NOTICE.txt`) for background removal, in a worker, on-device
 - Cloudflare Workers (static assets + API) with self-hosted Fly.io services for
   the three operations that cannot run in a browser

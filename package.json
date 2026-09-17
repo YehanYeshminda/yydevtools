@@ -83,6 +83,7 @@
     "heic-to": "^1.5.2",
     "jsonpath-plus": "^10.4.0",
     "marked": "^18.0.6",
+    "onnxruntime-web": "^1.30.0",
     "papaparse": "^5.7.0",
     "prettier": "^3.9.6",
     "qrcode": "^1.5.4",

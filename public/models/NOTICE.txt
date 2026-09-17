@@ -1,0 +1,22 @@
+u2netp.onnx — the segmentation model behind the Background Remover.
+
+  U^2-Net: Going Deeper with Nested U-Structure for Salient Object Detection
+  Copyright (c) 2020 Xuebin Qin and contributors
+  https://github.com/xuebinqin/U-2-Net
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. A copy of the License is in
+LICENSE beside this file, and at:
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied.
+
+This is the "portable" variant (u2netp), converted to ONNX and published in the
+rembg project's releases (https://github.com/danielgatis/rembg, MIT). It is
+redistributed here unmodified.
+
+  sha256  309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8
+  size    4,574,861 bytes
