@@ -1,0 +1,166 @@
+<app-tool-page slug="pdf-diff">
+  Compare two PDFs page by page and see exactly what moved. Both files are read in this tab and
+  neither is uploaded.
+</app-tool-page>
+
+<div class="panel">
+  @if (!ready()) {
+    <div class="sides">
+      <div class="side">
+        <span class="side__label" id="side-a">Original</span>
+        <app-dropzone
+          accept="application/pdf,.pdf"
+          [disabled]="busy()"
+          (filesSelected)="onLeft($event)"
+        >
+          <ng-icon class="dropzone__icon" aria-hidden="true" name="matPictureAsPdfOutline" />
+          <span class="dropzone__title">
+            {{ left() ? left()!.name : 'Drop the original PDF' }}
+          </span>
+          <span class="dropzone__hint">{{
+            left() ? 'Loaded — drop another to replace it' : 'or click to choose'
+          }}</span>
+        </app-dropzone>
+      </div>
+
+      <div class="side">
+        <span class="side__label" id="side-b">Revised</span>
+        <app-dropzone
+          accept="application/pdf,.pdf"
+          [disabled]="busy()"
+          (filesSelected)="onRight($event)"
+        >
+          <ng-icon class="dropzone__icon" aria-hidden="true" name="matPictureAsPdfOutline" />
+          <span class="dropzone__title">
+            {{ right() ? right()!.name : 'Drop the revised PDF' }}
+          </span>
+          <span class="dropzone__hint">{{
+            right() ? 'Loaded — drop another to replace it' : 'or click to choose'
+          }}</span>
+        </app-dropzone>
+      </div>
+    </div>
+
+    @if (busy()) {
+      <p class="status" role="status" data-testid="progress">
+        <app-spinner />
+        Comparing — {{ progress() }}
+      </p>
+    }
+
+    @if (error(); as message) {
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        {{ message }}
+      </p>
+    }
+  } @else {
+    <p class="summary" role="status" data-testid="summary">{{ summary() }}</p>
+
+    @if (truncated()) {
+      <p class="field__hint" data-testid="truncated">Only the first 200 pages were compared.</p>
+    }
+
+    <nav class="pager" aria-label="Pages">
+      @for (page of pages(); track page.index) {
+        <button
+          type="button"
+          class="pager__page"
+          [class.pager__page--on]="selected() === page.index"
+          [class.pager__page--changed]="page.status === 'changed'"
+          [class.pager__page--only]="page.status === 'only-a' || page.status === 'only-b'"
+          [attr.aria-current]="selected() === page.index ? 'true' : null"
+          [attr.aria-label]="'Page ' + (page.index + 1) + ', ' + page.ratioText + ' changed'"
+          (click)="select(page.index)"
+        >
+          {{ page.index + 1 }}
+        </button>
+      }
+    </nav>
+
+    <div class="controls">
+      <div class="control">
+        <span class="control__label" id="view-label">Showing</span>
+        <div class="tabs" role="group" aria-labelledby="view-label">
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="view() === 'diff'"
+            [attr.aria-pressed]="view() === 'diff'"
+            (click)="setView('diff')"
+          >
+            Difference
+          </button>
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="view() === 'a'"
+            [attr.aria-pressed]="view() === 'a'"
+            (click)="setView('a')"
+          >
+            Original
+          </button>
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="view() === 'b'"
+            [attr.aria-pressed]="view() === 'b'"
+            (click)="setView('b')"
+          >
+            Revised
+          </button>
+        </div>
+      </div>
+
+      @if (current(); as page) {
+        <p class="page-note" data-testid="page-note">
+          @switch (page.status) {
+            @case ('only-a') {
+              Page {{ page.index + 1 }} is in the original only.
+            }
+            @case ('only-b') {
+              Page {{ page.index + 1 }} is in the revised file only.
+            }
+            @case ('same') {
+              Page {{ page.index + 1 }} is unchanged.
+            }
+            @default {
+              Page {{ page.index + 1 }} — {{ page.ratioText }} of it changed.
+            }
+          }
+        </p>
+      }
+    </div>
+
+    <div class="stage">
+      <canvas #canvas class="stage__canvas" data-testid="page-canvas"></canvas>
+    </div>
+
+    @if (error(); as message) {
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        {{ message }}
+      </p>
+    }
+
+    <div class="actions">
+      <button matButton="filled" (click)="downloadPng()">
+        <ng-icon name="matDownloadOutline" />
+        Download this page
+      </button>
+      <button matButton (click)="reset()">
+        <ng-icon name="matClearOutline" />
+        Compare two others
+      </button>
+    </div>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Pages are paired by position, so inserting a page part-way through marks everything after it as
+    changed. For a diff of the words rather than the pixels, use the
+    <a routerLink="/tools/text-diff">Text Diff</a>.
+  </p>
+</div>
+
+<app-tool-content slug="pdf-diff" />

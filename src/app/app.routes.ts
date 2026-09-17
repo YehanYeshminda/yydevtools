@@ -647,6 +647,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/pdf-diff',
+    loadComponent: () => import('./tools/pdf-diff/pdf-diff').then((m) => m.PdfDiffTool),
+    title: 'PDF Visual Diff — Compare Two PDFs Page by Page — YYDevTools',
+    data: {
+      description:
+        'Compare two PDFs and see exactly what changed on each page, highlighted in red. Runs in ' +
+        'your browser; neither file is uploaded.',
+    },
+  },
+  {
     path: 'tools/pomodoro',
     loadComponent: () => import('./tools/pomodoro/pomodoro').then((m) => m.PomodoroTool),
     title: 'Pomodoro Timer & Stopwatch — YYDevTools',

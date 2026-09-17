@@ -119,6 +119,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'pdf-diff',
+    name: 'PDF Visual Diff',
+    description:
+      'Compare two PDFs page by page and see exactly which pixels moved — without uploading either.',
+    icon: 'matCompareOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'text-cleaner',
     name: 'Text Cleaner',
     description:

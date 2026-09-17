@@ -1018,6 +1018,80 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['pdf-merge', 'pdf-watermark', 'pdf-organizer', 'word-viewer'],
   },
+  'pdf-diff': {
+    slug: 'pdf-diff',
+    intro: [
+      'Drop in two versions of the same PDF and see what moved. Every page of both files is rendered and compared pixel by pixel, and the differences come back marked in red over a ghost of the page, so you can see not just that a page changed but where.',
+      'Both files are read in this tab. Contracts, drafts and signed documents are exactly the sort of thing you should not be uploading to a comparison service, and here there is nowhere for them to go.',
+    ],
+    steps: [
+      'Drop the original into the left box and the revised version into the right.',
+      'Wait for the pass over both files — the page strip fills in as it goes.',
+      'Click any page in the strip. Pages with a red bar under them are the ones that changed.',
+      'Switch between Difference, Original and Revised, and download the marked-up page if you need to send it on.',
+    ],
+    features: [
+      'Every page compared, not just the first.',
+      'Differences marked in red over a faded copy of the page.',
+      'A page strip that shows at a glance which pages changed.',
+      'Pages that exist in only one of the two files are called out.',
+      'The marked-up page downloads as a PNG.',
+      'Neither file is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'What a visual diff catches that a text diff does not',
+        body: [
+          'A text comparison reads the words out of both files and tells you which ones changed. That is the right tool when the document is prose and you want to know what it now says. It is blind to everything else: a figure replaced with a different figure, a table that has been re-laid-out, a signature block that moved down the page, a logo swapped, a margin change that repaginates the whole thing. None of those alter a single character.',
+          'A visual diff compares what the page looks like. It cannot tell you what a change means, and it will flag a reflow that changed no content at all — but it cannot miss anything either, which is the property you want when you are checking that a document you are about to sign is the one you agreed.',
+          'The two are complements rather than alternatives. Use this to find which pages to look at, then read those pages.',
+        ],
+      },
+      {
+        heading: 'How the pages are paired',
+        body: [
+          'By position: page one against page one, page two against page two. That is the only pairing that requires no guessing, and guessing is the thing you least want from a tool you are using to check a contract.',
+          'The consequence is worth knowing. Insert a page in the middle of the revised version and every page after it is reported as changed, because every page after it now holds different content from the page it is being compared with. That is literally true, and it is usually the fastest way to notice that a page was inserted at all. The page strip makes it obvious: a single change looks like one red bar, an insertion looks like a red tail.',
+          'Where one file has more pages than the other, the extra pages are marked as being in one file only rather than compared against nothing.',
+        ],
+      },
+      {
+        heading: 'What counts as a difference',
+        body: [
+          'Two pixels have to differ by more than a small amount on one of their channels before the pixel is counted as changed. The tolerance exists because a file that has been through another program can come back with imperceptibly different anti-aliasing on its text; without it, a page nobody had touched could come back glowing red.',
+          'It is deliberately small. Both files go through the same renderer at the same size, so identical content produces identical pixels, and the tolerance is absorbing noise rather than hiding edits. Anything you could see, it will see.',
+          'The percentage on each page is the share of the page area that changed, not a measure of importance. A moved paragraph is a large number; a changed digit in a total is a tiny one and matters far more.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Are my documents uploaded?',
+        a: 'No. Both are read and rendered in this tab, which is the only sensible arrangement for comparing two drafts of a contract.',
+      },
+      {
+        q: 'Why is every page after page 4 marked as changed?',
+        a: 'Almost certainly because a page was inserted or removed around page 4, so everything after it is being compared against different content. Pairing pages by position is what makes that visible.',
+      },
+      {
+        q: 'It says a page changed but I cannot see any difference.',
+        a: 'Switch between Original and Revised and look at where the red is. Common invisible-looking causes are a font substitution, a shift of a fraction of a millimetre from a re-save, or a change in an image\u2019s compression. The difference is real; whether it matters is a separate question.',
+      },
+      {
+        q: 'Can it compare scanned documents?',
+        a: 'Yes, but expect a lot of red: two scans of the same page are never pixel-identical. It is reliable for comparing two exports of the same digital document, which is the usual case.',
+      },
+      {
+        q: 'Is there a limit?',
+        a: 'The first 200 pages, and it says so when it hits that. Each page means two renders, so a very long document takes a while; the progress line tells you where it is.',
+      },
+      {
+        q: 'Can I get a diff of the text instead?',
+        a: 'The Text Diff compares two blocks of text line by line. Paste the text out of both PDFs into it if the words are what you care about.',
+      },
+    ],
+    related: ['text-diff', 'pdf-organizer', 'pdf-merge', 'pdf-viewer'],
+  },
   pomodoro: {
     slug: 'pomodoro',
     intro: [

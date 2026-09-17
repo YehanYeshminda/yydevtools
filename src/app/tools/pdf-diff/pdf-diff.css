@@ -1,0 +1,121 @@
+.sides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.side__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.5rem;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.tabs {
+  align-self: flex-start;
+}
+
+.page-note {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--on-var);
+}
+
+/* The page strip ------------------------------------------------------- */
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.pager__page {
+  min-width: 2rem;
+  padding: 0.3rem 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--on-var);
+  background: var(--surface-1);
+  border: 1px solid var(--outline-2);
+  border-radius: 6px;
+  cursor: var(--cursor-pointer);
+}
+
+.pager__page:hover {
+  color: var(--on);
+  border-color: var(--outline);
+}
+
+/* A changed page is marked by a bar rather than by colour alone: the strip is
+   the only summary of the whole document, and colour on its own excludes
+   anyone who cannot tell these two apart. */
+.pager__page--changed,
+.pager__page--only {
+  color: var(--on);
+  border-bottom-width: 3px;
+  border-bottom-color: var(--error);
+}
+
+.pager__page--only {
+  border-bottom-style: dashed;
+}
+
+.pager__page--on {
+  color: var(--on-brand);
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.pager__page:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* The page itself ------------------------------------------------------ */
+
+/* Always on white. The overlay is ink on paper, and a dark ground behind a
+   page would make a faded grey mark look like a change. */
+.stage {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid var(--outline-2);
+  border-radius: 8px;
+  overflow: auto;
+  max-height: 75vh;
+}
+
+.stage__canvas {
+  max-width: 100%;
+  height: auto;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 18%);
+}
+
+.summary {
+  margin: 0;
+  font: var(--mat-sys-title-small);
+  color: var(--on);
+}

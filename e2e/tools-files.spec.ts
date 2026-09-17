@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 
 import { expectClean, fixture, gotoTool, uploadFiles, watchConsole } from './helpers';
@@ -852,6 +852,114 @@ test('invoice-generator totals the lines and downloads a PDF', async ({ page }) 
   const bytes = readFileSync(path);
   expect(bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-');
   expect(bytes.length).toBeGreaterThan(1000);
+
+  expectClean(watch);
+});
+
+/** Pixels drawn in the diff overlay's red on the visible page canvas. */
+async function countRedPixels(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="page-canvas"]');
+    const context = canvas?.getContext('2d');
+    if (!canvas || !context || canvas.width === 0) return -1;
+    const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+    let count = 0;
+    for (let at = 0; at < data.length; at += 4) {
+      if (data[at] === 214 && data[at + 1] === 40 && data[at + 2] === 40) count++;
+    }
+    return count;
+  });
+}
+
+/**
+ * Two PDFs built here rather than taken from the fixtures, so the difference
+ * between them is exactly one known word on one known page.
+ */
+async function threePager(secondPageExtra: string): Promise<Buffer> {
+  const { PDFDocument, StandardFonts, rgb } = await import('@cantoo/pdf-lib');
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  for (let number = 1; number <= 3; number++) {
+    const page = doc.addPage([595, 842]);
+    page.drawText(`Clause ${number}`, { x: 60, y: 760, size: 24, font, color: rgb(0, 0, 0) });
+    if (number === 2 && secondPageExtra) {
+      page.drawText(secondPageExtra, { x: 60, y: 700, size: 24, font, color: rgb(0, 0, 0) });
+    }
+  }
+  return Buffer.from(await doc.save());
+}
+
+test('pdf-diff finds the one page that changed', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-diff', 'PDF Visual Diff');
+
+  const inputs = page.locator('input[type="file"]');
+  await inputs.nth(0).setInputFiles({
+    name: 'original.pdf',
+    mimeType: 'application/pdf',
+    buffer: await threePager(''),
+  });
+  await inputs.nth(1).setInputFiles({
+    name: 'revised.pdf',
+    mimeType: 'application/pdf',
+    buffer: await threePager('and also this'),
+  });
+
+  await expect(page.getByTestId('summary')).toHaveText('1 of 3 pages differs.', {
+    timeout: 60_000,
+  });
+
+  // It opens on the page that changed, not on page one.
+  await expect(page.getByTestId('page-note')).toContainText('Page 2');
+  await expect(page.locator('.pager__page--changed')).toHaveCount(1);
+
+  // The overlay really is marked: count the red pixels on the canvas. Polled
+  // rather than read once — the page on screen is re-rendered at a larger
+  // scale after the comparison finishes, so it lands a moment later.
+  await expect.poll(() => countRedPixels(page), { timeout: 30_000 }).toBeGreaterThan(100);
+
+  // Original and Revised show the page itself, with nothing marked on it.
+  await page
+    .getByRole('group', { name: 'Showing' })
+    .getByRole('button', { name: 'Original' })
+    .click();
+  await expect.poll(() => countRedPixels(page), { timeout: 30_000 }).toBe(0);
+
+  // An unchanged page has nothing marked on it either.
+  await page
+    .getByRole('group', { name: 'Showing' })
+    .getByRole('button', { name: 'Difference' })
+    .click();
+  await page.getByRole('button', { name: /^Page 1,/ }).click();
+  await expect(page.getByTestId('page-note')).toContainText('unchanged');
+  await expect.poll(() => countRedPixels(page), { timeout: 30_000 }).toBe(0);
+
+  expectClean(watch);
+});
+
+test('pdf-diff calls out a page that exists in only one file', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-diff', 'PDF Visual Diff');
+
+  // Three pages against two, and different content on every one of them.
+  const inputs = page.locator('input[type="file"]');
+  await inputs.nth(0).setInputFiles(fixture('sample.pdf'));
+  await inputs.nth(1).setInputFiles(fixture('sample-2.pdf'));
+
+  await expect(page.getByTestId('summary')).toHaveText('3 of 3 pages differ.', {
+    timeout: 60_000,
+  });
+
+  await page.getByRole('button', { name: /^Page 3,/ }).click();
+  await expect(page.getByTestId('page-note')).toContainText('in the original only');
+
+  // The Difference view has nothing to diff a missing page against, so it
+  // shows the side that has it rather than an empty box.
+  const drawn = await page.evaluate(() => {
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="page-canvas"]');
+    return canvas ? canvas.width * canvas.height : 0;
+  });
+  expect(drawn).toBeGreaterThan(0);
 
   expectClean(watch);
 });

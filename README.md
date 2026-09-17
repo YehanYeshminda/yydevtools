@@ -32,6 +32,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Slug Generator** | A list of titles into URL slugs — accents folded, length capped, collisions numbered. |
 | **Colour Palette Extractor** | The dominant colours of a photo or logo, with the share each one covers. |
 | **Invoice & Receipt Generator** | Fill in an invoice or receipt and download the PDF. Ten currencies, tax, line items. |
+| **PDF Visual Diff** | Compare two PDFs page by page and see which pixels moved. |
 | **Text Cleaner** | Strip invisible characters, straighten curly quotes, trim, sort and de-duplicate lines. |
 | **Lorem Ipsum Generator** | Generate placeholder text by paragraph, sentence, word or list item, as text, HTML or Markdown. |
 | **Case Converter** | Convert text between camelCase, snake_case, kebab-case, PascalCase and a slug. |
