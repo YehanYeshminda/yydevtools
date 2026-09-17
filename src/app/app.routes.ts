@@ -603,6 +603,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/pomodoro',
+    loadComponent: () => import('./tools/pomodoro/pomodoro').then((m) => m.PomodoroTool),
+    title: 'Pomodoro Timer & Stopwatch — YYDevTools',
+    data: {
+      description:
+        'A Pomodoro timer with focus sessions and automatic breaks, plus a stopwatch with laps. ' +
+        'Runs in your browser, free, with nothing to install.',
+    },
+  },
+  {
     path: 'tools/unit-converter',
     loadComponent: () =>
       import('./tools/unit-converter/unit-converter').then((m) => m.UnitConverterTool),

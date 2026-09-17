@@ -316,6 +316,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'pomodoro',
+    name: 'Pomodoro Timer & Stopwatch',
+    description:
+      'Focus sessions with breaks that arrive on their own, or a plain stopwatch with laps.',
+    icon: 'matTimerOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'unit-converter',
     name: 'Unit Converter',
     description:

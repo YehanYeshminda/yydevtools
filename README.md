@@ -58,6 +58,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Video Trimmer & GIF Maker** | Cut a clip, drop the sound, pull out the audio as an MP3, or turn it into a GIF. ffmpeg runs in your browser. |
 | **Image Resizer & Cropper** | Crop with a draggable box, resize to exact pixels or a file size, and save as JPEG, PNG or WebP. |
 | **EXIF Viewer** | See the camera, timestamp and GPS location hidden in a photo, then strip it out without re-compressing. |
+| **Pomodoro Timer & Stopwatch** | Focus sessions with automatic breaks, or a stopwatch with laps. |
 | **Unit Converter** | Length, weight, temperature, volume, speed, area, data and time, with every unit at once. |
 | **Age & Date Difference Calculator** | An age from a date of birth, or the span between two dates, in calendar units and totals. |
 | **Timestamp Converter** | Convert between Unix timestamps and human-readable dates. |

@@ -478,6 +478,71 @@ test('url-encoder encodes a value and breaks a URL into parts', async ({ page })
   expectClean(watch);
 });
 
+test('pomodoro runs a focus session through to the break', async ({ page }) => {
+  const watch = watchConsole(page);
+  // A faked clock, so the 25 minutes takes no time. The timer measures against
+  // Date.now() rather than counting ticks, which is exactly what this drives.
+  await page.clock.install();
+  await gotoTool(page, 'pomodoro', 'Pomodoro Timer & Stopwatch');
+
+  const time = page.getByTestId('time');
+  await expect(time).toHaveText('25:00');
+  await expect(page.getByTestId('phase')).toHaveText('Focus');
+
+  await page.getByTestId('toggle').click();
+  await page.clock.fastForward('00:30');
+  await expect(time).toHaveText('24:30');
+
+  // Pausing banks the elapsed time rather than losing or continuing it.
+  await page.getByTestId('toggle').click();
+  await page.clock.fastForward('00:30');
+  await expect(time).toHaveText('24:30');
+
+  await page.getByTestId('toggle').click();
+  await page.clock.fastForward('25:00');
+
+  // The session ends on its own and the short break is queued up next.
+  await expect(page.getByTestId('phase')).toHaveText('Short break');
+  await expect(time).toHaveText('5:00');
+  await expect(page.getByTestId('tally')).toContainText('1 focus session done');
+
+  expectClean(watch);
+});
+
+test('pomodoro stopwatch records laps and their splits', async ({ page }) => {
+  const watch = watchConsole(page);
+  await page.clock.install();
+  await gotoTool(page, 'pomodoro', 'Pomodoro Timer & Stopwatch');
+
+  await page
+    .getByRole('group', { name: 'Mode' })
+    .getByRole('button', { name: 'Stopwatch' })
+    .click();
+  const time = page.getByTestId('time');
+  await expect(time).toHaveText('0:00.00');
+
+  await page.getByTestId('toggle').click();
+  await page.clock.fastForward('00:05');
+  await page.getByRole('button', { name: 'Lap' }).click();
+  await page.clock.fastForward('00:03');
+  await page.getByRole('button', { name: 'Lap' }).click();
+
+  const laps = page.getByTestId('laps').locator('.row');
+  await expect(laps).toHaveCount(2);
+  // Newest first, showing the split and then the running total.
+  await expect(laps.first()).toContainText('Lap 2');
+  // Hundredths are left loose: the faked clock fires one more 50ms tick after
+  // each jump, so the split is 3.0-something rather than exactly 3.00.
+  await expect(laps.first()).toContainText(/0:03\.\d\d/);
+  await expect(laps.first()).toContainText(/0:08\.\d\d/);
+
+  await page.getByRole('button', { name: 'Reset' }).click();
+  await expect(time).toHaveText('0:00.00');
+  await expect(page.getByTestId('laps')).toHaveCount(0);
+
+  expectClean(watch);
+});
+
 test('unit-converter converts across categories, temperature included', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'unit-converter', 'Unit Converter');

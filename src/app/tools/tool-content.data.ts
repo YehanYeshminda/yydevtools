@@ -736,6 +736,75 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['case-converter', 'word-counter', 'text-diff', 'file-inspector'],
   },
+  pomodoro: {
+    slug: 'pomodoro',
+    intro: [
+      'Two timers that share a screen. The Pomodoro side runs focus sessions with breaks that arrive without being asked for, counts how many you have done, and sends you off for a longer break after every fourth. The stopwatch side counts up, with laps.',
+      'Both measure against the clock rather than by counting ticks, which matters the moment you switch tabs: browsers throttle background timers hard, and anything that counts its own intervals finishes late by however long you were away. Nothing is saved and nothing is sent anywhere — a reload starts over.',
+    ],
+    steps: [
+      'Pick Pomodoro or Stopwatch.',
+      'For Pomodoro, adjust the three lengths if the standard 25/5/15 does not suit you, then press Start.',
+      'When a session ends the next phase begins on its own, with a short chime.',
+      'For the stopwatch, press Lap while it runs to record a split.',
+    ],
+    features: [
+      'Focus, short break and long break, each with its own adjustable length.',
+      'The long break arrives automatically after every fourth focus session.',
+      'A count of completed sessions, and a way to start the cycle over.',
+      'A stopwatch with laps, showing both the split and the running total.',
+      'Timed against the wall clock, so a throttled background tab still ends on time.',
+      'A synthesised chime rather than an audio file — no request, no licence, no delay.',
+    ],
+    sections: [
+      {
+        heading: 'Where the technique came from, and what it is actually for',
+        body: [
+          'Francesco Cirillo named it in the late 1980s after the tomato-shaped kitchen timer he used as a student — pomodoro is Italian for tomato. The rule is simple: one task, one timer, no interruptions until it rings, then a deliberate break. Four of those, then a longer break.',
+          'The part that does the work is not the twenty-five minutes; it is the commitment that the twenty-five minutes is indivisible. A Pomodoro that is interrupted is meant to be abandoned rather than paused, which sounds severe until you notice that the rule exists to make interruptions visible rather than to punish them. If you cannot finish one, that is information about your afternoon.',
+          'The breaks matter as much. They are not a reward for the focus; they are what makes the next session possible, which is why the timer starts them for you rather than waiting to be asked.',
+        ],
+      },
+      {
+        heading: 'Why 25 minutes, and why you should probably change it',
+        body: [
+          'Twenty-five is the number the technique was written with, and it is a reasonable default for the same reason A4 is a reasonable paper size: it is the one everyone already has. It is not the result of a study. Work that needs a long run-up — reading a large codebase, writing anything structural — often suits 45 or 50 minutes better, because the first ten are spent getting back to where you were.',
+          'The opposite is also true. Work you are avoiding is easier to start at 10 or 15 minutes, because the commitment is small enough to be worth making. The lengths here are editable for exactly that reason; the ratios between them matter far less than picking a session length you will actually sit through.',
+        ],
+      },
+      {
+        heading: 'Why a background tab does not break it',
+        body: [
+          'Browsers throttle timers in tabs that are not visible — an interval asked to fire every second may fire once a minute, or not at all until the tab comes back. A timer implemented as "subtract one second on every tick" therefore loses time in exactly the situation a Pomodoro timer is most used in: minimised while you work in something else.',
+          'This one records the moment you pressed Start and subtracts it from the current time on each redraw. The redraws can be throttled all they like; the arithmetic does not care, because the clock kept running. Returning to the tab shows the right number immediately rather than catching up.',
+          'The chime is the one part that a throttled tab can delay, since the phase change is noticed on the next redraw. In practice that is when you look at the tab, which is also when you would hear it.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Does it keep running if I close the tab?',
+        a: 'No. Nothing is stored and there is no background process — closing the tab ends the timer. Switching to another tab or another application is fine; the timer is measured against the clock, so it is still correct when you come back.',
+      },
+      {
+        q: 'Why did the chime not play?',
+        a: 'Browsers refuse to make sound until the page has been interacted with. Starting the timer counts as an interaction, so by the time a phase can end the sound is already allowed. If your system or browser has the tab muted, the phase still changes on screen.',
+      },
+      {
+        q: 'Can I change how often the long break comes?',
+        a: 'Not yet — it arrives after every fourth focus session, which is the standard. You can adjust all three lengths, and the Start over button resets the count if you want to restart the cycle early.',
+      },
+      {
+        q: 'Is the stopwatch accurate?',
+        a: 'It is as accurate as the system clock, since every reading is a subtraction from it rather than an accumulation of intervals. It shows hundredths of a second; the display refreshes about twenty times a second, which is as often as a number that size is worth reading.',
+      },
+      {
+        q: 'Is anything sent anywhere?',
+        a: 'No. The whole thing is arithmetic in the page, and the chime is synthesised rather than downloaded.',
+      },
+    ],
+    related: ['age-calculator', 'timestamp-converter', 'cron-explainer', 'word-counter'],
+  },
   'unit-converter': {
     slug: 'unit-converter',
     intro: [

@@ -1,0 +1,167 @@
+.tabs {
+  align-self: flex-start;
+}
+
+/* The ring and the readout share one grid cell, so the numbers sit inside the
+   circle rather than beside it. */
+.clock {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: min(100%, 20rem);
+  aspect-ratio: 1;
+  margin: 0.5rem 0;
+}
+
+.clock > * {
+  grid-area: 1 / 1;
+}
+
+.ring {
+  width: 100%;
+  height: 100%;
+  /* Start the sweep at twelve o'clock rather than three. */
+  transform: rotate(-90deg);
+}
+
+.ring__track {
+  fill: none;
+  stroke: var(--outline-2);
+  stroke-width: 4;
+}
+
+.ring__fill {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.2s linear;
+}
+
+/* A break is the same shape in a different colour, so the state is readable
+   from across the room without reading the word. */
+.clock--break .ring__fill {
+  stroke: var(--success);
+}
+
+.clock__face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.clock__time {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: clamp(2.5rem, 12vw, 3.75rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--on);
+  font-variant-numeric: tabular-nums;
+}
+
+.clock__phase {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.clock--break .clock__phase {
+  color: var(--success);
+}
+
+.clock__caption {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--on-var);
+}
+
+.actions {
+  justify-content: center;
+}
+
+.setup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 14px;
+  background: var(--surface-1);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.lengths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 0.75rem;
+}
+
+.minutes {
+  font-variant-numeric: tabular-nums;
+}
+
+.tally {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--on-var);
+}
+
+.tally__icon {
+  font-size: 1.05rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--success);
+}
+
+.tally__reset {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  text-decoration: underline;
+  cursor: var(--cursor-pointer);
+}
+
+.row__value {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The running total is the secondary figure; the split is what a lap is for. */
+.row__total {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--on-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The ring animates a stroke; respect a request for less of that. */
+@media (prefers-reduced-motion: reduce) {
+  .ring__fill {
+    transition: none;
+  }
+}
