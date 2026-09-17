@@ -105,6 +105,7 @@
               inputmode="numeric"
               [value]="lengths()[info.id]"
               (input)="setLength(info.id, $any($event.target).value)"
+              (change)="showClamped(info.id, $any($event.target))"
             />
           </div>
         }

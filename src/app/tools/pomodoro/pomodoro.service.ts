@@ -165,8 +165,18 @@ export class PomodoroService {
     }
   }
 
-  /** Jumps to a phase by hand, for when the plan changes. */
+  /**
+   * Jumps to a phase by hand, for when the plan changes.
+   *
+   * Picking the phase you are already in does nothing, rather than quietly
+   * restarting it. The tabs stay clickable when pressed, so without this the
+   * button that looks like a no-op is the one that throws a session away — and
+   * Reset is right there for anyone who meant it.
+   */
   choosePhase(phase: Phase): void {
+    if (phase === this.phase()) {
+      return;
+    }
     this.phase.set(phase);
     this.reset();
   }

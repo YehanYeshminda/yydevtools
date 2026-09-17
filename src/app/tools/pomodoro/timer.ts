@@ -29,7 +29,17 @@ export const PHASE_ORDER: Phase[] = ['work', 'short', 'long'];
 export const LONG_BREAK_EVERY = 4;
 
 export const MIN_MINUTES = 1;
-export const MAX_MINUTES = 180;
+
+/**
+ * The longest a phase can be set to: six hours.
+ *
+ * Far past anything the technique would recognise, which is the point — the
+ * lengths are editable because the twenty-five minutes is a default rather than
+ * a finding, and somebody timing a working day or an exam is doing exactly what
+ * the field is for. A ceiling still exists so a mistyped length cannot produce a
+ * countdown that never ends.
+ */
+export const MAX_MINUTES = 6 * 60;
 
 /**
  * What follows the phase that just ended.

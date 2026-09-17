@@ -55,6 +55,14 @@ describe('timer', () => {
       expect(clampMinutes(9999)).toBe(MAX_MINUTES);
     });
 
+    // Spelled in hours rather than as MAX_MINUTES, which would agree with
+    // whatever the constant happened to say. Six is the number that was asked
+    // for; anything longer comes back as six.
+    it('allows a session of up to six hours', () => {
+      expect(clampMinutes(6 * 60)).toBe(360);
+      expect(clampMinutes(7 * 60)).toBe(360);
+    });
+
     // An emptied number field reads as NaN, which would otherwise become the
     // phase length and end the timer immediately.
     it('treats a blank field as the minimum', () => {

@@ -1112,12 +1112,13 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'For the stopwatch, press Lap while it runs to record a split.',
     ],
     features: [
-      'Focus, short break and long break, each with its own adjustable length.',
+      'Focus, short break and long break, each set to anything from one minute to six hours.',
       'The long break arrives automatically after every fourth focus session.',
       'A count of completed sessions, and a way to start the cycle over.',
       'A stopwatch with laps, showing both the split and the running total.',
       'Timed against the wall clock, so a throttled background tab still ends on time.',
       'Keeps running while you use the other tools, with the time left shown in the header.',
+      'Switching phase or mode asks first when a session is under way, rather than quietly discarding it.',
       'A synthesised chime rather than an audio file — no request, no licence, no delay.',
     ],
     sections: [
@@ -1133,7 +1134,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         heading: 'Why 25 minutes, and why you should probably change it',
         body: [
           'Twenty-five is the number the technique was written with, and it is a reasonable default for the same reason A4 is a reasonable paper size: it is the one everyone already has. It is not the result of a study. Work that needs a long run-up — reading a large codebase, writing anything structural — often suits 45 or 50 minutes better, because the first ten are spent getting back to where you were.',
-          'The opposite is also true. Work you are avoiding is easier to start at 10 or 15 minutes, because the commitment is small enough to be worth making. The lengths here are editable for exactly that reason; the ratios between them matter far less than picking a session length you will actually sit through.',
+          'The opposite is also true. Work you are avoiding is easier to start at 10 or 15 minutes, because the commitment is small enough to be worth making. The lengths here are editable for exactly that reason, up to six hours each — long past anything the technique would recognise, but a working day or an exam is a real thing to time. The ratios between them matter far less than picking a session length you will actually sit through.',
         ],
       },
       {
