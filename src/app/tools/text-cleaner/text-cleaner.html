@@ -1,0 +1,121 @@
+<app-tool-page slug="text-cleaner">
+  Tidy up pasted text: strip the invisible characters a copy and paste drags along, straighten curly
+  quotes, trim and sort lines, and drop the blanks and duplicates. Nothing is uploaded.
+</app-tool-page>
+
+<div class="panel">
+  <div class="pair">
+    <div class="field">
+      <span class="field__label">Text</span>
+      <app-code-editor
+        label="Text to clean"
+        placeholder="Paste the text that needs tidying…"
+        minHeight="16rem"
+        [(value)]="input"
+      />
+    </div>
+    <div class="field">
+      <span class="field__label">Cleaned</span>
+      <app-code-editor
+        label="Cleaned text"
+        placeholder="The result appears here."
+        minHeight="16rem"
+        [readOnly]="true"
+        [value]="output()"
+      />
+    </div>
+  </div>
+
+  <!-- Options ----------------------------------------------------------- -->
+  <div class="controls">
+    <div class="control">
+      <span class="control__label" id="clean-label">Clean up</span>
+      <div class="chips" role="group" aria-labelledby="clean-label">
+        @for (option of toggles; track option.key) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="isOn(option.key)"
+            [attr.aria-pressed]="isOn(option.key)"
+            [attr.title]="option.hint"
+            (click)="toggle(option.key)"
+          >
+            <ng-icon
+              aria-hidden="true"
+              [name]="isOn(option.key) ? 'matCheckOutline' : 'matAddOutline'"
+            />
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="control">
+      <span class="control__label" id="sort-label">Sort lines</span>
+      <div class="tabs" role="group" aria-labelledby="sort-label">
+        @for (order of sorts; track order.value) {
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="options().sort === order.value"
+            [attr.aria-pressed]="options().sort === order.value"
+            (click)="setSort(order.value)"
+          >
+            {{ order.label }}
+          </button>
+        }
+      </div>
+      <span class="field__hint">
+        Sorting is natural, so <code>item2</code> comes before <code>item10</code>.
+      </span>
+    </div>
+
+    <div class="actions">
+      <button matButton="filled" [disabled]="!hasInput()" (click)="copy()">
+        <ng-icon name="matContentCopyOutline" />
+        Copy
+      </button>
+      <button matButton [disabled]="!hasInput()" (click)="download()">
+        <ng-icon name="matDownloadOutline" />
+        Download
+      </button>
+      <button matButton (click)="clear()">
+        <ng-icon name="matClearOutline" />
+        Clear
+      </button>
+      <app-try-example (loadExample)="loadExample()" />
+      <app-share-link [state]="shared" />
+      <app-send-to [text]="output()" from="text-cleaner" />
+    </div>
+  </div>
+
+  @if (hasInput()) {
+    <p class="summary" role="status" data-testid="summary">
+      <span class="summary__stat">
+        {{ counts().linesBefore }} → {{ counts().linesAfter }} lines
+      </span>
+      @if (linesRemoved() > 0) {
+        <span class="summary__stat summary__stat--cut">{{ linesRemoved() }} removed</span>
+      }
+      <span class="summary__stat">
+        {{ counts().charsBefore }} → {{ counts().charsAfter }} characters
+      </span>
+      @if (counts().invisible > 0) {
+        <span class="summary__stat summary__stat--flag">
+          <ng-icon aria-hidden="true" name="matWarningOutline" />
+          {{ counts().invisible }} invisible
+        </span>
+      }
+    </p>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    The steps run in a fixed order, not the order you switch them on: characters first, then
+    trimming, then blanks, duplicates, sorting and finally reversing. That is why trimming makes a
+    line of spaces count as blank, and why de-duplicating keeps the first copy rather than a random
+    one.
+  </p>
+</div>
+
+<app-tool-content slug="text-cleaner" />

@@ -506,3 +506,37 @@ test('markdown-editor previews what was typed', async ({ page }) => {
 
   expectClean(watch);
 });
+
+test('text-cleaner strips invisible characters and tidies the lines', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'text-cleaner', 'Text Cleaner');
+
+  // A zero-width space, a non-breaking space, curly quotes, ragged indentation,
+  // a blank line and a duplicate — everything a real paste drags along.
+  await setEditorText(
+    editorByLabel(page, 'Text to clean'),
+    '  Beta\u00a0\u00a0\n\u200bAlpha\n\n  \u201cGamma\u201d  \nAlpha\n',
+  );
+
+  const result = editorByLabel(page, 'Cleaned text');
+  // Trim, remove blank lines and strip invisibles are on by default, so the
+  // duplicate and the curly quotes survive until they are asked for.
+  await expect.poll(() => getEditorText(result)).toContain('Alpha');
+  // One zero-width space. The two non-breaking spaces are not counted here:
+  // they are spaces, and "Normalise spaces" is the switch that deals with them.
+  await expect(page.getByTestId('summary')).toContainText('1 invisible');
+  await expect(page.getByTestId('summary')).toContainText('6 → 4 lines');
+
+  await page.getByRole('button', { name: 'Remove duplicate lines' }).click();
+  await page.getByRole('button', { name: 'Straighten quotes' }).click();
+  await expect.poll(() => getEditorText(result)).toBe('Beta\nAlpha\n\"Gamma\"');
+
+  await page.getByRole('button', { name: 'A \u2192 Z' }).click();
+  await expect.poll(() => getEditorText(result)).toBe('\"Gamma\"\nAlpha\nBeta');
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download' }).click();
+  expect((await download).suggestedFilename()).toBe('cleaned.txt');
+
+  expectClean(watch);
+});

@@ -671,6 +671,71 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['base64-converter', 'color-converter', 'uuid-generator'],
   },
 
+  'text-cleaner': {
+    slug: 'text-cleaner',
+    intro: [
+      'Text that has been through a word processor, a spreadsheet, a chat window or a PDF arrives carrying things you cannot see. A zero-width space in the middle of an identifier. A non-breaking space where an ordinary one should be. Curly quotes that a shell or a JSON parser will refuse. Trailing whitespace on every other line. None of it shows on screen, and all of it breaks comparisons, lookups and imports in ways that are genuinely hard to debug, because the two strings look identical.',
+      'This strips all of that, and does the ordinary line work at the same time: trim, drop the blanks, drop the duplicates, sort. Paste on the left, copy from the right. It runs in your browser, so the text you are cleaning never leaves the tab.',
+    ],
+    steps: [
+      'Paste the text into the left-hand box.',
+      'Switch on the clean-up steps you want. Removing invisible characters, trimming and dropping blank lines are on to begin with, because they are the ones that are almost never wrong.',
+      'Sort the lines if the order does not matter, or reverse them if it does and you want the other end first.',
+      'Watch the counter: it says how many lines and characters went in and came out, and flags any invisible characters it found.',
+      'Copy the result, download it as a text file, or send it straight to another tool.',
+    ],
+    features: [
+      'Removes zero-width spaces and joiners, soft hyphens, bidirectional overrides and stray byte-order marks.',
+      'Straightens curly quotes and apostrophes, and turns a typographic ellipsis into three dots.',
+      'Folds non-breaking and other exotic spaces into ordinary ones and collapses repeated runs.',
+      'Trims lines, removes blank lines, and removes duplicates while keeping the first of each.',
+      'Sorts naturally, so item2 comes before item10 rather than after it.',
+      'Counts what changed, and says how many invisible characters were in the input even if you leave them alone.',
+      'Runs entirely in your browser; nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'The characters you cannot see',
+        body: [
+          'A zero-width space (U+200B) is a real character with no width. Copy a product code out of a web page and you may get one for free, sitting between two digits. The code looks right, reads right, and matches nothing. The same goes for the soft hyphen U+00AD, which some systems insert at line-break opportunities, and for the byte-order mark U+FEFF, which belongs at the start of a file and nowhere else but regularly ends up in the middle of a concatenated one.',
+          'The bidirectional overrides are the most interesting of the set. They exist so that Hebrew and Arabic can be mixed with left-to-right text, but they also make it possible to write a filename that displays as one thing and is another — the trick behind a class of phishing attacks and the "Trojan Source" issue in compilers. Stripping them from anything you did not write yourself is a reasonable default.',
+        ],
+      },
+      {
+        heading: 'Why the order of the steps is fixed',
+        body: [
+          "The steps run in one order regardless of the order you switch them on, and the order is chosen so that the combinations do the obvious thing. Character-level fixes come first, because straightening quotes can change a line's length and trimming should account for it. Trimming comes before blank lines are dropped, so a line holding three spaces counts as blank rather than surviving as content.",
+          'De-duplication comes before sorting, so the copy that survives is the first one in the original order — which matters when the lines are not identical to the eye but are identical after trimming. Reversing comes last, so "sort A to Z" and "reverse" together give you Z to A, which is what anyone switching both on is asking for.',
+        ],
+      },
+      {
+        heading: 'Sorting a list the way a person reads it',
+        body: [
+          'Plain string sorting puts item10 before item2, because it compares character by character and "1" is less than "2". That is correct and almost never what anyone wants. Sorting here uses the browser\'s natural collation, which reads runs of digits as numbers, so item2, item10 and item100 come out in that order.',
+          'The same collation handles accented letters sensibly rather than pushing them to the end of the alphabet, and it is case-insensitive, so Apple and apple sort together instead of all the capitals coming first.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Will this change my text in ways I did not ask for?',
+        a: 'No. Every step is a switch, and the three that start on are the ones that only remove things that are invisible or at the edges of a line. Nothing else runs until you turn it on, and the original stays in the left-hand box so you can always compare.',
+      },
+      {
+        q: 'Does removing invisible characters break other languages?',
+        a: 'It can, and it is worth knowing when. Zero-width joiners are meaningful in Arabic, Indic scripts and in emoji sequences — a family emoji is several emoji joined by them. For English or code, stripping them is safe; for text in those scripts, or text with compound emoji, leave that switch off.',
+      },
+      {
+        q: 'Why did straightening quotes change my apostrophes too?',
+        a: 'The typographic apostrophe and the right single quotation mark are the same character, so there is no way to straighten quotes and leave apostrophes alone. In practice that is what you want: a straight apostrophe is what code, CSV and search boxes expect.',
+      },
+      {
+        q: 'Can it handle a large file?',
+        a: 'Everything is a linear pass over the text in your browser, so a few megabytes is comfortable. The editor itself is the slower half, so for very large files it is worth pasting in sections.',
+      },
+    ],
+    related: ['case-converter', 'word-counter', 'text-diff', 'file-inspector'],
+  },
   'case-converter': {
     slug: 'case-converter',
     intro: [

@@ -31,6 +31,7 @@ export const SEND_TARGETS: readonly SendTarget[] = [
   { slug: 'json-csv', label: 'JSON ↔ CSV', field: 'input' },
   { slug: 'url-encoder', label: 'URL Encoder', field: 'input' },
   { slug: 'base64-converter', label: 'Base64 Converter', field: 'text' },
+  { slug: 'text-cleaner', label: 'Text Cleaner', field: 'input' },
   { slug: 'case-converter', label: 'Case Converter', field: 'input' },
   { slug: 'text-diff', label: 'Text Diff', field: 'original' },
   { slug: 'json-diff', label: 'JSON Diff', field: 'original' },

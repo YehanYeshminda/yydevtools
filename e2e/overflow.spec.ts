@@ -130,3 +130,10 @@ test('jwt-editor keeps a long claim inside the payload editor', async ({ page })
   await expect(page.locator('#jwt-payload')).toHaveValue(/sub/);
   await expectFitsAtEveryWidth(page);
 });
+
+test('text-cleaner keeps a long token inside both editors', async ({ page }) => {
+  await gotoTool(page, 'text-cleaner', 'Text Cleaner');
+  await setEditorText(editorByLabel(page, 'Text to clean'), TOKEN);
+  await expect(page.getByTestId('summary')).toBeVisible();
+  await expectFitsAtEveryWidth(page);
+});

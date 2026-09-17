@@ -92,6 +92,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'text-cleaner',
+    name: 'Text Cleaner',
+    description:
+      'Strip invisible characters, straighten curly quotes, trim, sort and de-duplicate lines.',
+    icon: 'matCleaningServicesOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'case-converter',
     name: 'Case Converter',
     description: 'Convert text between camelCase, snake_case, kebab-case, PascalCase and a slug.',

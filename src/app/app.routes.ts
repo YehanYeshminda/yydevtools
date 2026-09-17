@@ -561,6 +561,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/text-cleaner',
+    loadComponent: () => import('./tools/text-cleaner/text-cleaner').then((m) => m.TextCleanerTool),
+    title: 'Text Cleaner — Remove invisible characters and tidy lines — YYDevTools',
+    data: {
+      description:
+        'Clean up pasted text: remove zero-width and invisible characters, straighten curly ' +
+        'quotes, trim, sort and de-duplicate lines. Runs in your browser, free.',
+    },
+  },
+  {
     path: 'tools/case-converter',
     loadComponent: () =>
       import('./tools/case-converter/case-converter').then((m) => m.CaseConverterTool),

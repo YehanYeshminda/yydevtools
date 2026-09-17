@@ -1,0 +1,62 @@
+.pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1rem;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 14px;
+  background: var(--surface-1);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+/* The sort control is three options, so it sizes to them rather than stretching. */
+.tabs {
+  align-self: flex-start;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--on-var);
+  font-variant-numeric: tabular-nums;
+}
+
+.summary__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.summary__stat--cut {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}
+
+/* Invisible characters are the find worth pointing at, so they get the accent. */
+.summary__stat--flag {
+  color: var(--star);
+  font-weight: 600;
+}
+
+.summary__stat--flag ng-icon {
+  font-size: 1rem;
+}
