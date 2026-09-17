@@ -18,14 +18,58 @@ export type CaseKind =
   | 'slug';
 
 /**
+ * Letters Unicode decomposition cannot take apart, because they are letters in
+ * their own right rather than a base letter carrying an accent. Without this,
+ * "Straße" loses its ß entirely instead of becoming "strasse".
+ */
+const LETTERS: Record<string, string> = {
+  ß: 'ss',
+  ẞ: 'ss',
+  ø: 'o',
+  Ø: 'o',
+  æ: 'ae',
+  Æ: 'ae',
+  œ: 'oe',
+  Œ: 'oe',
+  đ: 'd',
+  Đ: 'd',
+  ð: 'd',
+  Ð: 'd',
+  ł: 'l',
+  Ł: 'l',
+  þ: 'th',
+  Þ: 'th',
+  ı: 'i',
+};
+
+/**
+ * Folds accented Latin letters onto their ASCII base.
+ *
+ * Every case here is ASCII-only by design — an identifier, a URL slug, a column
+ * name — so a café has to become a cafe. It used to become a "caf": the split
+ * below treats anything outside A-Za-z0-9 as a separator, which silently threw
+ * away every accented letter and left "Über Straße" as "ber stra e".
+ */
+function fold(input: string): string {
+  return (
+    input
+      .replace(/[ßẞøØæÆœŒđĐðÐłŁþÞı]/g, (letter) => LETTERS[letter])
+      // NFKD splits "é" into "e" plus a combining acute, which then drops out.
+      .normalize('NFKD')
+      .replace(/[̀-ͯ]/g, '')
+  );
+}
+
+/**
  * Break a string into lowercase word tokens.
  *
  * Splits on non-alphanumerics and on camelCase boundaries, including the
  * "HTTPServer" → ["http", "server"] acronym case and letter/number seams.
+ * Accented letters are folded to ASCII first rather than dropped.
  */
 export function words(input: string): string[] {
   return (
-    input
+    fold(input)
       // Insert a break between an acronym run and a following TitleCase word.
       .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
       // Break between a lowercase/digit and an uppercase letter.

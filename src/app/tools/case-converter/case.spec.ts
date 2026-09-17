@@ -11,6 +11,19 @@ describe('words', () => {
     expect(words('HTTPServerError')).toEqual(['http', 'server', 'error']);
   });
 
+  it('folds accented letters onto ASCII instead of dropping them', () => {
+    expect(words('Café Münchén')).toEqual(['cafe', 'munchen']);
+    expect(words('naïve résumé')).toEqual(['naive', 'resume']);
+    expect(words('Ångström')).toEqual(['angstrom']);
+  });
+
+  it('spells out the letters that have no accent to strip', () => {
+    // These decompose to nothing, so they need naming one by one.
+    expect(words('Über Straße')).toEqual(['uber', 'strasse']);
+    expect(words('Øresund')).toEqual(['oresund']);
+    expect(words('Encyclopædia')).toEqual(['encyclopaedia']);
+  });
+
   it('splits snake, kebab and spaces uniformly', () => {
     expect(words('hello_world')).toEqual(['hello', 'world']);
     expect(words('hello-world')).toEqual(['hello', 'world']);
