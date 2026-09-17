@@ -156,3 +156,10 @@ test('barcode-generator keeps a very wide barcode inside the preview', async ({ 
   await expect(page.getByTestId('barcode').locator('rect').first()).toBeVisible();
   await expectFitsAtEveryWidth(page);
 });
+
+test('slug-generator keeps a long slug inside its row', async ({ page }) => {
+  await gotoTool(page, 'slug-generator', 'Slug Generator');
+  await page.locator('#slug-input').fill(TOKEN);
+  await expect(page.locator('.slug-row__slug').first()).toBeVisible();
+  await expectFitsAtEveryWidth(page);
+});

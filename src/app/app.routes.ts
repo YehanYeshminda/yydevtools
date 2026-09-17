@@ -614,6 +614,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/slug-generator',
+    loadComponent: () =>
+      import('./tools/slug-generator/slug-generator').then((m) => m.SlugGeneratorTool),
+    title: 'Slug Generator — URL Slugs From a List of Titles — YYDevTools',
+    data: {
+      description:
+        'Turn a list of titles into clean URL slugs, one per line. Accents folded, length ' +
+        'capped on a word boundary, duplicates numbered. Free, in your browser.',
+    },
+  },
+  {
     path: 'tools/pomodoro',
     loadComponent: () => import('./tools/pomodoro/pomodoro').then((m) => m.PomodoroTool),
     title: 'Pomodoro Timer & Stopwatch — YYDevTools',

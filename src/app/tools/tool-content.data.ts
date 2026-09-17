@@ -806,6 +806,75 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['qr-generator', 'hash-generator', 'uuid-generator', 'favicon-generator'],
   },
+  'slug-generator': {
+    slug: 'slug-generator',
+    intro: [
+      'A URL slug is the readable tail of a link — the part after the last slash. Paste a list of titles and this gives you one slug per line, lowercased, with accents folded to ASCII, punctuation collapsed, and the words joined by a hyphen or an underscore.',
+      'The reason it takes a list rather than a single string is that a list is where the problems are. Two titles that differ only in punctuation reduce to the same slug, and two pages cannot share a URL, so repeats are numbered here instead of colliding later.',
+    ],
+    steps: [
+      'Paste your titles, one per line. Blank lines are skipped.',
+      'Pick a separator. Hyphens are the convention; underscores are for systems that insist.',
+      'Cap the length if your CMS or your taste demands it — the cut lands on a word boundary.',
+      'Copy a single slug, or copy the whole list at once.',
+    ],
+    features: [
+      'One slug per line, for a whole list at a time.',
+      'Accented and non-ASCII Latin letters folded rather than dropped.',
+      'Duplicate slugs numbered, and flagged so you can see it happened.',
+      'Optional removal of the, a, of and the other short function words.',
+      'A length cap that cuts between words, never mid-word.',
+      'Runs in your browser; nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'What a good slug looks like',
+        body: [
+          'Lowercase, ASCII, words separated by hyphens, and no more of the title than it needs. Hyphens rather than underscores because search engines have long treated a hyphen as a word separator and an underscore as a joiner, which means my_blog_post can be read as one long token where my-blog-post is three words. Nothing is likely to break if you use underscores, but there is no upside either.',
+          'Short is better than complete. A slug is a human-readable identifier, not a summary: the-complete-guide-to-css-grid says everything that the-complete-guide-to-css-grid-for-beginners-in-2026 says, and it survives the article being updated. Cap the length here and the cut lands between words, so the slug still reads as a phrase.',
+          'Once a URL is published, changing the slug breaks every link to it. If you have to change one, make the old one redirect — that is a job for your server or CMS, not for the slug.',
+        ],
+      },
+      {
+        heading: 'Accents, and why so many tools get them wrong',
+        body: [
+          'The naive way to build a slug is to delete everything that is not a letter, a digit or a space. It works on English and quietly mangles everything else: café becomes caf, München becomes m-nchen, and the slug stops matching the title it came from.',
+          'The right move is to fold rather than delete. Unicode normalisation splits é into an e and a combining accent, so removing the accents leaves the letters behind. A handful of characters are not accented letters at all and have to be spelled out by hand — ß becomes ss, ø becomes o, æ becomes ae — because no amount of normalising will decompose a letter that is its own letter.',
+          'Non-Latin scripts are a different problem again. Transliterating Greek, Cyrillic or Han into ASCII is a judgement call this tool does not make: a line it cannot slug is shown as such rather than turned into something wrong. Modern browsers and search engines handle non-ASCII URLs perfectly well, so the honest answer there is often to use the characters as they are.',
+        ],
+      },
+      {
+        heading: 'Collisions, and the numbers on the end',
+        body: [
+          'Slugging is lossy on purpose, which means different titles can land on the same slug. "The 2026 Report", "The 2026 report!" and "the 2026 Report" all give the-2026-report. On a list of a hundred posts this happens more often than you would guess, and the failure is silent: the second page overwrites the first, or the CMS appends a number without telling you which one it renamed.',
+          'Here the second and later repeats get a numeric suffix and are marked so you can see which ones were changed. That is the same thing WordPress and most static site generators do, and doing it up front means you can fix the title instead — which is usually the better answer, because a slug ending in -2 tells a reader nothing.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Should I remove words like "the" and "of"?',
+        a: 'Usually not. It shortens the slug but can make it read strangely, and search engines stopped rewarding keyword-dense URLs a long time ago. The switch is here because some style guides require it; it is off by default, and it will not strip a title down to nothing.',
+      },
+      {
+        q: 'Hyphens or underscores?',
+        a: 'Hyphens, unless something downstream requires otherwise. Search engines treat a hyphen as a space between words and an underscore as part of one, so hyphens are what a slug is normally built from.',
+      },
+      {
+        q: 'What happens to a line in Greek, Arabic or Chinese?',
+        a: 'It is shown as a line with nothing to slug rather than being turned into something meaningless. Transliteration is a judgement call with no single right answer, and a wrong guess is worse than an honest blank — non-ASCII URLs work fine in every current browser.',
+      },
+      {
+        q: 'Why number a duplicate instead of just letting it through?',
+        a: 'Because a URL has to be unique. Letting two pages claim one slug produces a collision somewhere further along, usually silently. The number makes it visible now, while renaming the title is still easy.',
+      },
+      {
+        q: 'I only need one slug. Is there a quicker way?',
+        a: 'The Case Converter shows a url-slug alongside camelCase, snake_case and the rest for a single string, which is quicker when the slug is not the point.',
+      },
+    ],
+    related: ['case-converter', 'text-cleaner', 'url-encoder', 'word-counter'],
+  },
   pomodoro: {
     slug: 'pomodoro',
     intro: [

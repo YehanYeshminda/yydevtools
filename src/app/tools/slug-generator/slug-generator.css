@@ -1,0 +1,71 @@
+.slug-input {
+  min-height: 7rem;
+  font-family: var(--mono);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.tabs {
+  align-self: flex-start;
+}
+
+/* The source line above, the slug below it: a slug is long enough that putting
+   the two side by side leaves neither enough room at phone width. */
+.slug-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.2rem 0.5rem;
+}
+
+.slug-row__source {
+  grid-column: 1;
+  font-size: 0.8rem;
+  color: var(--on-var);
+}
+
+.slug-row__slug {
+  grid-column: 1;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  color: var(--on);
+}
+
+.slug-row button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+/* A slug that nothing survived into. Says so rather than showing a blank gap. */
+.slug-row__slug--empty {
+  color: var(--on-var);
+  font-style: italic;
+  font-family: inherit;
+}
+
+.slug-row__tag {
+  align-self: center;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  font-family: var(--font);
+  font-size: 0.7rem;
+  color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  border-radius: 999px;
+}

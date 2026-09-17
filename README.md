@@ -29,6 +29,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Cron Explainer** | Read a cron expression in plain English and preview its next run times. |
 | **QR Code Generator** | QR codes for links, Wi-Fi, contact cards, events or locations — as PNG or SVG. |
 | **Barcode Generator** | Code 128, EAN-13, EAN-8, UPC-A, Code 39 and ITF-14, with check digits calculated. |
+| **Slug Generator** | A list of titles into URL slugs — accents folded, length capped, collisions numbered. |
 | **Text Cleaner** | Strip invisible characters, straighten curly quotes, trim, sort and de-duplicate lines. |
 | **Lorem Ipsum Generator** | Generate placeholder text by paragraph, sentence, word or list item, as text, HTML or Markdown. |
 | **Case Converter** | Convert text between camelCase, snake_case, kebab-case, PascalCase and a slug. |

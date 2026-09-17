@@ -101,6 +101,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'slug-generator',
+    name: 'Slug Generator',
+    description:
+      'Turn a list of titles into URL slugs — accents folded, length capped, collisions numbered.',
+    icon: 'matFormatListBulletedOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'text-cleaner',
     name: 'Text Cleaner',
     description:

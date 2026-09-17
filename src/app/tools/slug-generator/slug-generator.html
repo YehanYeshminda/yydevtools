@@ -1,0 +1,136 @@
+<app-tool-page slug="slug-generator">
+  Turn a list of titles into URL slugs, one per line — accents folded, collisions numbered.
+</app-tool-page>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="slug-input">Titles, one per line</label>
+    <textarea
+      id="slug-input"
+      class="field__input slug-input"
+      spellcheck="false"
+      autocomplete="off"
+      rows="5"
+      placeholder="Paste a list of post titles, product names or headings…"
+      [value]="input()"
+      (input)="onInput($event)"
+    ></textarea>
+  </div>
+
+  <div class="controls">
+    <div class="control">
+      <span class="control__label" id="separator-label">Separator</span>
+      <div class="tabs" role="group" aria-labelledby="separator-label">
+        <button
+          type="button"
+          class="tab"
+          [class.tab--active]="separator() === '-'"
+          [attr.aria-pressed]="separator() === '-'"
+          (click)="setSeparator('-')"
+        >
+          Hyphen
+        </button>
+        <button
+          type="button"
+          class="tab"
+          [class.tab--active]="separator() === '_'"
+          [attr.aria-pressed]="separator() === '_'"
+          (click)="setSeparator('_')"
+        >
+          Underscore
+        </button>
+      </div>
+    </div>
+
+    <div class="control">
+      <span class="control__label" id="length-label">Maximum length</span>
+      <div class="tabs" role="group" aria-labelledby="length-label">
+        @for (option of lengths; track option) {
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="maxLength() === option"
+            [attr.aria-pressed]="maxLength() === option"
+            (click)="setMaxLength(option)"
+          >
+            {{ option === 0 ? 'None' : option }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="control">
+      <span class="control__label" id="stop-label">Short words</span>
+      <div class="chips" role="group" aria-labelledby="stop-label">
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="dropStopWords()"
+          [attr.aria-pressed]="dropStopWords()"
+          (click)="toggleStopWords()"
+        >
+          <ng-icon
+            aria-hidden="true"
+            [name]="dropStopWords() ? 'matCheckOutline' : 'matAddOutline'"
+          />
+          Drop the, a, of…
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button matButton="filled" [disabled]="rows().length === 0" (click)="copyAll()">
+      <ng-icon name="matContentCopyOutline" />
+      Copy all
+    </button>
+    <button matButton (click)="clear()">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+    <app-share-link [state]="shared" />
+    <app-send-to [text]="input()" from="slug-generator" />
+  </div>
+
+  @if (summary(); as text) {
+    <p class="summary" role="status" data-testid="summary">{{ text }}</p>
+  }
+
+  @if (rows().length > 0) {
+    <ul class="rows" data-testid="slugs">
+      @for (row of rows(); track $index) {
+        <li class="row slug-row">
+          <span class="slug-row__source">{{ row.source }}</span>
+          @if (row.slug) {
+            <p class="slug-row__slug">
+              {{ row.slug }}
+              @if (row.deduped) {
+                <span class="slug-row__tag">numbered</span>
+              }
+            </p>
+          } @else {
+            <p class="slug-row__slug slug-row__slug--empty">Nothing to slug on this line</p>
+          }
+          <button
+            type="button"
+            matIconButton
+            [disabled]="!row.slug"
+            (click)="copy(row.slug)"
+            [attr.aria-label]="'Copy ' + row.slug"
+          >
+            <ng-icon name="matContentCopyOutline" />
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Two titles can reduce to the same slug, and two pages cannot share a URL — so a repeat is
+    numbered rather than left to collide. For a single string in every case at once, use the
+    <a routerLink="/tools/case-converter">Case Converter</a>.
+  </p>
+</div>
+
+<app-tool-content slug="slug-generator" />

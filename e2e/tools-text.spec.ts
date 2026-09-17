@@ -849,3 +849,42 @@ test('barcode-generator draws every format and completes the check digit', async
 
   expectClean(watch);
 });
+
+test('slug-generator slugs a list, folds accents and numbers the collisions', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'slug-generator', 'Slug Generator');
+
+  const slugs = page.locator('.slug-row__slug');
+  await page
+    .locator('#slug-input')
+    .fill('Café Münchén\nThe Rise and Fall of Rome\nCafe Munchen\n!!!');
+
+  // Accents folded rather than dropped — "caf-m-nch-n" was the old bug.
+  await expect(slugs.nth(0)).toHaveText('cafe-munchen');
+  await expect(slugs.nth(1)).toHaveText('the-rise-and-fall-of-rome');
+  // Two titles, one slug: the repeat is numbered, not silently collided.
+  await expect(slugs.nth(2)).toContainText('cafe-munchen-2');
+  await expect(slugs.nth(3)).toHaveText('Nothing to slug on this line');
+  await expect(page.getByTestId('summary')).toContainText('1 numbered');
+
+  const separators = page.getByRole('group', { name: 'Separator' });
+  await separators.getByRole('button', { name: 'Underscore' }).click();
+  await expect(slugs.nth(0)).toHaveText('cafe_munchen');
+  await expect(slugs.nth(2)).toContainText('cafe_munchen_2');
+
+  await separators.getByRole('button', { name: 'Hyphen' }).click();
+  await page.getByRole('button', { name: 'Drop the, a, of…' }).click();
+  await expect(slugs.nth(1)).toHaveText('rise-fall-rome');
+
+  // The cap lands between words rather than mid-word.
+  await page
+    .getByRole('group', { name: 'Maximum length' })
+    .getByRole('button', { name: '40' })
+    .click();
+  await page
+    .locator('#slug-input')
+    .fill('The Absolutely Complete and Definitive Guide to Everything');
+  await expect(slugs.first()).toHaveText('absolutely-complete-definitive-guide');
+
+  expectClean(watch);
+});
