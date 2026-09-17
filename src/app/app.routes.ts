@@ -625,6 +625,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/palette-extractor',
+    loadComponent: () =>
+      import('./tools/palette-extractor/palette-extractor').then((m) => m.PaletteExtractorTool),
+    title: 'Colour Palette Extractor — Get the Colours From an Image — YYDevTools',
+    data: {
+      description:
+        'Extract the dominant colours from a photo or logo as HEX, RGB, HSL and OKLCH, with the ' +
+        'share each one covers. Runs in your browser; no upload.',
+    },
+  },
+  {
     path: 'tools/pomodoro',
     loadComponent: () => import('./tools/pomodoro/pomodoro').then((m) => m.PomodoroTool),
     title: 'Pomodoro Timer & Stopwatch — YYDevTools',

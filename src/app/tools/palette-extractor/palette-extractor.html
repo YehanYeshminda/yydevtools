@@ -1,0 +1,116 @@
+<app-tool-page slug="palette-extractor">
+  Pull the dominant colours out of a photo or a logo, with the share each one takes up. Runs on your
+  own device; the image is never uploaded.
+</app-tool-page>
+
+<div class="panel">
+  @if (palette().length > 0) {
+    <div class="workspace">
+      <figure class="preview">
+        @if (previewUrl(); as url) {
+          <img class="preview__img" [src]="url" [alt]="fileName()" />
+        }
+        <figcaption class="preview__name">{{ fileName() }}</figcaption>
+      </figure>
+
+      <div class="control">
+        <span class="control__label" id="count-label">Colours</span>
+        <div class="tabs" role="group" aria-labelledby="count-label">
+          @for (option of counts; track option) {
+            <button
+              type="button"
+              class="tab"
+              [class.tab--active]="count() === option"
+              [attr.aria-pressed]="count() === option"
+              (click)="setCount(option)"
+            >
+              {{ option }}
+            </button>
+          }
+        </div>
+        <span class="field__hint">
+          Fewer come back when the image holds fewer — a two-colour logo has two colours in it.
+        </span>
+      </div>
+    </div>
+
+    <ul class="swatches" data-testid="swatches">
+      @for (swatch of palette(); track swatch.hex) {
+        <li class="swatch">
+          <button
+            type="button"
+            class="swatch__chip"
+            [style.background]="swatch.hex"
+            [style.color]="swatch.ink"
+            (click)="copy(swatch.hex)"
+            [attr.aria-label]="'Copy ' + swatch.hex"
+          >
+            <span class="swatch__hex">{{ swatch.hex }}</span>
+            <span class="swatch__share">{{ swatch.percent }}</span>
+          </button>
+          <dl class="swatch__formats">
+            <div class="swatch__format">
+              <dt>RGB</dt>
+              <dd>{{ swatch.rgbText }}</dd>
+            </div>
+            <div class="swatch__format">
+              <dt>HSL</dt>
+              <dd>{{ swatch.hslText }}</dd>
+            </div>
+            <div class="swatch__format">
+              <dt>OKLCH</dt>
+              <dd>{{ swatch.oklchText }}</dd>
+            </div>
+          </dl>
+        </li>
+      }
+    </ul>
+
+    <div class="actions">
+      <button matButton="filled" (click)="copyCss()">
+        <ng-icon name="matContentCopyOutline" />
+        Copy as CSS
+      </button>
+      <button matButton (click)="copyJson()">
+        <ng-icon name="matDataObjectOutline" />
+        Copy as JSON
+      </button>
+      <button matButton (click)="reset()">
+        <ng-icon name="matClearOutline" />
+        Another image
+      </button>
+    </div>
+  } @else {
+    @if (error(); as message) {
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        {{ message }}
+      </p>
+    }
+
+    <app-dropzone
+      accept="image/*,.heic,.heif"
+      [disabled]="busy()"
+      (filesSelected)="onFiles($event)"
+    >
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matPaletteOutline" />
+      <span class="dropzone__title">Drop an image here, or click to choose</span>
+      <span class="dropzone__hint">JPEG, PNG, WebP, AVIF, GIF or SVG</span>
+    </app-dropzone>
+
+    @if (busy()) {
+      <p class="status" role="status">
+        <app-spinner />
+        Reading the image…
+      </p>
+    }
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+    The image is decoded and sampled in this tab. Nothing is uploaded, so a photo — and the location
+    data inside it — never leaves your device.
+  </p>
+</div>
+
+<app-tool-content slug="palette-extractor" />

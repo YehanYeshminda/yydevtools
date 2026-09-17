@@ -221,6 +221,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'palette-extractor',
+    name: 'Colour Palette Extractor',
+    description:
+      'Pull the dominant colours out of a photo or a logo, with the share each one takes up.',
+    icon: 'matColorizeOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'base-converter',
     name: 'Number Base Converter',
     description:

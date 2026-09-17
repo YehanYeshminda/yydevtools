@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-import { setTheme } from './helpers';
+import { gotoTool, setTheme, uploadFiles } from './helpers';
 
 /**
  * CLAUDE.md sets the bar: the site must pass AXE and meet WCAG AA. The redesign
@@ -90,3 +90,33 @@ test('the whole header is reachable and operable from the keyboard', async ({ pa
   const unnamed = reached.filter((entry) => entry.endsWith(':'));
   expect(unnamed, `focusable controls with no accessible name: ${unnamed.join(', ')}`).toEqual([]);
 });
+
+/**
+ * The one surface whose colours are not the palette's.
+ *
+ * Every swatch paints itself with a colour out of the uploaded image and
+ * writes its hex across it, so contrast here is decided at runtime by
+ * readableOn() rather than by a token anyone can inspect. A regression would
+ * be invisible until someone dropped in the wrong photograph.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`extracted palette swatches have no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'palette-extractor', 'Colour Palette Extractor');
+    await setTheme(page, theme);
+    await uploadFiles(page, ['sample.png']);
+    await expect(page.locator('.swatch').first()).toBeVisible();
+
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+    ).toEqual([]);
+  });
+}

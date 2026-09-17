@@ -754,3 +754,43 @@ test('video-trimmer selects a range and makes a GIF from it', async ({ page }) =
   }, src);
   expect(header).toBe('GIF89a');
 });
+
+test('palette-extractor pulls the colours out of an image', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'palette-extractor', 'Colour Palette Extractor');
+
+  await uploadFiles(page, ['sample.png']);
+
+  const swatches = page.getByTestId('swatches').locator('.swatch');
+  await expect(swatches).toHaveCount(6);
+
+  const hexes = await page.locator('.swatch__hex').allInnerTexts();
+  // sample.png is a gradient over red and green with blue pinned at 128, so
+  // every colour extracted from it has to end in 80. A palette that did not
+  // would mean the pixels were not really being read.
+  for (const hex of hexes) {
+    expect(hex).toMatch(/^#[0-9a-f]{4}80$/);
+  }
+
+  const shares = await page.locator('.swatch__share').allInnerTexts();
+  const total = shares.reduce((sum, text) => sum + Number.parseFloat(text), 0);
+  expect(total).toBeGreaterThan(97);
+  expect(total).toBeLessThan(103);
+
+  await page.getByRole('group', { name: 'Colours' }).getByRole('button', { name: '12' }).click();
+  await expect(swatches).toHaveCount(12);
+
+  // A file that is not an image says so, and leaves the dropzone to try again.
+  await page.getByRole('button', { name: 'Another image' }).click();
+  await page
+    .locator('input[type="file"]')
+    .first()
+    .setInputFiles({
+      name: 'broken.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('not an image at all'),
+    });
+  await expect(page.getByRole('alert')).toContainText('could not be read as an image');
+
+  expectClean(watch);
+});

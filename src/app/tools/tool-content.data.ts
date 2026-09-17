@@ -875,6 +875,75 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['case-converter', 'text-cleaner', 'url-encoder', 'word-counter'],
   },
+  'palette-extractor': {
+    slug: 'palette-extractor',
+    intro: [
+      'Drop in a photo, a screenshot or a logo and get the colours it is actually made of — as HEX, RGB, HSL and OKLCH, each with the share of the image it covers. Click a swatch to copy it, or take the whole palette as CSS custom properties or JSON.',
+      'The share is the part most colour pickers leave out, and it is what tells you which colour is the background and which is the accent. A colour covering 60% of a photo is its ground; one covering 3% is the thing your eye goes to.',
+    ],
+    steps: [
+      'Drop an image in, or click to choose one. JPEG, PNG, WebP, AVIF, GIF and SVG all work.',
+      'Pick how many colours you want — four for a scheme, twelve for a survey of a photograph.',
+      'Click any swatch to copy its hex, or copy the lot as CSS variables or JSON.',
+    ],
+    features: [
+      'Median-cut quantisation, so the palette tracks the picture rather than a fixed set.',
+      'The share of the image each colour covers.',
+      'HEX, RGB, HSL and OKLCH for every colour.',
+      'Copy one swatch, or the whole palette as CSS custom properties or JSON.',
+      'Deterministic — the same image always gives the same palette.',
+      'Runs on your device; the image is never uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'How the colours are chosen',
+        body: [
+          'The method is median cut, the classic quantiser. Every pixel starts in one box; the box spanning the widest range on any one channel is repeatedly split at that channel\u2019s median, until there are as many boxes as colours you asked for. Each box then reports the average of the pixels inside it. A region of flat colour stays in one box and comes back as one swatch; a gradient gets divided until its parts are distinct.',
+          'The alternative, k-means, gives marginally tighter clusters for a lot more work and a random starting seed — which would mean the same image gave you a slightly different palette every time you dropped it in. Median cut is deterministic, so a palette you copy today is the palette you get back tomorrow.',
+          'One detail matters more than it sounds: the split slides off a run of identical pixels. Cutting strictly at the halfway pixel is wrong on an image with a large flat area — a photo that is 90% sky would put sky on both sides of the cut, and the second box would average sky together with the sunset into a colour that is in neither. Sliding to the nearest point where the value actually changes keeps the two apart.',
+        ],
+      },
+      {
+        heading: 'What to do with the numbers',
+        body: [
+          'HEX is what you paste into a design tool. RGB is what you paste into code that does arithmetic on colour. HSL is the one to reach for when you want a variation rather than a copy: hold the hue, move the lightness, and you have a tint or a shade that still belongs to the same picture.',
+          'OKLCH is worth knowing about. It is a perceptual space, which means a change of ten in its lightness looks like the same size of change whatever the hue — something that is emphatically not true of HSL, where a yellow at 50% lightness is far brighter than a blue at 50%. If you are building a ramp of tints from an extracted colour, OKLCH gives even steps where HSL gives lumpy ones. Every current browser supports it.',
+          'The shares are a sanity check on a scheme. If the palette from a photograph is four colours at roughly 25% each, it is a busy image and no one of them will work as a page background. If one colour is at 70%, you have found the ground and the rest are the accents.',
+        ],
+      },
+      {
+        heading: 'Transparency, and images that are not photographs',
+        body: [
+          'Fully and mostly transparent pixels are skipped rather than counted as black or white. A logo on a transparent background gives you the logo\u2019s colours, not the colours plus a large dose of whatever the canvas happened to be. A completely transparent image gives nothing back, which is the honest answer.',
+          'A logo or a flat illustration will usually return fewer colours than you asked for, and that is correct: a two-colour mark has two colours in it. Padding the list with near-identical repeats would give you a palette that misrepresents the image.',
+          'The image is scaled down before its pixels are read. A twelve-megapixel photo holds no more palette than a thumbnail of it does, and quantising the full-size version would cost seconds and a great deal of memory to arrive at the same six colours.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is my image uploaded?',
+        a: 'No. It is decoded and sampled in this tab, and nothing is sent anywhere — which also means the location data inside a phone photo stays on your device.',
+      },
+      {
+        q: 'Why did I get four colours when I asked for eight?',
+        a: 'Because the image only holds four. A box of identical pixels cannot be divided, so the process stops rather than returning the same colour twice under different names.',
+      },
+      {
+        q: 'Why is the palette different from another tool\u2019s?',
+        a: 'Different quantisers make different trade-offs, and some weight for saturation or ignore near-greys to produce a more decorative result. This one reports what is in the image, which is sometimes less pretty and always more faithful.',
+      },
+      {
+        q: 'Can I use this on a screenshot of a website?',
+        a: 'Yes, and it is one of the better uses for it — though the shares will be dominated by whatever the page background is. Ask for more colours to reach the accents.',
+      },
+      {
+        q: 'What is OKLCH, and should I use it?',
+        a: 'A perceptual colour space, supported by every current browser. Use it when you need variations of an extracted colour that look evenly spaced; HSL will give you steps that jump around. For simply recording a colour, HEX is fine.',
+      },
+    ],
+    related: ['color-converter', 'image-converter', 'background-remover', 'favicon-generator'],
+  },
   pomodoro: {
     slug: 'pomodoro',
     intro: [

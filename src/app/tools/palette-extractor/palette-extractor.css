@@ -1,0 +1,132 @@
+.workspace {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.preview {
+  flex: none;
+  margin: 0;
+  max-width: 100%;
+}
+
+.preview__img {
+  display: block;
+  max-width: 14rem;
+  max-height: 10rem;
+  border: 1px solid var(--outline-2);
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.preview__name {
+  margin-top: 0.4rem;
+  max-width: 14rem;
+  font-size: 0.78rem;
+  color: var(--on-var);
+  overflow-wrap: anywhere;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.tabs {
+  align-self: flex-start;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.swatch {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--outline-2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* The block of colour is the copy button: the obvious thing to click on a
+   swatch is the swatch, not a small icon beside it. */
+.swatch__chip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1.1rem 0.75rem;
+  font: inherit;
+  text-align: left;
+  border: 0;
+  cursor: pointer;
+}
+
+.swatch__chip:hover {
+  filter: brightness(1.06);
+}
+
+.swatch__chip:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -3px;
+}
+
+/* Lower case, matching what the copy button puts on the clipboard. Displaying
+   it upper case and copying it lower would be a small lie on every swatch. */
+.swatch__hex {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* No opacity here, however much it wants to look secondary. readableOn()
+   guarantees 4.58:1 against the swatch, which is barely over the AA floor of
+   4.5 — fading the text to 85% took it under, and AXE said so. */
+.swatch__share {
+  font-size: 0.75rem;
+}
+
+.swatch__formats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-1);
+}
+
+.swatch__format {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.swatch__format dt {
+  flex: none;
+  width: 3.2rem;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--on-dim);
+}
+
+.swatch__format dd {
+  min-width: 0;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--on-var);
+  overflow-wrap: anywhere;
+}

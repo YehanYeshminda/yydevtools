@@ -855,9 +855,23 @@ test('slug-generator slugs a list, folds accents and numbers the collisions', as
   await gotoTool(page, 'slug-generator', 'Slug Generator');
 
   const slugs = page.locator('.slug-row__slug');
-  await page
-    .locator('#slug-input')
-    .fill('Café Münchén\nThe Rise and Fall of Rome\nCafe Munchen\n!!!');
+  const input = page.locator('#slug-input');
+
+  /**
+   * Fills the textarea, and makes sure it stayed filled.
+   *
+   * The page is prerendered, so a fill landing before Angular hydrates is
+   * silently undone when the value binding re-applies the sample. Retrying
+   * until it sticks is what global-drop.spec.ts does about the same race.
+   */
+  const type = async (text: string): Promise<void> => {
+    await expect(async () => {
+      await input.fill(text);
+      await expect(input).toHaveValue(text, { timeout: 500 });
+    }).toPass();
+  };
+
+  await type('Café Münchén\nThe Rise and Fall of Rome\nCafe Munchen\n!!!');
 
   // Accents folded rather than dropped — "caf-m-nch-n" was the old bug.
   await expect(slugs.nth(0)).toHaveText('cafe-munchen');
@@ -881,9 +895,7 @@ test('slug-generator slugs a list, folds accents and numbers the collisions', as
     .getByRole('group', { name: 'Maximum length' })
     .getByRole('button', { name: '40' })
     .click();
-  await page
-    .locator('#slug-input')
-    .fill('The Absolutely Complete and Definitive Guide to Everything');
+  await type('The Absolutely Complete and Definitive Guide to Everything');
   await expect(slugs.first()).toHaveText('absolutely-complete-definitive-guide');
 
   expectClean(watch);
