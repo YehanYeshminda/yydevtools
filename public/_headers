@@ -1,14 +1,14 @@
 # Headers for the paths that wrangler.jsonc's run_worker_first now excludes
-# from the Worker (the content-hashed bundles and the three vendored asset
+# from the Worker (the content-hashed bundles and the four vendored asset
 # trees). Cloudflare does NOT apply this file to a response the Worker
 # generates — so worker/security-headers.ts and worker/asset-cache.ts still
 # own every other path, and this file owns exactly the paths those two no
 # longer see. Keep the header values identical to those two files; they are
-# the same policy, just reached by a different route for these seven patterns.
+# the same policy, just reached by a different route for these eight patterns.
 #
 # Each pattern gets its own block rather than sharing one broader rule,
 # because the immutable Cache-Control belongs only to the four content-hashed
-# bundle patterns and must never reach the three vendored trees, which keep
+# bundle patterns and must never reach the four vendored trees, which keep
 # stable filenames across a deploy and would otherwise be stuck on a year-old
 # copy — the same reasoning asset-cache.ts documents for /sw.js.
 
@@ -49,6 +49,14 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
 
 /wasm/*
+  Strict-Transport-Security: max-age=63072000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Content-Security-Policy: frame-ancestors 'self'
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
+/models/*
   Strict-Transport-Security: max-age=63072000; includeSubDomains
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
