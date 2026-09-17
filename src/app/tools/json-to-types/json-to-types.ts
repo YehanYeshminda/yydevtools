@@ -6,6 +6,7 @@ import { NgIcon } from '@ng-icons/core';
 import { MatInputModule } from '@angular/material/input';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { CodeEditor, type EditorLanguage } from '../../shared/code-editor/code-editor';
 import { syncToolState } from '../../core/tool-state';
 import { Language, generate } from './type-generator';
 import { ToolPage } from '../../shared/tool-page/tool-page';
@@ -42,6 +43,25 @@ const LANGUAGE_LABELS: Record<Language, string> = {
   pydantic: 'Pydantic',
 };
 
+/**
+ * Which editor mode highlights each output.
+ *
+ * Zod schemas are TypeScript and Pydantic models are Python, so both reuse a
+ * mode rather than needing one of their own. JSON Schema is JSON.
+ */
+const EDITOR_LANGUAGES: Record<Language, EditorLanguage> = {
+  typescript: 'typescript',
+  csharp: 'csharp',
+  python: 'python',
+  go: 'go',
+  zod: 'typescript',
+  rust: 'rust',
+  kotlin: 'kotlin',
+  java: 'java',
+  jsonschema: 'json',
+  pydantic: 'python',
+};
+
 /** Either the generated source, or the parse error to show instead. */
 type Result = { ok: true; code: string } | { ok: false; message: string } | { ok: null };
 
@@ -61,8 +81,12 @@ const SAMPLE = `{
 
 @Component({
   selector: 'app-json-to-types',
-  imports: [ToolPage, ToolContent,
-    SendTo, ShareLink,
+  imports: [
+    ToolPage,
+    ToolContent,
+    CodeEditor,
+    SendTo,
+    ShareLink,
     TryExample,
     MatButtonModule,
     MatButtonToggleModule,
@@ -134,10 +158,16 @@ export class JsonToTypesTool {
     return result.ok === false ? result.message : '';
   });
 
-  /** Rows for the output box, so short results don't leave a tall empty field. */
-  protected readonly outputRows = computed(() =>
-    Math.min(24, Math.max(8, this.code().split('\n').length + 1)),
-  );
+  protected readonly editorLanguage = computed(() => EDITOR_LANGUAGES[this.language()]);
+
+  /**
+   * Height for the output editor, so a five-line result does not sit in a tall
+   * empty box and a long one does not push the copy button off the page.
+   */
+  protected readonly outputHeight = computed(() => {
+    const lines = Math.min(30, Math.max(8, this.code().split('\n').length + 1));
+    return `${lines * 1.35 + 1.7}rem`;
+  });
 
   protected onInput(event: Event): void {
     this.input.set((event.target as HTMLTextAreaElement).value);

@@ -74,15 +74,28 @@ test('json-to-types turns JSON into a TypeScript interface', async ({ page }) =>
   const watch = watchConsole(page);
   await gotoTool(page, 'json-to-types', 'JSON to Types');
 
-  // This tool uses a Material textarea, not the shared CodeMirror editor.
+  // The JSON goes into a Material textarea; the result comes out of the shared
+  // editor, which is what gives the generated code its highlighting.
   await page.getByLabel('JSON input').fill('{"id":1,"name":"ada","tags":["x"],"active":true}');
 
-  const out = page.locator('textarea').last();
-  await expect.poll(() => out.inputValue()).toMatch(/interface|type/i);
-  const code = await out.inputValue();
+  // Asserted on the editor's own content rather than through a polled helper:
+  // the editor replaces its fallback textarea once the CodeMirror chunk lands,
+  // and Playwright re-resolves the locator on every retry where a poll over a
+  // snapshot of it does not.
+  const out = editorByLabel(page, 'Generated types');
+  await expect(out).toContainText('interface', { timeout: 30_000 });
+  const code = await getEditorText(out);
   expect(code).toMatch(/id\s*:\s*number/);
   expect(code).toMatch(/name\s*:\s*string/);
   expect(code).toMatch(/active\s*:\s*boolean/);
+
+  // Each language gets its own mode, including the six that come from the
+  // legacy stream parsers rather than a Lezer grammar.
+  // The language picker is a MatButtonToggleGroup, so its options are radios.
+  await page.getByRole('radio', { name: 'Rust', exact: true }).click();
+  await expect.poll(() => getEditorText(out)).toContain('serde');
+  // Highlighted, not just monospaced: the mode is doing something.
+  await expect(out.locator('.cm-content span').first()).toBeVisible();
 
   expectClean(watch);
 });

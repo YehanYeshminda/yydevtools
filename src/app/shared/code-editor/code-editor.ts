@@ -130,7 +130,15 @@ export class CodeEditor implements OnDestroy {
   /** Two-way: bind with `[(value)]="someWritableSignal"`. */
   readonly value = model('');
   readonly language = input<EditorLanguage>('text');
-  /** Accessible name. Required — neither the editor nor the fallback has a label. */
+  /**
+   * Accessible name. Required — neither the editor nor the fallback has a
+   * label.
+   *
+   * Keep it constant for the life of the component. CodeMirror reads it once,
+   * when it mounts, so a label bound to something that changes goes stale on
+   * the editor while staying correct on the fallback textarea — which means it
+   * looks right until the chunk lands.
+   */
   readonly label = input.required<string>();
   readonly placeholder = input('');
   readonly readOnly = input(false);

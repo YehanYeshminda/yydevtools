@@ -12,6 +12,10 @@
  * one narrow, synchronous-looking interface.
  */
 
+// Type-only, so it is erased at compile time and the rule above still holds:
+// no CodeMirror value is imported statically anywhere in the app.
+import type { StreamParser } from '@codemirror/language';
+
 /** Language modes offered by the editor. `text` disables highlighting. */
 export type EditorLanguage =
   | 'text'
@@ -23,7 +27,17 @@ export type EditorLanguage =
   | 'javascript'
   | 'typescript'
   | 'yaml'
-  | 'xml';
+  | 'xml'
+  // These six have no Lezer grammar of their own and come from the legacy
+  // stream parsers instead. The highlighting is coarser — no syntax tree, so
+  // no folding or indentation support — but it colours keywords, strings,
+  // comments and numbers, which is the whole job for read-only generated code.
+  | 'python'
+  | 'rust'
+  | 'go'
+  | 'java'
+  | 'csharp'
+  | 'kotlin';
 
 export interface EditorHandle {
   /** Replace the document, but only when it really differs from what is shown. */
@@ -75,7 +89,8 @@ const THEME_SPEC = {
   '&.cm-focused': {
     outline: 'none',
     borderColor: 'var(--cme-focus-border, var(--primary))',
-    boxShadow: 'var(--cme-focus-ring, 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent))',
+    boxShadow:
+      'var(--cme-focus-ring, 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent))',
   },
   '.cm-content': {
     padding: '0.85rem 0',
@@ -141,20 +156,45 @@ export async function createEditor(options: EditorOptions): Promise<EditorHandle
     import('@lezer/highlight'),
   ]);
 
-  const { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter,
-    drawSelection, rectangularSelection, crosshairCursor, placeholder } = view;
+  const {
+    EditorView,
+    keymap,
+    lineNumbers,
+    highlightActiveLine,
+    highlightActiveLineGutter,
+    drawSelection,
+    rectangularSelection,
+    crosshairCursor,
+    placeholder,
+  } = view;
   const { EditorState, Compartment } = state;
   const { tags } = highlight;
 
   const highlightStyle = language.HighlightStyle.define([
-    { tag: [tags.comment, tags.lineComment, tags.blockComment], color: 'var(--cm-comment)', fontStyle: 'italic' },
-    { tag: [tags.keyword, tags.modifier, tags.controlKeyword, tags.moduleKeyword], color: 'var(--cm-keyword)' },
+    {
+      tag: [tags.comment, tags.lineComment, tags.blockComment],
+      color: 'var(--cm-comment)',
+      fontStyle: 'italic',
+    },
+    {
+      tag: [tags.keyword, tags.modifier, tags.controlKeyword, tags.moduleKeyword],
+      color: 'var(--cm-keyword)',
+    },
     { tag: [tags.string, tags.special(tags.string), tags.regexp], color: 'var(--cm-string)' },
     { tag: [tags.number, tags.bool, tags.null, tags.atom], color: 'var(--cm-number)' },
-    { tag: [tags.variableName, tags.propertyName, tags.function(tags.variableName)], color: 'var(--cm-name)' },
+    {
+      tag: [tags.variableName, tags.propertyName, tags.function(tags.variableName)],
+      color: 'var(--cm-name)',
+    },
     { tag: [tags.typeName, tags.className, tags.namespace, tags.tagName], color: 'var(--cm-type)' },
-    { tag: [tags.operator, tags.punctuation, tags.separator, tags.bracket], color: 'var(--cm-operator)' },
-    { tag: [tags.meta, tags.attributeName, tags.annotation, tags.processingInstruction], color: 'var(--cm-meta)' },
+    {
+      tag: [tags.operator, tags.punctuation, tags.separator, tags.bracket],
+      color: 'var(--cm-operator)',
+    },
+    {
+      tag: [tags.meta, tags.attributeName, tags.annotation, tags.processingInstruction],
+      color: 'var(--cm-meta)',
+    },
     { tag: [tags.heading], color: 'var(--cm-keyword)', fontWeight: 'bold' },
     { tag: [tags.link, tags.url], color: 'var(--cm-name)', textDecoration: 'underline' },
     { tag: [tags.emphasis], fontStyle: 'italic' },
@@ -255,7 +295,29 @@ async function loadLanguage(id: EditorLanguage) {
       return (await import('@codemirror/lang-yaml')).yaml();
     case 'xml':
       return (await import('@codemirror/lang-xml')).xml();
+    case 'python':
+      return stream((await import('@codemirror/legacy-modes/mode/python')).python);
+    case 'rust':
+      return stream((await import('@codemirror/legacy-modes/mode/rust')).rust);
+    case 'go':
+      return stream((await import('@codemirror/legacy-modes/mode/go')).go);
+    case 'java':
+      return stream((await import('@codemirror/legacy-modes/mode/clike')).java);
+    case 'csharp':
+      return stream((await import('@codemirror/legacy-modes/mode/clike')).csharp);
+    case 'kotlin':
+      return stream((await import('@codemirror/legacy-modes/mode/clike')).kotlin);
     default:
       return null;
   }
+}
+
+/**
+ * Wraps a legacy stream parser so it can be used where a Lezer language is
+ * expected. Imported lazily with the mode it is wrapping, so neither reaches a
+ * page that never asks for one of these six languages.
+ */
+async function stream(mode: StreamParser<unknown>) {
+  const { StreamLanguage } = await import('@codemirror/language');
+  return StreamLanguage.define(mode);
 }

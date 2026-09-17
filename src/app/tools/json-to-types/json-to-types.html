@@ -1,6 +1,6 @@
 <app-tool-page slug="json-to-types">
-  Paste JSON and get TypeScript, C#, Python, Go, Zod, Rust, Kotlin, Java, JSON Schema or
-  Pydantic types. Everything runs in your browser.
+  Paste JSON and get TypeScript, C#, Python, Go, Zod, Rust, Kotlin, Java, JSON Schema or Pydantic
+  types. Everything runs in your browser.
 </app-tool-page>
 
 <div class="panel">
@@ -58,16 +58,17 @@
   </div>
 
   @if (code()) {
-    <mat-form-field appearance="outline" class="field">
-      <mat-label>{{ languageLabel() }}</mat-label>
-      <textarea
-        matInput
-        [rows]="outputRows()"
-        readonly
+    <div class="field">
+      <span class="field__label">{{ languageLabel() }}</span>
+      <app-code-editor
+        label="Generated types"
+        [language]="editorLanguage()"
+        [minHeight]="outputHeight()"
+        [readOnly]="true"
+        [wrap]="false"
         [value]="code()"
-        spellcheck="false"
-      ></textarea>
-    </mat-form-field>
+      />
+    </div>
 
     <div class="actions">
       <button matButton="filled" (click)="copy()">
@@ -81,9 +82,9 @@
     <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
     <!-- One span, so .note's flex layout treats the sentence as a single item. -->
     <span>
-      Types are inferred from the values you paste, so the more representative your sample,
-      the better the result. Keys missing from some items in an array become optional, and
-      anything seen as <code>null</code> becomes nullable.
+      Types are inferred from the values you paste, so the more representative your sample, the
+      better the result. Keys missing from some items in an array become optional, and anything seen
+      as <code>null</code> becomes nullable.
     </span>
   </p>
 </div>

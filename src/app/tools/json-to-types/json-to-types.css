@@ -10,7 +10,8 @@
   width: 14rem;
 }
 
-/* The generated code reads as code, not prose. */
+/* The JSON input reads as code, not prose. The generated output is the
+   shared editor, which brings its own type. */
 .field textarea {
   font-family: var(--mono);
   font-size: 0.9rem;
