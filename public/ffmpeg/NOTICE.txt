@@ -37,7 +37,7 @@ differs.
 
 The .wasm is NOT in this directory. At 30.7 MB it is over the 25 MiB ceiling
 Cloudflare puts on a single static asset, so it lives in R2 and the Worker
-serves it at /vendor/ffmpeg/ffmpeg-core.wasm — see handleFfmpegCore in
+serves it at /ffmpeg/ffmpeg-core.wasm — see handleFfmpegCore in
 worker/index.ts. It is listed here anyway, because this is the file that
 describes what the tool loads, and splitting the record across two places by
 where the bytes happen to sit would only hide half of it.
@@ -56,7 +56,7 @@ point, bundled with esbuild into a single self-contained module so it can be
 served as a plain file. Regenerate it with:
 
   npx esbuild node_modules/@ffmpeg/ffmpeg/dist/esm/worker.js \
-    --bundle --format=esm --minify --outfile=public/vendor/ffmpeg/worker.js
+    --bundle --format=esm --minify --outfile=public/ffmpeg/worker.js
 
 It is vendored rather than left to the application bundler because the library
 loads it with `new Worker(new URL('./worker.js', import.meta.url))`, which is a

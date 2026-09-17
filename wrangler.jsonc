@@ -68,10 +68,16 @@
     // model and the ffmpeg wrapper) — none of them is ever a navigation target
     // or something a search engine indexes, so they can serve straight from
     // the edge without the Worker in front of them. The ffmpeg tree is listed
-    // file by file rather than as /vendor/ffmpeg/*, because the third file in
-    // that directory — the 30.7 MB core — is not an asset at all: the Worker
-    // serves it from R2, and a wildcard here would route it to the asset
-    // server instead.
+    // file by file rather than as /ffmpeg/*, because the third file in that
+    // directory — the 30.7 MB core — is not an asset at all: the Worker serves
+    // it from R2, and a wildcard here would route it to the asset server
+    // instead.
+    //
+    // It sits at /ffmpeg/ and not /vendor/ffmpeg/ because Cloudflare's managed
+    // WAF rules block /vendor/* outright — that path is where PHP projects put
+    // their dependencies, and it is a well-known target. The block is a 403
+    // from the edge that never reaches this Worker, so there is nothing to
+    // debug in here if it ever comes back; check the firewall events.
     // Their headers move to public/_headers, which only takes effect for
     // responses that bypass the Worker like these now do — see the note at
     // the top of that file.
@@ -85,8 +91,8 @@
       "!/tesseract/*",
       "!/pdfjs/*",
       "!/models/*",
-      "!/vendor/ffmpeg/ffmpeg-core.js",
-      "!/vendor/ffmpeg/worker.js",
+      "!/ffmpeg/ffmpeg-core.js",
+      "!/ffmpeg/worker.js",
     ],
   },
   // Custom domains — wrangler creates the DNS records if yydevtools.com is on

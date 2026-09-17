@@ -691,7 +691,7 @@ export default {
  * change to this line — deploys already in flight keep fetching the object
  * they were built against instead of half-loading a new one.
  */
-const FFMPEG_CORE_PATH = '/vendor/ffmpeg/ffmpeg-core.wasm';
+const FFMPEG_CORE_PATH = '/ffmpeg/ffmpeg-core.wasm';
 const FFMPEG_CORE_KEY = 'ffmpeg/0.12.10/ffmpeg-core.wasm';
 
 async function handleFfmpegCore(env: Env): Promise<Response> {

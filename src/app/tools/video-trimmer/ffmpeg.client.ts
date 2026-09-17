@@ -15,7 +15,7 @@ import { fetchFile, toBlobURL } from '@ffmpeg/util';
  * the core's .wasm comes from R2 through our own Worker, because it is over
  * the 25 MiB ceiling Cloudflare puts on a single static asset.
  */
-const BASE = '/vendor/ffmpeg';
+const BASE = '/ffmpeg';
 
 /** Reports the one-off download of the core, 0 to 1. */
 export type LoadProgress = (fraction: number) => void;
