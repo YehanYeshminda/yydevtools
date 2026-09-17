@@ -263,6 +263,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'video-trimmer',
+    name: 'Video Trimmer & GIF Maker',
+    description:
+      'Cut a clip, drop the sound, pull out the audio as an MP3, or turn it into a GIF. ffmpeg runs in your browser.',
+    icon: 'matMovieOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'image-resize',
     name: 'Image Resizer & Cropper',
     description:

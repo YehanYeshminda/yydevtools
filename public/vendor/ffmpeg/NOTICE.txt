@@ -1,0 +1,64 @@
+ffmpeg.wasm — the engine behind the Video Trimmer & GIF Maker.
+
+Three files make up this dependency, and they are not all under the same
+licence, so they are listed separately.
+
+--------------------------------------------------------------------------
+ffmpeg-core.js and ffmpeg-core.wasm — @ffmpeg/core 0.12.10
+--------------------------------------------------------------------------
+
+  FFmpeg, compiled to WebAssembly by the ffmpeg.wasm project
+  https://github.com/ffmpegwasm/ffmpeg.wasm
+
+Licensed under the GNU General Public License, version 2 or later. A copy of
+version 2 is in LICENSE beside this file, and at:
+
+  https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+
+This is the single-threaded build, chosen deliberately: the multi-threaded one
+needs SharedArrayBuffer, which needs cross-origin isolation, which would break
+every embeddable tool on this site. Both files are redistributed unmodified,
+exactly as published to npm, and the corresponding source is the repository
+above at the tag for this version.
+
+These are the ESM builds, not the UMD ones, and that is load-bearing. The
+wrapper's worker is a module worker, where importScripts does not exist, so the
+library falls back to a dynamic import of the core — which a UMD file cannot
+satisfy. The .wasm is byte-for-byte the same in both builds; only the loader
+differs.
+
+  ffmpeg-core.js
+    sha256  67a48f11645f85439f3fde4f2119042c16b374b910206b7a7a24f342e28dcae3
+    size    111,804 bytes
+
+  ffmpeg-core.wasm
+    sha256  9f57947a5bd530d8f00c5b3f2cb2a3492faa7e5d823315342d6a8656d0a6b7b7
+    size    32,232,419 bytes
+
+The .wasm is NOT in this directory. At 30.7 MB it is over the 25 MiB ceiling
+Cloudflare puts on a single static asset, so it lives in R2 and the Worker
+serves it at /vendor/ffmpeg/ffmpeg-core.wasm — see handleFfmpegCore in
+worker/index.ts. It is listed here anyway, because this is the file that
+describes what the tool loads, and splitting the record across two places by
+where the bytes happen to sit would only hide half of it.
+
+--------------------------------------------------------------------------
+worker.js — @ffmpeg/ffmpeg 0.12.15
+--------------------------------------------------------------------------
+
+  Copyright (c) 2019 Jerome Wu and contributors
+  https://github.com/ffmpegwasm/ffmpeg.wasm
+
+Licensed under the MIT License.
+
+This one is not redistributed verbatim: it is that package's ESM worker entry
+point, bundled with esbuild into a single self-contained module so it can be
+served as a plain file. Regenerate it with:
+
+  npx esbuild node_modules/@ffmpeg/ffmpeg/dist/esm/worker.js \
+    --bundle --format=esm --minify --outfile=public/vendor/ffmpeg/worker.js
+
+It is vendored rather than left to the application bundler because the library
+loads it with `new Worker(new URL('./worker.js', import.meta.url))`, which is a
+pattern bundlers rewrite inconsistently. Passing an explicit classWorkerURL
+that points here takes that guesswork out of the build.

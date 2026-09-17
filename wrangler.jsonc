@@ -63,10 +63,15 @@
     // Worker-first by default (`/*`), so every HTML page, unknown path and
     // /api/* route still gets the www redirect, the real 404 status and the
     // Worker's security headers, exactly as before. The exceptions below are
-    // the build's content-hashed bundles and the three vendored, stable-named
-    // asset trees (image codecs, the OCR engine, pdf.js) — none of them is
-    // ever a navigation target or something a search engine indexes, so they
-    // can serve straight from the edge without the Worker in front of them.
+    // the build's content-hashed bundles and the five vendored, stable-named
+    // asset trees (image codecs, the OCR engine, pdf.js, the segmentation
+    // model and the ffmpeg wrapper) — none of them is ever a navigation target
+    // or something a search engine indexes, so they can serve straight from
+    // the edge without the Worker in front of them. The ffmpeg tree is listed
+    // file by file rather than as /vendor/ffmpeg/*, because the third file in
+    // that directory — the 30.7 MB core — is not an asset at all: the Worker
+    // serves it from R2, and a wildcard here would route it to the asset
+    // server instead.
     // Their headers move to public/_headers, which only takes effect for
     // responses that bypass the Worker like these now do — see the note at
     // the top of that file.
@@ -80,6 +85,8 @@
       "!/tesseract/*",
       "!/pdfjs/*",
       "!/models/*",
+      "!/vendor/ffmpeg/ffmpeg-core.js",
+      "!/vendor/ffmpeg/worker.js",
     ],
   },
   // Custom domains — wrangler creates the DNS records if yydevtools.com is on
@@ -117,6 +124,13 @@
   // which is never sent to a server. Entries carry a TTL and are deleted on the
   // first read, so the namespace empties itself.
   "kv_namespaces": [{ "binding": "SECRETS", "id": "bdbc972594c34402a8b3cae823368f53" }],
+
+  // The ffmpeg core, which is 30.7 MB and so cannot live in the assets
+  // directory: Workers static assets cap a single file at 25 MiB. R2 has no
+  // such cap and no egress charge, so the binary stays first-party instead of
+  // being pulled off a public CDN. Served by worker/index.ts; see the note
+  // there for why the key is version-pinned.
+  "r2_buckets": [{ "binding": "VENDOR", "bucket_name": "yydevtools-vendor" }],
 
   // Per-IP rate limit for the /api/* operations, so nobody can hammer the
   // (metered-compute) Fly services. Keyed by CF-Connecting-IP in worker/index.ts.

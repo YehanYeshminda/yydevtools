@@ -215,6 +215,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/video-trimmer',
+    loadComponent: () =>
+      import('./tools/video-trimmer/video-trimmer').then((m) => m.VideoTrimmerTool),
+    title: 'Video Trimmer & GIF Maker — Cut a clip in your browser — YYDevTools',
+    data: {
+      description:
+        'Trim a video, remove its sound, extract the audio as an MP3 or make a GIF. ffmpeg runs ' +
+        'in your browser, so the video is never uploaded.',
+    },
+  },
+  {
     path: 'tools/image-resize',
     loadComponent: () => import('./tools/image-resize/image-resize').then((m) => m.ImageResizeTool),
     title: 'Image Resizer & Cropper — Crop and resize online — YYDevTools',

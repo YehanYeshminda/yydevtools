@@ -983,7 +983,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   'secret-link': {
     slug: 'secret-link',
     intro: [
-      'Sending someone a password is the part of the job with no good answer. Email keeps a copy forever, in two mailboxes and on whatever backs them up. Chat keeps a copy and syncs it to everyone\'s phone. A shared document keeps a copy and a revision history. None of those were built to hold a secret for five minutes and then forget it, which is what you actually want.',
+      "Sending someone a password is the part of the job with no good answer. Email keeps a copy forever, in two mailboxes and on whatever backs them up. Chat keeps a copy and syncs it to everyone's phone. A shared document keeps a copy and a revision history. None of those were built to hold a secret for five minutes and then forget it, which is what you actually want.",
       'This makes a link that works exactly once. The secret is encrypted in your browser before anything is sent; the ciphertext goes to the server and the key stays in the part of the URL after the # — the fragment, which browsers do not send in requests. The recipient opens the link, the ciphertext is handed over and deleted in the same moment, and their browser does the decryption. Send the link by whatever channel you like: what is left behind in that mailbox or chat is a URL that no longer opens anything.',
     ],
     steps: [
@@ -1027,7 +1027,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     faq: [
       {
         q: 'Can you read my secret?',
-        a: 'No. The encryption happens in your browser and the key is never sent — it only ever exists in your tab and, via the fragment, in the recipient\'s. What is stored is a blob that nobody holding it can decrypt.',
+        a: "No. The encryption happens in your browser and the key is never sent — it only ever exists in your tab and, via the fragment, in the recipient's. What is stored is a blob that nobody holding it can decrypt.",
       },
       {
         q: 'What if I send the link and the recipient never opens it?',
@@ -1991,6 +1991,85 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
     ],
     related: ['background-remover', 'image-resize', 'image-compressor', 'image-converter'],
+  },
+  'video-trimmer': {
+    slug: 'video-trimmer',
+    intro: [
+      'Cutting thirty seconds out of a video is the sort of job that has no proportionate tool. The desktop editors want a project, a timeline and several minutes of launching. The websites want the file, which means uploading a gigabyte of holiday footage to somebody else so they can hand back a piece of it, and keeping whatever they like in the meantime.',
+      'This runs ffmpeg — the same program underneath most of those editors — compiled to WebAssembly and executed inside this tab. The video is read straight off your disk, cut, and handed back. Nothing is uploaded, there is no queue, and the only thing that crosses the network is the engine itself, once, the first time you use it.',
+    ],
+    steps: [
+      'Drop in a video. MP4, WebM, MOV, MKV and most other things ffmpeg reads will work.',
+      'Play it, and set the start and end of the part you want — either by dragging the two handles or by pressing Use playhead while it is paused where you want the cut.',
+      'Choose what to get out: the clip as an MP4, the same clip without sound, the audio on its own as an MP3, or an animated GIF.',
+      'Press Create it. The first run pauses to fetch the engine; after that it starts straight away.',
+      'Play the result to check it, then download.',
+    ],
+    features: [
+      'Trim to an exact point — the clip is re-encoded, not stream-copied, so the cut lands where you put it instead of at the nearest keyframe.',
+      'Remove the audio track from a clip entirely.',
+      'Extract the sound of any range as an MP3.',
+      'Make a GIF with its own colour palette built from the clip, at a frame rate and width you choose.',
+      "Runs on your device. The video is never uploaded, so file size is limited by your machine rather than by someone else's upload policy.",
+      'No account, no watermark, no queue.',
+    ],
+    sections: [
+      {
+        heading: 'Why the first run is slow and the rest are not',
+        body: [
+          'ffmpeg compiled to WebAssembly is a 31 MB download. There is no way around that number: it is a real video toolchain, with the decoders and encoders for dozens of formats, and it has to be on your machine before it can do anything. It is fetched once and then kept in your browser cache, so the second clip you cut starts immediately.',
+          'It is also the reason nothing is downloaded until you actually pick a file. Loading 31 MB into every visitor who opens the page to see what it does would be rude, so the engine is fetched at the moment you press the button and not before.',
+        ],
+      },
+      {
+        heading: 'Why the clip is re-encoded',
+        body: [
+          'There are two ways to cut a video. Copying the stream is nearly instant, because nothing is decoded — but compressed video can only be cut at a keyframe, and keyframes are typically one or two seconds apart and sometimes much further. A copied cut therefore starts at the nearest keyframe before your mark, which can be seconds away from where you meant, or begins with a burst of grey where the frames reference a keyframe that is no longer there.',
+          'Re-encoding decodes the range and compresses it again, which takes real time but puts the cut exactly where you asked. For a tool whose whole job is choosing where to cut, that is the only sensible default. The trade is speed: expect a long clip to take a while, and a phone to take longer than a laptop.',
+        ],
+      },
+      {
+        heading: 'Making a GIF that does not look like mud',
+        body: [
+          'A GIF can hold 256 colours. Applied naively — with a fixed web palette — anything containing a gradient, a sky or a face comes out banded and blotchy, which is why so many GIFs look worse than the video they came from.',
+          'This builds a palette from your clip first and then maps the clip through it, so the 256 colours are the 256 colours that clip actually needs. Frame rate and width are yours to choose, and they are the two numbers that decide the file size: a GIF is a sequence of complete images, so doubling either roughly doubles the result. Twelve frames a second at 480 pixels wide is a reasonable place to start.',
+        ],
+      },
+      {
+        heading: 'What it will not do',
+        body: [
+          'This is a cutting tool, not an editor. There is no joining two clips together, no titles, no transitions, no colour correction and no frame-by-frame work. If you need those, you need a real editor, and the honest advice is to open one.',
+          "There is also a ceiling on file size. Everything happens in the tab's memory, and a browser tab has far less of it than your machine does — so a very long or very large video will fail where the same file would be fine in a desktop program. The limit here is set below the point where the tab would simply die, because being told no is better than losing the work.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is my video uploaded anywhere?',
+        a: 'No. ffmpeg runs inside the page, and the file is read directly from your disk by the browser. The only network request the tool makes is for the engine itself, which is the same file for everybody and says nothing about you.',
+      },
+      {
+        q: 'Why did it take so long?',
+        a: 'Re-encoding video is genuinely expensive, and WebAssembly runs slower than a native program — roughly half speed is normal. A short clip from a large source is quick because only the selected range is decoded; a ten-minute clip will take minutes. The first run also includes the one-off engine download.',
+      },
+      {
+        q: 'What formats can it read?',
+        a: 'Most of what ffmpeg reads, which is nearly everything: MP4, MOV, WebM, MKV, AVI, and more. Output is MP4 for video, MP3 for audio and GIF for animation.',
+      },
+      {
+        q: 'Why is my GIF so large?',
+        a: 'Because a GIF stores whole frames rather than the differences between them, so its size is roughly length times frame rate times area. Cutting the width or the frame rate in half makes a dramatic difference; shortening the clip makes more.',
+      },
+      {
+        q: 'The result is smaller or larger than the original. Why?',
+        a: 'The clip is re-encoded at a fixed quality level rather than at the original bitrate, so a video that was already heavily compressed may come out larger, and one from a camera will usually come out much smaller. The quality target is the same either way.',
+      },
+      {
+        q: 'Can I use this on a phone?',
+        a: 'Yes, but expect it to be slower, and keep clips short. Phone browsers give a tab less memory, so the size at which it gives up is lower than on a laptop.',
+      },
+    ],
+    related: ['background-remover', 'image-resize', 'image-converter', 'image-compressor'],
   },
   'image-resize': {
     slug: 'image-resize',

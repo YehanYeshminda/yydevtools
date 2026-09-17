@@ -685,3 +685,72 @@ test('passport-photo crops to an official size and lays out a print sheet', asyn
 
   expectClean(watch);
 });
+
+/**
+ * The Video Trimmer, as far as the environment allows.
+ *
+ * The selection logic is asserted everywhere, because it is the part with the
+ * decisions in it. The transcode itself needs the ffmpeg core, which is a
+ * 31 MB object served out of R2 by the Worker — so it is there against a
+ * deployment or `wrangler dev`, and absent under a bare `ng serve`. Rather
+ * than gate on an env var, this runs the job and branches on what came back:
+ * a real GIF, or an honest failure. Both are worth asserting; neither is a
+ * test that quietly does nothing.
+ */
+test('video-trimmer selects a range and makes a GIF from it', async ({ page }) => {
+  // The engine download and the transcode are both real work.
+  test.setTimeout(240_000);
+
+  await gotoTool(page, 'video-trimmer', 'Video Trimmer & GIF Maker');
+  await uploadFiles(page, ['sample-video.webm']);
+
+  // The fixture is recorded rather than authored, so its length is about three
+  // seconds rather than exactly three. What matters is that a duration was
+  // worked out at all — MediaRecorder writes no duration into the header, and
+  // an unhandled Infinity would leave this at 0:00.0.
+  const end = page.getByTestId('end');
+  await expect(end).not.toHaveText('0:00.0', { timeout: 30_000 });
+  await expect(page.getByTestId('start')).toHaveText('0:00.0');
+  const whole = await end.textContent();
+
+  // Moving the start handle shortens the selection.
+  await page.locator('.range__slider').first().fill('1');
+  await expect(page.getByTestId('start')).toHaveText('0:01.0');
+  await expect(page.getByTestId('length')).not.toContainText(`${whole} selected`);
+
+  // GIF options only exist for a GIF, and the frame count follows the choices.
+  await expect(page.getByTestId('frames')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Make a GIF', exact: true }).click();
+  await page.getByRole('button', { name: '8', exact: true }).click();
+  await page.getByRole('button', { name: '240px', exact: true }).click();
+  const frames = page.getByTestId('frames');
+  await expect(frames).toBeVisible();
+  const counted = Number((await frames.textContent())?.match(/(\d+) frames/)?.[1]);
+  // Whatever is left of a ~3s clip after cutting 1s off the front, at 8 fps.
+  expect(counted).toBeGreaterThan(4);
+  expect(counted).toBeLessThan(25);
+
+  await page.getByTestId('run').click();
+
+  const result = page.getByTestId('result');
+  const failed = page.getByTestId('error');
+  await expect(result.or(failed).first()).toBeVisible({ timeout: 200_000 });
+
+  if ((await result.count()) === 0) {
+    // No engine here — and it has to say precisely that. Accepting any failure
+    // would let a genuinely broken transcode pass as "degraded" everywhere the
+    // engine is missing, which is most places this suite runs.
+    await expect(failed).toContainText('video engine');
+    return;
+  }
+
+  // A GIF, and a real one: check the magic number rather than the extension.
+  const image = result.locator('img');
+  await expect(image).toBeVisible();
+  const src = await image.getAttribute('src');
+  const header = await page.evaluate(async (url) => {
+    const bytes = new Uint8Array(await (await fetch(url!)).arrayBuffer());
+    return String.fromCharCode(...bytes.slice(0, 6));
+  }, src);
+  expect(header).toBe('GIF89a');
+});

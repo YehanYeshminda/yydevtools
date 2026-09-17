@@ -47,6 +47,12 @@ export interface Env {
    */
   SECRETS?: KVNamespace;
 
+  /**
+   * Large vendored binaries that are too big to ship as static assets.
+   * Currently just the ffmpeg core — see handleFfmpegCore.
+   */
+  VENDOR?: R2Bucket;
+
   /** Coarse per-location rate limiter for the API operations (Cloudflare binding). */
   API_RATE_LIMITER?: RateLimiter;
 
@@ -671,6 +677,38 @@ export default {
   },
 };
 
+/**
+ * The ffmpeg core for the Video Trimmer, served out of R2.
+ *
+ * It is 30.7 MB, and Workers static assets refuse a single file over 25 MiB,
+ * so unlike pdf.js or the segmentation model it cannot simply sit in the
+ * assets directory. R2 has neither that cap nor an egress charge, which keeps
+ * the binary first-party: the alternative was pointing the tool at a public
+ * CDN, and a tool whose promise is that the video never leaves the tab should
+ * not need someone else's uptime in order to start.
+ *
+ * The key carries the version, so upgrading the core is an upload plus a
+ * change to this line — deploys already in flight keep fetching the object
+ * they were built against instead of half-loading a new one.
+ */
+const FFMPEG_CORE_PATH = '/vendor/ffmpeg/ffmpeg-core.wasm';
+const FFMPEG_CORE_KEY = 'ffmpeg/0.12.10/ffmpeg-core.wasm';
+
+async function handleFfmpegCore(env: Env): Promise<Response> {
+  const object = await env.VENDOR?.get(FFMPEG_CORE_KEY);
+  if (!object) {
+    return new Response('Not found', { status: 404 });
+  }
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': 'application/wasm',
+      // Safe to pin hard: the key it came from names the version.
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      ETag: object.httpEtag,
+    },
+  });
+}
+
 /** Everything the site answers, before the security headers are put on top. */
 async function route(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
@@ -688,6 +726,10 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
   const path = url.pathname;
   if (path.startsWith('/api/')) {
     return handleApi(request, env, path, ctx);
+  }
+  // Too large for the assets directory, so it comes out of R2 instead.
+  if (path === FFMPEG_CORE_PATH) {
+    return handleFfmpegCore(env);
   }
   // Every route is prerendered to its own HTML file, so a miss is a genuine
   // miss. Serve the prerendered 404 page, but with a 404 status — returning

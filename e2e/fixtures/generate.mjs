@@ -331,6 +331,89 @@ function makeXlsx() {
   );
 }
 
+/* Video ------------------------------------------------------------------ */
+
+/**
+ * A short video with a moving picture and an audible tone.
+ *
+ * There is no encoder in Node and none among this project's runtime
+ * dependencies, so this one is recorded rather than written: Chromium is
+ * already here for the e2e run, and it has both a canvas and a MediaRecorder.
+ * The result is VP8 video with an Opus track, which is what MediaRecorder
+ * produces and which ffmpeg reads without complaint.
+ *
+ * The tone matters as much as the picture — without a real audio track the
+ * mute and extract-audio paths would have nothing to prove.
+ */
+async function makeVideo({ seconds = 3, width = 320, height = 240 } = {}) {
+  const { chromium } = await import('@playwright/test');
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    const base64 = await page.evaluate(
+      async ({ seconds, width, height }) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        document.body.append(canvas);
+        const ctx = canvas.getContext('2d');
+        const stream = canvas.captureStream(25);
+
+        const audio = new AudioContext();
+        const tone = audio.createOscillator();
+        const sink = audio.createMediaStreamDestination();
+        tone.frequency.value = 440;
+        tone.connect(sink);
+        tone.start();
+        stream.addTrack(sink.stream.getAudioTracks()[0]);
+
+        const chunks = [];
+        const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        recorder.ondataavailable = (event) => chunks.push(event.data);
+        const stopped = new Promise((resolve) => {
+          recorder.onstop = resolve;
+        });
+        recorder.start();
+
+        // Paint on a timer rather than requestAnimationFrame: a headless tab
+        // is free to throttle animation frames, and a fixture that is
+        // sometimes two seconds long is worse than no fixture.
+        const started = performance.now();
+        await new Promise((resolve) => {
+          const timer = setInterval(() => {
+            const elapsed = (performance.now() - started) / 1000;
+            if (elapsed >= seconds) {
+              clearInterval(timer);
+              resolve();
+              return;
+            }
+            ctx.fillStyle = `hsl(${Math.floor(elapsed * 120) % 360} 80% 50%)`;
+            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = '#fff';
+            ctx.font = '64px sans-serif';
+            ctx.fillText(elapsed.toFixed(1), 16, height / 2 + 24);
+          }, 40);
+        });
+
+        recorder.stop();
+        tone.stop();
+        await stopped;
+
+        const bytes = new Uint8Array(await new Blob(chunks).arrayBuffer());
+        let binary = '';
+        for (const byte of bytes) {
+          binary += String.fromCharCode(byte);
+        }
+        return btoa(binary);
+      },
+      { seconds, width, height },
+    );
+    return Buffer.from(base64, 'base64');
+  } finally {
+    await browser.close();
+  }
+}
+
 /* ----------------------------------------------------------------------- */
 
 console.log('Generating e2e fixtures…');
@@ -342,4 +425,5 @@ write('sample.jpg', makeJpegWithExif());
 write('sample.csv', Buffer.from('region,requests,p99\niad,1284,210\nfra,903,188\nsyd,412,264\n'));
 write('sample.docx', makeDocx());
 write('sample.xlsx', makeXlsx());
+write('sample-video.webm', await makeVideo());
 console.log('Done.');

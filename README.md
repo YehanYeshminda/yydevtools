@@ -53,6 +53,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Background Remover** | Cut the background out of a photo and save a transparent PNG, or put the subject on a colour. Runs in your browser. |
 | **Passport Photo Maker** | Crop to an official passport or ID size with head-position guides, then print one or a sheet. |
 | **Image Converter** | Convert between HEIC, JPEG, PNG, WebP and AVIF in bulk — iPhone photos included — without uploading them. |
+| **Video Trimmer & GIF Maker** | Cut a clip, drop the sound, pull out the audio as an MP3, or turn it into a GIF. ffmpeg runs in your browser. |
 | **Image Resizer & Cropper** | Crop with a draggable box, resize to exact pixels or a file size, and save as JPEG, PNG or WebP. |
 | **EXIF Viewer** | See the camera, timestamp and GPS location hidden in a photo, then strip it out without re-compressing. |
 | **Timestamp Converter** | Convert between Unix timestamps and human-readable dates. |

@@ -1,0 +1,140 @@
+.source {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.video {
+  width: 100%;
+  /* Tall phone videos would otherwise push the whole page down. */
+  max-height: 60vh;
+  border-radius: 12px;
+  background: #000;
+}
+
+.source__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--on-var);
+}
+
+.source__name {
+  font-weight: 600;
+  color: var(--on);
+  /* A filename with no spaces is one long token; it has to be allowed to break. */
+  overflow-wrap: anywhere;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control__label {
+  font: var(--mat-sys-label-large);
+  color: var(--on);
+}
+
+.tabs {
+  align-self: flex-start;
+}
+
+/* Selection ------------------------------------------------------------- */
+
+.range {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.range__row {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr 4.2rem auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.range__name {
+  font: var(--mat-sys-body-medium);
+  color: var(--on-var);
+}
+
+.range__slider {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--brand);
+}
+
+.range__value {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--on);
+}
+
+@media (max-width: 40rem) {
+  /* Four columns do not fit a phone; stack the label and slider above the rest. */
+  .range__row {
+    grid-template-columns: 1fr auto auto;
+  }
+
+  .range__slider {
+    grid-column: 1 / -1;
+    order: 2;
+  }
+
+  .range__value {
+    order: 1;
+    text-align: right;
+  }
+}
+
+/* Progress -------------------------------------------------------------- */
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.progress__text {
+  margin: 0;
+  font: var(--mat-sys-body-small);
+  color: var(--on-var);
+}
+
+.progress__bar {
+  width: 100%;
+  height: 0.5rem;
+  accent-color: var(--brand);
+}
+
+/* Result ---------------------------------------------------------------- */
+
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.result {
+  width: 100%;
+  max-height: 60vh;
+  border-radius: 12px;
+}
+
+.result--image {
+  /* A GIF is usually smaller than the box; centre it instead of stretching. */
+  width: auto;
+  max-width: 100%;
+  align-self: flex-start;
+  background: var(--surface-1);
+}
+
+.field__hint--over {
+  color: var(--mat-sys-error);
+  font-weight: 600;
+}

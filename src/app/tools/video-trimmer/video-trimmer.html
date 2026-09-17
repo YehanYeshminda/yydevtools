@@ -1,0 +1,216 @@
+<app-tool-page slug="video-trimmer">
+  Cut a clip out of a video, drop its sound, pull the audio out as an MP3, or turn it into a GIF.
+  The video is processed by ffmpeg running inside this tab and is never uploaded.
+</app-tool-page>
+
+<div class="panel">
+  @if (stage() === 'empty') {
+    <app-dropzone accept="video/*" (filesSelected)="onFiles($event)">
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matMovieOutline" />
+      <span class="dropzone__title">Drop a video here, or click to choose</span>
+      <span class="dropzone__hint">
+        MP4, WebM, MOV, MKV and most other formats — up to {{ formatBytes(maxBytes) }}
+      </span>
+    </app-dropzone>
+  } @else {
+    <!-- Source and selection -------------------------------------------- -->
+    <div class="source">
+      <video
+        #video
+        class="video"
+        controls
+        playsinline
+        preload="metadata"
+        [src]="sourceUrl()"
+        (loadedmetadata)="onMetadata($event)"
+      ></video>
+
+      <p class="source__meta">
+        <span class="source__name">{{ name() }}</span>
+        <span class="source__size">{{ formatBytes(size()) }} · {{ formatTime(duration()) }}</span>
+      </p>
+    </div>
+
+    <div class="control">
+      <span class="control__label" id="range-label">The part you want</span>
+
+      <div class="range" role="group" aria-labelledby="range-label">
+        <label class="range__row">
+          <span class="range__name">Start</span>
+          <input
+            class="range__slider"
+            type="range"
+            min="0"
+            step="0.05"
+            [max]="duration()"
+            [value]="start()"
+            [disabled]="busy()"
+            (input)="setStart($any($event.target).value)"
+          />
+          <output class="range__value" data-testid="start">{{ formatTime(start()) }}</output>
+          <button matButton [disabled]="busy()" (click)="markStart(video)">Use playhead</button>
+        </label>
+
+        <label class="range__row">
+          <span class="range__name">End</span>
+          <input
+            class="range__slider"
+            type="range"
+            min="0"
+            step="0.05"
+            [max]="duration()"
+            [value]="end()"
+            [disabled]="busy()"
+            (input)="setEnd($any($event.target).value)"
+          />
+          <output class="range__value" data-testid="end">{{ formatTime(end()) }}</output>
+          <button matButton [disabled]="busy()" (click)="markEnd(video)">Use playhead</button>
+        </label>
+      </div>
+
+      <span class="field__hint" data-testid="length">
+        {{ formatTime(length()) }} selected of {{ formatTime(duration()) }}
+      </span>
+    </div>
+
+    <!-- What to produce -------------------------------------------------- -->
+    <div class="control">
+      <span class="control__label" id="op-label">What you want out</span>
+      <div class="tabs" role="group" aria-labelledby="op-label">
+        @for (option of operations; track option.value) {
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="operation() === option.value"
+            [attr.aria-pressed]="operation() === option.value"
+            [disabled]="busy()"
+            (click)="setOperation(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      <span class="field__hint">{{ hint() }}</span>
+    </div>
+
+    @if (isGif()) {
+      <div class="control">
+        <span class="control__label" id="fps-label">Frames per second</span>
+        <div class="tabs" role="group" aria-labelledby="fps-label">
+          @for (choice of fpsChoices; track choice) {
+            <button
+              type="button"
+              class="tab"
+              [class.tab--active]="fps() === choice"
+              [attr.aria-pressed]="fps() === choice"
+              [disabled]="busy()"
+              (click)="setFps(choice)"
+            >
+              {{ choice }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="control">
+        <span class="control__label" id="width-label">Width</span>
+        <div class="tabs" role="group" aria-labelledby="width-label">
+          @for (choice of gifWidths; track choice) {
+            <button
+              type="button"
+              class="tab"
+              [class.tab--active]="width() === choice"
+              [attr.aria-pressed]="width() === choice"
+              [disabled]="busy()"
+              (click)="setWidth(choice)"
+            >
+              {{ choice }}px
+            </button>
+          }
+        </div>
+        <span class="field__hint" [class.field__hint--over]="tooManyFrames()" data-testid="frames">
+          {{ frames() }} frames
+          @if (tooManyFrames()) {
+            — more than {{ maxFrames }}. Shorten the clip or drop the frame rate: a GIF this long
+            would be enormous and slow to make.
+          }
+        </span>
+      </div>
+    }
+
+    <!-- Actions ---------------------------------------------------------- -->
+    <div class="actions">
+      <button matButton="filled" [disabled]="!canRun()" (click)="run()" data-testid="run">
+        @if (busy()) {
+          <app-spinner />
+        } @else {
+          <ng-icon name="matContentCutOutline" />
+        }
+        {{ busy() ? 'Working…' : 'Create it' }}
+      </button>
+      <button matButton [disabled]="busy()" (click)="startAgain()">
+        <ng-icon name="matAddOutline" />
+        Another video
+      </button>
+    </div>
+
+    <!-- Progress --------------------------------------------------------- -->
+    @if (stage() === 'starting') {
+      <div class="progress" role="status" data-testid="starting">
+        <p class="progress__text">
+          Fetching the video engine — about 31 MB, once. It is then cached by your browser.
+        </p>
+        <progress class="progress__bar" max="1" [value]="downloaded()"></progress>
+      </div>
+    } @else if (stage() === 'working') {
+      <div class="progress" role="status" data-testid="working">
+        <p class="progress__text">Processing in this tab. Long clips take a while.</p>
+        <progress class="progress__bar" max="1" [value]="worked()"></progress>
+      </div>
+    }
+
+    <!-- Result ----------------------------------------------------------- -->
+    @if (resultUrl(); as url) {
+      <div class="done" data-testid="result">
+        <p class="status status--ok" role="status">
+          <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
+          Ready — {{ formatBytes(resultSize()) }}
+        </p>
+
+        @switch (resultKind()) {
+          @case ('image') {
+            <img class="result result--image" [src]="url" alt="The GIF that was created" />
+          }
+          @case ('audio') {
+            <audio class="result" controls [src]="url"></audio>
+          }
+          @default {
+            <video class="result" controls playsinline [src]="url"></video>
+          }
+        }
+
+        <div class="actions">
+          <button matButton="filled" (click)="save()" data-testid="save">
+            <ng-icon name="matDownloadOutline" />
+            Download
+          </button>
+        </div>
+      </div>
+    }
+  }
+
+  @if (error(); as message) {
+    <p class="status status--err" role="alert" data-testid="error">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      {{ message }}
+    </p>
+  }
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+  ffmpeg is compiled to WebAssembly and runs on your own device. The video is read straight from the
+  file you picked and never leaves the tab — only the engine itself is downloaded, once.
+</p>
+
+<app-tool-content slug="video-trimmer" />
