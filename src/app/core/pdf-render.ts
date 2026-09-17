@@ -82,6 +82,121 @@ function loadPdfJs(): Promise<PdfJsModule> {
   return loading;
 }
 
+/**
+ * How often a hidden page is handed a frame. Roughly 60Hz, like the real thing.
+ */
+const HIDDEN_FRAME_MS = 16;
+
+/**
+ * Frames for a render that nobody is looking at.
+ *
+ * pdf.js cuts a display render into slices and schedules each one through
+ * `requestAnimationFrame`, which browsers stop firing while the page is hidden.
+ * The render promise then never settles — no error, no rejection, just a
+ * spinner that runs until you come back, at which point it finishes instantly.
+ * Harmless for a preview somebody is watching, and wrong for the jobs here that
+ * are meant to be left alone: three hundred thumbnails, or OCR across a long
+ * document, stops dead the moment you switch tab.
+ *
+ * `intent: 'print'` turns the rAF path off, and is the obvious fix until you
+ * read what else it changes: it also decides which annotations and which
+ * optional content get drawn. Redact and Sign use the raster as the coordinate
+ * system for editing the real file, so a picture that differs from the document
+ * is the one thing they cannot have.
+ *
+ * So the missing frames are supplied instead, and only the missing ones. While
+ * a render is in flight this hands straight back to the browser's own
+ * requestAnimationFrame whenever the page is visible, and answers on a timer
+ * when it is not — which is the work the browser was deferring until you
+ * returned, done now instead. The handles it issues are negative, and the
+ * spec's are positive longs, so a cancel always routes back to whichever one
+ * issued it.
+ */
+let rendersInFlight = 0;
+let realFrames: {
+  request: typeof window.requestAnimationFrame;
+  cancel: typeof window.cancelAnimationFrame;
+} | null = null;
+const hiddenFrames = new Map<number, ReturnType<typeof setTimeout>>();
+let nextHiddenHandle = -1;
+
+function keepFramesComing(): void {
+  if (rendersInFlight++ > 0 || typeof window === 'undefined' || realFrames) {
+    return;
+  }
+  const real = {
+    request: window.requestAnimationFrame,
+    cancel: window.cancelAnimationFrame,
+  };
+  realFrames = real;
+
+  put('requestAnimationFrame', (callback: FrameRequestCallback): number => {
+    if (!document.hidden) {
+      return real.request.call(window, callback);
+    }
+    const handle = nextHiddenHandle--;
+    hiddenFrames.set(
+      handle,
+      setTimeout(() => {
+        hiddenFrames.delete(handle);
+        callback(performance.now());
+      }, HIDDEN_FRAME_MS),
+    );
+    return handle;
+  });
+
+  put('cancelAnimationFrame', (handle: number): void => {
+    const timer = hiddenFrames.get(handle);
+    if (timer === undefined) {
+      real.cancel.call(window, handle);
+      return;
+    }
+    hiddenFrames.delete(handle);
+    clearTimeout(timer);
+  });
+}
+
+/**
+ * Puts a function on `window` under a name the platform already owns.
+ *
+ * `defineProperty` rather than assignment, because the two frame functions are
+ * not always writable — under the test runner's DOM they are not, and a plain
+ * assignment there fails *silently*, leaving a shim that reports itself
+ * installed and does nothing. Restoring goes through here too, so what is left
+ * behind is the browser's own function under its own name.
+ */
+function put(name: 'requestAnimationFrame' | 'cancelAnimationFrame', value: unknown): void {
+  Object.defineProperty(window, name, { value, writable: true, configurable: true });
+}
+
+function releaseFrames(): void {
+  if (--rendersInFlight > 0 || !realFrames) {
+    return;
+  }
+  put('requestAnimationFrame', realFrames.request);
+  put('cancelAnimationFrame', realFrames.cancel);
+  realFrames = null;
+  for (const timer of hiddenFrames.values()) {
+    clearTimeout(timer);
+  }
+  hiddenFrames.clear();
+}
+
+/**
+ * Runs `work` with frames guaranteed, whether or not the page is on screen.
+ *
+ * Exported for the test that proves the shim hands back what it borrowed;
+ * everything else in the app reaches it through the renderer below.
+ */
+export async function withRenderFrames<T>(work: () => Promise<T>): Promise<T> {
+  keepFramesComing();
+  try {
+    return await work();
+  } finally {
+    releaseFrames();
+  }
+}
+
 export interface RenderedPage {
   index: number;
   dataUrl: string;
@@ -169,7 +284,7 @@ export class PdfDocumentRenderer {
       // Recognition on a transparent background reads as black-on-black.
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, canvas.width, canvas.height);
-      await page.render({ canvasContext: context, viewport }).promise;
+      await withRenderFrames(() => page.render({ canvasContext: context, viewport }).promise);
       return { canvas, width: canvas.width, height: canvas.height };
     } finally {
       page.cleanup();
@@ -232,7 +347,7 @@ export class PdfDocumentRenderer {
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, canvas.width, canvas.height);
 
-      await page.render({ canvasContext: context, viewport }).promise;
+      await withRenderFrames(() => page.render({ canvasContext: context, viewport }).promise);
       return canvas.toDataURL('image/jpeg', 0.72);
     } finally {
       page.cleanup();
