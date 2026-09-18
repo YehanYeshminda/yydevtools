@@ -1,0 +1,189 @@
+.stage {
+  margin-top: 1rem;
+}
+
+.stage__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.stage__count {
+  align-self: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.sheet {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0.75rem auto 0;
+  background: #fff;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 6px;
+  user-select: none;
+}
+
+.sheet--placing .overlay {
+  cursor: crosshair;
+}
+
+/*
+ * The container for the run sizes: a share of the page width is the only way
+ * to write a font size that stays right however wide the page is drawn.
+ */
+.overlay {
+  container-type: inline-size;
+  position: absolute;
+  inset: 0;
+}
+
+.sheet__page {
+  display: block;
+  max-width: 100%;
+  max-height: 72vh;
+  width: auto;
+  height: auto;
+  border-radius: 6px;
+}
+
+.sheet__busy {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(255 255 255 / 0.6);
+}
+
+/*
+ * One run of text. Invisible until pointed at, because the page underneath is
+ * the thing being read — a grid of permanent outlines over every word would
+ * make the document unreadable while it is being edited.
+ */
+.run {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: text;
+  overflow: hidden;
+}
+
+.run:hover,
+.run:focus-visible {
+  background: rgb(37 99 235 / 0.12);
+  border-color: rgb(37 99 235 / 0.9);
+}
+
+.run--edited {
+  background: rgb(22 163 74 / 0.14);
+  border-color: rgb(22 163 74 / 0.9);
+}
+
+.run--fixed {
+  cursor: not-allowed;
+}
+
+.run--fixed:hover {
+  background: rgb(120 120 120 / 0.12);
+  border-color: rgb(120 120 120 / 0.8);
+}
+
+/* Present for a screen reader and for the tests; the page shows the words. */
+.run__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.editor {
+  position: absolute;
+  z-index: 2;
+  min-width: 8rem;
+}
+
+.editor__input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  font-size: var(--run-size, 1rem);
+  line-height: 1.2;
+  color: var(--run-color, #000);
+  background: #fff;
+  border: 2px solid rgb(37 99 235 / 0.9);
+  border-radius: 2px;
+}
+
+.editor__panel {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  width: max-content;
+  max-width: min(24rem, 80cqw);
+}
+
+.editor__bar {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+}
+
+.editor__note {
+  margin: 0.35rem 0 0;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 6px;
+}
+
+.editor__note--bad {
+  color: var(--mat-sys-on-error-container);
+  background: var(--mat-sys-error-container);
+  border-color: var(--mat-sys-error);
+}
+
+.added {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.added__input {
+  padding: 0;
+  font: inherit;
+  font-size: var(--run-size, 1rem);
+  line-height: 1.2;
+  color: var(--run-color, #000);
+  background: rgb(22 163 74 / 0.1);
+  border: 1px dashed rgb(22 163 74 / 0.9);
+  border-radius: 2px;
+}
+
+.added__remove {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 50%;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: 700 13px/1 sans-serif;
+  cursor: pointer;
+}

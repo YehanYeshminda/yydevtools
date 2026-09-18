@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 
+import { EditablePdf } from '../src/app/core/pdf-edit/document';
 import { expectClean, fixture, gotoTool, uploadFiles, watchConsole } from './helpers';
 
 /**
@@ -403,6 +404,131 @@ test('pdf-redact finds a phrase on every page and downloads the rebuilt file', a
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: /Redact & download/ }).click();
   expect((await download).suggestedFilename()).toBe('sample-redacted.pdf');
+
+  expectClean(watch);
+});
+
+/**
+ * Edit PDF is the one tool here that rewrites a page rather than adding to it,
+ * so the assertion has to be made on the saved bytes: the run is read back out
+ * of the downloaded file with the same reader the tool edits with. A test that
+ * only watched the screen would pass just as happily on an overlay.
+ */
+test('pdf-edit rewrites a line and the saved file really says the new words', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-edit', 'Edit PDF');
+
+  await uploadFiles(page, ['sample.pdf']);
+  await expect(page.getByText(/sample\.pdf · 3 pages/)).toBeVisible({ timeout: 45_000 });
+  await expect(page.locator('.sheet__page')).toBeVisible({ timeout: 45_000 });
+
+  // Every run of text on the page is a button carrying what it says.
+  const heading = page.getByRole('button', { name: 'Annual Report', exact: true });
+  await expect(heading).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByRole('button', { name: 'Page 1 of 3', exact: true })).toBeVisible();
+
+  await heading.click();
+  const editor = page.getByTestId('run-editor');
+  await expect(editor).toHaveValue('Annual Report');
+  await editor.fill('Interim Report');
+  await page.getByRole('button', { name: 'Apply', exact: true }).click();
+
+  await expect(page.getByTestId('change-count')).toHaveText('1 change');
+  await expect(page.getByRole('button', { name: 'Interim Report', exact: true })).toBeVisible();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: /Save & download/ }).click();
+  const saved = await download;
+  expect(saved.suggestedFilename()).toBe('sample-edited.pdf');
+
+  const edited = await EditablePdf.open(new Uint8Array(readFileSync(await saved.path())));
+  expect(edited.runs(0).map((run) => run.text)).toEqual([
+    'Interim Report',
+    'Page 1 of 3',
+    'The quick brown fox jumps over the lazy dog.',
+  ]);
+
+  expectClean(watch);
+});
+
+test('pdf-edit removes a line, adds one, and refuses what no font can write', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-edit', 'Edit PDF');
+
+  await uploadFiles(page, ['sample.pdf']);
+  await expect(page.locator('.sheet__page')).toBeVisible({ timeout: 45_000 });
+
+  // Nothing in a Standard 14 font can draw these, and the tool says so rather
+  // than writing a line of blanks.
+  await page.getByRole('button', { name: 'Page 1 of 3', exact: true }).click();
+  await page.getByTestId('run-editor').fill('ページ');
+  await expect(page.getByTestId('plan-note')).toContainText('no way to write');
+  await expect(page.getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
+
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page.getByTestId('change-count')).toHaveText('1 change');
+
+  await page.getByRole('button', { name: 'Add text' }).click();
+  await page.getByTestId('sheet').click({ position: { x: 60, y: 300 } });
+  const added = page.getByLabel('Text you added');
+  await expect(added).toHaveValue('New text');
+  await added.fill('Added by hand');
+  await expect(page.getByTestId('change-count')).toHaveText('2 changes');
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: /Save & download/ }).click();
+  const edited = await EditablePdf.open(
+    new Uint8Array(readFileSync(await (await download).path())),
+  );
+  const text = edited.runs(0).map((run) => run.text);
+  expect(text).toContain('Added by hand');
+  expect(text).not.toContain('Page 1 of 3');
+
+  expectClean(watch);
+});
+
+/**
+ * The case the tool exists to get right, on a file a browser really produced:
+ * every font in it is subsetted, so the digits needed to change an invoice
+ * number are simply not in the file. The edit still has to land, and the tool
+ * still has to say what it did.
+ */
+test('pdf-edit re-sets a line when the font in the file has no glyph for it', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-edit', 'Edit PDF');
+
+  await uploadFiles(page, ['sample-subset.pdf']);
+  await expect(page.locator('.sheet__page')).toBeVisible({ timeout: 45_000 });
+
+  await page.getByRole('button', { name: 'INV-2044', exact: true }).click();
+  const editor = page.getByTestId('run-editor');
+  await editor.fill('INV-9137');
+  // Georgia-Bold is in this file only as the glyphs it already uses.
+  await expect(page.getByTestId('plan-note')).toContainText('re-set in Times-Bold');
+
+  await page.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(page.getByTestId('change-count')).toHaveText('1 change');
+
+  // A second edit in the same session, this one on a word the file's own
+  // Georgia can spell, so the two paths are exercised in one document.
+  await page.getByRole('button', { name: 'Consulting', exact: true }).click();
+  await page.getByTestId('run-editor').fill('Consultancy');
+  // Its own font can spell it, so the only thing worth saying is the length.
+  await expect(page.getByTestId('plan-note')).toHaveText(/longer than the space/);
+  await page.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(page.getByTestId('change-count')).toHaveText('2 changes');
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: /Save & download/ }).click();
+  const edited = await EditablePdf.open(
+    new Uint8Array(readFileSync(await (await download).path())),
+  );
+  const runs = edited.runs(0);
+  expect(runs.map((run) => run.text)).toContain('INV-9137');
+  // The one its own font could write kept that font.
+  expect(runs.find((run) => run.text === 'Consultancy')?.family).toBe('Georgia');
+  // Everything else is still in the typeface it started in.
+  expect(runs.find((run) => run.text === 'Acme Industries')?.family).toBe('Georgia-Italic');
 
   expectClean(watch);
 });

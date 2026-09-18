@@ -3497,6 +3497,82 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['pdf-protect', 'pdf-merge', 'pdf-organizer', 'image-compressor'],
   },
+  'pdf-edit': {
+    slug: 'pdf-edit',
+    intro: [
+      'Most online “PDF editors” cannot edit a PDF. They draw a white rectangle over the old text and put new text on top of it, which looks fine until someone selects the line, searches the document, or opens it on a coloured background. The old words are still in the file.',
+      'This one changes the page itself. A PDF page is a list of drawing instructions, and the words on it come from specific ones; this tool finds the instruction that drew the line you clicked and rewrites it. What comes out is the same document saying something different — same fonts, same graphics, same selectable text, and nothing covered up.',
+      'It runs entirely in your browser. The file is never uploaded.',
+    ],
+    steps: [
+      'Choose the PDF. Every line of real text on the page becomes clickable.',
+      'Click a line, type over it, and press Apply. Delete takes it off the page.',
+      'Use Add text to put a new line anywhere, or turn the page and keep going.',
+      'Save & download. Open the result and check the pages you touched.',
+    ],
+    features: [
+      "Edits the page's own content stream, so the original text is replaced rather than hidden.",
+      "Keeps the document's fonts, size, colour and position for every line it changes.",
+      'Says up front when a line cannot be written in its own font, and what it will use instead.',
+      'Delete a line, or add a new one anywhere on the page.',
+      'Reaches text inside form XObjects, which is where spreadsheet and report exports keep it.',
+      'Nothing leaves your device.',
+    ],
+    sections: [
+      {
+        heading: 'Why some letters are missing from a font',
+        body: [
+          "A PDF normally carries its fonts inside it, and to keep the file small it carries only the glyphs the document actually uses — a process called subsetting. An invoice that says “INV-2044” contains a 2, a 0 and a 4, and quite possibly no 9, no 3 and no 7 anywhere in that typeface. Changing the number to INV-9137 in the document's own font would draw three blanks.",
+          'So the tool checks before you commit. If every character you typed is already in the file, the edit is exact and invisible. If some are not, it says which, removes the original glyphs and re-sets that line in the nearest standard face — Arial becomes Helvetica, Georgia becomes Times, Courier New becomes Courier. That is a substitution you can see, which is why you are told about it rather than left to find it later.',
+          'This is not a limitation of this tool in particular. It is why desktop editors ask you to have the original font installed: the missing letters have to come from somewhere.',
+        ],
+      },
+      {
+        heading: 'What happens to the rest of the line',
+        body: [
+          'New text is rarely exactly as wide as what it replaced. Rather than let the difference push everything after it along the line, the tool puts the pen back where the old text ended, so every other word on the page stays exactly where it was. A longer replacement therefore runs into the space after it instead of shoving its neighbours sideways — visible straight away, and easy to shorten.',
+          'The editor tells you when a replacement needs more room than it had. Nothing reflows and no line breaks are recalculated: a PDF has no paragraphs to reflow, only positioned text.',
+        ],
+      },
+      {
+        heading: 'What it cannot do yet',
+        body: [
+          'Scanned pages have no text to edit — they are pictures. Run PDF OCR first and you will get a searchable copy, though the text it adds sits invisibly behind the image rather than replacing it.',
+          'Sideways and rotated text is shown but not editable, because the editor would have to be rotated with it. Images, tables and drawings are left exactly as they are; this changes text, not layout. Text can be changed and moved off the page, but not dragged to a new position.',
+        ],
+      },
+      {
+        heading: 'Before you send it',
+        body: [
+          'Open the saved file and read the pages you changed. Check a substituted line in particular — the letters will be right, but the shape of the typeface will not quite match its neighbours.',
+          'Editing a document someone else signed invalidates the signature, as it should: the point of a signature is that the bytes have not changed. And a PDF keeps its history in ways that are not always obvious, so if the original said something you would rather nobody read, redaction is the tool for that, not this one.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is the old text really gone, or covered up?',
+        a: 'Gone. The instruction that drew it is replaced, so there is nothing left underneath to select or search. If you want proof, edit a line, save, and select-all in any viewer.',
+      },
+      {
+        q: 'Why did it say the font has no “9”?',
+        a: 'Because the file genuinely does not contain one. PDFs carry only the glyphs they use. The line will be re-set in the closest standard typeface instead, and the tool names it before you commit.',
+      },
+      {
+        q: 'Can I change the font, size or colour?',
+        a: 'Not yet for text that is already there — an edited line keeps the size, colour and position it had. Text you add yourself is drawn in Helvetica at 12pt.',
+      },
+      {
+        q: 'Can I edit a scan?',
+        a: 'No. There is no text in a scan, only an image of one. OCR it first if you need it searchable.',
+      },
+      {
+        q: 'Is the file uploaded?',
+        a: 'No. Reading, editing and saving all happen in your browser.',
+      },
+    ],
+    related: ['pdf-sign', 'pdf-redact', 'pdf-form-fill', 'pdf-viewer'],
+  },
   'pdf-redact': {
     slug: 'pdf-redact',
     intro: [

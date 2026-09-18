@@ -457,6 +457,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'pdf-edit',
+    name: 'Edit PDF',
+    description:
+      'Change the text already in a PDF — click a line, type over it, and keep the fonts.',
+    icon: 'matEditNoteOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'pdf-redact',
     name: 'Redact PDF',
     description:

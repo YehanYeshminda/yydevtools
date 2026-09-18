@@ -1,0 +1,582 @@
+/**
+ * A PDF opened for editing rather than for adding to.
+ *
+ * This is the piece that joins the two halves: pdf-lib holds the object graph
+ * and writes the file back out, and the walker beside it says where every run
+ * of text sits and which bytes drew it. An edit is recorded against those
+ * bytes, and `save` splices them.
+ *
+ * Nothing is rewritten that was not edited. The content stream a page ends up
+ * with is the one it arrived with, minus the ranges that were replaced — which
+ * is why a page full of shadings, patterns and inline images survives having
+ * one word changed.
+ */
+import {
+  PDFArray,
+  PDFDict,
+  PDFDocument,
+  PDFFont,
+  PDFName,
+  PDFNumber,
+  PDFPage,
+  PDFRawStream,
+  PDFRef,
+  PDFStream,
+  StandardFonts,
+  decodePDFRawStream,
+} from '@cantoo/pdf-lib';
+// `/FlateDecode` means a zlib stream, header and all — not a raw deflate one.
+import { zlibSync } from 'fflate';
+
+import { spliceStream, toHexString } from './content-stream';
+import {
+  readPageFonts,
+  notInStandardFonts,
+  standardFaceFor,
+  type EditableFont,
+} from './font-metrics';
+import {
+  findTextRuns,
+  type FormXObject,
+  type Matrix,
+  type Resolve,
+  type TextRun,
+} from './text-runs';
+
+/** Text added to a page rather than changed on it. */
+export interface AddedText {
+  page: number;
+  text: string;
+  /** Baseline start in page points, origin bottom-left. */
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  bold: boolean;
+}
+
+/** How an edit would have to be written, worked out before it is made. */
+export type EditPlan =
+  /** The run's own font can say it, so only the string changes. */
+  | { kind: 'same-font'; overrun: number }
+  /** Its font has no glyph for some of it; the run gets re-set in `face`. */
+  | { kind: 'substitute'; overrun: number; missing: string[]; face: string }
+  /** Nothing available here can write these characters. */
+  | { kind: 'refused'; missing: string[] };
+
+interface PageStreams {
+  /** The page's own content, already concatenated. */
+  bytes: Uint8Array;
+  fonts: Map<string, EditableFont>;
+  resolve: Resolve;
+}
+
+interface EditableStream {
+  bytes: Uint8Array;
+  /** Where a font added for this stream has to be declared. */
+  resources: () => PDFDict;
+  /** Puts the rewritten bytes back where they came from. */
+  write(bytes: Uint8Array): void;
+}
+
+/** A run is identified by the stream it lives in and where it starts in it. */
+function editKey(streamId: string, start: number): string {
+  return `${streamId}@${start}`;
+}
+
+interface PendingEdit {
+  page: number;
+  run: TextRun;
+  text: string;
+}
+
+export class EditablePdf {
+  private readonly pageStreams = new Map<number, PageStreams>();
+  private readonly runsByPage = new Map<number, TextRun[]>();
+  private readonly streams = new Map<string, EditableStream>();
+  private readonly formFonts = new Map<string, Map<string, EditableFont>>();
+  private readonly edits = new Map<string, PendingEdit>();
+  private readonly added: AddedText[] = [];
+  /** Standard 14 faces embedded on demand, one object each however often used. */
+  private readonly embedded = new Map<string, PDFFont>();
+  /** Names those faces were given inside a stream's resources. */
+  private readonly fontNames = new Map<string, string>();
+
+  private constructor(
+    private readonly doc: PDFDocument,
+    private readonly pages: PDFPage[],
+  ) {}
+
+  static async open(bytes: Uint8Array): Promise<EditablePdf> {
+    const doc = await PDFDocument.load(bytes, { ignoreEncryption: false });
+    return new EditablePdf(doc, doc.getPages());
+  }
+
+  get pageCount(): number {
+    return this.pages.length;
+  }
+
+  /** Unrotated size in points, matching the frame the runs are measured in. */
+  pageSize(index: number): { width: number; height: number } {
+    const { width, height } = this.pages[index].getSize();
+    return { width, height };
+  }
+
+  /** Every editable run on a page, measured once and kept. */
+  runs(index: number): TextRun[] {
+    const cached = this.runsByPage.get(index);
+    if (cached) return cached;
+    const streams = this.openPage(index);
+    const runs = findTextRuns(streams.bytes, streams.fonts, {
+      resolve: streams.resolve,
+      streamId: `page:${index}`,
+    });
+    this.runsByPage.set(index, runs);
+    return runs;
+  }
+
+  /** The text a run currently says, counting an edit that is not yet saved. */
+  textOf(run: TextRun): string {
+    return this.edits.get(editKey(run.streamId, run.start))?.text ?? run.text;
+  }
+
+  edited(run: TextRun): boolean {
+    return this.edits.has(editKey(run.streamId, run.start));
+  }
+
+  get changeCount(): number {
+    return this.edits.size + this.added.length;
+  }
+
+  /**
+   * How the edit would have to be written, and what it would cost.
+   *
+   * Asked before the edit rather than after, because the answer is something
+   * the reader needs to decide about: almost every font in a real document is
+   * subsetted down to the characters that document happens to use, so a
+   * perfectly ordinary change from "2044" to "9137" can find that the file
+   * contains no 9, no 3 and no 7. Drawing them in that font would leave gaps.
+   */
+  plan(pageIndex: number, run: TextRun, text: string): EditPlan {
+    const font = this.fontOf(pageIndex, run);
+    const missing = font ? font.missing(text) : [...new Set(text)];
+    if (missing.length === 0 && font) {
+      return { kind: 'same-font', overrun: this.overrunOf(run, this.advanceOf(font, run, text)) };
+    }
+    const unwritable = notInStandardFonts(text);
+    if (unwritable.length > 0) return { kind: 'refused', missing: unwritable };
+    const face = standardFaceFor(run.family || run.font);
+    return {
+      kind: 'substitute',
+      missing,
+      face,
+      overrun: this.overrunOf(run, this.standardAdvanceOf(face, run, text)),
+    };
+  }
+
+  /**
+   * Records a run's new text. An empty string takes it off the page.
+   *
+   * Nothing is written here — the operator that replaces the run is built in
+   * `save`, which is where a substitute font can be embedded.
+   */
+  setText(pageIndex: number, run: TextRun, text: string): void {
+    const key = editKey(run.streamId, run.start);
+    if (text === run.text) {
+      this.edits.delete(key);
+      return;
+    }
+    if (text !== '' && this.plan(pageIndex, run, text).kind === 'refused') {
+      throw new Error('That text cannot be written into this document.');
+    }
+    this.edits.set(key, { page: pageIndex, run, text });
+  }
+
+  /** Adds a line of text to a page, in one of the fonts every reader has. */
+  addText(item: AddedText): void {
+    this.added.push(item);
+  }
+
+  /** Changes the wording of a line that was added, leaving where it sits. */
+  setAdded(index: number, text: string): void {
+    const item = this.added[index];
+    if (item) item.text = text;
+  }
+
+  removeAdded(index: number): void {
+    this.added.splice(index, 1);
+  }
+
+  get additions(): readonly AddedText[] {
+    return this.added;
+  }
+
+  /** Drops every pending change. */
+  reset(): void {
+    this.edits.clear();
+    this.added.length = 0;
+  }
+
+  async save(): Promise<Uint8Array> {
+    const byStream = new Map<string, Array<{ start: number; end: number; text: string }>>();
+    for (const edit of this.edits.values()) {
+      const operator = await this.operatorFor(edit);
+      const list = byStream.get(edit.run.streamId) ?? [];
+      list.push({ start: edit.run.start, end: edit.run.end, text: operator });
+      byStream.set(edit.run.streamId, list);
+    }
+    // Added lines are content too, so they go through the same door. A page
+    // that gains one still has its content rewritten from the bytes it arrived
+    // with, which is what makes saving twice give the same file as saving once.
+    const suffixes = new Map<string, string>();
+    for (const item of this.added) {
+      const streamId = `page:${item.page}`;
+      if (!byStream.has(streamId)) {
+        this.openPage(item.page);
+        byStream.set(streamId, []);
+      }
+      suffixes.set(streamId, (suffixes.get(streamId) ?? '') + (await this.drawnText(item)));
+    }
+
+    // Splicing comes last: every offset above was taken before anything moved.
+    for (const [streamId, list] of byStream) {
+      const stream = this.streams.get(streamId);
+      if (!stream) continue;
+      const spliced = spliceStream(stream.bytes, list);
+      const suffix = suffixes.get(streamId);
+      stream.write(suffix ? wrapAndAppend(spliced, suffix) : spliced);
+    }
+
+    return this.doc.save({ useObjectStreams: false });
+  }
+
+  // --- Writing a replacement ---------------------------------------------
+
+  /**
+   * The operator that replaces a run.
+   *
+   * Always a `TJ` array, whatever the original operator was, with a kerning
+   * number after the string that puts the pen exactly where the old run left
+   * it. Without that correction a replacement of a different width would drag
+   * everything after it along the line — producers that lean on the pen
+   * position rather than setting a fresh matrix for each word are common enough
+   * that this is not a theoretical worry. Overlapping the next word is visible
+   * and the reader can shorten the text; silently reflowing half a line is not.
+   */
+  private async operatorFor(edit: PendingEdit): Promise<string> {
+    const { run, text } = edit;
+    const lead = run.opText === "'" || run.opText === '"' ? newlinePrefix(run) : '';
+    if (text === '') return `${lead}[${this.kerning(run, 0)}] TJ`;
+
+    const font = this.fontOf(edit.page, run);
+    const native = font?.encode(text);
+    if (font && native) {
+      const body = `${toHexString(native)} ${this.kerning(run, this.advanceOf(font, run, text))}`;
+      return `${lead}[${body}] TJ`;
+    }
+
+    // The run's own font cannot say it, so it is re-set in a face that can. The
+    // original `Tf` goes back straight afterwards, so nothing drawn later in
+    // the same text object inherits the substitute.
+    const face = standardFaceFor(run.family || run.font);
+    const embedded = await this.embedStandard(face);
+    const name = this.nameFor(run.streamId, face, embedded);
+    const hex = embedded.encodeText(text).toString();
+    const kern = this.kerning(run, this.standardAdvanceOf(face, run, text));
+    const size = round(run.fontSize);
+    return `${lead}/${name} ${size} Tf [${hex} ${kern}] TJ /${run.font} ${size} Tf`;
+  }
+
+  /** A line the reader added, as the operators that draw it. */
+  private async drawnText(item: AddedText): Promise<string> {
+    const face = item.bold ? 'Helvetica-Bold' : 'Helvetica';
+    const font = await this.embedStandard(face);
+    const name = this.nameFor(`page:${item.page}`, face, font);
+    const [r, g, b] = hexToRgb(item.color);
+    const hex = font.encodeText(item.text).toString();
+    return (
+      `q BT /${name} ${round(item.size)} Tf ${round(r)} ${round(g)} ${round(b)} rg ` +
+      `1 0 0 1 ${round(item.x)} ${round(item.y)} Tm ${hex} Tj ET Q\n`
+    );
+  }
+
+  /**
+   * The number that makes the pen land where the original run ended.
+   *
+   * A number inside `TJ` moves the pen by `-n/1000` of the font size, after the
+   * horizontal scale — so this is that relation turned around.
+   */
+  private kerning(run: TextRun, newAdvance: number): string {
+    const scale = Math.hypot(run.matrix[0], run.matrix[1]) || 1;
+    const original = run.width / scale;
+    const divisor = (run.fontSize || 1) * (run.horizontal || 1);
+    return round(((newAdvance - original) * 1000) / divisor);
+  }
+
+  /** How far `text` would advance in the run's own font, in text space. */
+  private advanceOf(font: EditableFont, run: TextRun, text: string): number {
+    const codes = font.encode(text);
+    if (!codes) return run.width / (Math.hypot(run.matrix[0], run.matrix[1]) || 1);
+    let advance = 0;
+    for (const code of font.decode(codes)) {
+      const spacing = run.charSpacing + (font.isWordSpace(code) ? run.wordSpacing : 0);
+      advance += ((font.widthOf(code) / 1000) * run.fontSize + spacing) * run.horizontal;
+    }
+    return advance;
+  }
+
+  /** The same, for a Standard 14 face standing in for the run's own font. */
+  private standardAdvanceOf(face: string, run: TextRun, text: string): number {
+    const embedded = this.embedded.get(face);
+    // Nothing is embedded until a save needs it, and the only caller that gets
+    // here before then is `plan`, whose overrun is an estimate either way.
+    if (!embedded) return text.length * 0.5 * run.fontSize * run.horizontal;
+    const glyphs = embedded.widthOfTextAtSize(text, run.fontSize);
+    return (glyphs + text.length * run.charSpacing) * run.horizontal;
+  }
+
+  /** How much wider the replacement is than what it replaces, in page points. */
+  private overrunOf(run: TextRun, advance: number): number {
+    return advance * (Math.hypot(run.matrix[0], run.matrix[1]) || 1) - run.width;
+  }
+
+  private async embedStandard(face: string): Promise<PDFFont> {
+    const existing = this.embedded.get(face);
+    if (existing) return existing;
+    const font = await this.doc.embedFont(face as StandardFonts);
+    this.embedded.set(face, font);
+    return font;
+  }
+
+  /**
+   * Declares a substitute font in the resources of the stream that needs it,
+   * under a name nothing else there is using.
+   */
+  private nameFor(streamId: string, face: string, font: PDFFont): string {
+    const key = `${streamId}|${face}`;
+    const known = this.fontNames.get(key);
+    if (known) return known;
+
+    const resources = this.streams.get(streamId)?.resources();
+    if (!resources) throw new Error('This page has nowhere to declare a font.');
+    let fonts = resources.lookupMaybe(PDFName.of('Font'), PDFDict);
+    if (!fonts) {
+      fonts = this.doc.context.obj({}) as PDFDict;
+      resources.set(PDFName.of('Font'), fonts);
+    }
+    let name = `YY${face.replace(/[^A-Za-z]/g, '')}`;
+    for (let suffix = 1; fonts.has(PDFName.of(name)); suffix++) name = `YYsub${suffix}`;
+    fonts.set(PDFName.of(name), font.ref);
+    this.fontNames.set(key, name);
+    return name;
+  }
+
+  // --- Opening ------------------------------------------------------------
+
+  /** The font a run was drawn in, looked up in the stream it belongs to. */
+  private fontOf(pageIndex: number, run: TextRun): EditableFont | null {
+    const streams = this.openPage(pageIndex);
+    if (run.streamId === `page:${pageIndex}`) return streams.fonts.get(run.font) ?? null;
+    return this.formFonts.get(run.streamId)?.get(run.font) ?? null;
+  }
+
+  /**
+   * Opens a page's content and everything it draws, once.
+   *
+   * Form XObjects are copied before they are opened for editing, and this
+   * page's resource entry is pointed at the copy. An XObject is shared by
+   * reference — a header drawn on forty pages is one object — and editing the
+   * original would change all forty. The copy costs a few kilobytes and is the
+   * only way the promise "this page" can be kept.
+   */
+  private openPage(index: number): PageStreams {
+    const cached = this.pageStreams.get(index);
+    if (cached) return cached;
+    const page = this.pages[index];
+    const bytes = concatContents(this.doc, page);
+    this.streams.set(`page:${index}`, {
+      bytes,
+      resources: () => this.pageResources(page),
+      write: (next) => page.node.set(PDFName.of('Contents'), this.newStream(next)),
+    });
+
+    const resources = page.node.Resources();
+    const streams: PageStreams = {
+      bytes,
+      fonts: readPageFonts(resources),
+      resolve: this.resolverFor(resources, `page:${index}/`, 0),
+    };
+    this.pageStreams.set(index, streams);
+    return streams;
+  }
+
+  /** The page's own resource dictionary, created if it inherited one instead. */
+  private pageResources(page: PDFPage): PDFDict {
+    const own = page.node.get(PDFName.of('Resources'));
+    const resolved = own ? this.doc.context.lookupMaybe(own, PDFDict) : undefined;
+    if (resolved) return resolved;
+    const fresh = this.doc.context.obj({}) as PDFDict;
+    page.node.set(PDFName.of('Resources'), fresh);
+    return fresh;
+  }
+
+  private resolverFor(resources: PDFDict | undefined, prefix: string, depth: number): Resolve {
+    return (name: string): FormXObject | null => {
+      if (depth > 8) return null;
+      const xobjects = resources?.lookupMaybe(PDFName.of('XObject'), PDFDict);
+      if (!xobjects) return null;
+      const key = PDFName.of(name);
+      const stream = xobjects.lookupMaybe(key, PDFStream);
+      if (!stream) return null;
+      if (stream.dict.lookupMaybe(PDFName.of('Subtype'), PDFName)?.asString() !== '/Form') {
+        return null;
+      }
+
+      const id = `${prefix}${name}`;
+      let bytes: Uint8Array;
+      try {
+        bytes = readStream(stream);
+      } catch {
+        return null;
+      }
+
+      const own = stream.dict.lookupMaybe(PDFName.of('Resources'), PDFDict) ?? resources;
+      if (!this.streams.has(id)) {
+        // The copy is made on the first thing that would change the original,
+        // and reused by whatever comes after it.
+        const copy: { dict: PDFDict | null } = { dict: null };
+        const dictOf = (): PDFDict => (copy.dict ??= stream.dict.clone(this.doc.context));
+        this.streams.set(id, {
+          bytes,
+          resources: () => {
+            const dict = dictOf();
+            const held = dict.lookupMaybe(PDFName.of('Resources'), PDFDict);
+            if (held) return held;
+            const fresh = this.doc.context.obj({}) as PDFDict;
+            dict.set(PDFName.of('Resources'), fresh);
+            return fresh;
+          },
+          write: (next) => xobjects.set(key, this.rewriteForm(dictOf(), next)),
+        });
+      }
+
+      if (!this.formFonts.has(id)) this.formFonts.set(id, readPageFonts(own));
+
+      return {
+        id,
+        bytes,
+        fonts: this.formFonts.get(id)!,
+        matrix: readMatrix(stream.dict),
+        resolve: this.resolverFor(own, `${id}/`, depth + 1),
+      };
+    };
+  }
+
+  /** A fresh compressed stream holding `bytes`. */
+  private newStream(bytes: Uint8Array): PDFRef {
+    const stream = this.doc.context.stream(zlibSync(bytes), {
+      Filter: PDFName.of('FlateDecode'),
+    });
+    return this.doc.context.register(stream);
+  }
+
+  /** The form XObject again, with new contents and everything else kept. */
+  private rewriteForm(dict: PDFDict, bytes: Uint8Array): PDFRef {
+    const compressed = zlibSync(bytes);
+    dict.set(PDFName.of('Filter'), PDFName.of('FlateDecode'));
+    dict.delete(PDFName.of('DecodeParms'));
+    dict.set(PDFName.of('Length'), PDFNumber.of(compressed.length));
+    return this.doc.context.register(PDFRawStream.of(dict, compressed));
+  }
+}
+
+/**
+ * The page's own content inside `q`/`Q`, with `suffix` after it.
+ *
+ * The wrapping is what makes the appended operators safe: a page that leaves
+ * its transformation matrix somewhere else — scaled to a tenth, flipped, or
+ * simply unbalanced — would otherwise draw the new line wherever that matrix
+ * happened to put it, rather than where the reader clicked.
+ */
+function wrapAndAppend(content: Uint8Array, suffix: string): Uint8Array {
+  const head = Uint8Array.from('q\n', (char) => char.charCodeAt(0));
+  const tail = Uint8Array.from(`\nQ\n${suffix}`, (char) => char.charCodeAt(0));
+  const out = new Uint8Array(head.length + content.length + tail.length);
+  out.set(head, 0);
+  out.set(content, head.length);
+  out.set(tail, head.length + content.length);
+  return out;
+}
+
+/** Keeps the line move that `'` and `"` do before they show anything. */
+function newlinePrefix(run: TextRun): string {
+  return run.opText === '"'
+    ? `${round(run.wordSpacing)} Tw ${round(run.charSpacing)} Tc T* `
+    : 'T* ';
+}
+
+function round(value: number): string {
+  return Number(value.toFixed(3)).toString();
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) return [0, 0, 0];
+  const value = Number.parseInt(match[1], 16);
+  return [((value >> 16) & 0xff) / 255, ((value >> 8) & 0xff) / 255, (value & 0xff) / 255];
+}
+
+function readStream(stream: PDFStream): Uint8Array {
+  return stream instanceof PDFRawStream
+    ? decodePDFRawStream(stream).decode()
+    : stream.getContents();
+}
+
+/** A form's `/Matrix`, or the identity when it has none. */
+function readMatrix(dict: PDFDict): Matrix {
+  const array = dict.lookupMaybe(PDFName.of('Matrix'), PDFArray);
+  if (!array || array.size() !== 6) return [1, 0, 0, 1, 0, 0];
+  const values: number[] = [];
+  for (let at = 0; at < 6; at++) {
+    const value = array.lookup(at);
+    values.push(value instanceof PDFNumber ? value.asNumber() : 0);
+  }
+  return values as unknown as Matrix;
+}
+
+/**
+ * A page's content as one buffer.
+ *
+ * `/Contents` may be an array, and the spec allows a token to be split across
+ * the boundary between two of them, so they are joined with a newline and
+ * treated as the single stream they logically are. Saving writes one stream
+ * back, which is legal and simpler than keeping the original division.
+ */
+function concatContents(doc: PDFDocument, page: PDFPage): Uint8Array {
+  const contents = page.node.Contents();
+  const streams = (
+    contents instanceof PDFArray
+      ? contents.asArray().map((ref) => doc.context.lookup(ref))
+      : [contents]
+  ).filter((stream): stream is PDFStream => stream instanceof PDFStream);
+
+  const parts: Uint8Array[] = [];
+  for (const stream of streams) {
+    try {
+      parts.push(readStream(stream));
+    } catch {
+      continue;
+    }
+    parts.push(Uint8Array.of(0x0a));
+  }
+  const total = parts.reduce((sum, part) => sum + part.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const part of parts) {
+    out.set(part, offset);
+    offset += part.length;
+  }
+  return out;
+}
+
+export type { TextRun } from './text-runs';
