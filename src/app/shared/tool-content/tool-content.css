@@ -110,3 +110,15 @@
 .tc__reldesc {
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* Reading time sits with the link, not the description, so the cost of the
+   click is known before the summary is read. */
+.tc__mins {
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}

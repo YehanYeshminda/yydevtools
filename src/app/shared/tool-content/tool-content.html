@@ -49,6 +49,23 @@
       </div>
     }
 
+    @if (guides().length) {
+      <h2 class="tc__heading">Learn how it works</h2>
+      <ul class="tc__related">
+        @for (guide of guides(); track guide.slug) {
+          <li>
+            <a class="tc__link" [routerLink]="['/guides', guide.slug]">{{ guide.title }}</a>
+            <!-- &ngsp; because Angular drops the whitespace between the two
+                 elements, and the visual gap is a margin a screen reader cannot
+                 see: without it the title and the reading time are read as one
+                 word ("…quirks11 min read"). -->
+            &ngsp;<span class="tc__mins">{{ guide.readingMinutes }} min read</span>
+            <span class="tc__reldesc"> — {{ guide.description }}</span>
+          </li>
+        }
+      </ul>
+    }
+
     @if (relatedTools().length) {
       <h2 class="tc__heading">Related tools</h2>
       <ul class="tc__related">

@@ -1314,7 +1314,7 @@ export const GUIDES: Guide[] = [
         text: 'The system is a chain of signatures, and its weakest property is the one people most often over-read. It establishes that you are talking to the domain you asked for, over a connection nobody in between can read or alter. It says nothing at all about whether that domain deserves what you are about to send it.',
       },
     ],
-    related: ['hash-generator', 'jwt-decoder', 'base64-converter'],
+    related: ['certificate-decoder', 'key-generator', 'hash-generator', 'jwt-decoder'],
     relatedGuides: ['https-explained', 'password-storage-explained'],
   },
   {
@@ -1439,7 +1439,15 @@ export const GUIDES: Guide[] = [
         ],
       },
     ],
-    related: ['pdf-viewer', 'pdf-organizer', 'pdf-compress'],
+    related: [
+      'pdf-viewer',
+      'pdf-organizer',
+      'pdf-merge',
+      'pdf-split',
+      'pdf-edit',
+      'pdf-redact',
+      'pdf-compress',
+    ],
     relatedGuides: ['compress-images-for-web', 'image-formats-explained'],
   },
 
@@ -2714,4 +2722,23 @@ export const GUIDES: Guide[] = [
 /** Fast slug → guide lookup for the detail route. */
 export const GUIDE_BY_SLUG: Record<string, Guide> = Object.fromEntries(
   GUIDES.map((guide) => [guide.slug, guide]),
+);
+
+/**
+ * Tool slug → the guides that are about it.
+ *
+ * Inverted from each guide's own `related` list rather than declared a second
+ * time on the tool, so the two directions cannot drift: a guide names the tools
+ * it covers once, and those tools link back to it automatically. A tool no
+ * guide covers simply has no entry, which is honest — better than padding a
+ * guide's "Tools in this guide" footer with something it never discusses.
+ */
+export const GUIDES_BY_TOOL: Record<string, Guide[]> = GUIDES.reduce<Record<string, Guide[]>>(
+  (byTool, guide) => {
+    for (const slug of guide.related) {
+      (byTool[slug] ??= []).push(guide);
+    }
+    return byTool;
+  },
+  {},
 );

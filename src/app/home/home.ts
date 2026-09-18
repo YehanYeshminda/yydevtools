@@ -99,8 +99,20 @@ export class Home {
     return cat === 'All' ? 'All tools' : CATEGORY_TITLES[cat];
   });
 
-  /** A few guides to surface at the foot of the page; the rest live at /guides. */
-  protected readonly featuredGuides = GUIDES.slice(0, 3);
+  /**
+   * The guides surfaced at the foot of the page, freshest first; the rest live
+   * at /guides.
+   *
+   * This was `GUIDES.slice(0, 3)` — the first three in array order, fixed for
+   * as long as the page has existed. Over the last 30 days those three were
+   * three of the only four guides anyone opened at all: the other 21 had no
+   * inbound link except the guides index, and were never read once. Ordering by
+   * `updated` gives each one a turn as it is revised, and sorts on static data
+   * so the prerendered HTML and the hydrated page cannot disagree.
+   */
+  protected readonly featuredGuides = [...GUIDES]
+    .sort((a, b) => b.updated.localeCompare(a.updated))
+    .slice(0, 6);
   protected readonly guideCount = GUIDES.length;
 
   protected readonly query = signal('');
@@ -121,15 +133,13 @@ export class Home {
     // produce a DOM that disagrees with the served HTML. Same reason the
     // favourites row starts empty.
     afterNextRender(() => {
-      this.route.queryParamMap
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((params) => {
-          const requested = params.get('category');
-          const match = this.categories.find(
-            (category) => category.toLowerCase() === requested?.toLowerCase(),
-          );
-          this.category.set(match ?? 'All');
-        });
+      this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+        const requested = params.get('category');
+        const match = this.categories.find(
+          (category) => category.toLowerCase() === requested?.toLowerCase(),
+        );
+        this.category.set(match ?? 'All');
+      });
     });
   }
 

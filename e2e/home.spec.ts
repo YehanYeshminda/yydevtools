@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { GUIDES } from '../src/app/guides/guides.data';
 import { expectClean, seedFavorites, watchConsole } from './helpers';
 
 /**
@@ -169,6 +170,16 @@ test.describe('home workbench', () => {
     const teaser = page.locator('.guides-teaser');
     await expect(teaser).toBeVisible();
     await expect(teaser.locator('.guides-teaser__card').first()).toBeVisible();
+
+    // The teaser used to be GUIDES.slice(0, 3) — the same three articles for as
+    // long as the page existed, and they were three of the only four guides
+    // anyone ever opened. It now shows the six most recently updated, so the
+    // count and the order are both the point of the section.
+    const expected = [...GUIDES].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 6);
+    await expect(teaser.locator('.guides-teaser__card')).toHaveCount(expected.length);
+    await expect(teaser.locator('.guides-teaser__name')).toHaveText(
+      expected.map((guide) => guide.title),
+    );
 
     await teaser.getByRole('link', { name: /All \d+ guides/ }).click();
     await expect(page).toHaveURL(/\/guides$/);

@@ -10,6 +10,8 @@ import {
 import { RouterLink } from '@angular/router';
 
 import { StructuredDataService } from '../../core/structured-data.service';
+import { GUIDES_BY_TOOL } from '../../guides/guides.data';
+import type { Guide } from '../../guides/guide.model';
 import type { Tool } from '../../tools/tool.model';
 import { TOOL_CONTENT } from '../../tools/tool-content.data';
 import { TOOLS } from '../../tools/tools.data';
@@ -40,6 +42,15 @@ export class ToolContent implements OnInit, OnDestroy {
 
   protected readonly tool = computed(() => TOOLS.find((t) => t.slug === this.slug()));
   protected readonly content = computed(() => TOOL_CONTENT[this.slug()]);
+
+  /**
+   * The guides that explain what this tool operates on.
+   *
+   * The link only ever ran the other way: 25 guides pointed at the tools, and
+   * no tool page pointed back, so 16,775 words of writing were reachable only
+   * from the guides index and 21 of the 25 had never been opened.
+   */
+  protected readonly guides = computed<Guide[]>(() => GUIDES_BY_TOOL[this.slug()] ?? []);
 
   protected readonly relatedTools = computed<Tool[]>(() => {
     const related = this.content()?.related ?? [];
