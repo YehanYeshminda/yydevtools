@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
+import { describeProblem, excerptBlock } from './json-problem';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
@@ -30,9 +31,12 @@ const SAMPLE_JSON =
 
 @Component({
   selector: 'app-json-formatter',
-  imports: [ToolPage, ToolContent,
+  imports: [
+    ToolPage,
+    ToolContent,
     CodeEditor,
-    SendTo, ShareLink,
+    SendTo,
+    ShareLink,
     TryExample,
     MatButtonModule,
     MatButtonToggleModule,
@@ -86,18 +90,28 @@ export class JsonFormatterTool {
     },
   });
 
+  /**
+   * Where the current input fails to parse, recomputed as it is typed.
+   *
+   * The chip used to say "Invalid JSON — click Format for details", and those
+   * details were a snackbar that took the position away again after six
+   * seconds. Finding the broken character is the whole job of a JSON
+   * formatter, so it is shown in place and stays put.
+   */
+  protected readonly problem = computed(() => describeProblem(this.input()));
+
+  /** The offending line with a caret under it, or '' when nothing located it. */
+  protected readonly excerpt = computed(() => {
+    const problem = this.problem();
+    return problem ? excerptBlock(problem) : '';
+  });
+
   /** Live, non-intrusive validity of the current input — drives the status chip. */
   protected readonly validity = computed<Validity>(() => {
-    const text = this.input().trim();
-    if (text === '') {
+    if (this.input().trim() === '') {
       return 'empty';
     }
-    try {
-      JSON.parse(text);
-      return 'valid';
-    } catch {
-      return 'invalid';
-    }
+    return this.problem() === null ? 'valid' : 'invalid';
   });
 
   protected onQueryInput(event: Event): void {

@@ -1,6 +1,6 @@
 <app-tool-page slug="json-formatter">
-  Format, validate and minify JSON, convert to and from YAML, and query it with JSONPath.
-  Everything runs in your browser.
+  Format, validate and minify JSON, convert to and from YAML, and query it with JSONPath. Everything
+  runs in your browser.
 </app-tool-page>
 
 <div class="panel">
@@ -40,10 +40,28 @@
       </p>
     }
     @case ('invalid') {
-      <p class="status status--err" role="status">
-        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
-        Invalid JSON — click Format for details.
-      </p>
+      @let broken = problem()!;
+
+      <div class="problem" role="status" data-testid="json-problem">
+        <p class="status status--err">
+          <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+          <span>
+            {{ broken.message }}
+            @if (broken.line !== null) {
+              <span class="problem__at" data-testid="json-problem-at">
+                — line {{ broken.line }}, column {{ broken.column }}
+              </span>
+            }
+          </span>
+        </p>
+
+        @if (excerpt(); as block) {
+          <pre
+            class="problem__excerpt"
+            data-testid="json-problem-excerpt"
+          ><code>{{ block }}</code></pre>
+        }
+      </div>
     }
   }
 

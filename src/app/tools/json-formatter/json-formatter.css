@@ -76,3 +76,30 @@
 .status--err {
   color: var(--mat-sys-error);
 }
+
+.problem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.problem__at {
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+/* The caret only accuses the right character in a fixed-width block whose
+   leading spaces survive, so this must not wrap and must not collapse. */
+.problem__excerpt {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--surface-1);
+  color: var(--mat-sys-on-surface);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  white-space: pre;
+  tab-size: 2;
+}

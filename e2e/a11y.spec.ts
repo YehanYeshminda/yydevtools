@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-import { gotoTool, setTheme, uploadFiles } from './helpers';
+import { editorByLabel, gotoTool, setEditorText, setTheme, uploadFiles } from './helpers';
 
 /**
  * CLAUDE.md sets the bar: the site must pass AXE and meet WCAG AA. The redesign
@@ -293,6 +293,43 @@ for (const theme of ['dark', 'light'] as const) {
             .join(' | ')}`,
       ),
       `AXE violations with a decoded token [${theme}]`,
+    ).toEqual([]);
+  });
+}
+
+/**
+ * The JSON Formatter with a broken document in it.
+ *
+ * The error state is the one nobody audits, because you have to break something
+ * to see it: an error-coloured message, a muted "line 3, column 8" beside it,
+ * and a fixed-width excerpt on its own surface with a caret under the offending
+ * character. All of it is drawn in colour over a container, and none of it
+ * exists on the empty page.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`json-formatter's error state has no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'json-formatter');
+    await setTheme(page, theme);
+
+    await setEditorText(
+      editorByLabel(page, 'JSON input'),
+      ['{', '  "a": 1,', '  "b": oops', '}'].join('\n'),
+    );
+    await expect(page.getByTestId('json-problem')).toBeVisible();
+    await expect(page.getByTestId('json-problem-excerpt')).toBeVisible();
+
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+      `AXE violations with a broken document [${theme}]`,
     ).toEqual([]);
   });
 }

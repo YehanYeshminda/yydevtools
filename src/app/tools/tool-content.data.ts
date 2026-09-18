@@ -100,10 +100,10 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Choose Format to pretty-print it, or Minify to compress it to a single line.',
       'Adjust the indent width, or turn on sort-keys if you want a stable, diff-friendly key order.',
       'To convert, pick To YAML or YAML to JSON; to extract values, enter a JSONPath expression such as $.items[*].id.',
-      'Copy the result, or read the error message if the input is not valid JSON.',
+      'If the input is not valid JSON, read the error under the box: it names the line and column and points a caret at the offending character.',
     ],
     features: [
-      'Validation with human-readable error messages, not just a red outline.',
+      'Validation as you type, with the line, the column and the offending line quoted under a caret — not just a red outline saying something, somewhere, is wrong.',
       'JSON to YAML and YAML to JSON, honouring your indent and sort-keys choices.',
       'JSONPath queries for pulling matching nodes out of large documents.',
       'Everything runs in your browser, so sensitive payloads never leave your machine.',
@@ -143,7 +143,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
       {
         q: 'Why does my JSON show an error?',
-        a: 'JSON is strict: keys and strings must use double quotes, there can be no trailing commas, and every bracket and brace must be closed. The error message points at what tripped the parser so you can fix it.',
+        a: 'JSON is strict: keys and strings must use double quotes, there can be no trailing commas, and every bracket and brace must be closed. The error appears as you type and says exactly where — the line and column, with the offending line quoted and a caret under the character that stopped the parser. That last part is worth having because the browser itself often will not say: JSON.parse reports a position for some failures, but for the two commonest, an unexpected token and a document that simply stops, it gives none. The position here comes from the same JSON grammar the editor highlights with, so there is always one.',
       },
       {
         q: 'Can it convert JSON to YAML?',

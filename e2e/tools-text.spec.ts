@@ -47,7 +47,21 @@ test('json-formatter reports where a broken document failed', async ({ page }) =
 
   // The tool reports the failure inline rather than clearing the editor.
   await expect(page.locator('.status--err, .status--error, [role="alert"]').first()).toBeVisible();
-  await expect(page.locator('.panel').first()).toContainText(/invalid|unexpected|parse/i);
+
+  // Saying "invalid" is the easy half. This used to be the whole of it: the
+  // chip read "Invalid JSON — click Format for details" and the details were a
+  // snackbar that took the position away again after six seconds.
+  await expect(page.getByTestId('json-problem-at')).toContainText('line 1, column 8');
+  const excerpt = await page.getByTestId('json-problem-excerpt').textContent();
+  const [source, caret] = excerpt!.split('\n');
+  expect(source).toBe('1 | {"a":1,}');
+  // The caret accuses the '}' that the trailing comma left dangling.
+  expect(source[caret.indexOf('^')]).toBe('}');
+
+  // And it is live: correcting the document clears the error without a click.
+  await setEditorText(editorByLabel(page, 'JSON input'), '{"a":1}');
+  await expect(page.getByTestId('json-problem')).toHaveCount(0);
+  await expect(page.locator('.status--ok')).toContainText('Valid JSON');
 });
 
 test('json-csv converts both ways and folds nested fields', async ({ page }) => {
