@@ -2717,6 +2717,404 @@ export const GUIDES: Guide[] = [
     related: ['pdf-ocr', 'document-scanner', 'pdf-viewer', 'pdf-redact'],
     relatedGuides: ['pdf-internals-explained', 'image-formats-explained'],
   },
+  {
+    slug: 'pdf-security-explained',
+    title: 'Passwords, signatures and watermarks on a PDF, and what each one actually protects',
+    description:
+      'Why a PDF has two passwords, why removing one is not cracking anything, what a digital signature covers that a picture of your name does not, and why a watermark protects nothing.',
+    category: 'Documents',
+    readingMinutes: 12,
+    updated: '2026-09-18',
+    published: '2026-09-18',
+    intro: [
+      'Four different things get called "securing a PDF": setting a password, restricting printing and copying, adding a signature, and stamping a watermark across the page. They are not variations on one idea. One is real encryption, one is a polite request, one is a cryptographic claim about who approved a document, and one is ink.',
+      'They get confused because the same menu offers all four, and because three of them are routinely used for the one job they cannot do. This guide explains what each actually protects, so you can tell which you need \u2014 and recognise the cases where a file you were told was protected is not.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'A PDF has two passwords' },
+      {
+        kind: 'p',
+        text: 'This is the single fact that explains most of the confusion. The format defines a user password, which is needed to open the document at all, and an owner password, which governs what you may do once it is open \u2014 print it, copy text out of it, fill in its forms, extract its pages. A file can carry either, both, or neither.',
+      },
+      {
+        kind: 'p',
+        text: 'The difference is not one of strength. It is a difference in kind. The user password is an encryption key: without it the bytes of every page are ciphertext and no amount of goodwill will render them. The owner password is a set of flags stored inside the document, and the document is readable whether or not you know it.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'A file with only an owner password is not encrypted against you. It is encrypted with an empty user password, which every reader supplies automatically, so anything that opens the file has already decrypted it. What stops you printing is a boolean the reader has chosen to honour.',
+      },
+      {
+        kind: 'p',
+        text: 'That is why a tool can remove those restrictions instantly and without guessing anything. It is not breaking encryption; it is re-saving a document it can already read, without the flags. The restriction was never enforced by mathematics, only by convention \u2014 and a convention that the specification itself describes as something a conforming reader should respect, not something it can be made to.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Remove restrictions from a file you can already open:',
+        slug: 'pdf-unlock',
+      },
+      { kind: 'h2', text: 'What the encryption actually is' },
+      {
+        kind: 'p',
+        text: 'When there is a user password, the protection is genuine, but its strength depends entirely on how old the file is. The standard security handler has been revised repeatedly, and every revision is still legal PDF, so a document produced in 2004 by software nobody has updated is as valid as one produced yesterday.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          '40-bit RC4 was the original. It was weak when it shipped and is trivially broken now; the key space alone is small enough to exhaust.',
+          '128-bit RC4 followed, and is better only in the sense that the key is longer. RC4 itself is no longer considered sound and is banned in modern protocols.',
+          'AES-128 arrived with PDF 1.6 and is the first version that is genuinely respectable.',
+          'AES-256 arrived with Acrobat 9, but its first form derived the key with a single pass of SHA-256, which made guessing passwords far cheaper than intended. PDF 2.0 replaced it with a deliberately slow derivation. Both identify themselves as AES-256.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'The practical consequence is that "this PDF is password protected" says almost nothing on its own. What matters is which revision produced it and, far more, how good the password is \u2014 because in every revision the password is the whole key. There is no second factor and no rate limit. An attacker with the file can guess offline, as fast as their hardware allows, forever.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'Treat a password-protected PDF as being exactly as strong as its password, and assume the file will be guessed against offline. A long passphrase is the only part of this you control, and it is worth more than the revision number.',
+      },
+      { kind: 'tool', lead: 'Add a password, in your browser:', slug: 'pdf-protect' },
+      { kind: 'h2', text: 'A signature is not a picture of your name' },
+      {
+        kind: 'p',
+        text: 'Two completely different things are called signing. The first is drawing your name, or pasting an image of it, onto the page. That is a picture. It is evidence of nothing: it can be copied out of one document and into another by anyone who can open both, and it says as much about who approved the document as a typed name does.',
+      },
+      {
+        kind: 'p',
+        text: 'The second is a digital signature, and it is a cryptographic statement. The signer\u2019s software hashes the file, signs that hash with a private key, and embeds the result \u2014 along with the certificate identifying the key \u2014 inside the document. A reader can then recompute the hash, check it against the signature using the public key in the certificate, and tell you two things: that the bytes have not changed since signing, and whose key signed them.',
+      },
+      {
+        kind: 'code',
+        caption: 'The hole a signature signs around',
+        code: '/ByteRange [ 0 840 6284 1029 ]\n/Contents <30820...signature bytes...>',
+      },
+      {
+        kind: 'p',
+        text: 'The detail worth knowing is that odd pair of ranges. A signature cannot cover itself, so the signed hash is computed over the whole file except the gap holding the signature \u2014 here, bytes 0 to 840 and 6284 to 7313. That is why a verifier reports which byte ranges were signed, and it is the hook for the format\u2019s most confusing behaviour.',
+      },
+      {
+        kind: 'p',
+        text: 'A PDF can be changed by appending to it, leaving the original bytes untouched. So a signed document can be edited afterwards and still contain a perfectly valid signature \u2014 valid over the earlier revision. Good readers say so, in words like "signed, then modified". Less careful ones show a green tick for the signature and never mention the appendix. If you are relying on a signature, read what the reader says about revisions, not just whether it found one.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'A valid signature answers "have these bytes changed since this key signed them". It does not answer "is this key\u2019s owner who the document says they are". That second question is the certificate\u2019s job, and it is only as good as the authority that issued it.',
+      },
+      { kind: 'tool', lead: 'Add a signature to a document:', slug: 'pdf-sign' },
+      { kind: 'h2', text: 'A watermark is ink, not a lock' },
+      {
+        kind: 'p',
+        text: 'A watermark is drawn into the page content like any other text or graphic. Nothing marks it as special, nothing protects it, and anything that can edit a PDF can take it out \u2014 often by deleting a single object. Software that claims to add a "secure" watermark is adding the same drawing instructions as software that does not.',
+      },
+      {
+        kind: 'p',
+        text: 'This is not an argument against watermarking. It is an argument about what it buys. A DRAFT across every page stops a document being mistaken for the final one. A recipient\u2019s name across a confidential report makes a leak traceable and makes the reader conscious that it would be. Both are real benefits, and neither is confidentiality. If the document must not be read by the wrong person, that is the user password\u2019s job, and it is a different job.',
+      },
+      { kind: 'tool', lead: 'Stamp a watermark across every page:', slug: 'pdf-watermark' },
+      { kind: 'h2', text: 'Forms, and the data that hides in them' },
+      {
+        kind: 'p',
+        text: 'A fillable PDF keeps its field values as document objects, separate from the page that displays them. That separation is useful \u2014 it is what lets a form be filled, saved, reopened and changed \u2014 and it is also a leak worth knowing about. Filled values live in the file even when a page looks blank, and a field that was filled and then cleared may still leave the old value behind in an earlier revision.',
+      },
+      {
+        kind: 'p',
+        text: 'Flattening is the answer when a form is finished. It draws the current values into the page as ordinary content and discards the fields, which is what you want before sending a completed form to someone: no editable values, no field history, and nothing that depends on the recipient\u2019s reader supporting forms. The trade-off is that it is one-way.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'There were two form technologies. AcroForm is the one built into the format and the one everything supports. XFA was an XML layer Adobe added on top, it never worked outside Adobe\u2019s own readers, and PDF 2.0 deprecated it. An old government form that renders as "please open this in Adobe Reader" is almost always XFA.',
+      },
+      { kind: 'tool', lead: 'Fill in a form and flatten it:', slug: 'pdf-form-fill' },
+      { kind: 'h2', text: 'Which one you actually want' },
+      {
+        kind: 'ol',
+        items: [
+          'Nobody unauthorised may read it: a user password, with a long passphrase. Nothing else on this list provides confidentiality.',
+          'They may read it but should not edit or print it: the permission flags, understanding that they are honoured rather than enforced, and that anyone determined can ignore them.',
+          'They must be able to tell it is genuinely from you and unaltered: a digital signature from a certificate they can verify \u2014 and check what the reader says about later revisions.',
+          'You want a leak to be traceable, or the status to be unmistakable: a watermark, which is for humans reading the page, not for stopping them.',
+          'You are sending a completed form: flatten it, so the values become page content and the field data stops travelling with the file.',
+        ],
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'None of these redacts anything. Drawing a black rectangle over a name leaves the name in the content stream underneath, selectable and searchable, and a password does not change that once the file is open. Removing text means removing it.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Remove content properly rather than covering it:',
+        slug: 'pdf-redact',
+      },
+    ],
+    related: ['pdf-protect', 'pdf-unlock', 'pdf-sign', 'pdf-watermark', 'pdf-form-fill'],
+    relatedGuides: [
+      'pdf-internals-explained',
+      'certificates-and-the-chain-of-trust',
+      'hashing-vs-encryption-vs-encoding',
+    ],
+  },
+  {
+    slug: 'slugs-cases-and-invisible-characters',
+    title: 'Slugs, cases and the characters you cannot see',
+    description:
+      'How a title becomes a URL, why accents have two spellings that look identical, which case convention goes where, and the invisible characters that break comparisons and code.',
+    category: 'Text',
+    readingMinutes: 11,
+    updated: '2026-09-18',
+    published: '2026-09-18',
+    intro: [
+      'Most text that software handles was written for people, and most of the places software puts it were designed for machines. A URL, a database column, a variable name and a filename each accept a different subset of characters, and none of them accepts everything a person might type into a title.',
+      'The work of getting from one to the other is unglamorous and full of traps. This guide covers the three that cost the most time: turning a title into a URL, choosing a case convention and applying it safely, and finding the characters that are in your text without being visible in it.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Why a URL needs a slug' },
+      {
+        kind: 'p',
+        text: 'A URL is not free-form text. It has a small legal alphabet, and anything outside it has to be percent-encoded, which is why a title pasted straight into a path comes back as a wall of hex. "Caf\u00e9 r\u00e9sum\u00e9 2026" becomes Caf%C3%A9%20r%C3%A9sum%C3%A9%202026: correct, unreadable, and different again if the encoder happened to use + for the spaces.',
+      },
+      {
+        kind: 'p',
+        text: 'A slug avoids the encoding entirely by staying inside the safe alphabet from the start: lowercase letters, digits and hyphens. The result is short, survives being pasted into a plain-text email without a line break landing in the middle of an escape, and reads the same in a browser bar, a log file and a link someone types out by hand.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'Generate the slug once and store it. Deriving it from the title on every request means the URL changes the moment somebody fixes a typo in the title, which quietly breaks every link anyone has saved.',
+      },
+      { kind: 'h2', text: 'Folding accents: two spellings that look identical' },
+      {
+        kind: 'p',
+        text: 'Before the accents can be removed they have to be found, and Unicode offers two ways to write the same accented letter. \u00e9 can be one code point, U+00E9, or it can be a plain e followed by a combining acute accent, U+0301. The two render identically, have different lengths, and are not equal to each other.',
+      },
+      {
+        kind: 'code',
+        caption: 'The same word, two encodings',
+        code: "'caf\u00e9'.length              // 4 \u2014 composed (NFC)\n'cafe\\u0301'.length        // 5 \u2014 decomposed (NFD)\n'caf\u00e9' === 'cafe\\u0301'  // false",
+      },
+      {
+        kind: 'p',
+        text: 'This is why the standard trick works: normalise to the decomposed form so every accent becomes a separate combining mark, then delete the combining marks. It is one pass, it needs no table of letters, and it handles scripts you have never heard of. What it cannot do is make a language-specific choice, because the right answer sometimes is not "drop the accent".',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'German convention expands: \u00f6 becomes oe, \u00fc becomes ue, \u00df becomes ss. Stripping gives o, u and nothing, which is wrong in a way a German reader will notice immediately.',
+          'Scandinavian \u00e5, \u00e6 and \u00f8 are letters in their own right, sorted after z, not decorated vowels. Decomposition does not touch \u00f8 at all, because there is no combining stroke to remove.',
+          'A script with no Latin form at all \u2014 Greek, Cyrillic, Arabic, Han \u2014 has nothing to strip to. The honest options are to transliterate it or to accept a slug that is percent-encoded, not to produce an empty string.',
+        ],
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Watch for the slug that folds away to nothing. A title written entirely in a non-Latin script can strip down to an empty string, and an empty slug usually means every such post lands on the same URL. Fall back to an identifier rather than shipping a collision.',
+      },
+      {
+        kind: 'p',
+        text: 'Collisions happen with plain Latin too, because slugs throw information away by design. "The A-Team" and "The A Team" produce the same slug, and so do two posts a year apart with the same title. The usual answer is a numeric suffix \u2014 the-a-team-2 \u2014 which is ugly and correct, and much better than the alternative of silently overwriting.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Turn a list of titles into slugs, collisions numbered:',
+        slug: 'slug-generator',
+      },
+      { kind: 'h2', text: 'Case conventions, and where each one belongs' },
+      {
+        kind: 'p',
+        text: 'The conventions exist because the same identifier has to survive systems with different rules about what a word boundary is, and about whether two spellings are the same identifier.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'kebab-case for URLs and CSS. Hyphens are legal in a path, and they are what search engines have long treated as word separators. An underscore is legal too, but it can sit invisibly under a link\u2019s underline, which is a real problem when someone reads a URL aloud or copies it from a printout.',
+          'snake_case for SQL and for Python. Unquoted SQL identifiers are folded to one case by the engine, so a camelCase column is not reliably the column you named; an underscore keeps the words apart without depending on case surviving.',
+          'camelCase and PascalCase for JavaScript, Java and C#, where the convention is strong enough that breaking it reads as a mistake. The split is by role: types get the capital, values do not.',
+          'SCREAMING_SNAKE_CASE for constants and environment variables. Environment variables are the stricter case: the conventional alphabet is uppercase, digits and underscore, and shells vary in what else they will accept.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'Converting between them is mostly about finding the boundaries, and the hard part is acronyms. Splitting camelCase on a lowercase-to-uppercase transition turns parseHTTPResponse into parse-h-t-t-p-response unless the rule also treats a run of capitals followed by a lowercase letter as one word. This is the single most common bug in hand-written case converters, and it only appears once someone names something with an acronym in it.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Lowercasing is not locale-free. In Turkish, capital I lowercases to the dotless \u0131, so a locale-aware lowercase turns ID into \u0131d and a comparison against "id" fails \u2014 on a Turkish user\u2019s machine only. For identifiers, protocol tokens and anything compared against a fixed string, lowercase without a locale.',
+      },
+      { kind: 'tool', lead: 'Convert between every case convention:', slug: 'case-converter' },
+      { kind: 'h2', text: 'The characters you cannot see' },
+      {
+        kind: 'p',
+        text: 'Text that came from a word processor, a web page or a chat client carries passengers. They are real characters with real code points; they simply have no visible shape, or a shape identical to something else. They survive copy and paste, they are invisible in most editors, and they are why two strings that look the same on screen are not equal.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'The non-breaking space, U+00A0, looks exactly like a space and is not one. It is what most word processors insert between a number and its unit, and it is the reason a trim() or a split on " " quietly misses.',
+          'The zero-width space, U+200B, has no width at all. It is used for line-breaking hints and it is a favourite of copy-protection and tracking, so pasted text can carry several with nothing to show for it.',
+          'The byte order mark, U+FEFF, belongs at the start of a file, and is routinely left in the middle of one by a careless concatenation. A BOM at the front of a CSV is why the first column header will not match the string you are comparing it against.',
+          'The soft hyphen, U+00AD, is a hyphen that only appears if the line breaks there. Pasted into a search box or a code identifier, it is a character that is simply not visible.',
+          'Curly quotes and the en and em dash arrive from autocorrect. They are legitimate typography and they are not the ASCII characters a parser, a shell or a programming language is expecting.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'The symptom is always the same shape: something matches by eye and not in code. A key lookup misses, a comparison fails, a regular expression finds nothing, a CSV gains a column, a copied command errors on a character that is not there. Once the possibility is in mind the diagnosis is quick \u2014 compare the lengths of the two strings, or print their code points \u2014 and it is essentially undiagnosable before then.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'Clean text at the boundary, where it enters your system, and not repeatedly afterwards. Anything that arrives by paste, upload or scrape deserves one pass; anything already stored and matched against does not want its bytes changing under it.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Strip invisible characters and normalise quotes:',
+        slug: 'text-cleaner',
+      },
+      { kind: 'h2', text: 'And the placeholder text' },
+      {
+        kind: 'p',
+        text: 'Lorem ipsum is mangled Latin, drawn from a passage of Cicero written in 45 BC, and it has been the printing trade\u2019s filler since long before it was anyone\u2019s CSS problem. Its virtue is precisely that it means nothing: the eye assesses the shape of the text block instead of reading it, and nobody argues about the wording in a layout review.',
+      },
+      {
+        kind: 'p',
+        text: 'Its vice is the same thing. Latin has a different distribution of word lengths from English and a very different one from German, so a column that looks balanced full of lorem ipsum can break the moment real copy arrives. It also hides the cases that matter most: the name that is one character, the name that is sixty, the heading with no spaces in it, the empty field. Use it to check rhythm and spacing; use realistic content, including the awkward extremes, before believing the layout.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Generate placeholder text by words, sentences or paragraphs:',
+        slug: 'lorem-ipsum',
+      },
+    ],
+    related: ['slug-generator', 'case-converter', 'text-cleaner', 'lorem-ipsum'],
+    relatedGuides: ['character-encoding-explained', 'regex-explained', 'markdown-explained'],
+  },
+  {
+    slug: 'sharing-a-secret-safely',
+    title: 'Sending someone a password without leaving it lying around',
+    description:
+      'Why a secret pasted into chat outlives the conversation, how a one-time link keeps the key away from the server, and the failure everybody hits the first time \u2014 the link preview that reads it first.',
+    category: 'Security',
+    readingMinutes: 10,
+    updated: '2026-09-18',
+    published: '2026-09-18',
+    intro: [
+      'Somebody needs a database password, an API key or a recovery code, and they need it in the next five minutes. The path of least resistance is to paste it into the chat window that is already open, and that is how most credentials in most companies were last transmitted.',
+      'The problem is not that chat is unencrypted \u2014 it almost certainly is not. The problem is what happens to the message afterwards. This guide is about that afterwards, what a one-time link actually changes, and what it does not.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'The message outlives the conversation' },
+      {
+        kind: 'p',
+        text: 'A secret pasted into a chat is not an event, it is a record. It is in the channel history, which is searchable by everyone who can read the channel, including people who join next year. It is in the recipient\u2019s notification, which may have appeared on a lock screen. It is in the workspace\u2019s compliance export and in whatever backup policy the provider runs. If the channel is bridged to email, it is in a mailbox; if anybody copied it into a ticket for convenience, it is in the ticket for good.',
+      },
+      {
+        kind: 'p',
+        text: 'Deleting the message addresses one of those copies. It does not address the export, the backup, the search index that already returned it, or the screenshot. This is the sense in which the paste is irreversible: you can stop it being convenient to find, and you cannot make it not have happened.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'The practical test is not "who can read this channel today" but "who will be able to read it, on any system, for as long as the credential is valid". For a database password that nobody rotates, that is a very long list.',
+      },
+      { kind: 'h2', text: 'What a one-time link changes' },
+      {
+        kind: 'p',
+        text: 'A one-time link replaces the secret with a reference to it. The secret is encrypted in the browser, the ciphertext is stored on a server, and what you send is a URL that fetches the ciphertext and deletes it. Two properties follow, and only the second is obvious.',
+      },
+      {
+        kind: 'p',
+        text: 'The obvious one is that the link stops working after it is opened. Whatever copies of the URL are left in chat histories and backups are, from that moment, a link to nothing. The record persists, as records do, but it is no longer a record of the secret.',
+      },
+      {
+        kind: 'p',
+        text: 'The less obvious one is where the decryption key lives. It is in the fragment \u2014 the part of the URL after the # \u2014 and browsers do not send the fragment to the server. It is handled entirely on the client side, which is a rule from the earliest days of the web, when it identified a spot to scroll to and there was no reason for a server to see it.',
+      },
+      {
+        kind: 'code',
+        caption: 'What each party gets to see',
+        code: 'https://example.com/s/7f3a9c2e#k5Qv1pT8_zR4nX0bLmYw\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n         sent to server      never sent',
+      },
+      {
+        kind: 'p',
+        text: 'So the server holds ciphertext and an identifier, and never receives the key that would open it. That is what "the server cannot read your secret" means when a tool claims it: not a promise about how carefully the operator behaves, but a statement about which bytes reach them. It is worth confirming rather than assuming, because a tool that puts the key in the query string instead \u2014 after a ? rather than a # \u2014 sends it to the server on every request and into its access logs.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Seal a secret into a link that burns on first open:',
+        slug: 'secret-link',
+      },
+      { kind: 'h2', text: 'The failure everybody hits first' },
+      {
+        kind: 'p',
+        text: 'You create a burn-on-read link, paste it into Slack, and the recipient says it is already used. Nobody stole it. The chat client fetched the URL to build a preview card, the fetch counted as the one read, and the secret was destroyed before a human ever saw it.',
+      },
+      {
+        kind: 'p',
+        text: 'Every unfurling client does this \u2014 chat apps, mail clients, ticketing systems, security scanners that follow links in messages. It is not an attack and there is no way for the server to reliably tell a preview bot from a person, because saying "I am a browser" is a single header.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Prefer a link that requires a click on the destination page before it reveals and burns. A preview fetch then only ever sees the "click to reveal" page, which is exactly what it is for.',
+          'Send the link somewhere that does not unfurl, or paste it in a way that stops the client treating it as a link \u2014 inside a code block, for instance.',
+          'If it burns early, do not hunt for the culprit. Regenerate and send again; a destroyed secret is the system working, just at the wrong moment.',
+        ],
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'A short expiry does more work than it looks. Burn-on-read protects against the copy left in the history; an expiry of an hour protects against the link that was never opened at all and sits in an inbox indefinitely.',
+      },
+      { kind: 'h2', text: 'What it does not fix' },
+      {
+        kind: 'p',
+        text: 'If you send the link through the same chat channel you were worried about, you have not moved the secret out of that channel so much as put a time limit on it. That is a genuine improvement \u2014 the window is minutes instead of years, and an opened link tells you somebody got there \u2014 but it is not the same as the secret never having been there.',
+      },
+      {
+        kind: 'p',
+        text: 'Nor does it help with the part that matters most. Once a person has a credential, they have it: in a password manager, in a shell history, in an environment file, in their memory. The link controls the transmission and nothing after it. If the credential is one they should hold long-term, give them something they can change \u2014 an account they set their own password on, a token issued to them \u2014 rather than a shared secret that can only ever be reshared.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Client-side encryption means trusting the code the site serves you on the day you use it, since it is the page that holds your key. That is a smaller trust than handing over the plaintext, and it is not zero. For a secret where it matters, use a tool your organisation runs, or exchange it out of band.',
+      },
+      { kind: 'h2', text: 'The habits worth having' },
+      {
+        kind: 'ol',
+        items: [
+          'Send credentials as a link that expires and burns, never as text in a message.',
+          'Send the link and any context in separate places where you can, so one intercepted channel is not enough.',
+          'Generate the secret rather than inventing it, and generate it where it will be used \u2014 a key pair whose private half never leaves the machine that needs it is a secret nobody has to transmit at all.',
+          'Rotate anything that has been pasted into a chat, a ticket or an email, rather than deleting the message and calling it handled.',
+          'Prefer per-person credentials to shared ones. A shared password cannot be revoked from one person; an account can.',
+        ],
+      },
+      {
+        kind: 'tool',
+        lead: 'Generate a strong password rather than inventing one:',
+        slug: 'password-generator',
+      },
+      {
+        kind: 'tool',
+        lead: 'Generate a key pair whose private half never leaves your browser:',
+        slug: 'key-generator',
+      },
+    ],
+    related: ['secret-link', 'password-generator', 'key-generator'],
+    relatedGuides: [
+      'password-storage-explained',
+      'hashing-vs-encryption-vs-encoding',
+      'https-explained',
+    ],
+  },
 ];
 
 /** Fast slug → guide lookup for the detail route. */

@@ -763,6 +763,39 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'guides/pdf-security-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'PDF passwords, signatures and watermarks \u2014 YYDevTools',
+    data: {
+      slug: 'pdf-security-explained',
+      description:
+        'Why a PDF has two passwords, why removing the restrictions is not cracking anything, ' +
+        'what a digital signature covers, and why a watermark protects nothing.',
+    },
+  },
+  {
+    path: 'guides/slugs-cases-and-invisible-characters',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Slugs, cases and invisible characters \u2014 YYDevTools',
+    data: {
+      slug: 'slugs-cases-and-invisible-characters',
+      description:
+        'How a title becomes a URL, why accented letters have two spellings that look ' +
+        'identical, which case convention goes where, and the characters you cannot see.',
+    },
+  },
+  {
+    path: 'guides/sharing-a-secret-safely',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Sharing a secret safely \u2014 YYDevTools',
+    data: {
+      slug: 'sharing-a-secret-safely',
+      description:
+        'Why a password pasted into chat outlives the conversation, how a one-time link keeps ' +
+        'the key away from the server, and the link preview that reads it first.',
+    },
+  },
+  {
     path: 'guides/jwt-explained',
     loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
     title: 'JSON Web Tokens explained — YYDevTools',
