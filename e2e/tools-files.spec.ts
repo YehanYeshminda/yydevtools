@@ -586,6 +586,15 @@ test('pdf-edit zooms into the page, shows the change before saving, and takes a 
   await page.getByTestId('compare').click();
   await expect.poll(shownPage).not.toBe(asItArrived);
 
+  // Add image shipped as a <label matButton>, which matButton does not match,
+  // so it rendered as bare text beside a properly drawn sibling. Both are real
+  // buttons of the same height or it has regressed.
+  const addText = page.getByRole('button', { name: 'Add text' });
+  const addImage = page.getByRole('button', { name: 'Add image' });
+  const heightOf = (button: typeof addText) =>
+    button.evaluate((node) => Math.round(node.getBoundingClientRect().height));
+  expect(await heightOf(addImage)).toBe(await heightOf(addText));
+
   const edited = await shownPage();
   await page
     .locator('input[aria-label="Choose an image to place on the page"]')
@@ -601,6 +610,63 @@ test('pdf-edit zooms into the page, shows the change before saving, and takes a 
   // is the one that was just placed. What it is drawn at is asserted on the
   // operators in document.spec.ts.
   expect(saved.toString('latin1')).toContain('/Subtype /Image');
+
+  expectClean(watch);
+});
+
+/**
+ * Undo, and the thing that made it worth testing on the file rather than the
+ * screen: the preview saves after every change, so by the time anything is
+ * taken back the page has already been rewritten once. A save with nothing
+ * left to write has to put that page back, or the line you removed is still in
+ * the download.
+ */
+test('pdf-edit takes changes back one at a time, and the file forgets them too', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-edit', 'PDF Editor');
+
+  await uploadFiles(page, ['sample.pdf']);
+  await expect(page.locator('.sheet__page')).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByTestId('undo')).toBeDisabled();
+
+  await page.getByRole('button', { name: 'Annual Report', exact: true }).click();
+  await page.getByTestId('run-editor').fill('Interim Report');
+  await page.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(page.getByTestId('change-count')).toHaveText('1 change');
+
+  await page.getByRole('button', { name: 'Page 1 of 3', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page.getByTestId('change-count')).toHaveText('2 changes');
+
+  // Ctrl-Z outside a text field takes the last one back.
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(page.getByTestId('change-count')).toHaveText('1 change');
+  await expect(page.getByRole('button', { name: 'Page 1 of 3', exact: true })).toBeVisible();
+
+  // Add a line, let the preview save, then take it back with the button.
+  await page.getByRole('button', { name: 'Add text' }).click();
+  await page.getByTestId('sheet').click({ position: { x: 60, y: 300 } });
+  await expect(page.getByTestId('change-count')).toHaveText('2 changes');
+  await expect(page.getByLabel('Text you added')).toHaveValue('New text');
+  await page.waitForTimeout(700); // long enough for the debounced save to land
+
+  await page.getByTestId('undo').click();
+  await expect(page.getByTestId('change-count')).toHaveText('1 change');
+  await expect(page.getByTestId('undo')).toBeEnabled();
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: /Save & download/ }).click();
+  const edited = await EditablePdf.open(
+    new Uint8Array(readFileSync(await (await download).path())),
+  );
+  const text = edited.runs(0).map((run) => run.text);
+  expect(text).toContain('Interim Report');
+  // Undone, after a save had already written it to the page.
+  expect(text).not.toContain('New text');
+  // And the delete that was undone is back.
+  expect(text).toContain('Page 1 of 3');
 
   expectClean(watch);
 });

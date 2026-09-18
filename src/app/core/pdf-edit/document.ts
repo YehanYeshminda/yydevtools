@@ -104,6 +104,9 @@ interface EditableStream {
   write(bytes: Uint8Array): void;
 }
 
+/** How many changes can be taken back. Deep enough for a session's work. */
+const MAX_HISTORY = 100;
+
 /** A run is identified by the stream it lives in and where it starts in it. */
 function editKey(streamId: string, start: number): string {
   return `${streamId}@${start}`;
@@ -128,6 +131,17 @@ export class EditablePdf {
   private readonly images = new Map<string, PDFImage>();
   /** Names those fonts and pictures were given inside a stream's resources. */
   private readonly resourceNames = new Map<string, string>();
+  /**
+   * One entry per change, holding the state it replaced.
+   *
+   * A whole-state snapshot rather than an inverse operation per mutation:
+   * nothing here is large — the edits are strings and the additions are a
+   * handful of records whose image bytes are shared, not copied — and a
+   * snapshot cannot disagree with the operation it is supposed to undo.
+   */
+  private readonly history: Array<{ edits: Map<string, PendingEdit>; added: Addition[] }> = [];
+  /** Streams a save has already rewritten, so a later one can undo the writing. */
+  private readonly written = new Set<string>();
 
   private constructor(
     private readonly doc: PDFDocument,
@@ -210,17 +224,21 @@ export class EditablePdf {
   setText(pageIndex: number, run: TextRun, text: string): void {
     const key = editKey(run.streamId, run.start);
     if (text === run.text) {
+      if (!this.edits.has(key)) return;
+      this.remember();
       this.edits.delete(key);
       return;
     }
     if (text !== '' && this.plan(pageIndex, run, text).kind === 'refused') {
       throw new Error('That text cannot be written into this document.');
     }
+    this.remember();
     this.edits.set(key, { page: pageIndex, run, text });
   }
 
   /** Puts something new on a page. */
   add(item: Addition): void {
+    this.remember();
     this.added.push(item);
   }
 
@@ -230,22 +248,64 @@ export class EditablePdf {
     patch: Partial<Omit<AddedText, 'kind' | 'id'>> & Partial<Omit<AddedImage, 'kind' | 'id'>>,
   ): void {
     const item = this.added.find((candidate) => candidate.id === id);
-    if (item) Object.assign(item, patch);
+    if (!item) return;
+    this.remember();
+    Object.assign(item, patch);
   }
 
   remove(id: string): void {
     const at = this.added.findIndex((candidate) => candidate.id === id);
-    if (at >= 0) this.added.splice(at, 1);
+    if (at < 0) return;
+    this.remember();
+    this.added.splice(at, 1);
   }
 
   get additions(): readonly Addition[] {
     return this.added;
   }
 
-  /** Drops every pending change. */
+  // --- Taking a change back ------------------------------------------------
+
+  /**
+   * Records the state a change is about to replace.
+   *
+   * The additions are copied one level deep, because `update` writes through
+   * the object it finds; the image bytes inside them are shared on purpose,
+   * since nothing ever mutates those.
+   */
+  private remember(): void {
+    this.history.push({
+      edits: new Map(this.edits),
+      added: this.added.map((item) => ({ ...item })),
+    });
+    if (this.history.length > MAX_HISTORY) this.history.shift();
+  }
+
+  get canUndo(): boolean {
+    return this.history.length > 0;
+  }
+
+  /** Puts the document back as it was before the last change. */
+  undo(): void {
+    const previous = this.history.pop();
+    if (!previous) return;
+    this.edits.clear();
+    for (const [key, edit] of previous.edits) this.edits.set(key, edit);
+    this.added.length = 0;
+    this.added.push(...previous.added);
+  }
+
+  /**
+   * Drops every pending change, and the history with it.
+   *
+   * ponytail: deliberately not undoable. Making it so would mean holding on to
+   * the object URLs the caller releases when it reverts; the one button that
+   * says it throws everything away can be the one that means it.
+   */
   reset(): void {
     this.edits.clear();
     this.added.length = 0;
+    this.history.length = 0;
   }
 
   async save(): Promise<Uint8Array> {
@@ -270,6 +330,14 @@ export class EditablePdf {
       suffixes.set(streamId, (suffixes.get(streamId) ?? '') + drawn);
     }
 
+    // A stream an earlier save rewrote has to be rewritten again even when
+    // nothing touches it now, because "nothing to write" would otherwise leave
+    // the previous save's content in place — and a line taken back after the
+    // preview had already saved once would survive into the download.
+    for (const streamId of this.written) {
+      if (!byStream.has(streamId)) byStream.set(streamId, []);
+    }
+
     // Splicing comes last: every offset above was taken before anything moved.
     for (const [streamId, list] of byStream) {
       const stream = this.streams.get(streamId);
@@ -277,6 +345,7 @@ export class EditablePdf {
       const spliced = spliceStream(stream.bytes, list);
       const suffix = suffixes.get(streamId);
       stream.write(suffix ? wrapAndAppend(spliced, suffix) : spliced);
+      this.written.add(streamId);
     }
 
     return this.doc.save({ useObjectStreams: false });

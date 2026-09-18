@@ -115,6 +115,10 @@ const DESCENT = 0.25;
   imports: [NextStep, ToolPage, Dropzone, ToolContent, MatButtonModule, NgIcon, Spinner],
   templateUrl: './pdf-edit.html',
   styleUrls: ['../tool-shell.css', './pdf-edit.css'],
+  host: {
+    '(document:keydown.control.z)': 'onUndoKey($event)',
+    '(document:keydown.meta.z)': 'onUndoKey($event)',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PdfEditTool implements OnDestroy {
@@ -213,6 +217,11 @@ export class PdfEditTool implements OnDestroy {
   });
 
   protected readonly canSave = computed(() => this.changeCount() > 0 && !this.busy());
+
+  protected readonly canUndo = computed(() => {
+    this.revision();
+    return this.pdf?.canUndo ?? false;
+  });
 
   /** What the message under the editor should say, if anything. */
   protected readonly planNote = computed(() => {
@@ -675,6 +684,30 @@ export class PdfEditTool implements OnDestroy {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Takes the last change back, whatever kind it was. */
+  protected undo(): void {
+    if (!this.pdf?.canUndo) return;
+    this.stopEditing();
+    this.selected.set(null);
+    this.pdf.undo();
+    this.refresh();
+  }
+
+  /**
+   * Ctrl-Z, except inside a text field.
+   *
+   * Somebody half-way through typing a replacement means the field's own undo,
+   * and taking that away to undo the previous edit instead would be the wrong
+   * answer to an unambiguous keystroke.
+   */
+  protected onUndoKey(event: Event): void {
+    const target = event.target;
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+    if (!this.pdf?.canUndo) return;
+    event.preventDefault();
+    this.undo();
   }
 
   protected revert(): void {

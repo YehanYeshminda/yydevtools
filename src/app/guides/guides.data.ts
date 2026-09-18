@@ -1287,7 +1287,7 @@ export const GUIDES: Guide[] = [
       'A PDF is a set of drawing instructions, not a document. That single fact explains broken text extraction, why pages rearrange cheaply, where the size goes, and why black boxes do not redact.',
     category: 'Documents',
     readingMinutes: 11,
-    updated: '2026-09-11',
+    updated: '2026-09-18',
     published: '2026-09-11',
     intro: [
       'Almost every complaint about PDFs — copied text arriving as gibberish, a two-page file weighing nine megabytes, a redaction that turned out not to be one — comes from the same misunderstanding. People expect a PDF to be a document, a structured thing made of words and paragraphs. It is not. It is closer to a program that describes how to paint a page.',
@@ -1334,7 +1334,16 @@ export const GUIDES: Guide[] = [
       },
       {
         kind: 'p',
-        text: 'Editing the text on a page is the opposite. There is no paragraph to re-flow — changing a word means recomputing glyph positions, and if the replacement is wider, deciding what moves. Editors that offer it are reconstructing a layout the file never described, which is why the results are so often subtly wrong. The reliable path for real edits is to change the source document and export again.',
+        text: 'Editing the text on a page is the opposite. There is no paragraph to re-flow — changing a word means recomputing glyph positions, and if the replacement is wider, deciding what moves. Editors that offer it are reconstructing a layout the file never described, which is why the results are so often subtly wrong. For anything structural, the reliable path is still to change the source document and export again.',
+      },
+      {
+        kind: 'p',
+        text: 'Changing a few words is more tractable, because it does not require reconstructing anything. The operator that drew a run of text can be found in the content stream and replaced in place, leaving every other instruction on the page byte-for-byte as it was. Two things then have to be handled honestly. The pen has to be put back where the old text left it, or every word after it slides along the line. And the font has to be able to say the new words at all — a subsetted font carries only the glyphs the document already uses, so an invoice numbered 2044 may contain no 9, no 3 and no 7 in that typeface. Changing it means either finding the letters elsewhere or admitting the substitution.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Change the words in a page rather than covering them over:',
+        slug: 'pdf-edit',
       },
       {
         kind: 'tool',

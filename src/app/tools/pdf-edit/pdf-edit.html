@@ -62,17 +62,24 @@
             <ng-icon name="matTextFieldsOutline" />
             {{ placing() ? 'Click the page…' : 'Add text' }}
           </button>
-          <label class="bar__file" matButton>
+          <!--
+            A button, not a <label> wrapping the input: matButton only matches
+            button and a, so a label carrying it is styled by nothing at all and
+            lands in the bar as bare text beside a properly drawn sibling.
+          -->
+          <button matButton (click)="picker.click()">
             <ng-icon name="matImageOutline" />
             Add image
-            <input
-              class="bar__hidden"
-              type="file"
-              accept="image/*"
-              aria-label="Choose an image to place on the page"
-              (change)="acceptImage($event)"
-            />
-          </label>
+          </button>
+          <input
+            #picker
+            class="bar__hidden"
+            type="file"
+            accept="image/*"
+            tabindex="-1"
+            aria-label="Choose an image to place on the page"
+            (change)="acceptImage($event)"
+          />
         </div>
 
         <div class="bar__group bar__group--end">
@@ -88,6 +95,16 @@
           >
             <ng-icon name="matCompareOutline" />
             {{ showOriginal() ? 'Showing original' : 'Compare' }}
+          </button>
+          <button
+            matButton
+            (click)="undo()"
+            [disabled]="!canUndo()"
+            title="Undo the last change (Ctrl-Z)"
+            data-testid="undo"
+          >
+            <ng-icon name="matUndoOutline" />
+            Undo
           </button>
           <button matButton (click)="revert()" [disabled]="changeCount() === 0">Undo all</button>
         </div>

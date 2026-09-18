@@ -226,6 +226,29 @@ describe('adding to a page', () => {
     expect(after.map((run) => run.text)).not.toContain('oops');
   });
 
+  /**
+   * The live preview saves after every change, so by the time anything is
+   * removed the page has usually been rewritten once already. A save with
+   * nothing left to write still has to put that page back.
+   */
+  it('drops one that is taken back after it has already been saved once', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...NOTE, text: 'oops' });
+    await pdf.save();
+    pdf.remove('note');
+    const after = await reread(await pdf.save());
+    expect(after.map((run) => run.text)).not.toContain('oops');
+  });
+
+  it('puts an edited line back after a save, once the whole lot is reverted', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.setText(0, pdf.runs(0)[0], 'Invoice 7');
+    await pdf.save();
+    pdf.reset();
+    const after = await reread(await pdf.save());
+    expect(after.map((run) => run.text)).toEqual(['Invoice 1024', 'Acme Limited', 'Total 480.00']);
+  });
+
   it('draws a picture at the size it was given', async () => {
     const pdf = await EditablePdf.open(await build(THREE_LINES));
     pdf.add({ ...PICTURE });
@@ -251,6 +274,79 @@ describe('adding to a page', () => {
     pdf.add({ ...PICTURE });
     const after = await reread(await pdf.save());
     expect(after.map((run) => run.text)).toEqual(['Invoice 1024', 'Acme Limited', 'Total 480.00']);
+  });
+});
+
+describe('taking a change back', () => {
+  it('has nothing to undo until something is changed', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    expect(pdf.canUndo).toBe(false);
+    pdf.undo();
+    expect(pdf.changeCount).toBe(0);
+  });
+
+  it('undoes one edit at a time, in the order they were made', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    const runs = pdf.runs(0);
+    pdf.setText(0, runs[0], 'Invoice 7');
+    pdf.setText(0, runs[2], 'Total 9.99');
+
+    pdf.undo();
+    expect(pdf.textOf(runs[0])).toBe('Invoice 7');
+    expect(pdf.textOf(runs[2])).toBe('Total 480.00');
+
+    pdf.undo();
+    expect(pdf.textOf(runs[0])).toBe('Invoice 1024');
+    expect(pdf.canUndo).toBe(false);
+  });
+
+  it('puts back a line that was taken off the page', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.setText(0, pdf.runs(0)[1], '');
+    pdf.undo();
+    expect(await reread(await pdf.save())).toEqual([
+      { text: 'Invoice 1024', x: 40, y: 250 },
+      { text: 'Acme Limited', x: 40, y: 220 },
+      { text: 'Total 480.00', x: 40, y: 190 },
+    ]);
+  });
+
+  it('takes back an addition, and a removal of one', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...NOTE });
+    pdf.remove('note');
+    expect(pdf.additions).toEqual([]);
+
+    pdf.undo();
+    expect(pdf.additions.map((item) => item.id)).toEqual(['note']);
+    pdf.undo();
+    expect(pdf.additions).toEqual([]);
+  });
+
+  it('restores the wording an addition had before it was changed', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...NOTE, text: 'Draft' });
+    pdf.update('note', { text: 'Final', x: 60 });
+    pdf.undo();
+    const [item] = pdf.additions;
+    expect(item.kind === 'text' ? item.text : '').toBe('Draft');
+    expect(item.x).toBe(40);
+  });
+
+  it('writes the undone document, not the one that was undone', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...NOTE, text: 'Paid in full' });
+    await pdf.save();
+    pdf.undo();
+    const after = await reread(await pdf.save());
+    expect(after.map((run) => run.text)).not.toContain('Paid in full');
+  });
+
+  it('forgets everything once the whole lot is reverted', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.setText(0, pdf.runs(0)[0], 'Invoice 7');
+    pdf.reset();
+    expect(pdf.canUndo).toBe(false);
   });
 });
 

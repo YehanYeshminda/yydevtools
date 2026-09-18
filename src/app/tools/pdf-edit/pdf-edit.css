@@ -62,11 +62,7 @@
   cursor: default;
 }
 
-/* A file input dressed as the button beside it. */
-.bar__file {
-  cursor: pointer;
-}
-
+/* Out of sight and out of the tab order; the button beside it does the asking. */
 .bar__hidden {
   position: absolute;
   width: 1px;
