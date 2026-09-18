@@ -11,7 +11,14 @@ import { NgIcon } from '@ng-icons/core';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
-import { buildClaims, extractToken, inspect, type Claim, type Finding } from './jwt-inspect';
+import {
+  buildClaims,
+  extractToken,
+  inspect,
+  isToken,
+  type Claim,
+  type Finding,
+} from './jwt-inspect';
 import { VerifyResult, verifyJwt } from './jwt-verify';
 import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
@@ -45,6 +52,8 @@ export type DecodeResult =
   | { kind: 'error'; message: string }
   /** Five parts: encrypted, so only the header can be read. */
   | { kind: 'jwe'; header: string; alg: string; enc: string }
+  /** `cty: JWT` — the payload is another token rather than claims. */
+  | { kind: 'nested'; header: string; inner: string }
   | {
       kind: 'ok';
       header: string;
@@ -212,6 +221,11 @@ export class JwtDecoderTool {
     this.key.set(SAMPLE_SECRET);
   }
 
+  /** Steps into the token a nested one carries, by making it the input. */
+  protected openInner(inner: string): void {
+    this.token.set(inner);
+  }
+
   protected clear(): void {
     this.token.set('');
     this.key.set('');
@@ -254,6 +268,21 @@ export class JwtDecoderTool {
     if (!header) {
       return { kind: 'error', message: 'The header is not a base64url-encoded JSON object.' };
     }
+    // `cty: JWT` means the payload is another token, not claims. Saying so and
+    // offering to step into it beats reporting the payload as malformed JSON,
+    // which is the only other thing it could look like.
+    const cty = header['cty'];
+    if (typeof cty === 'string' && cty.toLowerCase() === 'jwt') {
+      const inner = decodeSegment(payloadPart);
+      if (inner && isToken(inner)) {
+        return {
+          kind: 'nested',
+          header: JSON.stringify(header, null, 2),
+          inner: inner.trim(),
+        };
+      }
+    }
+
     const payload = readJson(payloadPart);
     if (!payload) {
       return { kind: 'error', message: 'The payload is not a base64url-encoded JSON object.' };
@@ -285,9 +314,11 @@ export class JwtDecoderTool {
  * to display claims from.
  */
 function readJson(segment: string): Record<string, unknown> | null {
+  const text = decodeSegment(segment);
+  if (text === null) return null;
   let parsed: unknown;
   try {
-    parsed = JSON.parse(base64UrlDecode(segment));
+    parsed = JSON.parse(text);
   } catch {
     return null;
   }
@@ -295,6 +326,15 @@ function readJson(segment: string): Record<string, unknown> | null {
     return null;
   }
   return parsed as Record<string, unknown>;
+}
+
+/** A base64url segment as text, or null when it is not valid base64url UTF-8. */
+function decodeSegment(segment: string): string | null {
+  try {
+    return base64UrlDecode(segment);
+  } catch {
+    return null;
+  }
 }
 
 /** Decode a base64url segment to a UTF-8 string. Throws on malformed input. */

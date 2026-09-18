@@ -380,6 +380,11 @@ const WHOLE = new RegExp(`^${SHAPE.source}$`);
  * Returns the input unchanged when nothing token-shaped is in it, so a genuinely
  * malformed token still reaches the decoder and gets a real error.
  */
+/** True when the text is a compact token and nothing else. */
+export function isToken(text: string): boolean {
+  return WHOLE.test(text.trim().replace(/\s+/g, ''));
+}
+
 export function extractToken(raw: string): string {
   const trimmed = raw.trim();
   if (trimmed === '') return '';

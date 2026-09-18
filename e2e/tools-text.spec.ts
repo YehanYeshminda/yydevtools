@@ -279,6 +279,66 @@ test('jwt-decoder verifies against a pasted JWKS, picking the key by kid', async
   expectClean(watch);
 });
 
+test('jwt-decoder verifies EdDSA, and steps into a nested token', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'jwt-decoder', 'JWT Decoder');
+
+  const built = await page.evaluate(async () => {
+    const b64 = (bytes: Uint8Array) => {
+      let binary = '';
+      for (const byte of bytes) binary += String.fromCharCode(byte);
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    };
+    const seg = (value: unknown) => b64(new TextEncoder().encode(JSON.stringify(value)));
+
+    // Not wrapped in a try: the browser is pinned by the repo's Playwright
+    // version and has Ed25519, so losing it should fail loudly rather than
+    // quietly skipping the only EdDSA coverage there is.
+    const pair = (await crypto.subtle.generateKey({ name: 'Ed25519' }, true, [
+      'sign',
+      'verify',
+    ])) as CryptoKeyPair;
+    const body = `${seg({ alg: 'EdDSA', typ: 'JWT', kid: 'ed-1' })}.${seg({ sub: 'ada' })}`;
+    const mac = await crypto.subtle.sign(
+      { name: 'Ed25519' },
+      pair.privateKey,
+      new TextEncoder().encode(body),
+    );
+    const jwk = { ...(await crypto.subtle.exportKey('jwk', pair.publicKey)), kid: 'ed-1' };
+    const eddsa = {
+      token: `${body}.${b64(new Uint8Array(mac))}`,
+      jwk: JSON.stringify({ keys: [jwk] }),
+      exportedAlg: jwk.alg ?? '',
+    };
+
+    // A token whose payload is another token, which cty declares.
+    const inner = `${seg({ alg: 'HS256', typ: 'JWT' })}.${seg({ sub: 'inner-subject', scope: 'read:all' })}.sig`;
+    const nested = `${seg({ alg: 'HS256', cty: 'JWT' })}.${b64(new TextEncoder().encode(inner))}.sig2`;
+    return { eddsa, nested };
+  });
+
+  // The JWK WebCrypto exports is labelled alg "Ed25519" while the token says
+  // "EdDSA". They name one key, so neither spelling may be refused — asserted
+  // here so the test cannot quietly stop covering that mismatch.
+  expect(built.eddsa.exportedAlg).toBe('Ed25519');
+  await page.locator('#jwt-input').fill(built.eddsa.token);
+  await page.locator('#jwt-key').fill(built.eddsa.jwk);
+  const verified = page.getByTestId('verify-ok');
+  await expect(verified).toContainText('Signature verified.');
+  await expect(verified).toContainText('ed-1');
+
+  // Nested: reported for what it is, and steppable rather than a dead end.
+  await page.locator('#jwt-input').fill(built.nested);
+  await expect(page.getByTestId('nested')).toContainText('carries another token');
+  await expect(page.locator('.claim')).toHaveCount(0);
+
+  await page.getByTestId('open-inner').click();
+  await expect(page.locator('.claim').filter({ hasText: 'inner-subject' })).toBeVisible();
+  await expect(page.locator('.claim').filter({ hasText: 'read:all' })).toBeVisible();
+
+  expectClean(watch);
+});
+
 test('jwt-decoder hands a token to the editor with Send to', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'jwt-decoder', 'JWT Decoder');

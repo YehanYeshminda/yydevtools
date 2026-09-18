@@ -231,9 +231,9 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Lists every claim, not just the registered ones — scope, roles, permissions and anything else your issuer adds.',
       'Shows each timestamp as a date and in words ("expired 3 hours ago"), switchable between your own time zone and UTC.',
       'Flags what the token itself gives away: alg "none", no expiry, a lifetime measured in years, secrets in the payload, a size that will not fit in a cookie.',
-      'Verifies HS256/384/512 with a secret, and RS/PS/ES256/384/512 with a PEM public key, a JWK, or a whole JWKS document.',
+      'Verifies HS256/384/512 with a secret, and RS/PS/ES256/384/512 and EdDSA (Ed25519) with a PEM public key, a JWK, or a whole JWKS document.',
       'Picks the right key out of a JWKS by the token’s kid, and says which one it used — useful while keys are being rotated.',
-      'Recognises an encrypted token (JWE) and explains it instead of reporting a broken JWT.',
+      'Recognises an encrypted token (JWE) and a nested one (cty: JWT), explaining each instead of reporting a broken token \u2014 and lets you step into the token inside.',
       'Uses the browser Web Crypto API — no library and no network request. Tokens and keys never leave your browser.',
     ],
     sections: [
@@ -281,6 +281,14 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       {
         q: 'What does the "What to watch out for" panel check?',
         a: 'Everything that can be decided from the token by itself, with no key and no network: an alg of "none", a header that points at a remote key with jku or x5u, a missing exp claim, a lifetime longer than a year, an iat in the future, a missing audience, sensitive-looking claims such as password or api_key anywhere in the payload, and a token too large for a cookie or a request-header buffer. It also warns if you paste a public key while the token says HS256, which is the setup for the RS256-to-HS256 confusion attack. None of it says whether the signature is valid — that is the separate check below it.',
+      },
+      {
+        q: 'Does it support EdDSA?',
+        a: 'Yes, for Ed25519, which is what EdDSA means in practice on the web. It needs the browser to implement Ed25519 in Web Crypto \u2014 recent versions of Chrome, Safari and Firefox do, and where it is missing the page says the algorithm cannot be checked in this browser rather than blaming your key. One wrinkle it handles for you: a key exported from Web Crypto is labelled alg "Ed25519" while the same key published in a JWKS is labelled "EdDSA", so both spellings are accepted.',
+      },
+      {
+        q: 'What if the payload is another token?',
+        a: 'That is a nested token, declared by cty: JWT in the header, and it used to read as a malformed payload because the payload is a token rather than JSON. It is now recognised: the outer header is shown, and a button steps into the token inside so you can read its claims. Encrypted tokens work the same way \u2014 a five-part JWE is identified and its header shown, though its contents need the recipient\u2019s private key.',
       },
       {
         q: 'Can it decode an encrypted token (JWE)?',

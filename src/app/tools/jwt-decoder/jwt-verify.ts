@@ -7,6 +7,11 @@
  *   - RS256/384/512  (RSASSA-PKCS1-v1_5)   — key is a public-key PEM (SPKI)
  *   - PS256/384/512  (RSA-PSS)             — key is a public-key PEM (SPKI)
  *   - ES256/384/512  (ECDSA)               — key is a public-key PEM (SPKI)
+ *   - EdDSA          (Ed25519)             — key is a public-key PEM (SPKI)
+ *
+ * EdDSA depends on the browser having Ed25519, which not all of them do yet;
+ * when it does not, the engine says so and that is reported as unsupported
+ * rather than as a bad key.
  *
  * The key can also be a JWK, or a whole JWKS document with the key picked out
  * of it by the token's `kid`. That is what an identity provider actually hands
@@ -25,7 +30,7 @@ export type VerifyResult =
   | { kind: 'error'; message: string };
 
 interface AlgSpec {
-  importParams: RsaHashedImportParams | EcKeyImportParams | HmacImportParams;
+  importParams: RsaHashedImportParams | EcKeyImportParams | HmacImportParams | Algorithm;
   verifyParams: AlgorithmIdentifier | RsaPssParams | EcdsaParams;
   /** 'raw' for the HMAC secret, 'spki' for a public key PEM. */
   keyFormat: 'raw' | 'spki';
@@ -36,6 +41,16 @@ const SALT: Record<string, number> = { '256': 32, '384': 48, '512': 64 };
 
 /** Maps a JWT `alg` header to the WebCrypto parameters needed to verify it. */
 function specFor(alg: string): AlgSpec | null {
+  // EdDSA names its curve in the key rather than in the algorithm, so unlike
+  // every other family here it has no digest suffix to read.
+  if (alg === 'EdDSA') {
+    return {
+      keyFormat: 'spki',
+      importParams: { name: 'Ed25519' },
+      verifyParams: { name: 'Ed25519' },
+    };
+  }
+
   const bits = alg.slice(2);
   const hash = SHA[bits];
   if (!hash) return null;
@@ -85,6 +100,9 @@ function ktyFor(alg: string): string | null {
       return 'RSA';
     case 'ES':
       return 'EC';
+    // 'EdDSA'.slice(0, 2), which is as much as this needs to look at.
+    case 'Ed':
+      return 'OKP';
     default:
       return null;
   }
@@ -106,6 +124,22 @@ const PRIVATE_MEMBERS = ['d', 'p', 'q', 'dp', 'dq', 'qi', 'oth'] as const;
  */
 export interface Jwk extends JsonWebKey {
   kid?: string;
+}
+
+/**
+ * Whether a key's declared `alg` is the one the token asks for.
+ *
+ * Not always string equality, because Ed25519 has two names in circulation:
+ * WebCrypto exports a JWK with `alg: "Ed25519"`, following the Secure Curves
+ * spec, while a provider publishing the same key follows RFC 8037 and writes
+ * `alg: "EdDSA"`. They name one primitive, so refusing either would reject a
+ * correct key — and a key exported from the browser is exactly what someone
+ * debugging this would have to hand.
+ */
+function sameAlg(keyAlg: string, tokenAlg: string): boolean {
+  if (keyAlg === tokenAlg) return true;
+  const ed = new Set(['Ed25519', 'EdDSA']);
+  return ed.has(keyAlg) && ed.has(tokenAlg);
 }
 
 export type JwkChoice =
@@ -162,7 +196,7 @@ function fromSet(
 
   const kty = ktyFor(alg);
   const usable = keys.filter(
-    (key) => (!kty || key.kty === kty) && (!key.alg || key.alg === alg) && key.use !== 'enc',
+    (key) => (!kty || key.kty === kty) && (!key.alg || sameAlg(key.alg, alg)) && key.use !== 'enc',
   );
   if (usable.length === 1) {
     return {
@@ -189,11 +223,17 @@ function check(jwk: Jwk, via: string, alg: string): JwkChoice {
   }
   // Caught here rather than left to WebCrypto, which reports the same mismatch
   // as an unexplained DataError.
-  if (jwk.alg && jwk.alg !== alg) {
+  if (jwk.alg && !sameAlg(jwk.alg, alg)) {
     return { kind: 'error', message: `That key is for ${jwk.alg}, but the token says ${alg}.` };
   }
   if (jwk.use === 'enc') {
     return { kind: 'error', message: 'That key is marked for encryption, not for signatures.' };
+  }
+  if (jwk.kty === 'OKP' && jwk.crv && jwk.crv !== 'Ed25519') {
+    return {
+      kind: 'error',
+      message: `Only Ed25519 keys can be checked here, and that one is ${jwk.crv}.`,
+    };
   }
 
   const publicHalf = jwk.kty !== 'oct' && typeof jwk.d === 'string';
@@ -264,7 +304,12 @@ export async function verifyJwt(token: string, alg: string, key: string): Promis
         : await crypto.subtle.importKey(spec.keyFormat, keyData!, spec.importParams, false, [
             'verify',
           ]);
-  } catch {
+  } catch (error) {
+    // Ed25519 is not in every browser yet. That is the engine saying so, and
+    // it is a different thing from the key being wrong.
+    if (error instanceof Error && error.name === 'NotSupportedError') {
+      return { kind: 'unsupported', alg };
+    }
     return { kind: 'error', message: importErrorMessage(choice.kind === 'ok', spec.keyFormat) };
   }
 

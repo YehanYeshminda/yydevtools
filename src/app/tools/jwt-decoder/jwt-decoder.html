@@ -53,6 +53,33 @@
         {{ $any(result()).message }}
       </p>
     }
+    @case ('nested') {
+      @let nested = $any(result());
+
+      <p class="status status--warn" role="status" data-testid="nested">
+        <ng-icon class="status__icon" aria-hidden="true" name="matLayersOutline" />
+        This token carries another token as its payload, which is what
+        <code>cty: JWT</code> means. The outer one is below; the claims are in the inner one.
+      </p>
+
+      <section class="segment segment--header" aria-label="Header">
+        <div class="segment__bar">
+          <h2 class="section__title">Header</h2>
+          <button matButton (click)="copy(nested.header, 'Header')">
+            <ng-icon name="matContentCopyOutline" />
+            Copy
+          </button>
+        </div>
+        <pre class="segment__body"><code>{{ nested.header }}</code></pre>
+      </section>
+
+      <div class="actions">
+        <button matButton="filled" (click)="openInner(nested.inner)" data-testid="open-inner">
+          <ng-icon name="matArrowForwardOutline" />
+          Open the token inside
+        </button>
+      </div>
+    }
     @case ('jwe') {
       @let encrypted = $any(result());
 

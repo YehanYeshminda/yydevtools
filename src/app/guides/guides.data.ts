@@ -10,10 +10,10 @@ export const GUIDES: Guide[] = [
     slug: 'jwt-explained',
     title: 'JSON Web Tokens explained: how a JWT works, and how to keep one safe',
     description:
-      'What a JWT actually is, how its header, payload and signature fit together, why decoding is not verifying, and the mistakes that let attackers forge tokens.',
+      'What a JWT actually is, how its header, payload and signature fit together, why decoding is not verifying, how a JWKS and the kid header let keys rotate, and the mistakes that let attackers forge tokens.',
     category: 'Security',
-    readingMinutes: 9,
-    updated: '2026-08-10',
+    readingMinutes: 12,
+    updated: '2026-09-18',
     published: '2026-08-10',
     intro: [
       'A JSON Web Token — JWT, usually said “jot” — is the string of gibberish your app hands back after you log in, and sends up with every request after that. It looks opaque, but there is nothing secret about most of it: a JWT is just JSON that has been packed into a compact, URL-safe form and stamped with a signature. Once you can read that shape, a whole class of authentication bugs stops being mysterious.',
@@ -97,6 +97,42 @@ export const GUIDES: Guide[] = [
         text: 'You can reproduce both scenarios safely against your own service. The editor below re-signs an edited token — or emits an alg:none one — entirely in your browser, so you can confirm your backend rejects what it should.',
       },
       { kind: 'tool', lead: 'Edit and re-sign a token to test a verifier:', slug: 'jwt-editor' },
+      { kind: 'h2', text: 'Where the key actually comes from' },
+      {
+        kind: 'p',
+        text: 'Pinning the key sounds simple until you ask which key. A service that signs with HMAC has one shared secret and the question does not arise. A service that signs with RSA or ECDSA has a key pair, rotates it periodically, and has to let every verifier find the current public half without a redeploy. The answer the industry settled on is a JWKS \u2014 a JSON Web Key Set, published at a fixed URL, holding every public key the issuer is currently willing to have you trust.',
+      },
+      {
+        kind: 'code',
+        caption: 'A JWKS, trimmed to its shape',
+        code: '{\n  "keys": [\n    { "kty": "RSA", "kid": "2024-06", "use": "sig", "alg": "RS256", "n": "\u2026", "e": "AQAB" },\n    { "kty": "RSA", "kid": "2026-01", "use": "sig", "alg": "RS256", "n": "\u2026", "e": "AQAB" }\n  ]\n}',
+      },
+      {
+        kind: 'p',
+        text: 'Each key carries a kid \u2014 a key id \u2014 and so does the header of every token the issuer mints. That pairing is the whole mechanism: the verifier reads the kid out of the token, looks for the key with that kid in the set, and uses it. Nothing has to be guessed, and two keys can be live at once, which is what makes rotation possible without a flag day. The issuer starts signing with the new key while the old one stays published long enough for the tokens it signed to expire.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'If verification suddenly fails for everyone, check the kid before anything else. A token whose kid is no longer in the set is not forged \u2014 it was signed by a key that has since been rotated away, and it simply outlived its signer.',
+      },
+      {
+        kind: 'p',
+        text: 'Two mistakes are worth naming. The first is caching the JWKS forever: fetch it once at boot and a rotation breaks you. The second is the opposite \u2014 fetching it on every request, which hands the issuer a denial-of-service lever over your service. Cache it, honour the cache headers, and refetch when a kid turns up that you do not recognise.',
+      },
+      {
+        kind: 'p',
+        text: 'There is also a trap in the header itself. Alongside kid, the JWS spec defines jku and x5u, which name a URL the verifier should fetch the key from. Taking that at face value lets whoever sends the token choose the key it is checked against \u2014 so they can sign with their own and be believed. Treat those fields as data, never as instructions, or ignore them entirely.',
+      },
+      {
+        kind: 'p',
+        text: 'The decoder here takes a JWKS directly: paste the whole document your provider publishes and the key matching the token\u2019s kid is used, with the page telling you which one that was. It is read from what you paste rather than fetched, so nothing about your issuer leaves the tab.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Check a token against your provider\u2019s JWKS:',
+        slug: 'jwt-decoder',
+      },
       { kind: 'h2', text: 'Practical rules of thumb' },
       {
         kind: 'ol',
@@ -105,6 +141,7 @@ export const GUIDES: Guide[] = [
           'Always verify the signature, and pin the algorithm and key on the server — do not read them from the token.',
           'Keep expiry (exp) short, and use a separate, revocable refresh token for staying logged in.',
           'Check aud and iss so a token minted for one audience cannot be replayed against another.',
+          'Resolve the key by the token\u2019s kid against a cached JWKS, and refetch when an unknown kid appears \u2014 never fetch a key from a URL the token itself supplies.',
           'Store tokens carefully in the browser — an HttpOnly cookie keeps a token out of reach of cross-site scripting in a way that localStorage does not.',
         ],
       },

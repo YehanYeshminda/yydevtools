@@ -211,6 +211,75 @@ describe('verifying against a JWKS', () => {
   });
 });
 
+/** A public key as the PEM block a person would paste. */
+async function toPem(key: CryptoKey): Promise<string> {
+  const spki = new Uint8Array(await crypto.subtle.exportKey('spki', key));
+  let binary = '';
+  for (const byte of spki) binary += String.fromCharCode(byte);
+  const body = btoa(binary).replace(/(.{64})/g, '$1\n');
+  return `-----BEGIN PUBLIC KEY-----\n${body}\n-----END PUBLIC KEY-----`;
+}
+
+describe('verifying EdDSA', () => {
+  const ed = crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
+
+  /** A real EdDSA token. The algorithm carries no digest suffix, unlike the rest. */
+  async function signEdDsa(header: object = { alg: 'EdDSA', typ: 'JWT' }): Promise<string> {
+    const { privateKey } = await ed;
+    const body = `${segment(header)}.${segment({ sub: 'ada' })}`;
+    const mac = await crypto.subtle.sign(
+      { name: 'Ed25519' },
+      privateKey,
+      new TextEncoder().encode(body),
+    );
+    return `${body}.${base64Url(new Uint8Array(mac))}`;
+  }
+
+  it('verifies against a PEM public key', async () => {
+    const token = await signEdDsa();
+    const pem = await toPem((await ed).publicKey);
+    expect(await verifyJwt(token, 'EdDSA', pem)).toEqual({ kind: 'valid' });
+  });
+
+  it('verifies against an OKP key in a JWKS, chosen by kid', async () => {
+    const token = await signEdDsa({ alg: 'EdDSA', typ: 'JWT', kid: 'ed-1' });
+    const jwk = { ...(await crypto.subtle.exportKey('jwk', (await ed).publicKey)), kid: 'ed-1' };
+    expect(jwk.kty).toBe('OKP');
+    expect(jwk.crv).toBe('Ed25519');
+    const rsaJwk = await publicJwk('rsa-1');
+    const jwks = JSON.stringify({ keys: [rsaJwk, jwk] });
+    expect(await verifyJwt(token, 'EdDSA', jwks)).toEqual({
+      kind: 'valid',
+      via: 'kid “ed-1”, key 2 of 2',
+    });
+  });
+
+  it('knows an RSA key cannot stand in for an EdDSA one', async () => {
+    const token = await signEdDsa();
+    expect(await verifyJwt(token, 'EdDSA', JSON.stringify(await publicJwk()))).toEqual({
+      kind: 'error',
+      message: 'EdDSA needs a OKP key, and that one is RSA.',
+    });
+  });
+
+  it('refuses a curve WebCrypto does not implement, before trying to import it', async () => {
+    const token = await signEdDsa();
+    const jwk = { ...(await crypto.subtle.exportKey('jwk', (await ed).publicKey)), crv: 'Ed448' };
+    expect(await verifyJwt(token, 'EdDSA', JSON.stringify(jwk))).toEqual({
+      kind: 'error',
+      message: 'Only Ed25519 keys can be checked here, and that one is Ed448.',
+    });
+  });
+
+  it('still reports a genuinely wrong key as invalid', async () => {
+    const token = await signEdDsa();
+    const other = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
+    expect(await verifyJwt(token, 'EdDSA', await toPem(other.publicKey))).toEqual({
+      kind: 'invalid',
+    });
+  });
+});
+
 describe('chooseJwk', () => {
   it('stands aside for anything that is not JSON', () => {
     expect(chooseJwk('a-shared-secret', 'HS256', '')).toEqual({ kind: 'none' });
