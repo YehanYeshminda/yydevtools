@@ -16,6 +16,7 @@ import {
   PDFDict,
   PDFDocument,
   PDFFont,
+  PDFImage,
   PDFName,
   PDFNumber,
   PDFPage,
@@ -43,17 +44,41 @@ import {
   type TextRun,
 } from './text-runs';
 
-/** Text added to a page rather than changed on it. */
-export interface AddedText {
+/** Something put on a page rather than changed on it. */
+interface Placed {
+  /** Stable across reorders and deletions, unlike an index. */
+  id: string;
   page: number;
-  text: string;
-  /** Baseline start in page points, origin bottom-left. */
+  /** Where it starts, in page points with the origin bottom-left. */
   x: number;
   y: number;
+}
+
+/** A line of text, in one of the fonts every reader already has. */
+export interface AddedText extends Placed {
+  kind: 'text';
+  text: string;
   size: number;
   color: string;
   bold: boolean;
 }
+
+/**
+ * A picture, in the two formats a PDF can carry directly.
+ *
+ * Anything else the browser can decode is turned into a PNG before it gets
+ * here, which is the caller's job: this only writes what the format allows.
+ */
+export interface AddedImage extends Placed {
+  kind: 'image';
+  bytes: Uint8Array;
+  format: 'png' | 'jpeg';
+  /** Drawn size in page points. */
+  width: number;
+  height: number;
+}
+
+export type Addition = AddedText | AddedImage;
 
 /** How an edit would have to be written, worked out before it is made. */
 export type EditPlan =
@@ -96,11 +121,13 @@ export class EditablePdf {
   private readonly streams = new Map<string, EditableStream>();
   private readonly formFonts = new Map<string, Map<string, EditableFont>>();
   private readonly edits = new Map<string, PendingEdit>();
-  private readonly added: AddedText[] = [];
+  private readonly added: Addition[] = [];
   /** Standard 14 faces embedded on demand, one object each however often used. */
   private readonly embedded = new Map<string, PDFFont>();
-  /** Names those faces were given inside a stream's resources. */
-  private readonly fontNames = new Map<string, string>();
+  /** Pictures embedded on demand, one object each however often drawn. */
+  private readonly images = new Map<string, PDFImage>();
+  /** Names those fonts and pictures were given inside a stream's resources. */
+  private readonly resourceNames = new Map<string, string>();
 
   private constructor(
     private readonly doc: PDFDocument,
@@ -192,22 +219,26 @@ export class EditablePdf {
     this.edits.set(key, { page: pageIndex, run, text });
   }
 
-  /** Adds a line of text to a page, in one of the fonts every reader has. */
-  addText(item: AddedText): void {
+  /** Puts something new on a page. */
+  add(item: Addition): void {
     this.added.push(item);
   }
 
-  /** Changes the wording of a line that was added, leaving where it sits. */
-  setAdded(index: number, text: string): void {
-    const item = this.added[index];
-    if (item) item.text = text;
+  /** Changes one of them in place — its wording, size, colour or position. */
+  update(
+    id: string,
+    patch: Partial<Omit<AddedText, 'kind' | 'id'>> & Partial<Omit<AddedImage, 'kind' | 'id'>>,
+  ): void {
+    const item = this.added.find((candidate) => candidate.id === id);
+    if (item) Object.assign(item, patch);
   }
 
-  removeAdded(index: number): void {
-    this.added.splice(index, 1);
+  remove(id: string): void {
+    const at = this.added.findIndex((candidate) => candidate.id === id);
+    if (at >= 0) this.added.splice(at, 1);
   }
 
-  get additions(): readonly AddedText[] {
+  get additions(): readonly Addition[] {
     return this.added;
   }
 
@@ -235,7 +266,8 @@ export class EditablePdf {
         this.openPage(item.page);
         byStream.set(streamId, []);
       }
-      suffixes.set(streamId, (suffixes.get(streamId) ?? '') + (await this.drawnText(item)));
+      const drawn = item.kind === 'text' ? await this.drawnText(item) : await this.drawnImage(item);
+      suffixes.set(streamId, (suffixes.get(streamId) ?? '') + drawn);
     }
 
     // Splicing comes last: every offset above was taken before anything moved.
@@ -280,7 +312,7 @@ export class EditablePdf {
     // the same text object inherits the substitute.
     const face = standardFaceFor(run.family || run.font);
     const embedded = await this.embedStandard(face);
-    const name = this.nameFor(run.streamId, face, embedded);
+    const name = this.nameFor(run.streamId, 'Font', face, embedded.ref);
     const hex = embedded.encodeText(text).toString();
     const kern = this.kerning(run, this.standardAdvanceOf(face, run, text));
     const size = round(run.fontSize);
@@ -291,12 +323,33 @@ export class EditablePdf {
   private async drawnText(item: AddedText): Promise<string> {
     const face = item.bold ? 'Helvetica-Bold' : 'Helvetica';
     const font = await this.embedStandard(face);
-    const name = this.nameFor(`page:${item.page}`, face, font);
+    const name = this.nameFor(`page:${item.page}`, 'Font', face, font.ref);
     const [r, g, b] = hexToRgb(item.color);
     const hex = font.encodeText(item.text).toString();
     return (
       `q BT /${name} ${round(item.size)} Tf ${round(r)} ${round(g)} ${round(b)} rg ` +
       `1 0 0 1 ${round(item.x)} ${round(item.y)} Tm ${hex} Tj ET Q\n`
+    );
+  }
+
+  /** A picture the reader added, as the operators that draw it. */
+  private async drawnImage(item: AddedImage): Promise<string> {
+    let embedded = this.images.get(item.id);
+    if (!embedded) {
+      // The bytes are handed over as a copy: pdf-lib keeps what it is given,
+      // and the caller still needs its own for the preview in the page.
+      embedded =
+        item.format === 'png'
+          ? await this.doc.embedPng(item.bytes.slice())
+          : await this.doc.embedJpg(item.bytes.slice());
+      this.images.set(item.id, embedded);
+    }
+    const name = this.nameFor(`page:${item.page}`, 'XObject', `image:${item.id}`, embedded.ref);
+    // `cm` scales the unit square the image is drawn into, so the matrix is the
+    // size and the position at once.
+    return (
+      `q ${round(item.width)} 0 0 ${round(item.height)} ` +
+      `${round(item.x)} ${round(item.y)} cm /${name} Do Q\n`
     );
   }
 
@@ -349,25 +402,30 @@ export class EditablePdf {
   }
 
   /**
-   * Declares a substitute font in the resources of the stream that needs it,
+   * Declares a font or an image in the resources of the stream that needs it,
    * under a name nothing else there is using.
    */
-  private nameFor(streamId: string, face: string, font: PDFFont): string {
-    const key = `${streamId}|${face}`;
-    const known = this.fontNames.get(key);
+  private nameFor(
+    streamId: string,
+    category: 'Font' | 'XObject',
+    key: string,
+    ref: PDFRef,
+  ): string {
+    const cacheKey = `${streamId}|${category}|${key}`;
+    const known = this.resourceNames.get(cacheKey);
     if (known) return known;
 
     const resources = this.streams.get(streamId)?.resources();
-    if (!resources) throw new Error('This page has nowhere to declare a font.');
-    let fonts = resources.lookupMaybe(PDFName.of('Font'), PDFDict);
-    if (!fonts) {
-      fonts = this.doc.context.obj({}) as PDFDict;
-      resources.set(PDFName.of('Font'), fonts);
+    if (!resources) throw new Error('This page has nowhere to declare a resource.');
+    let holder = resources.lookupMaybe(PDFName.of(category), PDFDict);
+    if (!holder) {
+      holder = this.doc.context.obj({}) as PDFDict;
+      resources.set(PDFName.of(category), holder);
     }
-    let name = `YY${face.replace(/[^A-Za-z]/g, '')}`;
-    for (let suffix = 1; fonts.has(PDFName.of(name)); suffix++) name = `YYsub${suffix}`;
-    fonts.set(PDFName.of(name), font.ref);
-    this.fontNames.set(key, name);
+    let name = `YY${key.replace(/[^A-Za-z0-9]/g, '')}`;
+    for (let suffix = 1; holder.has(PDFName.of(name)); suffix++) name = `YY${category}${suffix}`;
+    holder.set(PDFName.of(name), ref);
+    this.resourceNames.set(cacheKey, name);
     return name;
   }
 

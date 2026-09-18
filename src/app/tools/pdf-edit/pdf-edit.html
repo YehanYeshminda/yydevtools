@@ -1,6 +1,6 @@
 <app-tool-page slug="pdf-edit">
-  Change the words that are already in a PDF. Click any line on the page, type over it, and download
-  a file with the text genuinely replaced — not a box pasted on top. Nothing is uploaded.
+  Change the words that are already in a PDF. Click any line on the page, type over it, add text or
+  a picture, and watch the document itself change — then download it. Nothing is uploaded.
 </app-tool-page>
 
 <div class="panel">
@@ -23,154 +23,286 @@
     </p>
 
     <section class="stage" aria-label="The page">
-      <div class="stage__bar">
-        <div class="actions">
-          <button matButton (click)="previousPage()" [disabled]="page() === 0 || rendering()">
-            <ng-icon name="matChevronLeftOutline" />
-            Previous
-          </button>
-          <span class="stage__count">Page {{ page() + 1 }} of {{ pageCount() }}</span>
+      <div class="bar">
+        <div class="bar__group" role="group" aria-label="Pages">
           <button
-            matButton
-            (click)="nextPage()"
-            [disabled]="page() + 1 >= pageCount() || rendering()"
+            class="bar__icon"
+            type="button"
+            aria-label="Previous page"
+            (click)="previousPage()"
+            [disabled]="page() === 0"
           >
-            Next
+            <ng-icon name="matChevronLeftOutline" />
+          </button>
+          <span class="bar__label">Page {{ page() + 1 }} of {{ pageCount() }}</span>
+          <button
+            class="bar__icon"
+            type="button"
+            aria-label="Next page"
+            (click)="nextPage()"
+            [disabled]="page() + 1 >= pageCount()"
+          >
             <ng-icon name="matChevronRightOutline" />
           </button>
         </div>
-        <div class="actions">
-          <span class="stage__count" data-testid="change-count">
-            {{ changeCount() }} {{ changeCount() === 1 ? 'change' : 'changes' }}
-          </span>
-          <button matButton (click)="togglePlacing()" [attr.aria-pressed]="placing()">
+
+        <div class="bar__group" role="group" aria-label="Zoom">
+          <button class="bar__icon" type="button" aria-label="Zoom out" (click)="zoomOut()">
+            <ng-icon name="matRemoveOutline" />
+          </button>
+          <span class="bar__label bar__label--zoom" data-testid="zoom">{{ zoomLabel() }}</span>
+          <button class="bar__icon" type="button" aria-label="Zoom in" (click)="zoomIn()">
             <ng-icon name="matAddOutline" />
+          </button>
+          <button matButton (click)="fitToWidth()">Fit width</button>
+        </div>
+
+        <div class="bar__group" role="group" aria-label="Add to the page">
+          <button matButton (click)="togglePlacing()" [attr.aria-pressed]="placing()">
+            <ng-icon name="matTextFieldsOutline" />
             {{ placing() ? 'Click the page…' : 'Add text' }}
           </button>
-          <button matButton (click)="revert()" [disabled]="changeCount() === 0">
-            Undo all changes
+          <label class="bar__file" matButton>
+            <ng-icon name="matImageOutline" />
+            Add image
+            <input
+              class="bar__hidden"
+              type="file"
+              accept="image/*"
+              aria-label="Choose an image to place on the page"
+              (change)="acceptImage($event)"
+            />
+          </label>
+        </div>
+
+        <div class="bar__group bar__group--end">
+          <span class="bar__label" data-testid="change-count">
+            {{ changeCount() }} {{ changeCount() === 1 ? 'change' : 'changes' }}
+          </span>
+          <button
+            matButton
+            (click)="toggleOriginal()"
+            [attr.aria-pressed]="showOriginal()"
+            [disabled]="changeCount() === 0"
+            data-testid="compare"
+          >
+            <ng-icon name="matCompareOutline" />
+            {{ showOriginal() ? 'Showing original' : 'Compare' }}
           </button>
+          <button matButton (click)="revert()" [disabled]="changeCount() === 0">Undo all</button>
         </div>
       </div>
 
-      <div class="sheet" [class.sheet--placing]="placing()">
-        @if (pageImage(); as src) {
-          <img class="sheet__page" [src]="src" alt="Page {{ page() + 1 }}" draggable="false" />
-        }
-        @if (rendering()) {
-          <div class="sheet__busy" role="status"><app-spinner [size]="28" /></div>
-        }
+      @if (showOriginal()) {
+        <p class="banner" role="status">
+          <ng-icon class="banner__icon" aria-hidden="true" name="matHistoryOutline" />
+          This is the file as it arrived. Press Compare again to go back to your version.
+        </p>
+      }
 
-        <!--
-          The overlay, not the sheet, is the container query's container: an
-          element with inline-size containment cannot be sized by its contents,
-          so putting it on the sheet would make `width: fit-content` resolve to
-          nothing at all. Stretched over the page instead, its width comes from
-          the sheet and the page image is free to set that.
-        -->
-        <div class="overlay" #overlay (pointerdown)="placeText($event)" data-testid="sheet">
-          @for (box of boxes(); track box.key) {
-            @if (editing()?.key !== box.key) {
-              <button
-                type="button"
-                class="run"
-                [class.run--edited]="box.edited"
-                [class.run--fixed]="!box.editable"
-                [style.left.%]="box.left"
-                [style.top.%]="box.top"
-                [style.width.%]="box.width"
-                [style.height.%]="box.height"
-                [title]="box.text"
-                (pointerdown)="$event.stopPropagation()"
-                (click)="startEditing(box)"
-              >
-                <span class="run__label">{{ box.text }}</span>
-              </button>
-            }
+      <div class="frame" #frame (wheel)="onWheel($event)">
+        <div
+          class="sheet"
+          [class.sheet--placing]="placing()"
+          [style.width.px]="sheetWidth()"
+          data-testid="sheet-outer"
+        >
+          @if (pageImage(); as src) {
+            <img class="sheet__page" [src]="src" alt="Page {{ page() + 1 }}" draggable="false" />
           }
-
-          @if (editing(); as box) {
-            <div
-              class="editor"
-              [style.left.%]="box.left"
-              [style.top.%]="box.top"
-              [style.width.%]="box.width"
-              [style.min-height.%]="box.height"
-              [style.--run-size]="box.size + 'cqw'"
-              [style.--run-color]="box.color"
-              (pointerdown)="$event.stopPropagation()"
-            >
-              <input
-                class="editor__input"
-                type="text"
-                aria-label="Text on the page"
-                data-testid="run-editor"
-                autocomplete="off"
-                [value]="draft()"
-                (input)="onDraft($event)"
-                (keydown.enter)="commit()"
-                (keydown.escape)="stopEditing()"
-              />
-              <!--
-                Out of the flow, because the editor is only as wide as the run
-                it sits on and a three-word run would otherwise squash three
-                buttons into it.
-              -->
-              <div class="editor__panel">
-                <div class="editor__bar">
-                  <button matButton="filled" (click)="commit()" [disabled]="!canCommit()">
-                    Apply
-                  </button>
-                  <button matButton (click)="removeRun()">Delete</button>
-                  <button matButton (click)="stopEditing()">Cancel</button>
-                </div>
-                @if (planNote(); as note) {
-                  <p
-                    class="editor__note"
-                    [class.editor__note--bad]="!canCommit()"
-                    role="status"
-                    data-testid="plan-note"
-                  >
-                    {{ note }}
-                  </p>
-                }
-              </div>
+          @if (rendering()) {
+            <div class="sheet__busy" role="status">
+              <app-spinner [size]="28" />
             </div>
           }
 
-          @for (item of added(); track item.index) {
-            <div
-              class="added"
-              [style.left.%]="item.left"
-              [style.top.%]="item.top"
-              [style.--run-size]="item.size + 'cqw'"
-              [style.--run-color]="item.color"
-              (pointerdown)="$event.stopPropagation()"
-            >
+          <!--
+            The overlay, not the sheet, is the container query's container: an
+            element with inline-size containment cannot be sized by its own
+            contents, so putting it on the sheet would stop the page image
+            setting the width. Stretched over the page instead, its width comes
+            from the sheet and the run sizes can be a share of it.
+          -->
+          <div
+            class="overlay"
+            #overlay
+            (pointerdown)="onSheetDown($event)"
+            (pointermove)="onDrag($event)"
+            (pointerup)="endDrag($event)"
+            (pointercancel)="endDrag($event)"
+            data-testid="sheet"
+          >
+            @if (!showOriginal()) {
+              @for (box of boxes(); track box.key) {
+                @if (editing()?.key !== box.key) {
+                  <button
+                    type="button"
+                    class="run"
+                    [class.run--edited]="box.edited"
+                    [class.run--removed]="box.removed"
+                    [class.run--fixed]="!box.editable"
+                    [style.left.%]="box.left"
+                    [style.top.%]="box.top"
+                    [style.width.%]="box.width"
+                    [style.height.%]="box.height"
+                    [title]="box.text || 'Removed — click to put it back'"
+                    (pointerdown)="$event.stopPropagation()"
+                    (click)="startEditing(box)"
+                  >
+                    <span class="run__label">{{ box.text || 'Removed line' }}</span>
+                  </button>
+                }
+              }
+
+              @if (editing(); as box) {
+                <div
+                  class="editor"
+                  [style.left.%]="box.left"
+                  [style.top.%]="box.top"
+                  [style.width.%]="box.width"
+                  [style.min-height.%]="box.height"
+                  [style.--run-size]="box.size + 'cqw'"
+                  [style.--run-color]="box.color"
+                  (pointerdown)="$event.stopPropagation()"
+                >
+                  <input
+                    class="editor__input"
+                    type="text"
+                    aria-label="Text on the page"
+                    data-testid="run-editor"
+                    autocomplete="off"
+                    [value]="draft()"
+                    (input)="onDraft($event)"
+                    (keydown.enter)="commit()"
+                    (keydown.escape)="stopEditing()"
+                  />
+                  <!--
+                    Out of the flow, because the editor is only as wide as the
+                    run it sits on and a three-word run would otherwise squash
+                    three buttons into it.
+                  -->
+                  <div class="editor__panel">
+                    <div class="editor__bar">
+                      <button matButton="filled" (click)="commit()" [disabled]="!canCommit()">
+                        Apply
+                      </button>
+                      <button matButton (click)="removeRun()">Delete</button>
+                      <button matButton (click)="stopEditing()">Cancel</button>
+                    </div>
+                    @if (planNote(); as note) {
+                      <p
+                        class="editor__note"
+                        [class.editor__note--bad]="!canCommit()"
+                        role="status"
+                        data-testid="plan-note"
+                      >
+                        {{ note }}
+                      </p>
+                    }
+                  </div>
+                </div>
+              }
+
+              @for (box of added(); track box.id) {
+                <div
+                  class="added"
+                  [class.added--chosen]="selected() === box.id"
+                  [style.left.%]="box.left"
+                  [style.top.%]="box.top"
+                  [style.height.%]="box.height"
+                  [style.width.%]="box.item.kind === 'image' ? box.width : null"
+                  [style.--run-size]="box.size + 'cqw'"
+                  [style.--run-color]="box.item.kind === 'text' ? box.item.color : '#000000'"
+                  (pointerdown)="startDrag(box, 'move', $event)"
+                  (click)="choose(box.id, $event)"
+                >
+                  @if (box.item.kind === 'image') {
+                    <img class="added__image" [src]="box.url" alt="" draggable="false" />
+                    <span
+                      class="added__handle"
+                      aria-hidden="true"
+                      (pointerdown)="startDrag(box, 'resize', $event)"
+                    ></span>
+                  } @else {
+                    <span class="added__text">{{ box.item.text }}</span>
+                  }
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      @if (chosen(); as box) {
+        <div class="controls" role="group" aria-label="The thing you added">
+          @if (box.item.kind === 'text') {
+            <label class="controls__field">
+              <span class="controls__label">Text</span>
               <input
-                class="added__input"
+                class="field__input"
                 type="text"
                 aria-label="Text you added"
                 autocomplete="off"
-                [value]="item.text"
-                (input)="editAdded(item.index, $event)"
+                [value]="box.item.text"
+                (input)="editAdded(box.id, $event)"
               />
-              <button
-                type="button"
-                class="added__remove"
-                aria-label="Remove this line"
-                (click)="removeAdded(item.index)"
-              >
-                ×
-              </button>
-            </div>
+            </label>
+            <label class="controls__field controls__field--narrow">
+              <span class="controls__label">Size</span>
+              <input
+                class="field__input"
+                type="number"
+                min="4"
+                max="144"
+                step="1"
+                aria-label="Font size in points"
+                [value]="box.item.size"
+                (input)="setSize(box.id, $event)"
+              />
+            </label>
+            <label class="controls__field controls__field--narrow">
+              <span class="controls__label">Colour</span>
+              <input
+                class="controls__colour"
+                type="color"
+                aria-label="Text colour"
+                [value]="box.item.color"
+                (input)="setColor(box.id, $event)"
+              />
+            </label>
+            <button matButton (click)="toggleBold(box)" [attr.aria-pressed]="box.item.bold">
+              <ng-icon name="matFormatBoldOutline" />
+              Bold
+            </button>
+          } @else {
+            <label class="controls__field controls__field--narrow">
+              <span class="controls__label">Width</span>
+              <input
+                class="field__input"
+                type="number"
+                min="8"
+                max="2000"
+                step="1"
+                aria-label="Image width in points"
+                [value]="box.item.width.toFixed(0)"
+                (input)="setWidth(box, $event)"
+              />
+            </label>
+            <span class="controls__hint"
+              >Drag the corner to resize, or the picture to move it.</span
+            >
           }
+          <button matButton (click)="removeAdded(box.id)">
+            <ng-icon name="matDeleteOutline" />
+            Remove
+          </button>
         </div>
-      </div>
+      }
 
       <p class="field__hint">
-        Every box is a run of text the PDF actually contains. Click one to change it, Delete to take
-        it off the page. Sideways text is shown but cannot be changed yet.
+        Every box is a run of text the PDF actually contains — click one to change it. The page you
+        see is the edited document, rebuilt after each change. Ctrl-scroll zooms. Sideways text is
+        shown but cannot be changed yet.
       </p>
     </section>
 

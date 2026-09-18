@@ -1,7 +1,16 @@
-import { PDFDocument, PDFName, StandardFonts, type PDFDict } from '@cantoo/pdf-lib';
+import {
+  decodePDFRawStream,
+  PDFDocument,
+  PDFName,
+  PDFNumber,
+  PDFRawStream,
+  PDFDict,
+  StandardFonts,
+} from '@cantoo/pdf-lib';
 import { describe, expect, it } from 'vitest';
 
-import { EditablePdf } from './document';
+import { parseContentStream } from './content-stream';
+import { EditablePdf, type AddedImage, type AddedText } from './document';
 
 /**
  * These go the whole way round: a document is built, opened for editing,
@@ -123,18 +132,69 @@ describe('planning an edit', () => {
   });
 });
 
-describe('adding text', () => {
+const NOTE: AddedText = {
+  kind: 'text',
+  id: 'note',
+  page: 0,
+  text: 'Paid in full',
+  x: 40,
+  y: 160,
+  size: 12,
+  color: '#000000',
+  bold: false,
+};
+
+/**
+ * A real 2x2 PNG.
+ *
+ * Written by hand rather than read off disk so the check has no path in it,
+ * and a real one because pdf-lib takes invalid bytes quietly — the picture
+ * simply never appears, which is the failure this is here to catch.
+ */
+const TINY_PNG =
+  'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91Jpz' +
+  'AAAAFklEQVR4nGO4o6YmttiLQTX59a8zogAinwV6UwmB+QAAAABJRU5ErkJggg==';
+
+const PICTURE: AddedImage = {
+  kind: 'image',
+  id: 'shot',
+  page: 0,
+  bytes: Uint8Array.from(atob(TINY_PNG), (c) => c.charCodeAt(0)),
+  format: 'png',
+  x: 40,
+  y: 40,
+  width: 80,
+  height: 60,
+};
+
+/** Every picture page one draws: its pixel size, and where the matrix puts it. */
+async function picturesOn(saved: Uint8Array): Promise<string[]> {
+  const doc = await PDFDocument.load(saved);
+  const page = doc.getPage(0);
+  const content = decodePDFRawStream(
+    doc.context.lookup(page.node.get(PDFName.of('Contents'))) as PDFRawStream,
+  ).decode();
+  const xobjects = page.node.Resources()!.lookup(PDFName.of('XObject'), PDFDict);
+  const ops = parseContentStream(content);
+  // The `cm` right before `Do` is what sizes and places the picture, because
+  // that is the pair this writes; a reader of arbitrary content would have to
+  // carry the whole graphics state to know.
+  return ops.flatMap((op, at) => {
+    const name = op.op === 'Do' && op.operands[0]?.kind === 'name' ? op.operands[0].value : null;
+    if (name === null) return [];
+    const image = xobjects.lookup(PDFName.of(name)) as PDFRawStream;
+    const size = (key: string) => image.dict.lookup(PDFName.of(key), PDFNumber).asNumber();
+    const cm = ops[at - 1].operands.map((operand) =>
+      operand.kind === 'num' ? operand.value : NaN,
+    );
+    return [`${size('Width')}x${size('Height')} drawn ${cm[0]}x${cm[3]} at ${cm[4]},${cm[5]}`];
+  });
+}
+
+describe('adding to a page', () => {
   it('puts a new line on the page where it was asked for', async () => {
     const pdf = await EditablePdf.open(await build(THREE_LINES));
-    pdf.addText({
-      page: 0,
-      text: 'Paid in full',
-      x: 40,
-      y: 160,
-      size: 12,
-      color: '#cc0000',
-      bold: false,
-    });
+    pdf.add({ ...NOTE, color: '#cc0000' });
     expect(pdf.changeCount).toBe(1);
     const after = await reread(await pdf.save());
     expect(after).toContainEqual({ text: 'Paid in full', x: 40, y: 160 });
@@ -142,28 +202,55 @@ describe('adding text', () => {
 
   it('draws an added line once however many times it is saved', async () => {
     const pdf = await EditablePdf.open(await build(THREE_LINES));
-    pdf.addText({
-      page: 0,
-      text: 'Paid in full',
-      x: 40,
-      y: 160,
-      size: 12,
-      color: '#000000',
-      bold: false,
-    });
+    pdf.add({ ...NOTE });
     await pdf.save();
     const after = await reread(await pdf.save());
     expect(after.filter((run) => run.text === 'Paid in full')).toHaveLength(1);
   });
 
+  it('moves and rewords one that is already on the page', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...NOTE, text: 'Draft' });
+    pdf.update('note', { text: 'Final', x: 60, y: 120 });
+    const after = await reread(await pdf.save());
+    expect(after).toContainEqual({ text: 'Final', x: 60, y: 120 });
+    expect(after.map((run) => run.text)).not.toContain('Draft');
+  });
+
   it('drops an addition that is taken back', async () => {
     const pdf = await EditablePdf.open(await build(THREE_LINES));
-    const item = { page: 0, text: 'oops', x: 10, y: 10, size: 8, color: '#000000', bold: false };
-    pdf.addText(item);
-    pdf.removeAdded(0);
+    pdf.add({ ...NOTE, text: 'oops' });
+    pdf.remove('note');
     expect(pdf.additions).toEqual([]);
     const after = await reread(await pdf.save());
     expect(after.map((run) => run.text)).not.toContain('oops');
+  });
+
+  it('draws a picture at the size it was given', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...PICTURE });
+    expect(await picturesOn(await pdf.save())).toEqual(['2x2 drawn 80x60 at 40,40']);
+  });
+
+  it('embeds a picture once however many times it is saved', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...PICTURE });
+    await pdf.save();
+    expect(await picturesOn(await pdf.save())).toHaveLength(1);
+  });
+
+  it('resizes a picture without embedding it again', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...PICTURE });
+    pdf.update('shot', { width: 120, height: 90 });
+    expect(await picturesOn(await pdf.save())).toEqual(['2x2 drawn 120x90 at 40,40']);
+  });
+
+  it('leaves the text already on the page alone', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...PICTURE });
+    const after = await reread(await pdf.save());
+    expect(after.map((run) => run.text)).toEqual(['Invoice 1024', 'Acme Limited', 'Total 480.00']);
   });
 });
 

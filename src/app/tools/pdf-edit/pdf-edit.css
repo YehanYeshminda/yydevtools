@@ -2,27 +2,119 @@
   margin-top: 1rem;
 }
 
-.stage__bar {
+/* --- The toolbar ------------------------------------------------------- */
+
+.bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
+  gap: 0.35rem 1rem;
+  padding: 0.4rem 0.5rem;
+  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
 }
 
-.stage__count {
-  align-self: center;
+.bar__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Pushed right on a wide bar, and simply next in line on a narrow one. */
+.bar__group--end {
+  margin-left: auto;
+}
+
+.bar__label {
+  padding: 0 0.35rem;
   color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+.bar__label--zoom {
+  min-width: 3.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--mat-sys-on-surface);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.bar__icon:hover:not(:disabled) {
+  background: var(--mat-sys-surface-container-highest);
+  border-color: var(--mat-sys-outline-variant);
+}
+
+.bar__icon:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* A file input dressed as the button beside it. */
+.bar__file {
+  cursor: pointer;
+}
+
+.bar__hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+}
+
+.banner__icon {
+  flex: none;
+}
+
+/* --- The page ---------------------------------------------------------- */
+
+/*
+ * The frame scrolls; the sheet inside it is as wide as the zoom says. Without
+ * the frame, zooming in would widen the whole page layout instead of giving
+ * the reader something to scroll around in.
+ */
+.frame {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  max-height: 78vh;
+  overflow: auto;
+  background: var(--mat-sys-surface-container-low);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  overscroll-behavior: contain;
 }
 
 .sheet {
   position: relative;
-  width: fit-content;
-  max-width: 100%;
-  margin: 0.75rem auto 0;
+  margin: 0 auto;
   background: #fff;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.16);
   user-select: none;
 }
 
@@ -30,23 +122,11 @@
   cursor: crosshair;
 }
 
-/*
- * The container for the run sizes: a share of the page width is the only way
- * to write a font size that stays right however wide the page is drawn.
- */
-.overlay {
-  container-type: inline-size;
-  position: absolute;
-  inset: 0;
-}
-
 .sheet__page {
   display: block;
-  max-width: 100%;
-  max-height: 72vh;
-  width: auto;
+  width: 100%;
   height: auto;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .sheet__busy {
@@ -54,13 +134,27 @@
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgb(255 255 255 / 0.6);
+  background: rgb(255 255 255 / 0.55);
+  border-radius: 4px;
 }
 
 /*
- * One run of text. Invisible until pointed at, because the page underneath is
- * the thing being read — a grid of permanent outlines over every word would
- * make the document unreadable while it is being edited.
+ * The container for the run sizes: a share of the page width is the only way
+ * to write a font size that stays right at every zoom.
+ */
+.overlay {
+  container-type: inline-size;
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+
+/* --- Runs of text already in the file ---------------------------------- */
+
+/*
+ * Invisible until pointed at, because the page underneath is the thing being
+ * read — a permanent outline around every word would make the document
+ * unreadable while it is being edited.
  */
 .run {
   position: absolute;
@@ -85,6 +179,11 @@
   border-color: rgb(22 163 74 / 0.9);
 }
 
+.run--removed {
+  background: repeating-linear-gradient(135deg, rgb(220 38 38 / 0.16) 0 6px, transparent 6px 12px);
+  border-color: rgb(220 38 38 / 0.8);
+}
+
 .run--fixed {
   cursor: not-allowed;
 }
@@ -104,9 +203,11 @@
   white-space: nowrap;
 }
 
+/* --- Editing one ------------------------------------------------------- */
+
 .editor {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   min-width: 8rem;
 }
 
@@ -157,33 +258,96 @@
   border-color: var(--mat-sys-error);
 }
 
+/* --- Things the reader added ------------------------------------------- */
+
 .added {
   position: absolute;
-  z-index: 1;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.25rem;
-}
-
-.added__input {
-  padding: 0;
-  font: inherit;
-  font-size: var(--run-size, 1rem);
-  line-height: 1.2;
-  color: var(--run-color, #000);
-  background: rgb(22 163 74 / 0.1);
-  border: 1px dashed rgb(22 163 74 / 0.9);
+  z-index: 2;
+  cursor: move;
+  border: 1px dashed transparent;
   border-radius: 2px;
 }
 
-.added__remove {
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: 1px solid var(--mat-sys-outline);
-  border-radius: 50%;
+.added:hover {
+  border-color: rgb(22 163 74 / 0.7);
+}
+
+.added--chosen {
+  border-color: rgb(22 163 74 / 0.95);
+  border-style: solid;
+}
+
+.added__text {
+  display: block;
+  font-size: var(--run-size, 1rem);
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--run-color, #000);
+  /* The page beneath already shows it; this layer is only for grabbing. */
+  opacity: 0;
+}
+
+.added__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+.added__handle {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  background: rgb(22 163 74 / 0.95);
+  border: 1px solid #fff;
+  border-radius: 2px;
+  cursor: nwse-resize;
+}
+
+/* --- Controls for the chosen one --------------------------------------- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+}
+
+.controls__field {
+  display: flex;
+  flex: 1 1 12rem;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.controls__field--narrow {
+  flex: 0 0 6.5rem;
+}
+
+.controls__label {
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.controls__colour {
+  width: 100%;
+  height: 2.5rem;
+  padding: 0.15rem;
   background: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: 700 13px/1 sans-serif;
-  cursor: pointer;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 6px;
+}
+
+.controls__hint {
+  flex: 1 1 12rem;
+  padding-bottom: 0.6rem;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
 }

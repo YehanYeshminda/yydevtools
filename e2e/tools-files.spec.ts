@@ -533,6 +533,78 @@ test('pdf-edit re-sets a line when the font in the file has no glyph for it', as
   expectClean(watch);
 });
 
+/**
+ * The three things that make the editor usable without downloading to find
+ * out: the page really zooms, the preview is the edited document, and Compare
+ * puts the original back. A picture goes on at the end, because that is the
+ * one addition whose bytes have to reach the file.
+ */
+test('pdf-edit zooms into the page, shows the change before saving, and takes a picture', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'pdf-edit', 'PDF Editor');
+
+  await uploadFiles(page, ['sample.pdf']);
+  const sheet = page.locator('.sheet__page');
+  await expect(sheet).toBeVisible({ timeout: 45_000 });
+
+  /** Clicks a zoom button until the label says what it should. */
+  const zoomTo = async (label: string, button: string) => {
+    for (let step = 0; step < 12; step++) {
+      if ((await page.getByTestId('zoom').textContent())?.trim() === label) break;
+      await page.getByRole('button', { name: button }).click();
+    }
+    await expect(page.getByTestId('zoom')).toHaveText(label);
+  };
+  const shownWidth = () => page.getByTestId('sheet-outer').evaluate((node) => node.clientWidth);
+  const drawnWidth = () => sheet.evaluate((node) => (node as HTMLImageElement).naturalWidth);
+
+  await zoomTo('50%', 'Zoom out');
+  const small = { shown: await shownWidth(), drawn: await drawnWidth() };
+
+  await zoomTo('200%', 'Zoom in');
+  // Drawn again at the larger scale rather than stretched: a CSS-only zoom
+  // would leave the raster exactly where it was and the type would go soft.
+  await expect.poll(drawnWidth).toBeGreaterThan(small.drawn);
+  expect((await shownWidth()) / small.shown).toBeCloseTo(4, 1);
+
+  await page.getByRole('button', { name: 'Fit width' }).click();
+  const shownPage = () => sheet.getAttribute('src');
+  const asItArrived = await shownPage();
+
+  const heading = page.getByRole('button', { name: 'Annual Report', exact: true });
+  await heading.click();
+  await page.getByTestId('run-editor').fill('Interim Report');
+  await page.getByRole('button', { name: 'Apply', exact: true }).click();
+  // No download, no second tab: the page on screen is the edited document.
+  await expect.poll(shownPage).not.toBe(asItArrived);
+
+  await page.getByTestId('compare').click();
+  await expect(page.getByText('This is the file as it arrived')).toBeVisible();
+  await expect.poll(shownPage).toBe(asItArrived);
+  await page.getByTestId('compare').click();
+  await expect.poll(shownPage).not.toBe(asItArrived);
+
+  const edited = await shownPage();
+  await page
+    .locator('input[aria-label="Choose an image to place on the page"]')
+    .setInputFiles(fixture('sample.png'));
+  await expect(page.getByTestId('change-count')).toHaveText('2 changes');
+  await page.getByLabel('Image width in points').fill('220');
+  await expect.poll(shownPage).not.toBe(edited);
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: /Save & download/ }).click();
+  const saved = readFileSync(await (await download).path());
+  // The fixture carries no pictures of its own, so the one in the saved file
+  // is the one that was just placed. What it is drawn at is asserted on the
+  // operators in document.spec.ts.
+  expect(saved.toString('latin1')).toContain('/Subtype /Image');
+
+  expectClean(watch);
+});
+
 test('pdf-sign places a typed signature and downloads the signed file', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'pdf-sign', 'Sign PDF');

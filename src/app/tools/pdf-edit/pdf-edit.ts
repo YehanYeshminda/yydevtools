@@ -15,7 +15,7 @@ import { NgIcon } from '@ng-icons/core';
 import { downloadBytes } from '../../core/download';
 import type { HandoffFile } from '../../core/file-handoff';
 import { describeFile, formatBytes } from '../../core/format';
-import { EditablePdf, type EditPlan } from '../../core/pdf-edit/document';
+import { EditablePdf, type Addition, type EditPlan } from '../../core/pdf-edit/document';
 import type { TextRun } from '../../core/pdf-edit/text-runs';
 import { looksLikePdf } from '../../core/pdf-probe';
 import { PdfDocumentRenderer } from '../../core/pdf-render';
@@ -26,15 +26,34 @@ import { ToolContent } from '../../shared/tool-content/tool-content';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 
 const MAX_INPUT_BYTES = 50 * 1024 * 1024;
-const PREVIEW_SCALE = 2;
-/** Default size for a line the reader adds themselves. */
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+
+/** How far in and out the page can be taken. */
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 4;
+const ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 4];
+
+/**
+ * Pixels drawn per page point.
+ *
+ * Twice the zoom keeps small type sharp when the page is enlarged, and the
+ * ceiling stops a 400% view of an A4 page from asking for a canvas no browser
+ * will allocate.
+ */
+const renderScale = (zoom: number): number => Math.min(Math.max(zoom * 2, 1.5), 3);
+
+/** Waiting this long before rebuilding the preview keeps typing responsive. */
+const SETTLE_MS = 220;
+
 const NEW_TEXT_SIZE = 12;
+/** A placed picture starts at this share of the page width. */
+const NEW_IMAGE_SHARE = 0.3;
 
 /**
  * One run of text as it sits on the rendered page.
  *
- * Every measurement is a percentage of the page, so the sheet can be any size
- * on screen and the boxes stay on the words. The font size rides along as a
+ * Every measurement is a percentage of the page, so the sheet can be drawn at
+ * any zoom and the boxes stay on the words. The font size rides along as a
  * container-query width, which is the same trick in the one place a percentage
  * cannot be used.
  */
@@ -46,19 +65,25 @@ interface RunBox {
   top: number;
   width: number;
   height: number;
-  /** Font size as a fraction of the page width, for `cqw`. */
+  /** Font size as a share of the page width, for `cqw`. */
   size: number;
   color: string;
   editable: boolean;
   edited: boolean;
+  removed: boolean;
 }
 
-/** Characters named back to the reader: “9”, “3” and “7”. */
-function list(characters: string[]): string {
-  const quoted = characters.slice(0, 6).map((character) => `“${character}”`);
-  if (characters.length > 6) return `${quoted.join(', ')} and more`;
-  if (quoted.length <= 1) return quoted.join('');
-  return `${quoted.slice(0, -1).join(', ')} or ${quoted[quoted.length - 1]}`;
+/** An added line or picture, placed the same way. */
+interface AddedBox {
+  item: Addition;
+  id: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  size: number;
+  /** Object URL for a picture, so it can be shown before it is in the file. */
+  url: string;
 }
 
 /** Roughly where a baseline sits inside its line, as a fraction of font size. */
@@ -75,6 +100,11 @@ const DESCENT = 0.25;
  * selectable text, still the original fonts, still every graphic untouched,
  * because nothing that was not edited is rewritten at all.
  *
+ * The page on screen is the edited document, not the original with markers on
+ * it: every applied change rebuilds the file and draws that. It costs a save
+ * and a re-parse per change, which is why it is debounced, and it is what makes
+ * downloading to find out unnecessary.
+ *
  * The honest limit is the fonts. A PDF usually carries only the glyphs it
  * needs, so a document that never says "x" cannot be made to say one in its own
  * typeface; the tool notices before the edit is made and re-sets that run in
@@ -90,6 +120,7 @@ const DESCENT = 0.25;
 export class PdfEditTool implements OnDestroy {
   private readonly snackBar = inject(MatSnackBar);
   private readonly overlay = viewChild<ElementRef<HTMLElement>>('overlay');
+  private readonly frame = viewChild<ElementRef<HTMLElement>>('frame');
 
   protected readonly fileName = signal('');
   protected readonly fileSize = signal(0);
@@ -99,9 +130,12 @@ export class PdfEditTool implements OnDestroy {
   protected readonly rendering = signal(false);
   protected readonly busy = signal(false);
   protected readonly placing = signal(false);
+  protected readonly zoom = signal(1);
+  /** While on, the page shows the file as it arrived. */
+  protected readonly showOriginal = signal(false);
   protected readonly result = signal<HandoffFile | null>(null);
 
-  /** Bumped whenever an edit lands, to rebuild the boxes from the document. */
+  /** Bumped whenever a change lands, to rebuild the boxes from the document. */
   private readonly revision = signal(0);
   private readonly pageSize = signal({ width: 1, height: 1 });
   private readonly runs = signal<TextRun[]>([]);
@@ -110,11 +144,16 @@ export class PdfEditTool implements OnDestroy {
   protected readonly editing = signal<RunBox | null>(null);
   protected readonly draft = signal('');
   protected readonly plan = signal<EditPlan | null>(null);
+  /** The added line or picture whose controls are open. */
+  protected readonly selected = signal<string | null>(null);
 
   protected readonly hasFile = computed(() => this.fileName() !== '');
   protected readonly fileSummary = computed(() =>
     describeFile(this.fileName(), this.pageCount() || null, this.fileSize()),
   );
+  protected readonly zoomLabel = computed(() => `${Math.round(this.zoom() * 100)}%`);
+  /** The page's drawn width in CSS pixels, which is what the zoom controls. */
+  protected readonly sheetWidth = computed(() => this.pageSize().width * this.zoom());
 
   protected readonly boxes = computed<RunBox[]>(() => {
     this.revision();
@@ -129,34 +168,44 @@ export class PdfEditTool implements OnDestroy {
         text,
         left: (run.x / width) * 100,
         top: ((height - run.y - run.size * ASCENT) / height) * 100,
-        // A deleted or very short run still needs something to click on.
+        // A removed or very short run still needs something to click on.
         width: (Math.max(run.width, run.size * 0.6) / width) * 100,
         height: ((run.size * (ASCENT + DESCENT)) / height) * 100,
         size: (run.size / width) * 100,
         color: run.color,
         editable: !run.rotated,
         edited: pdf.edited(run),
+        removed: text === '',
       };
     });
   });
 
-  protected readonly added = computed(() => {
+  protected readonly added = computed<AddedBox[]>(() => {
     this.revision();
     const pdf = this.pdf;
     const { width, height } = this.pageSize();
     if (!pdf) return [];
     return pdf.additions
-      .map((item, index) => ({ item, index }))
-      .filter((entry) => entry.item.page === this.page())
-      .map((entry) => ({
-        index: entry.index,
-        text: entry.item.text,
-        left: (entry.item.x / width) * 100,
-        top: ((height - entry.item.y - entry.item.size * ASCENT) / height) * 100,
-        size: (entry.item.size / width) * 100,
-        color: entry.item.color,
-      }));
+      .filter((item) => item.page === this.page())
+      .map((item) => {
+        const tall = item.kind === 'text' ? item.size * (ASCENT + DESCENT) : item.height;
+        return {
+          item,
+          id: item.id,
+          left: (item.x / width) * 100,
+          top: ((height - item.y - tall * (item.kind === 'text' ? ASCENT : 1)) / height) * 100,
+          width: item.kind === 'image' ? (item.width / width) * 100 : 0,
+          height: (tall / height) * 100,
+          size: ((item.kind === 'text' ? item.size : 0) / width) * 100,
+          url: this.imageUrls.get(item.id) ?? '',
+        };
+      });
   });
+
+  /** The added item the controls belong to, if one is chosen. */
+  protected readonly chosen = computed(() =>
+    this.added().find((box) => box.id === this.selected()),
+  );
 
   protected readonly changeCount = computed(() => {
     this.revision();
@@ -190,10 +239,20 @@ export class PdfEditTool implements OnDestroy {
 
   private pdf: EditablePdf | null = null;
   private renderer: PdfDocumentRenderer | null = null;
+  private original: PdfDocumentRenderer | null = null;
   private renderToken = 0;
+  private settle: ReturnType<typeof setTimeout> | null = null;
+  private readonly imageUrls = new Map<string, string>();
+  private drag: {
+    id: string;
+    mode: 'move' | 'resize';
+    pointerId: number;
+    from: { x: number; y: number };
+    start: { x: number; y: number; width: number; height: number };
+  } | null = null;
 
   ngOnDestroy(): void {
-    this.renderer?.close();
+    this.closeDocument();
   }
 
   // --- The document -----------------------------------------------------
@@ -220,7 +279,10 @@ export class PdfEditTool implements OnDestroy {
 
     this.closeDocument();
     try {
-      // Two readers of the same bytes: one to draw the page, one to change it.
+      // Three readers of the same bytes: one keeps the file as it arrived for
+      // the comparison, one is reopened on the edited document, and one holds
+      // the document being changed.
+      this.original = await PdfDocumentRenderer.open(bytes);
       this.renderer = await PdfDocumentRenderer.open(bytes);
       this.pdf = await EditablePdf.open(bytes.slice());
     } catch {
@@ -234,29 +296,20 @@ export class PdfEditTool implements OnDestroy {
     this.fileSize.set(file.size);
     this.pageCount.set(this.pdf.pageCount);
     this.result.set(null);
+    this.pageSize.set(this.pdf.pageSize(0));
+    this.fitToWidth();
     await this.showPage(0);
   }
 
   protected async showPage(index: number): Promise<void> {
-    const renderer = this.renderer;
     const pdf = this.pdf;
-    if (!renderer || !pdf || index < 0 || index >= pdf.pageCount) return;
-
+    if (!pdf || index < 0 || index >= pdf.pageCount) return;
     this.stopEditing();
-    const token = ++this.renderToken;
-    this.rendering.set(true);
-    try {
-      const { canvas } = await renderer.renderPageCanvas(index, PREVIEW_SCALE);
-      if (token !== this.renderToken) return;
-      this.page.set(index);
-      this.pageSize.set(pdf.pageSize(index));
-      this.runs.set(pdf.runs(index));
-      this.pageImage.set(canvas.toDataURL('image/jpeg', 0.9));
-    } catch {
-      this.showError('That page could not be drawn.');
-    } finally {
-      if (token === this.renderToken) this.rendering.set(false);
-    }
+    this.selected.set(null);
+    this.page.set(index);
+    this.pageSize.set(pdf.pageSize(index));
+    this.runs.set(pdf.runs(index));
+    await this.draw();
   }
 
   protected previousPage(): void {
@@ -267,9 +320,100 @@ export class PdfEditTool implements OnDestroy {
     void this.showPage(this.page() + 1);
   }
 
+  /** Draws the current page from whichever document is being shown. */
+  private async draw(): Promise<void> {
+    const renderer = this.showOriginal() ? this.original : this.renderer;
+    if (!renderer) return;
+    const token = ++this.renderToken;
+    this.rendering.set(true);
+    try {
+      const { canvas } = await renderer.renderPageCanvas(this.page(), renderScale(this.zoom()));
+      if (token !== this.renderToken) return;
+      this.pageImage.set(canvas.toDataURL('image/jpeg', 0.92));
+    } catch {
+      this.showError('That page could not be drawn.');
+    } finally {
+      if (token === this.renderToken) this.rendering.set(false);
+    }
+  }
+
+  /**
+   * Rebuilds the preview from the edited document.
+   *
+   * Debounced, because it saves the whole file and hands it back to pdf.js —
+   * cheap on a page of text, not free on a long document, and pointless three
+   * times over while somebody drags a picture across the page.
+   */
+  private refresh(): void {
+    this.revision.update((count) => count + 1);
+    if (this.settle) clearTimeout(this.settle);
+    this.settle = setTimeout(() => {
+      this.settle = null;
+      void this.rebuild();
+    }, SETTLE_MS);
+  }
+
+  private async rebuild(): Promise<void> {
+    const pdf = this.pdf;
+    if (!pdf || this.showOriginal()) return;
+    try {
+      const next = await PdfDocumentRenderer.open(await pdf.save());
+      this.renderer?.close();
+      this.renderer = next;
+    } catch {
+      this.showError('The preview could not be rebuilt, but your changes are still here.');
+      return;
+    }
+    await this.draw();
+  }
+
+  // --- Zoom ---------------------------------------------------------------
+
+  protected zoomIn(): void {
+    this.setZoom(ZOOM_STEPS.find((step) => step > this.zoom() + 0.001) ?? MAX_ZOOM);
+  }
+
+  protected zoomOut(): void {
+    const smaller = [...ZOOM_STEPS].reverse().find((step) => step < this.zoom() - 0.001);
+    this.setZoom(smaller ?? MIN_ZOOM);
+  }
+
+  /** Sets the zoom so the page fills the width it has to sit in. */
+  protected fitToWidth(): void {
+    const frame = this.frame()?.nativeElement;
+    const width = this.pageSize().width;
+    if (!frame || width <= 1) return;
+    // The gutter keeps the page clear of the scrollbar it may have caused.
+    this.setZoom((frame.clientWidth - 28) / width);
+  }
+
+  private setZoom(value: number): void {
+    const next = Math.min(Math.max(value, MIN_ZOOM), MAX_ZOOM);
+    if (Math.abs(next - this.zoom()) < 0.001) return;
+    this.zoom.set(next);
+    void this.draw();
+  }
+
+  /** Ctrl- or ⌘-scroll zooms the page, the way every other viewer does. */
+  protected onWheel(event: WheelEvent): void {
+    if (!event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    if (event.deltaY < 0) this.zoomIn();
+    else this.zoomOut();
+  }
+
+  protected toggleOriginal(): void {
+    this.stopEditing();
+    this.selected.set(null);
+    this.showOriginal.update((on) => !on);
+    if (this.showOriginal()) void this.draw();
+    else void this.rebuild();
+  }
+
   // --- Editing a run ------------------------------------------------------
 
   protected startEditing(box: RunBox): void {
+    if (this.showOriginal()) return;
     if (!box.editable) {
       this.snackBar.open('Sideways and rotated text can be read here but not changed.', 'Dismiss', {
         duration: 5000,
@@ -277,6 +421,7 @@ export class PdfEditTool implements OnDestroy {
       return;
     }
     this.placing.set(false);
+    this.selected.set(null);
     this.editing.set(box);
     this.draft.set(box.text);
     this.replan(box.text);
@@ -305,12 +450,11 @@ export class PdfEditTool implements OnDestroy {
       return;
     }
     this.stopEditing();
-    this.revision.update((n) => n + 1);
+    this.refresh();
   }
 
   protected removeRun(): void {
-    const box = this.editing();
-    if (!box) return;
+    if (!this.editing()) return;
     this.draft.set('');
     this.plan.set(null);
     this.commit();
@@ -322,54 +466,197 @@ export class PdfEditTool implements OnDestroy {
     this.plan.set(null);
   }
 
-  // --- Adding a line ------------------------------------------------------
+  // --- Adding a line or a picture -----------------------------------------
 
   protected togglePlacing(): void {
     this.stopEditing();
+    this.selected.set(null);
     this.placing.update((on) => !on);
   }
 
   /**
    * Puts a new line where the page was clicked, or — when nothing is being
-   * placed — closes the open editor, which is what clicking off it should do.
+   * placed — closes whatever was open, which is what clicking off it means.
    */
-  protected placeText(event: PointerEvent): void {
+  protected onSheetDown(event: PointerEvent): void {
     if (!this.placing()) {
       this.stopEditing();
+      this.selected.set(null);
       return;
     }
-    if (!this.pdf) return;
-    const host = this.overlay()?.nativeElement;
-    if (!host) return;
-    const rect = host.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
-    const { width, height } = this.pageSize();
-    const x = ((event.clientX - rect.left) / rect.width) * width;
-    const y = height - ((event.clientY - rect.top) / rect.height) * height;
-
-    this.pdf.addText({
+    const point = this.pointOf(event);
+    if (!point || !this.pdf) return;
+    const id = freshId();
+    this.pdf.add({
+      kind: 'text',
+      id,
       page: this.page(),
       text: 'New text',
-      x,
-      y,
+      x: point.x,
+      y: point.y,
       size: NEW_TEXT_SIZE,
       color: '#000000',
       bold: false,
     });
     this.placing.set(false);
-    this.revision.update((n) => n + 1);
+    this.selected.set(id);
+    this.refresh();
   }
 
-  protected editAdded(index: number, event: Event): void {
+  protected async acceptImage(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Clearing it means the same picture can be chosen twice in a row.
+    input.value = '';
     const pdf = this.pdf;
-    if (!pdf) return;
-    pdf.setAdded(index, (event.target as HTMLInputElement).value);
-    this.revision.update((n) => n + 1);
+    if (!file || !pdf) return;
+    if (file.size > MAX_IMAGE_BYTES) {
+      this.showError(`"${file.name}" is too large (max ${formatBytes(MAX_IMAGE_BYTES)}).`);
+      return;
+    }
+    let picture: Picture;
+    try {
+      picture = await readPicture(file);
+    } catch {
+      this.showError(`"${file.name}" could not be read as an image.`);
+      return;
+    }
+
+    const page = this.pageSize();
+    const width = page.width * NEW_IMAGE_SHARE;
+    const height = (width * picture.height) / picture.width;
+    const id = freshId();
+    this.imageUrls.set(
+      id,
+      URL.createObjectURL(new Blob([picture.bytes.slice()], { type: `image/${picture.format}` })),
+    );
+    pdf.add({
+      kind: 'image',
+      id,
+      page: this.page(),
+      bytes: picture.bytes,
+      format: picture.format,
+      // Dropped in the middle, where it is visible and easy to drag from.
+      x: (page.width - width) / 2,
+      y: (page.height - height) / 2,
+      width,
+      height,
+    });
+    this.selected.set(id);
+    this.refresh();
   }
 
-  protected removeAdded(index: number): void {
-    this.pdf?.removeAdded(index);
-    this.revision.update((n) => n + 1);
+  protected choose(id: string, event: Event): void {
+    event.stopPropagation();
+    this.stopEditing();
+    this.selected.set(id);
+  }
+
+  protected editAdded(id: string, event: Event): void {
+    this.pdf?.update(id, { text: (event.target as HTMLInputElement).value });
+    this.refresh();
+  }
+
+  protected setSize(id: string, event: Event): void {
+    const size = Number((event.target as HTMLInputElement).value);
+    if (Number.isFinite(size) && size > 0) this.pdf?.update(id, { size });
+    this.refresh();
+  }
+
+  protected setColor(id: string, event: Event): void {
+    this.pdf?.update(id, { color: (event.target as HTMLInputElement).value });
+    this.refresh();
+  }
+
+  protected toggleBold(box: AddedBox): void {
+    if (box.item.kind !== 'text') return;
+    this.pdf?.update(box.id, { bold: !box.item.bold });
+    this.refresh();
+  }
+
+  /** Resizes a picture by its width, keeping the shape it came in. */
+  protected setWidth(box: AddedBox, event: Event): void {
+    if (box.item.kind !== 'image') return;
+    const width = Number((event.target as HTMLInputElement).value);
+    if (!Number.isFinite(width) || width <= 0) return;
+    const ratio = box.item.height / box.item.width;
+    this.pdf?.update(box.id, { width, height: width * ratio });
+    this.refresh();
+  }
+
+  protected removeAdded(id: string): void {
+    this.pdf?.remove(id);
+    this.releaseUrl(id);
+    if (this.selected() === id) this.selected.set(null);
+    this.refresh();
+  }
+
+  // --- Dragging -----------------------------------------------------------
+
+  protected startDrag(box: AddedBox, mode: 'move' | 'resize', event: PointerEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const point = this.pointOf(event);
+    if (!point) return;
+    const item = box.item;
+    this.selected.set(box.id);
+    this.stopEditing();
+    this.drag = {
+      id: box.id,
+      mode,
+      pointerId: event.pointerId,
+      from: point,
+      start: {
+        x: item.x,
+        y: item.y,
+        width: item.kind === 'image' ? item.width : 0,
+        height: item.kind === 'image' ? item.height : 0,
+      },
+    };
+    (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+  }
+
+  protected onDrag(event: PointerEvent): void {
+    const drag = this.drag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const point = this.pointOf(event);
+    if (!point) return;
+    const dx = point.x - drag.from.x;
+    const dy = point.y - drag.from.y;
+    if (drag.mode === 'move') {
+      this.pdf?.update(drag.id, { x: drag.start.x + dx, y: drag.start.y + dy });
+    } else {
+      // The corner sets the width and the shape follows; the top edge is what
+      // stays still, because the anchor underneath is the bottom-left corner.
+      const width = Math.max(8, drag.start.width + dx);
+      const height = (width * drag.start.height) / drag.start.width;
+      this.pdf?.update(drag.id, {
+        width,
+        height,
+        y: drag.start.y - (height - drag.start.height),
+      });
+    }
+    // Only the boxes move while the pointer is down; the page catches up after.
+    this.revision.update((count) => count + 1);
+  }
+
+  protected endDrag(event: PointerEvent): void {
+    if (!this.drag || this.drag.pointerId !== event.pointerId) return;
+    this.drag = null;
+    this.refresh();
+  }
+
+  /** Where a pointer is on the page, in page points. */
+  private pointOf(event: PointerEvent): { x: number; y: number } | null {
+    const host = this.overlay()?.nativeElement;
+    if (!host) return null;
+    const rect = host.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+    const { width, height } = this.pageSize();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * width,
+      y: height - ((event.clientY - rect.top) / rect.height) * height,
+    };
   }
 
   // --- Out again ----------------------------------------------------------
@@ -393,7 +680,9 @@ export class PdfEditTool implements OnDestroy {
   protected revert(): void {
     this.pdf?.reset();
     this.stopEditing();
-    this.revision.update((n) => n + 1);
+    this.selected.set(null);
+    for (const id of [...this.imageUrls.keys()]) this.releaseUrl(id);
+    this.refresh();
   }
 
   protected clear(): void {
@@ -408,15 +697,79 @@ export class PdfEditTool implements OnDestroy {
 
   private closeDocument(): void {
     this.renderToken++;
+    if (this.settle) clearTimeout(this.settle);
+    this.settle = null;
     this.renderer?.close();
+    this.original?.close();
     this.renderer = null;
+    this.original = null;
     this.pdf = null;
+    for (const id of [...this.imageUrls.keys()]) this.releaseUrl(id);
     this.stopEditing();
+    this.selected.set(null);
     this.placing.set(false);
-    this.revision.update((n) => n + 1);
+    this.showOriginal.set(false);
+    this.revision.update((count) => count + 1);
+  }
+
+  private releaseUrl(id: string): void {
+    const url = this.imageUrls.get(id);
+    if (url) URL.revokeObjectURL(url);
+    this.imageUrls.delete(id);
   }
 
   private showError(message: string): void {
     this.snackBar.open(message, 'Dismiss', { duration: 6000 });
+  }
+}
+
+/** Characters named back to the reader: “9”, “3” and “7”. */
+function list(characters: string[]): string {
+  const quoted = characters.slice(0, 6).map((character) => `“${character}”`);
+  if (characters.length > 6) return `${quoted.join(', ')} and more`;
+  if (quoted.length <= 1) return quoted.join('');
+  return `${quoted.slice(0, -1).join(', ')} or ${quoted[quoted.length - 1]}`;
+}
+
+let counter = 0;
+function freshId(): string {
+  return `a${++counter}`;
+}
+
+interface Picture {
+  bytes: Uint8Array;
+  format: 'png' | 'jpeg';
+  width: number;
+  height: number;
+}
+
+/**
+ * A chosen file as bytes a PDF can carry.
+ *
+ * PNG and JPEG go in untouched, because re-encoding them could only lose
+ * something. Everything else the browser can decode — WebP, AVIF, GIF, a BMP —
+ * is drawn once and taken back out as a PNG, which is the shortest path from
+ * "the browser can show it" to "a PDF can hold it".
+ */
+async function readPicture(file: File): Promise<Picture> {
+  const bitmap = await createImageBitmap(file);
+  const width = bitmap.width;
+  const height = bitmap.height;
+  try {
+    if (file.type === 'image/png' || file.type === 'image/jpeg') {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      return { bytes, format: file.type === 'image/png' ? 'png' : 'jpeg', width, height };
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('This browser could not open a drawing surface.');
+    context.drawImage(bitmap, 0, 0);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('That image could not be converted.');
+    return { bytes: new Uint8Array(await blob.arrayBuffer()), format: 'png', width, height };
+  } finally {
+    bitmap.close();
   }
 }

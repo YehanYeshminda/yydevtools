@@ -3435,7 +3435,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Fill and flatten it here, then open the result in Sign PDF to add a signature image.',
       },
     ],
-    related: ['pdf-sign', 'pdf-protect', 'pdf-ocr', 'pdf-organizer'],
+    related: ['pdf-edit', 'pdf-sign', 'pdf-protect', 'pdf-ocr'],
   },
   'pdf-sign': {
     slug: 'pdf-sign',
@@ -3495,26 +3495,29 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. Rendering, placement and embedding all run in your browser. Nothing leaves your device.',
       },
     ],
-    related: ['pdf-protect', 'pdf-merge', 'pdf-organizer', 'image-compressor'],
+    related: ['pdf-edit', 'pdf-protect', 'pdf-merge', 'pdf-organizer'],
   },
   'pdf-edit': {
     slug: 'pdf-edit',
     intro: [
       'Most online “PDF editors” cannot edit a PDF. They draw a white rectangle over the old text and put new text on top of it, which looks fine until someone selects the line, searches the document, or opens it on a coloured background. The old words are still in the file.',
       'This one changes the page itself. A PDF page is a list of drawing instructions, and the words on it come from specific ones; this tool finds the instruction that drew the line you clicked and rewrites it. What comes out is the same document saying something different — same fonts, same graphics, same selectable text, and nothing covered up.',
-      'It runs entirely in your browser. The file is never uploaded.',
+      'The page in front of you is the edited document, redrawn after every change, so you can read the result before you download anything — and Compare puts the original back for as long as you hold it. It runs entirely in your browser. The file is never uploaded.',
     ],
     steps: [
       'Choose the PDF. Every line of real text on the page becomes clickable.',
       'Click a line, type over it, and press Apply. Delete takes it off the page.',
-      'Use Add text to put a new line anywhere, or turn the page and keep going.',
-      'Save & download. Open the result and check the pages you touched.',
+      'Add text or a picture anywhere, then drag it into place; zoom in to work on small type.',
+      'Press Compare to see it against the original, then Save & download.',
     ],
     features: [
       "Edits the page's own content stream, so the original text is replaced rather than hidden.",
       "Keeps the document's fonts, size, colour and position for every line it changes.",
       'Says up front when a line cannot be written in its own font, and what it will use instead.',
-      'Delete a line, or add a new one anywhere on the page.',
+      'Shows the edited document as you work — no download needed to see what changed.',
+      'Compare switches back to the file as it arrived, and Undo all returns to it for good.',
+      'Delete a line, or add text and pictures anywhere on the page.',
+      'Zoom from 25% to 400%, with the page redrawn at each step rather than stretched.',
       'Reaches text inside form XObjects, which is where spreadsheet and report exports keep it.',
       'Nothing leaves your device.',
     ],
@@ -3538,7 +3541,14 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         heading: 'What it cannot do yet',
         body: [
           'Scanned pages have no text to edit — they are pictures. Run PDF OCR first and you will get a searchable copy, though the text it adds sits invisibly behind the image rather than replacing it.',
-          'Sideways and rotated text is shown but not editable, because the editor would have to be rotated with it. Images, tables and drawings are left exactly as they are; this changes text, not layout. Text can be changed and moved off the page, but not dragged to a new position.',
+          'Sideways and rotated text is shown but not editable, because the editor would have to be rotated with it. The drawings, tables and pictures already in the document are left exactly as they are; this changes text, not layout. A line that was in the file can be rewritten or removed, but not dragged somewhere else — only the text and pictures you add yourself can be moved and resized.',
+        ],
+      },
+      {
+        heading: 'Seeing it before you save it',
+        body: [
+          'Every change rebuilds the file and draws the result, so what is on screen is the document you are about to download, not the original with markers on top of it. If a replacement is too long, or a substituted line does not sit well with its neighbours, you find out while you can still fix it.',
+          'Compare holds the file as it arrived for as long as you keep it pressed on, which is the quickest way to see exactly what you have changed. Undo all goes back to it permanently. Zoom redraws the page rather than enlarging a picture of it, so small print stays sharp all the way in — Ctrl-scroll, or ⌘-scroll on a Mac, works too.',
         ],
       },
       {
@@ -3560,7 +3570,15 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
       {
         q: 'Can I change the font, size or colour?',
-        a: 'Not yet for text that is already there — an edited line keeps the size, colour and position it had. Text you add yourself is drawn in Helvetica at 12pt.',
+        a: 'Not for text that is already there — an edited line keeps the size, colour and position it had, which is what makes the change invisible. Text you add yourself has its own size, colour and bold controls, and is drawn in Helvetica.',
+      },
+      {
+        q: 'Do I have to download it to see what changed?',
+        a: 'No. The page you are looking at is the edited document, redrawn after each change. Compare switches to the original and back, so you can see the difference without leaving the tab.',
+      },
+      {
+        q: 'Can I put an image on the page?',
+        a: 'Yes. Add image takes a PNG, JPEG or anything else your browser can open; drag it where you want it and drag the corner to resize, or type an exact width. It is embedded in the PDF, not pasted over a picture of it.',
       },
       {
         q: 'Can I edit a scan?',
@@ -3632,7 +3650,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. Rendering, searching and rebuilding all run in your browser.',
       },
     ],
-    related: ['pdf-ocr', 'pdf-protect', 'exif-viewer', 'pdf-sign'],
+    related: ['pdf-edit', 'pdf-ocr', 'pdf-protect', 'exif-viewer'],
   },
   'pdf-protect': {
     slug: 'pdf-protect',
@@ -3805,7 +3823,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. There is a monthly free allowance you can use without signing up.',
       },
     ],
-    related: ['pdf-ocr', 'pdf-compress', 'pdf-viewer'],
+    related: ['pdf-edit', 'pdf-ocr', 'pdf-compress', 'pdf-viewer'],
   },
 
   'pdf-ocr': {
@@ -3854,7 +3872,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. The original pages are copied across untouched and the recognised words are added as text that draws nothing at all, so the file renders pixel for pixel as it did before. Nothing is re-compressed and no image is re-rendered.',
       },
     ],
-    related: ['pdf-convert', 'pdf-viewer', 'pdf-compress'],
+    related: ['pdf-edit', 'pdf-convert', 'pdf-viewer', 'pdf-compress'],
   },
 
   'pdf-compress': {
@@ -3974,7 +3992,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Scanned pages are images with no underlying text, so search finds nothing. Run the PDF through the OCR tool first to add a searchable text layer, then view it here.',
       },
     ],
-    related: ['pdf-ocr', 'pdf-merge', 'pdf-split'],
+    related: ['pdf-edit', 'pdf-ocr', 'pdf-merge', 'pdf-split'],
   },
 
   'pdf-organizer': {

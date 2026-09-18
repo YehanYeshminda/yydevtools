@@ -346,8 +346,8 @@ export const routes: Routes = [
     title: 'PDF Editor — Change the text inside a PDF online — YYDevTools',
     data: {
       description:
-        'Edit the text already in a PDF: click a line, type over it, delete it or add a new ' +
-        'one, and download a file with the words really replaced. Never uploaded.',
+        'Edit the text inside a PDF, not over it: click a line and type, add text or images, ' +
+        'and see the change before you download. Never uploaded.',
     },
   },
   {

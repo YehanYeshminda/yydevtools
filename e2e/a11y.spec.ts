@@ -209,3 +209,47 @@ for (const theme of ['dark', 'light'] as const) {
     ).toEqual([]);
   });
 }
+
+/**
+ * The editor's three states, none of which exist until a PDF is open.
+ *
+ * It is the densest surface on the site — a toolbar, a button over every run
+ * of text on the page, a panel that opens on top of the document, and a row of
+ * controls for whatever was added last. All of it sits over a white page
+ * rather than over the theme's own background, which is exactly where
+ * contrast goes wrong in the dark theme.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`pdf-edit has no AXE violations in the ${theme} theme`, async ({ page }) => {
+    await gotoTool(page, 'pdf-edit', 'PDF Editor');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+    await uploadFiles(page, ['sample.pdf']);
+    await expect(page.locator('.sheet__page')).toBeVisible({ timeout: 45_000 });
+
+    const check = async (state: string) => {
+      const results = await audit(page).analyze();
+      expect(
+        results.violations.map(
+          (violation) =>
+            `${violation.id}: ${violation.nodes
+              .map((node) => node.target.join(' '))
+              .slice(0, 6)
+              .join(' | ')}`,
+        ),
+        `AXE violations with ${state} [${theme}]`,
+      ).toEqual([]);
+    };
+
+    await check('the page open');
+
+    await page.getByRole('button', { name: 'Annual Report', exact: true }).click();
+    await expect(page.getByTestId('run-editor')).toBeVisible();
+    await check('a line being edited');
+
+    await page.getByRole('button', { name: 'Add text' }).click();
+    await page.getByTestId('sheet').click({ position: { x: 60, y: 300 } });
+    await expect(page.getByLabel('Text you added')).toBeVisible();
+    await check('an added line selected');
+  });
+}
