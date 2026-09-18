@@ -160,7 +160,10 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: 2px;
-  cursor: text;
+  /* Editable by clicking, movable by dragging; grab wins because the text
+     cursor is what a caret would mean, and there is no caret until the editor
+     opens. */
+  cursor: grab;
   overflow: hidden;
 }
 

@@ -162,8 +162,12 @@
                     [style.top.%]="box.top"
                     [style.width.%]="box.width"
                     [style.height.%]="box.height"
-                    [title]="box.text || 'Removed — click to put it back'"
-                    (pointerdown)="$event.stopPropagation()"
+                    [title]="
+                      box.text
+                        ? box.text + ' — click to change it, drag to move it'
+                        : 'Removed — click to put it back'
+                    "
+                    (pointerdown)="startRunDrag(box, $event)"
                     (click)="startEditing(box)"
                   >
                     <span class="run__label">{{ box.text || 'Removed line' }}</span>

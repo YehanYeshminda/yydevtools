@@ -84,6 +84,17 @@ export interface TextRun {
   rotated: boolean;
   /** The matrix in force, needed to write a replacement back in place. */
   matrix: Matrix;
+  /**
+   * The three matrices `matrix` is made of, which is what relocating needs.
+   *
+   * `matrix` is `tm × ctm`, so it cannot be written back as a `Tm` — that
+   * would apply the CTM twice. Moving a run means emitting a `tm` shifted in
+   * text space and then putting `tmAfter` back, so the pen ends exactly where
+   * the original left it and nothing after it shifts.
+   */
+  ctm: Matrix;
+  tm: Matrix;
+  tmAfter: Matrix;
   /** Font size before the matrix, i.e. the number next to `Tf`. */
   fontSize: number;
   /** Which of `Tj TJ ' "` drew it — the last two also move to a new line. */
@@ -408,6 +419,7 @@ function placeRun(
   }
 
   const matrix = multiply(textMatrix, state.ctm);
+  const after = multiply([1, 0, 0, 1, advance, 0], textMatrix);
   const origin = apply(matrix, 0, rise);
   const end = apply(matrix, advance, rise);
   // The font size as painted: how long the text matrix makes a unit of height.
@@ -432,12 +444,15 @@ function placeRun(
       // shows these but does not offer to change them.
       rotated: Math.abs(matrix[1]) > 1e-6 || matrix[0] < 0,
       matrix,
+      ctm: state.ctm,
+      tm: textMatrix,
+      tmAfter: after,
       fontSize: size,
       opText: op.op,
       wordSpacing,
       charSpacing,
       horizontal,
     },
-    after: multiply([1, 0, 0, 1, advance, 0], textMatrix),
+    after,
   };
 }

@@ -45,6 +45,9 @@ const renderScale = (zoom: number): number => Math.min(Math.max(zoom * 2, 1.5), 
 /** Waiting this long before rebuilding the preview keeps typing responsive. */
 const SETTLE_MS = 220;
 
+/** How far a press has to travel before it counts as a drag, in page points. */
+const DRAG_SLOP = 2;
+
 const NEW_TEXT_SIZE = 12;
 /** A placed picture starts at this share of the page width. */
 const NEW_IMAGE_SHARE = 0.3;
@@ -166,12 +169,15 @@ export class PdfEditTool implements OnDestroy {
     if (!pdf || width <= 0 || height <= 0) return [];
     return this.runs().map((run) => {
       const text = pdf.textOf(run);
+      // A dragged run is drawn where it has been put, not where the file drew
+      // it — the page underneath already shows it there.
+      const { dx, dy } = pdf.offsetOf(run);
       return {
         run,
         key: `${run.streamId}@${run.start}`,
         text,
-        left: (run.x / width) * 100,
-        top: ((height - run.y - run.size * ASCENT) / height) * 100,
+        left: ((run.x + dx) / width) * 100,
+        top: ((height - (run.y + dy) - run.size * ASCENT) / height) * 100,
         // A removed or very short run still needs something to click on.
         width: (Math.max(run.width, run.size * 0.6) / width) * 100,
         height: ((run.size * (ASCENT + DESCENT)) / height) * 100,
@@ -252,13 +258,32 @@ export class PdfEditTool implements OnDestroy {
   private renderToken = 0;
   private settle: ReturnType<typeof setTimeout> | null = null;
   private readonly imageUrls = new Map<string, string>();
-  private drag: {
-    id: string;
-    mode: 'move' | 'resize';
-    pointerId: number;
-    from: { x: number; y: number };
-    start: { x: number; y: number; width: number; height: number };
-  } | null = null;
+  private drag:
+    | {
+        kind: 'added';
+        id: string;
+        mode: 'move' | 'resize';
+        pointerId: number;
+        from: { x: number; y: number };
+        start: { x: number; y: number; width: number; height: number };
+      }
+    | {
+        kind: 'run';
+        run: TextRun;
+        pointerId: number;
+        from: { x: number; y: number };
+        start: { dx: number; dy: number };
+        moved: boolean;
+      }
+    | null = null;
+
+  /**
+   * Set when a drag actually moved a run, so the `click` that follows the
+   * pointer-up does not also open the editor. Cleared by the next press, which
+   * keeps a drag that ended off the button from swallowing a later click.
+   * Keyboard activation never sets it, because it sends no pointer events.
+   */
+  private draggedRun = false;
 
   ngOnDestroy(): void {
     this.closeDocument();
@@ -422,6 +447,8 @@ export class PdfEditTool implements OnDestroy {
   // --- Editing a run ------------------------------------------------------
 
   protected startEditing(box: RunBox): void {
+    // The click that ends a drag is not a request to edit.
+    if (this.draggedRun) return;
     if (this.showOriginal()) return;
     if (!box.editable) {
       this.snackBar.open('Sideways and rotated text can be read here but not changed.', 'Dismiss', {
@@ -611,6 +638,7 @@ export class PdfEditTool implements OnDestroy {
     this.selected.set(box.id);
     this.stopEditing();
     this.drag = {
+      kind: 'added',
       id: box.id,
       mode,
       pointerId: event.pointerId,
@@ -622,6 +650,32 @@ export class PdfEditTool implements OnDestroy {
         height: item.kind === 'image' ? item.height : 0,
       },
     };
+    // One undo step for the whole drag, not one per pointer move.
+    this.pdf?.beginGesture();
+    (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+  }
+
+  /**
+   * Starts dragging a line that is already in the file.
+   *
+   * The press is not what opens the editor — the click that follows it is — so
+   * this can begin a drag without stealing an ordinary click on the run.
+   */
+  protected startRunDrag(box: RunBox, event: PointerEvent): void {
+    event.stopPropagation();
+    this.draggedRun = false;
+    if (!box.editable || !this.pdf) return;
+    const point = this.pointOf(event);
+    if (!point) return;
+    this.drag = {
+      kind: 'run',
+      run: box.run,
+      pointerId: event.pointerId,
+      from: point,
+      start: this.pdf.offsetOf(box.run),
+      moved: false,
+    };
+    this.pdf.beginGesture();
     (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
   }
 
@@ -632,7 +686,14 @@ export class PdfEditTool implements OnDestroy {
     if (!point) return;
     const dx = point.x - drag.from.x;
     const dy = point.y - drag.from.y;
-    if (drag.mode === 'move') {
+
+    if (drag.kind === 'run') {
+      // A press that never really moves is a click on the run, not a drag.
+      if (!drag.moved && Math.hypot(dx, dy) < DRAG_SLOP) return;
+      drag.moved = true;
+      this.stopEditing();
+      this.pdf?.moveText(this.page(), drag.run, drag.start.dx + dx, drag.start.dy + dy);
+    } else if (drag.mode === 'move') {
       this.pdf?.update(drag.id, { x: drag.start.x + dx, y: drag.start.y + dy });
     } else {
       // The corner sets the width and the shape follows; the top edge is what
@@ -650,8 +711,11 @@ export class PdfEditTool implements OnDestroy {
   }
 
   protected endDrag(event: PointerEvent): void {
-    if (!this.drag || this.drag.pointerId !== event.pointerId) return;
+    const drag = this.drag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
     this.drag = null;
+    this.pdf?.endGesture();
+    if (drag.kind === 'run') this.draggedRun = drag.moved;
     this.refresh();
   }
 

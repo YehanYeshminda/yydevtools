@@ -109,6 +109,88 @@ describe('editing a run', () => {
   });
 });
 
+describe('moving a run', () => {
+  it('puts it where it was dragged and leaves its neighbours alone', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.moveText(0, pdf.runs(0)[1], 30, -12);
+    expect(await reread(await pdf.save())).toEqual([
+      { text: 'Invoice 1024', x: 40, y: 250 },
+      { text: 'Acme Limited', x: 70, y: 208 },
+      { text: 'Total 480.00', x: 40, y: 190 },
+    ]);
+  });
+
+  it('keeps the words it was given', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    const run = pdf.runs(0)[0];
+    pdf.setText(0, run, 'Invoice 7');
+    pdf.moveText(0, run, 0, -40);
+    const after = await reread(await pdf.save());
+    expect(after[0]).toEqual({ text: 'Invoice 7', x: 40, y: 210 });
+  });
+
+  /**
+   * The case a `Td` could not do. Three shows lean on the pen the last one
+   * left, so moving the middle one has to put the pen back where it would have
+   * been or the third slides with it.
+   */
+  it('does not drag the rest of the line along with it', async () => {
+    const chained = 'BT /F1 12 Tf 1 0 0 1 40 250 Tm (one ) Tj (two ) Tj (three) Tj ET';
+    const pdf = await EditablePdf.open(await build(chained));
+    const before = pdf.runs(0).map((run) => Number(run.x.toFixed(2)));
+    pdf.moveText(0, pdf.runs(0)[1], 0, -20);
+    const after = await reread(await pdf.save());
+    expect(after.map((run) => run.text)).toEqual(['one ', 'two ', 'three']);
+    expect(after[1].y).toBe(230);
+    // The two nobody touched are exactly where they were, on their own line.
+    expect([after[0], after[2]]).toEqual([
+      { text: 'one ', x: before[0], y: 250 },
+      { text: 'three', x: before[2], y: 250 },
+    ]);
+  });
+
+  it('moves the same distance however many times it is saved', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.moveText(0, pdf.runs(0)[0], 25, 0);
+    await pdf.save();
+    expect((await reread(await pdf.save()))[0]).toEqual({ text: 'Invoice 1024', x: 65, y: 250 });
+  });
+
+  it('takes the move back', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    const run = pdf.runs(0)[0];
+    pdf.moveText(0, run, 25, -30);
+    expect(pdf.offsetOf(run)).toEqual({ dx: 25, dy: -30 });
+    expect(pdf.changeCount).toBe(1);
+
+    pdf.undo();
+    expect(pdf.offsetOf(run)).toEqual({ dx: 0, dy: 0 });
+    expect(pdf.changeCount).toBe(0);
+    expect((await reread(await pdf.save()))[0]).toEqual({ text: 'Invoice 1024', x: 40, y: 250 });
+  });
+
+  it('counts a whole drag as one step, not one per pointer move', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    const run = pdf.runs(0)[0];
+    pdf.beginGesture();
+    for (let step = 1; step <= 20; step++) pdf.moveText(0, run, step, 0);
+    pdf.endGesture();
+    expect(pdf.offsetOf(run)).toEqual({ dx: 20, dy: 0 });
+
+    pdf.undo();
+    expect(pdf.offsetOf(run)).toEqual({ dx: 0, dy: 0 });
+    expect(pdf.canUndo).toBe(false);
+  });
+
+  it('forgets the move when it is dragged back to where it started', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    const run = pdf.runs(0)[0];
+    pdf.moveText(0, run, 25, 0);
+    pdf.moveText(0, run, 0, 0);
+    expect(pdf.changeCount).toBe(0);
+  });
+});
+
 describe('planning an edit', () => {
   it('says the run can be written in its own font', async () => {
     const pdf = await EditablePdf.open(await build(THREE_LINES));

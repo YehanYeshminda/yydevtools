@@ -408,6 +408,13 @@ test('pdf-redact finds a phrase on every page and downloads the rebuilt file', a
   expectClean(watch);
 });
 
+/** Downloads what the editor currently holds and opens it for reading. */
+async function saveAndOpen(page: Page): Promise<EditablePdf> {
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: /Save & download/ }).click();
+  return EditablePdf.open(new Uint8Array(readFileSync(await (await download).path())));
+}
+
 /**
  * PDF Editor is the one tool here that rewrites a page rather than adding to it,
  * so the assertion has to be made on the saved bytes: the run is read back out
@@ -667,6 +674,71 @@ test('pdf-edit takes changes back one at a time, and the file forgets them too',
   expect(text).not.toContain('New text');
   // And the delete that was undone is back.
   expect(text).toContain('Page 1 of 3');
+
+  expectClean(watch);
+});
+
+/**
+ * Dragging text the file already contains, which is a different thing from
+ * dragging something added: nothing new is drawn, an existing show operator is
+ * wrapped in a matrix that puts it somewhere else. The check is on the saved
+ * bytes because that is the only place the distinction is visible — an overlay
+ * moved on screen would look identical.
+ */
+test('pdf-edit moves a line the file already had, and puts it back', async ({ page }) => {
+  const watch = watchConsole(page);
+  const original = await EditablePdf.open(new Uint8Array(readFileSync(fixture('sample.pdf'))));
+  const was = original.runs(0)[0];
+  expect(was.text).toBe('Annual Report');
+
+  await gotoTool(page, 'pdf-edit', 'PDF Editor');
+  await uploadFiles(page, ['sample.pdf']);
+  await expect(page.locator('.sheet__page')).toBeVisible({ timeout: 45_000 });
+
+  const heading = page.getByRole('button', { name: 'Annual Report', exact: true });
+  await expect(heading).toBeVisible({ timeout: 45_000 });
+  const from = (await heading.boundingBox())!;
+
+  // Down and to the right, in steps: one jump would clear the slop without
+  // ever producing the intermediate moves a real drag sends.
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  for (let step = 1; step <= 5; step++) {
+    await page.mouse.move(
+      from.x + from.width / 2 + step * 20,
+      from.y + from.height / 2 + step * 14,
+    );
+  }
+  await page.mouse.up();
+
+  // One change for the whole drag, not one per pointer move.
+  await expect(page.getByTestId('change-count')).toHaveText('1 change');
+  const to = (await heading.boundingBox())!;
+  expect(to.x).toBeGreaterThan(from.x + 60);
+  expect(to.y).toBeGreaterThan(from.y + 40);
+
+  const moved = await saveAndOpen(page);
+  const run = moved.runs(0)[0];
+  expect(run.text).toBe('Annual Report');
+  // Right on the page is +x; down the screen is -y in page points.
+  expect(run.x).toBeGreaterThan(was.x + 20);
+  expect(run.y).toBeLessThan(was.y - 15);
+
+  // Taking it back has to reach the file too, not just the screen: the preview
+  // already saved the move into the page once.
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect(page.getByTestId('change-count')).toHaveText('0 changes');
+  expect((await heading.boundingBox())!.x).toBeCloseTo(from.x, 0);
+
+  // Something else to change, because Save is off with nothing to save.
+  await page.getByRole('button', { name: 'Page 1 of 3', exact: true }).click();
+  await page.getByTestId('run-editor').fill('Page one');
+  await page.getByRole('button', { name: 'Apply', exact: true }).click();
+
+  const back = (await saveAndOpen(page)).runs(0)[0];
+  expect(back.text).toBe('Annual Report');
+  expect(back.x).toBeCloseTo(was.x, 1);
+  expect(back.y).toBeCloseTo(was.y, 1);
 
   expectClean(watch);
 });

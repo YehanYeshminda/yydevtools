@@ -116,6 +116,33 @@ interface PendingEdit {
   page: number;
   run: TextRun;
   text: string;
+  /** How far the run has been dragged, in page points. */
+  dx: number;
+  dy: number;
+}
+
+/** The six numbers of a matrix, as a content stream writes them. */
+function matrixText(m: Matrix): string {
+  return m.map(round).join(' ');
+}
+
+/**
+ * The text matrix that draws a run `dx, dy` page points from where it was.
+ *
+ * The offset arrives in page space but `Tm` is read in text space, so it has to
+ * come back through the CTM. Only the CTM's linear part matters — a
+ * translation of the output is a translation of the input mapped by the
+ * inverse, and the CTM's own translation cancels.
+ */
+function shiftedTm(run: TextRun, dx: number, dy: number): Matrix {
+  const [a, b, c, d] = run.ctm;
+  const det = a * d - b * c;
+  // A degenerate CTM draws nothing; leaving the run where it is beats dividing
+  // by zero and writing NaN into the page.
+  if (!det) return run.tm;
+  const tx = (dx * d - dy * c) / det;
+  const ty = (dy * a - dx * b) / det;
+  return [run.tm[0], run.tm[1], run.tm[2], run.tm[3], run.tm[4] + tx, run.tm[5] + ty];
 }
 
 export class EditablePdf {
@@ -142,6 +169,8 @@ export class EditablePdf {
   private readonly history: Array<{ edits: Map<string, PendingEdit>; added: Addition[] }> = [];
   /** Streams a save has already rewritten, so a later one can undo the writing. */
   private readonly written = new Set<string>();
+  /** True while a drag is open, so the whole drag is one step in the history. */
+  private gesture = false;
 
   private constructor(
     private readonly doc: PDFDocument,
@@ -223,8 +252,12 @@ export class EditablePdf {
    */
   setText(pageIndex: number, run: TextRun, text: string): void {
     const key = editKey(run.streamId, run.start);
-    if (text === run.text) {
-      if (!this.edits.has(key)) return;
+    const previous = this.edits.get(key);
+    const moved = previous ? previous.dx !== 0 || previous.dy !== 0 : false;
+    // Putting the original words back is only a no-op if the run has not also
+    // been dragged; otherwise the move is still a pending change.
+    if (text === run.text && !moved) {
+      if (!previous) return;
       this.remember();
       this.edits.delete(key);
       return;
@@ -233,7 +266,43 @@ export class EditablePdf {
       throw new Error('That text cannot be written into this document.');
     }
     this.remember();
-    this.edits.set(key, { page: pageIndex, run, text });
+    this.edits.set(key, {
+      page: pageIndex,
+      run,
+      text,
+      dx: previous?.dx ?? 0,
+      dy: previous?.dy ?? 0,
+    });
+  }
+
+  /**
+   * Moves a run to `dx, dy` page points from where the file drew it.
+   *
+   * The offset is absolute rather than cumulative, so a drag can call this on
+   * every pointer move without the run running away.
+   */
+  moveText(pageIndex: number, run: TextRun, dx: number, dy: number): void {
+    const key = editKey(run.streamId, run.start);
+    const previous = this.edits.get(key);
+    if (dx === 0 && dy === 0 && previous && previous.text === run.text) {
+      this.remember();
+      this.edits.delete(key);
+      return;
+    }
+    this.remember();
+    this.edits.set(key, {
+      page: pageIndex,
+      run,
+      text: previous?.text ?? run.text,
+      dx,
+      dy,
+    });
+  }
+
+  /** How far a run has been dragged, for the caller to draw it there. */
+  offsetOf(run: TextRun): { dx: number; dy: number } {
+    const edit = this.edits.get(editKey(run.streamId, run.start));
+    return { dx: edit?.dx ?? 0, dy: edit?.dy ?? 0 };
   }
 
   /** Puts something new on a page. */
@@ -274,11 +343,27 @@ export class EditablePdf {
    * since nothing ever mutates those.
    */
   private remember(): void {
+    if (this.gesture) return;
     this.history.push({
       edits: new Map(this.edits),
       added: this.added.map((item) => ({ ...item })),
     });
     if (this.history.length > MAX_HISTORY) this.history.shift();
+  }
+
+  /**
+   * Groups everything until `endGesture` into one undo step.
+   *
+   * A drag calls a mutator on every pointer move. Without this, undoing a
+   * picture dragged across the page would take it back one pixel at a time.
+   */
+  beginGesture(): void {
+    this.remember();
+    this.gesture = true;
+  }
+
+  endGesture(): void {
+    this.gesture = false;
   }
 
   get canUndo(): boolean {
@@ -367,15 +452,31 @@ export class EditablePdf {
    * and the reader can shorten the text; silently reflowing half a line is not.
    */
   private async operatorFor(edit: PendingEdit): Promise<string> {
-    const { run, text } = edit;
+    const { run } = edit;
     const lead = run.opText === "'" || run.opText === '"' ? newlinePrefix(run) : '';
-    if (text === '') return `${lead}[${this.kerning(run, 0)}] TJ`;
+    const show = await this.showFor(edit);
+    if (!edit.dx && !edit.dy) return `${lead}${show}`;
+    // Placed by its own matrix instead of by the pen, then the matrix the rest
+    // of the text object was written against is put back — so a moved run
+    // takes nothing with it, however many shows follow it on the same line.
+    // The lead stays in front: `'` and `"` also move the *line* matrix, which
+    // a `Tm` does not, and a later newline still has to land correctly.
+    return (
+      `${lead}${matrixText(shiftedTm(run, edit.dx, edit.dy))} Tm ${show} ` +
+      `${matrixText(run.tmAfter)} Tm`
+    );
+  }
+
+  /** The show operator itself, without anything that repositions it. */
+  private async showFor(edit: PendingEdit): Promise<string> {
+    const { run, text } = edit;
+    if (text === '') return `[${this.kerning(run, 0)}] TJ`;
 
     const font = this.fontOf(edit.page, run);
     const native = font?.encode(text);
     if (font && native) {
       const body = `${toHexString(native)} ${this.kerning(run, this.advanceOf(font, run, text))}`;
-      return `${lead}[${body}] TJ`;
+      return `[${body}] TJ`;
     }
 
     // The run's own font cannot say it, so it is re-set in a face that can. The
@@ -387,7 +488,7 @@ export class EditablePdf {
     const hex = embedded.encodeText(text).toString();
     const kern = this.kerning(run, this.standardAdvanceOf(face, run, text));
     const size = round(run.fontSize);
-    return `${lead}/${name} ${size} Tf [${hex} ${kern}] TJ /${run.font} ${size} Tf`;
+    return `/${name} ${size} Tf [${hex} ${kern}] TJ /${run.font} ${size} Tf`;
   }
 
   /** A line the reader added, as the operators that draw it. */
