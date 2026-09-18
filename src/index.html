@@ -36,6 +36,41 @@
     })();
   </script>
   <script>
+    // Hold on to anything typed or dropped before the page is alive.
+    //
+    // Every tool route is prerendered, so its controls exist and accept input
+    // from the first frame — but the component bound to them arrives in a lazy
+    // chunk a second or so later and writes its own empty state over them.
+    // withEventReplay() does not rescue that: the replay has already run by the
+    // time the chunk lands. This records what the visitor did, and
+    // core/pre-hydration-input.ts hands it back once the tool has hydrated.
+    //
+    // Inline, and ahead of main.js, for the same reason as the theme script
+    // above: the window it covers opens before the bundle has even parsed.
+    (function () {
+      var seen = [];
+      function record(e) {
+        var el = e.target;
+        if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA')) return;
+        for (var i = 0; i < seen.length; i++) {
+          if (seen[i].el === el) { seen[i].value = el.value; return; }
+        }
+        seen.push({ el: el, value: el.value });
+      }
+      // Capture phase: nothing else is listening yet, and a component that
+      // hydrates later cannot hear an event that has already been and gone.
+      document.addEventListener('input', record, true);
+      document.addEventListener('change', record, true);
+      window.__yyEarlyInput = {
+        seen: seen,
+        stop: function () {
+          document.removeEventListener('input', record, true);
+          document.removeEventListener('change', record, true);
+        }
+      };
+    })();
+  </script>
+  <script>
     // Google Consent Mode v2 defaults. These must be in place BEFORE any ad
     // script loads, so they live here rather than in the Angular bundle;
     // ConsentService sends the matching 'update' once a choice is made.

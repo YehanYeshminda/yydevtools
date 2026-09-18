@@ -9,7 +9,7 @@ import {
 } from '@cantoo/pdf-lib';
 import { describe, expect, it } from 'vitest';
 
-import { parseContentStream } from './content-stream';
+import { latin1, parseContentStream } from './content-stream';
 import { EditablePdf, type AddedImage, type AddedText } from './document';
 
 /**
@@ -260,6 +260,46 @@ describe('adding to a page', () => {
     pdf.add({ ...PICTURE });
     await pdf.save();
     expect(await picturesOn(await pdf.save())).toHaveLength(1);
+  });
+
+  /**
+   * Removing an addition has to remove its bytes, not just stop drawing it.
+   * pdf-lib writes every object it holds, so a picture placed and then thought
+   * better of would otherwise still travel in the file.
+   */
+  it('takes a removed picture out of the file, not just off the page', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...PICTURE });
+    expect(latin1(await pdf.save())).toContain('/Subtype /Image');
+
+    pdf.remove('shot');
+    const after = latin1(await pdf.save());
+    expect(after).not.toContain('/Subtype /Image');
+    expect(await picturesOn(await pdf.save())).toEqual([]);
+  });
+
+  it('takes one out that was never drawn into a saved file at all', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...PICTURE });
+    pdf.remove('shot');
+    expect(latin1(await pdf.save())).not.toContain('/Subtype /Image');
+  });
+
+  it('takes one out when the picture is undone', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...PICTURE });
+    await pdf.save();
+    pdf.undo();
+    expect(latin1(await pdf.save())).not.toContain('/Subtype /Image');
+  });
+
+  it('puts a picture back if its removal is undone', async () => {
+    const pdf = await EditablePdf.open(await build(THREE_LINES));
+    pdf.add({ ...PICTURE });
+    pdf.remove('shot');
+    await pdf.save();
+    pdf.undo();
+    expect(await picturesOn(await pdf.save())).toEqual(['2x2 drawn 80x60 at 40,40']);
   });
 
   it('resizes a picture without embedding it again', async () => {

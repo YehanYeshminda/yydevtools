@@ -1,10 +1,16 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter, withInMemoryScrolling, withViewTransitions } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideIcons, provideNgIconsConfig } from '@ng-icons/core';
 
 import { routes } from './app.routes';
 import { APP_ICONS } from './core/icons';
+import { PreHydrationInput } from './core/pre-hydration-input';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 
 export const appConfig: ApplicationConfig = {
@@ -37,5 +43,8 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(),
     provideClientHydration(withEventReplay()),
+    // Hands a tool back anything typed or dropped before its lazy chunk landed;
+    // the recording half is inline in index.html, ahead of the bundle.
+    provideAppInitializer(() => inject(PreHydrationInput).start()),
   ],
 };

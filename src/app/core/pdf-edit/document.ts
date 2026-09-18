@@ -338,6 +338,8 @@ export class EditablePdf {
       if (!byStream.has(streamId)) byStream.set(streamId, []);
     }
 
+    await this.dropUnusedImages();
+
     // Splicing comes last: every offset above was taken before anything moved.
     for (const [streamId, list] of byStream) {
       const stream = this.streams.get(streamId);
@@ -399,6 +401,42 @@ export class EditablePdf {
       `q BT /${name} ${round(item.size)} Tf ${round(r)} ${round(g)} ${round(b)} rg ` +
       `1 0 0 1 ${round(item.x)} ${round(item.y)} Tm ${hex} Tj ET Q\n`
     );
+  }
+
+  /**
+   * Takes a picture nothing draws any more back out of the document.
+   *
+   * Removing an addition only stops it being drawn; pdf-lib writes every
+   * object registered with it, so without this the bytes of a picture you
+   * placed and then thought better of would still travel in the file you send.
+   *
+   * `embed()` before `delete` on purpose: until an image has been embedded
+   * pdf-lib still holds it pending, and its own flush would put it back into
+   * the context on the way out — deleting the object first achieves nothing.
+   */
+  private async dropUnusedImages(): Promise<void> {
+    const drawn = new Set(
+      this.added.filter((item) => item.kind === 'image').map((item) => item.id),
+    );
+    for (const [id, image] of this.images) {
+      if (drawn.has(id)) continue;
+      this.images.delete(id);
+      await image.embed();
+      this.doc.context.delete(image.ref);
+      // And the name it was declared under, or the page keeps a reference to
+      // an object that is no longer there.
+      const suffix = `|XObject|image:${id}`;
+      for (const [cacheKey, name] of this.resourceNames) {
+        if (!cacheKey.endsWith(suffix)) continue;
+        const streamId = cacheKey.slice(0, cacheKey.indexOf('|'));
+        this.streams
+          .get(streamId)
+          ?.resources()
+          .lookupMaybe(PDFName.of('XObject'), PDFDict)
+          ?.delete(PDFName.of(name));
+        this.resourceNames.delete(cacheKey);
+      }
+    }
   }
 
   /** A picture the reader added, as the operators that draw it. */
