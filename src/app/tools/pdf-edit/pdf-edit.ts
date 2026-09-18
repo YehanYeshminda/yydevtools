@@ -66,7 +66,7 @@ const ASCENT = 0.8;
 const DESCENT = 0.25;
 
 /**
- * Edit PDF: change the text that is already in a PDF, in the file itself.
+ * PDF Editor: change the text that is already in a PDF, in the file itself.
  *
  * Every other PDF tool here adds a layer — a signature on top, a black box
  * over a word, a page rebuilt as a picture. This one reads the page's content

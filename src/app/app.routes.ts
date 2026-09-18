@@ -343,7 +343,7 @@ export const routes: Routes = [
   {
     path: 'tools/pdf-edit',
     loadComponent: () => import('./tools/pdf-edit/pdf-edit').then((m) => m.PdfEditTool),
-    title: 'Edit PDF — Change the text inside a PDF online — YYDevTools',
+    title: 'PDF Editor — Change the text inside a PDF online — YYDevTools',
     data: {
       description:
         'Edit the text already in a PDF: click a line, type over it, delete it or add a new ' +

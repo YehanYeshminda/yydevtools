@@ -409,14 +409,14 @@ test('pdf-redact finds a phrase on every page and downloads the rebuilt file', a
 });
 
 /**
- * Edit PDF is the one tool here that rewrites a page rather than adding to it,
+ * PDF Editor is the one tool here that rewrites a page rather than adding to it,
  * so the assertion has to be made on the saved bytes: the run is read back out
  * of the downloaded file with the same reader the tool edits with. A test that
  * only watched the screen would pass just as happily on an overlay.
  */
 test('pdf-edit rewrites a line and the saved file really says the new words', async ({ page }) => {
   const watch = watchConsole(page);
-  await gotoTool(page, 'pdf-edit', 'Edit PDF');
+  await gotoTool(page, 'pdf-edit', 'PDF Editor');
 
   await uploadFiles(page, ['sample.pdf']);
   await expect(page.getByText(/sample\.pdf · 3 pages/)).toBeVisible({ timeout: 45_000 });
@@ -453,7 +453,7 @@ test('pdf-edit rewrites a line and the saved file really says the new words', as
 
 test('pdf-edit removes a line, adds one, and refuses what no font can write', async ({ page }) => {
   const watch = watchConsole(page);
-  await gotoTool(page, 'pdf-edit', 'Edit PDF');
+  await gotoTool(page, 'pdf-edit', 'PDF Editor');
 
   await uploadFiles(page, ['sample.pdf']);
   await expect(page.locator('.sheet__page')).toBeVisible({ timeout: 45_000 });
@@ -495,7 +495,7 @@ test('pdf-edit removes a line, adds one, and refuses what no font can write', as
  */
 test('pdf-edit re-sets a line when the font in the file has no glyph for it', async ({ page }) => {
   const watch = watchConsole(page);
-  await gotoTool(page, 'pdf-edit', 'Edit PDF');
+  await gotoTool(page, 'pdf-edit', 'PDF Editor');
 
   await uploadFiles(page, ['sample-subset.pdf']);
   await expect(page.locator('.sheet__page')).toBeVisible({ timeout: 45_000 });
