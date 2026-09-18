@@ -96,7 +96,65 @@ for (const theme of ['dark', 'light'] as const) {
       { pairs: TEXT_ON_SURFACES, min: AA_NORMAL },
     );
 
-    expect(failures, `contrast failures in the ${theme} theme:\n${failures.join('\n')}`).toEqual([]);
+    expect(failures, `contrast failures in the ${theme} theme:\n${failures.join('\n')}`).toEqual(
+      [],
+    );
+  });
+}
+
+/**
+ * The case the pairs above cannot express: a control's own state layer.
+ *
+ * A Material text button tints itself with the primary at 12% while it is
+ * hovered or focused, so its label is read against that blend and not against
+ * the surface underneath. Every token check measured the resting surface, and
+ * the label shipped at 4.43:1 in the light theme — under AA, and invisible to
+ * an audit unless the pointer happened to be resting on a button when it ran.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`a text button's label clears AA on its own state layer in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await setTheme(page, theme);
+
+    const report = await page.evaluate((min) => {
+      const styles = getComputedStyle(document.documentElement);
+      const read = (name: string) => styles.getPropertyValue(name).trim();
+      const rgb = (hex: string): [number, number, number] =>
+        [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
+      const luminance = (c: [number, number, number]) => {
+        const [r, g, b] = c.map((v) => {
+          const s = v / 255;
+          return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+
+      const label = rgb(read('--primary-strong'));
+      const layer = rgb(read('--primary'));
+      const worst: string[] = [];
+      // Every surface a button sits on, tinted by the layer it paints itself.
+      for (const name of ['--bg', '--surface', '--surface-1', '--surface-2']) {
+        const under = rgb(read(name));
+        const blended = under.map((v, i) => 0.12 * layer[i] + 0.88 * v) as [number, number, number];
+        const a = luminance(label);
+        const b = luminance(blended);
+        const [hi, lo] = a > b ? [a, b] : [b, a];
+        const ratio = (hi + 0.05) / (lo + 0.05);
+        if (ratio < min) {
+          worst.push(
+            `the label on a button over ${name} is ${ratio.toFixed(2)}:1 (needs ${min}:1)`,
+          );
+        }
+      }
+      return worst;
+    }, AA_NORMAL);
+
+    expect(
+      report,
+      `state-layer contrast failures in the ${theme} theme:\n${report.join('\n')}`,
+    ).toEqual([]);
   });
 }
 
@@ -125,7 +183,10 @@ test('the brand amber is never used as body text', async ({ page }) => {
         if (!text) return false;
         return getComputedStyle(el).color === brandRgb;
       })
-      .map((el) => `${el.tagName.toLowerCase()}.${el.className} — "${el.textContent?.trim().slice(0, 30)}"`);
+      .map(
+        (el) =>
+          `${el.tagName.toLowerCase()}.${el.className} — "${el.textContent?.trim().slice(0, 30)}"`,
+      );
   });
 
   expect(offenders, `--brand used as text:\n${offenders.join('\n')}`).toEqual([]);

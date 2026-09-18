@@ -244,6 +244,13 @@ body {
 :root {
   --mat-sys-primary: var(--primary);
   --mat-sys-on-primary: var(--on-primary);
+  /* A text button's label sits on the button's own state layer once it is
+     hovered or focused — the primary at 12% over the surface beneath. At
+     --primary that blend is 4.43:1 in light, just under AA, which no audit
+     caught because every check measured the label against the resting
+     surface. --primary-strong is the higher-contrast pairing in both schemes
+     (darker in light, lighter in dark) and clears it with room to spare. */
+  --mat-button-text-label-text-color: var(--primary-strong);
   --mat-sys-primary-container: var(--primary-c);
   --mat-sys-on-primary-container: var(--on-primary-c);
   --mat-sys-secondary-container: var(--surface-2);
