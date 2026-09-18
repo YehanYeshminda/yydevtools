@@ -137,6 +137,96 @@ test('jwt-decoder share link carries the token but never the key', async ({ page
   await expect(other.locator('#jwt-key')).toHaveValue('');
 });
 
+/**
+ * The three things a decoder can say that reading the JSON cannot: what the
+ * custom claims are, when the timestamps actually fall, and what is wrong with
+ * the token before anyone checks its signature.
+ */
+test('jwt-decoder lists every claim, dates them, and says what is risky', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'jwt-decoder', 'JWT Decoder');
+
+  // alg none, no expiry, no audience, a password in the payload, and custom
+  // claims a real token would carry.
+  const payload = {
+    sub: '42',
+    iat: 1516239022,
+    scope: 'read:all write:all',
+    roles: ['admin', 'billing'],
+    password: 'hunter2',
+  };
+  const b64 = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  const token = `${b64({ alg: 'none', typ: 'JWT' })}.${b64(payload)}.`;
+
+  await page.locator('#jwt-input').fill(token);
+
+  // Custom claims, which the registered-claim summary alone would never show.
+  const claims = page.locator('.claim');
+  await expect(claims.filter({ hasText: 'read:all write:all' })).toBeVisible();
+  await expect(claims.filter({ hasText: 'admin, billing' })).toBeVisible();
+
+  // The timestamp, as a date and as a phrase.
+  const issued = claims.filter({ hasText: 'Issued at' });
+  await expect(issued).toContainText('1516239022');
+  await expect(issued).toContainText('years ago');
+
+  const checks = page.getByTestId('checks');
+  await expect(checks.locator('[data-check="alg-none"]')).toBeVisible();
+  await expect(checks.locator('[data-check="sensitive-claims"]')).toContainText('password');
+  await expect(checks.locator('[data-check="no-expiry"]')).toBeVisible();
+  await expect(checks.locator('[data-check="no-audience"]')).toBeVisible();
+  // The level is in words, not only in colour.
+  await expect(checks.locator('[data-check="alg-none"]')).toContainText('Risk');
+
+  // UTC is an absolute answer, so it can be asserted exactly.
+  await page.getByTestId('utc-toggle').click();
+  await expect(issued).toContainText('2018-01-18 01:30:22 UTC');
+
+  expectClean(watch);
+});
+
+test('jwt-decoder finds a token inside a pasted header, and explains a JWE', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'jwt-decoder', 'JWT Decoder');
+
+  const token =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
+    'eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.' +
+    'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+
+  await page.locator('#jwt-input').fill(`Authorization: Bearer ${token}`);
+  await expect(page.getByTestId('found-inside')).toBeVisible();
+  await expect(page.locator('.claim').filter({ hasText: 'John Doe' })).toBeVisible();
+
+  // Five parts is an encrypted token, not a broken one.
+  await page
+    .locator('#jwt-input')
+    .fill('eyJhbGciOiJSU0EtT0FFUCIsImVuYyI6IkEyNTZHQ00ifQ.aaa.bbb.ccc.ddd');
+  await expect(page.getByTestId('jwe')).toContainText('encrypted token');
+  await expect(page.getByLabel('Header')).toContainText('RSA-OAEP');
+  await expect(page.getByTestId('checks')).toBeHidden();
+
+  expectClean(watch);
+});
+
+test('jwt-decoder hands a token to the editor with Send to', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'jwt-decoder', 'JWT Decoder');
+
+  await page.getByRole('button', { name: 'Try an example' }).click();
+  await expect(page.getByText('Signature verified.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Send to' }).click();
+  await page.getByRole('menuitem', { name: 'JWT Editor' }).click();
+
+  await expect(page).toHaveURL(/\/tools\/jwt-editor#s=/);
+  // It arrives already split, rather than waiting to be decoded.
+  await expect(page.locator('#jwt-payload')).toHaveValue(/Ada Lovelace/);
+  await expect(page.locator('#jwt-header')).toHaveValue(/HS256/);
+
+  expectClean(watch);
+});
+
 test('jwt-editor loads a token into editable header and payload', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'jwt-editor', 'JWT Editor');

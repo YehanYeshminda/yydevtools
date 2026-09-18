@@ -12,12 +12,19 @@
   --seg-header: #c0392b;
   --seg-payload: #6c3fb5;
   --seg-signature: #0e7490;
+  /* The same teal, dark enough to read on a container surface rather than on
+     the panel. The plain one is 3.95:1 on --mat-sys-surface-container-high,
+     which is where the algorithm chip sits; this is 5.03:1 there and 6.43:1 on
+     the panel, so it is safe wherever the other one is. */
+  --seg-signature-strong: #0c637a;
 }
 
 :host-context([data-theme='dark']) {
   --seg-header: #ef9a9a;
   --seg-payload: #c3a6ef;
   --seg-signature: #67c7dd;
+  /* Already 6.73:1 on the dark chip background, so nothing to strengthen. */
+  --seg-signature-strong: #67c7dd;
 }
 
 .panel {
@@ -135,7 +142,7 @@
   border-radius: 6px;
   background: var(--mat-sys-surface-container-high);
   font-size: 0.8em;
-  color: var(--seg-signature);
+  color: var(--seg-signature-strong);
 }
 
 /* Claims ---------------------------------------------------------------- */
@@ -258,4 +265,123 @@
   height: 1.1rem;
   flex: none;
   margin-top: 0.1rem;
+}
+
+/* The parts of an encrypted token that are not the header --------------- */
+.token__seg--cipher {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* A claim the token's own issuer added, rather than a registered one. */
+.claim--custom .claim__key code {
+  color: var(--mat-sys-primary);
+}
+
+.claim__relative {
+  white-space: nowrap;
+}
+
+/* What to watch out for -------------------------------------------------- */
+
+.checks {
+  margin-top: 1rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+}
+
+.checks__title-icon {
+  margin-right: 0.4rem;
+  vertical-align: -0.15em;
+}
+
+.checks__list {
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+}
+
+.check + .check {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.check__icon {
+  flex: none;
+  margin-top: 0.1rem;
+}
+
+.check__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.check__title {
+  color: var(--mat-sys-on-surface);
+  font-weight: 600;
+}
+
+/*
+ * The level in words, in front of the title. The colour of the icon says the
+ * same thing, and saying it only in colour would leave it unsaid for anyone
+ * reading in greyscale or with a colour vision deficiency.
+ */
+.check__level {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 0.05em;
+}
+
+.check__detail {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/*
+ * Only two pill treatments for three levels, on purpose. The site has a
+ * verified error pair and a verified neutral pair and no amber, and inventing
+ * one would mean proving its contrast in both themes for the sake of a shade.
+ * The level word and the icon shape already distinguish all three, so the
+ * colour is carrying nothing on its own.
+ */
+.check__level {
+  color: var(--mat-sys-on-secondary-container);
+  background: var(--mat-sys-secondary-container);
+}
+
+.check--danger .check__icon,
+.check--danger .check__level {
+  color: var(--mat-sys-on-error-container);
+}
+
+.check--danger .check__level {
+  background: var(--mat-sys-error-container);
+}
+
+.check--warn .check__icon {
+  color: var(--mat-sys-tertiary);
+}
+
+.check--info .check__icon {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.checks__note {
+  margin: 0.6rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
 }

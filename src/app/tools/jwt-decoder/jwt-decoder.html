@@ -12,7 +12,7 @@
       spellcheck="false"
       [value]="token()"
       (input)="onInput($event)"
-      placeholder="Paste a token (header.payload.signature)…"
+      placeholder="Paste a token, or the Authorization header it came in…"
     ></textarea>
   </div>
 
@@ -22,17 +22,28 @@
       Clear
     </button>
     <app-share-link [state]="shared" />
+    <app-send-to [text]="cleaned()" from="jwt-decoder" />
     <app-try-example (loadExample)="loadExample()" />
   </div>
 
-  @if (segments(); as seg) {
-    <p class="token" aria-label="Colour-coded token">
-      <span class="token__seg token__seg--header">{{ seg.header }}</span>
-      <span class="token__dot">.</span>
-      <span class="token__seg token__seg--payload">{{ seg.payload }}</span>
-      <span class="token__dot">.</span>
-      <span class="token__seg token__seg--signature">{{ seg.signature }}</span>
+  @if (foundInside()) {
+    <p class="status status--ok" role="status" data-testid="found-inside">
+      <ng-icon class="status__icon" aria-hidden="true" name="matSearchOutline" />
+      Found a token inside what you pasted, and decoded that.
     </p>
+  }
+
+  @if (segments(); as parts) {
+    @if (parts.length) {
+      <p class="token" aria-label="Colour-coded token">
+        @for (part of parts; track $index) {
+          @if (!$first) {
+            <span class="token__dot">.</span>
+          }
+          <span class="token__seg token__seg--{{ part.kind }}">{{ part.text }}</span>
+        }
+      </p>
+    }
   }
 
   @switch (result().kind) {
@@ -41,6 +52,34 @@
         <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
         {{ $any(result()).message }}
       </p>
+    }
+    @case ('jwe') {
+      @let encrypted = $any(result());
+
+      <p class="status status--warn" role="status" data-testid="jwe">
+        <ng-icon class="status__icon" aria-hidden="true" name="matLockOutline" />
+        This is an encrypted token (JWE), not a signed one. Its contents cannot be read without the
+        decryption key, so only the header is shown.
+      </p>
+
+      <section class="segment segment--header" aria-label="Header">
+        <div class="segment__bar">
+          <h2 class="section__title">Header</h2>
+          <button matButton (click)="copy(encrypted.header, 'Header')">
+            <ng-icon name="matContentCopyOutline" />
+            Copy
+          </button>
+        </div>
+        <pre class="segment__body"><code>{{ encrypted.header }}</code></pre>
+        <p class="segment__note">
+          <ng-icon class="segment__note-icon" aria-hidden="true" name="matInfoOutline" />
+          <span>
+            The key was wrapped with <code>{{ encrypted.alg || 'an unnamed algorithm' }}</code> and
+            the payload encrypted with <code>{{ encrypted.enc || 'an unnamed cipher' }}</code
+            >. Decrypting a JWE needs the recipient's private key, which this tool never asks for.
+          </span>
+        </p>
+      </section>
     }
     @case ('ok') {
       @let decoded = $any(result());
@@ -57,19 +96,74 @@
         </p>
       }
 
-      @if (decoded.claims.length) {
+      @if (findings().length) {
+        <section class="checks" aria-labelledby="checks-title" data-testid="checks">
+          <h2 class="section__title" id="checks-title">
+            <ng-icon class="checks__title-icon" aria-hidden="true" name="matFactCheckOutline" />
+            What to watch out for
+          </h2>
+          <ul class="checks__list">
+            @for (finding of findings(); track finding.id) {
+              <li class="check check--{{ finding.level }}" [attr.data-check]="finding.id">
+                <ng-icon
+                  class="check__icon"
+                  aria-hidden="true"
+                  [name]="levelIcons[finding.level]"
+                />
+                <div class="check__text">
+                  <strong class="check__title">
+                    <span class="check__level">{{ levelWords[finding.level] }}</span>
+                    {{ finding.title }}
+                  </strong>
+                  <span class="check__detail">{{ finding.detail }}</span>
+                </div>
+              </li>
+            }
+          </ul>
+          <p class="checks__note">
+            Worked out from the token alone — no key, no network. It says nothing about whether the
+            signature is valid; check that below.
+          </p>
+        </section>
+      }
+
+      @if (claims().length) {
         <section class="claims" aria-label="Claims">
-          <h2 class="section__title">Claims</h2>
+          <div class="segment__bar">
+            <h2 class="section__title">Claims</h2>
+            <button
+              matButton
+              (click)="toggleUtc()"
+              [attr.aria-pressed]="utc()"
+              data-testid="utc-toggle"
+              title="Switch between your own time zone and UTC"
+            >
+              <ng-icon name="matPublicOutline" />
+              {{ utc() ? 'Showing UTC' : 'Show UTC' }}
+            </button>
+          </div>
           <dl class="claims__list">
-            @for (claim of decoded.claims; track claim.key) {
-              <div class="claim" [class.claim--warn]="claim.state === 'warn'">
+            @for (claim of claims(); track claim.key) {
+              <div
+                class="claim"
+                [class.claim--warn]="claim.state === 'warn'"
+                [class.claim--custom]="claim.custom"
+              >
                 <dt class="claim__key">
-                  {{ claim.label }} <code>{{ claim.key }}</code>
+                  @if (claim.label) {
+                    {{ claim.label }}
+                  }
+                  <code>{{ claim.key }}</code>
                 </dt>
                 <dd class="claim__val">
                   {{ claim.value }}
                   @if (claim.detail) {
-                    <span class="claim__detail">— {{ claim.detail }}</span>
+                    <span class="claim__detail">
+                      — {{ claim.detail }}
+                      @if (claim.relative) {
+                        <span class="claim__relative">({{ claim.relative }})</span>
+                      }
+                    </span>
                   }
                 </dd>
               </div>
@@ -154,8 +248,10 @@
 
         <p class="segment__note">
           <ng-icon class="segment__note-icon" aria-hidden="true" name="matInfoOutline" />
-          The secret or key is used only in your browser to check the signature — it is never sent
-          anywhere. Leave it blank to just decode.
+          <span>
+            The secret or key is used only in your browser to check the signature — it is never sent
+            anywhere. Leave it blank to just decode.
+          </span>
         </p>
       </section>
     }

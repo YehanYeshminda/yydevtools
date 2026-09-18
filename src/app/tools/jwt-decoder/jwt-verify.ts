@@ -90,22 +90,18 @@ export async function verifyJwt(token: string, alg: string, key: string): Promis
 
   let keyData: BufferSource;
   try {
-    keyData = (spec.keyFormat === 'raw'
-      ? new TextEncoder().encode(key)
-      : pemToDer(key)) as BufferSource;
+    keyData = (
+      spec.keyFormat === 'raw' ? new TextEncoder().encode(key) : pemToDer(key)
+    ) as BufferSource;
   } catch (error) {
     return { kind: 'error', message: pemErrorMessage(error) };
   }
 
   let cryptoKey: CryptoKey;
   try {
-    cryptoKey = await crypto.subtle.importKey(
-      spec.keyFormat,
-      keyData,
-      spec.importParams,
-      false,
-      ['verify'],
-    );
+    cryptoKey = await crypto.subtle.importKey(spec.keyFormat, keyData, spec.importParams, false, [
+      'verify',
+    ]);
   } catch {
     return {
       kind: 'error',

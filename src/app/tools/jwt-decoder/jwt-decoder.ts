@@ -11,7 +11,9 @@ import { NgIcon } from '@ng-icons/core';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
+import { buildClaims, extractToken, inspect, type Claim, type Finding } from './jwt-inspect';
 import { VerifyResult, verifyJwt } from './jwt-verify';
+import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -32,39 +34,25 @@ const SAMPLE_TOKEN =
 
 const SAMPLE_SECRET = 'yydevtools-demo-secret';
 
-/** Registered time claims, in display order, with a human label. */
-const TIME_CLAIMS: { key: string; label: string }[] = [
-  { key: 'iat', label: 'Issued at' },
-  { key: 'nbf', label: 'Not valid before' },
-  { key: 'exp', label: 'Expires at' },
-];
-
-/** Registered non-time claims worth surfacing in the summary. */
-const TEXT_CLAIMS: { key: string; label: string }[] = [
-  { key: 'iss', label: 'Issuer' },
-  { key: 'sub', label: 'Subject' },
-  { key: 'aud', label: 'Audience' },
-  { key: 'jti', label: 'JWT ID' },
-];
-
-export interface Claim {
-  key: string;
-  label: string;
-  value: string;
-  /** Present for time claims: the formatted date and whether it makes the token invalid now. */
-  detail?: string;
-  state?: 'ok' | 'warn';
+/** One part of the compact token, for the colour-coded preview. */
+export interface Segment {
+  text: string;
+  kind: 'header' | 'payload' | 'signature' | 'cipher';
 }
 
 export type DecodeResult =
   | { kind: 'empty' }
   | { kind: 'error'; message: string }
+  /** Five parts: encrypted, so only the header can be read. */
+  | { kind: 'jwe'; header: string; alg: string; enc: string }
   | {
       kind: 'ok';
       header: string;
       payload: string;
       signature: string;
-      claims: Claim[];
+      /** The parsed objects, for the claim table and the checks. */
+      headerData: Record<string, unknown>;
+      payloadData: Record<string, unknown>;
       expired: boolean;
       /** The `alg` from the header, used to drive signature verification. */
       alg: string;
@@ -72,7 +60,7 @@ export type DecodeResult =
 
 @Component({
   selector: 'app-jwt-decoder',
-  imports: [ToolPage, ToolContent, TryExample, ShareLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, TryExample, ShareLink, SendTo, MatButtonModule, NgIcon],
   templateUrl: './jwt-decoder.html',
   styleUrl: './jwt-decoder.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -84,6 +72,26 @@ export class JwtDecoderTool {
   /** Shared secret (HS) or PEM public key (RS, PS, ES) for verification. */
   protected readonly key = signal('');
   protected readonly verifyState = signal<VerifyState>({ kind: 'idle' });
+  /** Whether the dates are shown in UTC rather than this machine's zone. */
+  protected readonly utc = signal(false);
+
+  protected readonly levelIcons: Record<Finding['level'], string> = {
+    danger: 'matGppBadOutline',
+    warn: 'matWarningOutline',
+    info: 'matInfoOutline',
+  };
+
+  /**
+   * How each level is said in words.
+   *
+   * Not decoration: the level is otherwise carried by colour alone, which
+   * anyone reading in greyscale or with a colour vision deficiency cannot see.
+   */
+  protected readonly levelWords: Record<Finding['level'], string> = {
+    danger: 'Risk',
+    warn: 'Check',
+    info: 'Note',
+  };
 
   /**
    * The token travels in a link — it is what people paste into chat to ask
@@ -120,7 +128,7 @@ export class JwtDecoderTool {
         return;
       }
       this.verifyState.set({ kind: 'verifying' });
-      void verifyJwt(this.token().trim(), decoded.alg, key).then((result) => {
+      void verifyJwt(this.cleaned(), decoded.alg, key).then((result) => {
         if (id === this.verifyId) {
           this.verifyState.set(result);
         }
@@ -128,21 +136,61 @@ export class JwtDecoderTool {
     });
   }
 
-  /** The three raw segments, for the colour-coded token preview. */
-  protected readonly segments = computed(() => {
-    const raw = this.token().trim();
-    if (raw === '') {
-      return null;
-    }
-    const parts = raw.split('.');
-    return {
-      header: parts[0] ?? '',
-      payload: parts[1] ?? '',
-      signature: parts[2] ?? '',
-    };
+  /**
+   * The token itself, dug out of whatever was pasted around it.
+   *
+   * Everything downstream works from this rather than the raw text, so a
+   * `Bearer` header or a line-wrapped copy decodes like a bare token. The box
+   * keeps what was typed — rewriting it under the cursor would be worse than
+   * the problem.
+   */
+  protected readonly cleaned = computed(() => extractToken(this.token()));
+
+  /** True when the token had to be found inside something else. */
+  protected readonly foundInside = computed(() => {
+    const cleaned = this.cleaned();
+    return cleaned !== '' && cleaned !== this.token().trim();
   });
 
-  protected readonly result = computed<DecodeResult>(() => this.decode(this.token().trim()));
+  /** The parts of the token, for the colour-coded preview. */
+  protected readonly segments = computed<Segment[]>(() => {
+    const raw = this.cleaned();
+    if (raw === '') return [];
+    const parts = raw.split('.');
+    const three = parts.length === 3;
+    return parts.map((text, at) => ({
+      text,
+      kind: at === 0 ? 'header' : three ? (at === 1 ? 'payload' : 'signature') : 'cipher',
+    }));
+  });
+
+  protected readonly result = computed<DecodeResult>(() => this.decode(this.cleaned()));
+
+  /** Every claim in the payload, re-dated whenever the UTC switch moves. */
+  protected readonly claims = computed<Claim[]>(() => {
+    const decoded = this.result();
+    if (decoded.kind !== 'ok') return [];
+    return buildClaims(decoded.payloadData, Math.floor(Date.now() / 1000), this.utc());
+  });
+
+  /**
+   * What is worth knowing about the token before trusting it.
+   *
+   * Separate from `result` so that typing in the key box re-runs the checks —
+   * one of them is about the key — without re-decoding the token on every
+   * keystroke.
+   */
+  protected readonly findings = computed<Finding[]>(() => {
+    const decoded = this.result();
+    if (decoded.kind !== 'ok') return [];
+    return inspect({
+      header: decoded.headerData,
+      payload: decoded.payloadData,
+      token: this.cleaned(),
+      key: this.key(),
+      nowSeconds: Math.floor(Date.now() / 1000),
+    });
+  });
 
   protected onInput(event: Event): void {
     this.token.set((event.target as HTMLTextAreaElement).value);
@@ -150,6 +198,10 @@ export class JwtDecoderTool {
 
   protected onKeyInput(event: Event): void {
     this.key.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  protected toggleUtc(): void {
+    this.utc.update((on) => !on);
   }
 
   /** Fill in the signed sample token and its secret, so verification succeeds too. */
@@ -172,6 +224,22 @@ export class JwtDecoderTool {
       return { kind: 'empty' };
     }
     const parts = raw.split('.');
+
+    // Five parts is a JWE: header, encrypted key, IV, ciphertext, tag. The
+    // header is still plain, and saying so beats "this one has 5 parts".
+    if (parts.length === 5) {
+      const header = readJson(parts[0]);
+      if (!header) {
+        return { kind: 'error', message: 'The header is not valid base64url-encoded JSON.' };
+      }
+      return {
+        kind: 'jwe',
+        header: JSON.stringify(header, null, 2),
+        alg: typeof header['alg'] === 'string' ? header['alg'] : '',
+        enc: typeof header['enc'] === 'string' ? header['enc'] : '',
+      };
+    }
+
     if (parts.length !== 3) {
       return {
         kind: 'error',
@@ -180,36 +248,49 @@ export class JwtDecoderTool {
     }
     const [headerPart, payloadPart, signaturePart] = parts;
 
-    let header: unknown;
-    let payload: Record<string, unknown>;
-    try {
-      header = JSON.parse(base64UrlDecode(headerPart));
-    } catch {
-      return { kind: 'error', message: 'The header is not valid base64url-encoded JSON.' };
+    const header = readJson(headerPart);
+    if (!header) {
+      return { kind: 'error', message: 'The header is not a base64url-encoded JSON object.' };
     }
-    try {
-      payload = JSON.parse(base64UrlDecode(payloadPart)) as Record<string, unknown>;
-    } catch {
-      return { kind: 'error', message: 'The payload is not valid base64url-encoded JSON.' };
+    const payload = readJson(payloadPart);
+    if (!payload) {
+      return { kind: 'error', message: 'The payload is not a base64url-encoded JSON object.' };
     }
 
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    const claims = buildClaims(payload, nowSeconds);
     const exp = payload['exp'];
-    const expired = typeof exp === 'number' && exp < nowSeconds;
-    const algValue = (header as Record<string, unknown> | null)?.['alg'];
-    const alg = typeof algValue === 'string' ? algValue : '';
+    const algValue = header['alg'];
 
     return {
       kind: 'ok',
       header: JSON.stringify(header, null, 2),
       payload: JSON.stringify(payload, null, 2),
       signature: signaturePart,
-      claims,
-      expired,
-      alg,
+      headerData: header,
+      payloadData: payload,
+      expired: typeof exp === 'number' && exp < Math.floor(Date.now() / 1000),
+      alg: typeof algValue === 'string' ? algValue : '',
     };
   }
+}
+
+/**
+ * A base64url segment as a JSON object, or null if it is not one.
+ *
+ * Both halves of a JWT are defined as JSON objects, so anything else — a bare
+ * number, a string, malformed base64 — is a broken token rather than something
+ * to display claims from.
+ */
+function readJson(segment: string): Record<string, unknown> | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(base64UrlDecode(segment));
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return null;
+  }
+  return parsed as Record<string, unknown>;
 }
 
 /** Decode a base64url segment to a UTF-8 string. Throws on malformed input. */
@@ -219,34 +300,4 @@ function base64UrlDecode(segment: string): string {
   const binary = atob(padded);
   const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
   return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-}
-
-/** Build the human-readable claim summary from a decoded payload. */
-function buildClaims(payload: Record<string, unknown>, nowSeconds: number): Claim[] {
-  const claims: Claim[] = [];
-
-  for (const { key, label } of TIME_CLAIMS) {
-    const value = payload[key];
-    if (typeof value !== 'number') {
-      continue;
-    }
-    const detail = new Date(value * 1000).toLocaleString();
-    let state: 'ok' | 'warn' = 'ok';
-    if (key === 'exp' && value < nowSeconds) {
-      state = 'warn';
-    } else if (key === 'nbf' && value > nowSeconds) {
-      state = 'warn';
-    }
-    claims.push({ key, label, value: String(value), detail, state });
-  }
-
-  for (const { key, label } of TEXT_CLAIMS) {
-    const value = payload[key];
-    if (value === undefined) {
-      continue;
-    }
-    claims.push({ key, label, value: Array.isArray(value) ? value.join(', ') : String(value) });
-  }
-
-  return claims;
 }

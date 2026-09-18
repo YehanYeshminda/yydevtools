@@ -37,6 +37,8 @@ export const SEND_TARGETS: readonly SendTarget[] = [
   { slug: 'json-diff', label: 'JSON Diff', field: 'original' },
   { slug: 'regex-tester', label: 'Regex Tester', field: 'text' },
   { slug: 'word-counter', label: 'Word Counter', field: 'text' },
+  { slug: 'jwt-decoder', label: 'JWT Decoder', field: 'token' },
+  { slug: 'jwt-editor', label: 'JWT Editor', field: 'token' },
 ];
 
 /**

@@ -221,16 +221,19 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'It can also verify the signature, which is the part that actually tells you whether a token is genuine. Paste an HMAC secret for HS256/384/512, or a PEM public key for RSA and ECDSA tokens (RS, PS and ES families), and it checks the signature with the browser Web Crypto API. Both decoding and verification happen entirely on your device, so you can inspect real production tokens without the security risk of pasting them into a remote site.',
     ],
     steps: [
-      'Paste the JWT into the token field.',
-      'Read the decoded header and payload; timestamp claims like exp and iat are shown as human-readable dates.',
-      'To verify, choose the algorithm family and paste the shared secret (HMAC) or the public key (RSA/ECDSA).',
+      'Paste the token — or the whole Authorization header, curl command or JSON response you copied it from; the token is found inside.',
+      'Read the claims table: every claim the token carries, with timestamps shown as dates and as how long ago or away they are.',
+      'Check the "What to watch out for" panel, which reports what can be told from the token alone — no expiry, an unsigned algorithm, secrets in the payload.',
+      'To verify, paste the shared secret (HMAC) or the public key (RSA/ECDSA) into the key box under the signature.',
       'Check the verification result: verified, does not match, unsupported algorithm, or an error.',
     ],
     features: [
-      'Decodes the header and payload and flags expired tokens.',
+      'Lists every claim, not just the registered ones — scope, roles, permissions and anything else your issuer adds.',
+      'Shows each timestamp as a date and in words ("expired 3 hours ago"), switchable between your own time zone and UTC.',
+      'Flags what the token itself gives away: alg "none", no expiry, a lifetime measured in years, secrets in the payload, a size that will not fit in a cookie.',
       'Verifies HS256/384/512 with a secret, and RS/PS/ES256/384/512 with a PEM public key.',
-      'Uses the browser Web Crypto API — no library and no network request.',
-      'Tokens and keys never leave your browser.',
+      'Recognises an encrypted token (JWE) and explains it instead of reporting a broken JWT.',
+      'Uses the browser Web Crypto API — no library and no network request. Tokens and keys never leave your browser.',
     ],
     sections: [
       {
@@ -258,6 +261,18 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
     ],
     faq: [
+      {
+        q: 'Can I paste the whole Authorization header instead of just the token?',
+        a: 'Yes. Paste an "Authorization: Bearer …" header, a curl command, a Set-Cookie value, a quoted string out of a JSON response, or a token your terminal wrapped across several lines — the token is found inside and decoded, and the page tells you it did that. Only if nothing token-shaped is in what you pasted do you get an error.',
+      },
+      {
+        q: 'What does the "What to watch out for" panel check?',
+        a: 'Everything that can be decided from the token by itself, with no key and no network: an alg of "none", a header that points at a remote key with jku or x5u, a missing exp claim, a lifetime longer than a year, an iat in the future, a missing audience, sensitive-looking claims such as password or api_key anywhere in the payload, and a token too large for a cookie or a request-header buffer. It also warns if you paste a public key while the token says HS256, which is the setup for the RS256-to-HS256 confusion attack. None of it says whether the signature is valid — that is the separate check below it.',
+      },
+      {
+        q: 'Can it decode an encrypted token (JWE)?',
+        a: 'It recognises one and reads its header, so you can see which algorithms were used to wrap the key and encrypt the content. It cannot show the contents: a JWE is genuinely encrypted, and reading it needs the recipient’s private key. A five-part token is a JWE; a three-part one is the signed JWS that most people mean by "JWT".',
+      },
       {
         q: 'Is it safe to paste a real JWT here?',
         a: 'Yes. Decoding and signature verification both run locally in your browser. The token and any key you enter are never transmitted, so inspecting a live token here does not expose it the way pasting it into a server-side tool would.',

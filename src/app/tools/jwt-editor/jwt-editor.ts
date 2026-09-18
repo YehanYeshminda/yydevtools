@@ -1,8 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { syncToolState } from '../../core/tool-state';
 import { SignResult, signJwt } from './jwt-sign';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -49,6 +57,28 @@ export class JwtEditorTool {
   protected readonly decodeError = signal<string | null>(null);
 
   protected readonly signState = signal<SignState>({ kind: 'idle' });
+
+  /**
+   * Keeps the working state across a reload, and lets another tool hand a
+   * token over — the JWT Decoder's "Send to" arrives here.
+   *
+   * The signing key is deliberately not in the snapshot at all. Everything
+   * else here is something you were in the middle of writing; that is a
+   * private key, and it has no business outliving the keystroke.
+   */
+  protected readonly shared = syncToolState({
+    key: 'jwt-editor',
+    snapshot: () => ({ token: this.token(), header: this.header(), payload: this.payload() }),
+    restore: (state) => {
+      if (typeof state.header === 'string') this.header.set(state.header);
+      if (typeof state.payload === 'string') this.payload.set(state.payload);
+      if (typeof state.token !== 'string' || state.token === '') return;
+      this.token.set(state.token);
+      // Arriving from another tool, with nothing else to restore: open ready to
+      // edit rather than making the first click be Decode.
+      if (!this.header() && !this.payload()) this.decode();
+    },
+  });
 
   /** Guards against a slow sign resolving after a newer one. */
   private signId = 0;
@@ -123,9 +153,7 @@ export class JwtEditorTool {
     }
     const parts = raw.split('.');
     if (parts.length !== 3) {
-      this.decodeError.set(
-        `A JWT has three dot-separated parts; this one has ${parts.length}.`,
-      );
+      this.decodeError.set(`A JWT has three dot-separated parts; this one has ${parts.length}.`);
       return;
     }
     let header: string;

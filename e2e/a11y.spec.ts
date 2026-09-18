@@ -253,3 +253,43 @@ for (const theme of ['dark', 'light'] as const) {
     await check('an added line selected');
   });
 }
+
+/**
+ * The JWT Decoder with a token in it.
+ *
+ * The busiest thing on the page is the checks panel, whose three levels are
+ * drawn with colour — an error container, a tertiary icon, a neutral pill —
+ * over a container surface. Auditing the empty page would never see any of it,
+ * and the claims table underneath tints a whole row when a token has expired.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`jwt-decoder's decoded state has no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'jwt-decoder', 'JWT Decoder');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    // Unsigned, expired, no audience and carrying a password: one token that
+    // puts every level of the panel on screen at once, plus a warned claim row.
+    const b64 = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
+    const token =
+      `${b64({ alg: 'none', typ: 'JWT' })}.` +
+      `${b64({ sub: '42', iat: 1516239022, exp: 1516242622, password: 'hunter2' })}.`;
+    await page.locator('#jwt-input').fill(token);
+    await expect(page.getByTestId('checks')).toBeVisible();
+    await expect(page.locator('.claim--warn')).toBeVisible();
+
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+      `AXE violations with a decoded token [${theme}]`,
+    ).toEqual([]);
+  });
+}
