@@ -209,6 +209,76 @@ test('jwt-decoder finds a token inside a pasted header, and explains a JWE', asy
   expectClean(watch);
 });
 
+/**
+ * A JWKS is what an identity provider actually gives you — nobody converts one
+ * to PEM by hand — so the keys here are generated in the browser and the token
+ * is really signed with one of them. Anything less would not exercise the
+ * WebCrypto import, which is the part that is fussy about JWK members.
+ */
+test('jwt-decoder verifies against a pasted JWKS, picking the key by kid', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'jwt-decoder', 'JWT Decoder');
+
+  const { token, jwks } = await page.evaluate(async () => {
+    const params = {
+      name: 'RSASSA-PKCS1-v1_5',
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: 'SHA-256',
+    };
+    const b64 = (bytes: Uint8Array) => {
+      let binary = '';
+      for (const byte of bytes) binary += String.fromCharCode(byte);
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    };
+    const seg = (value: unknown) => b64(new TextEncoder().encode(JSON.stringify(value)));
+
+    const mine = await crypto.subtle.generateKey(params, true, ['sign', 'verify']);
+    const other = await crypto.subtle.generateKey(params, true, ['sign', 'verify']);
+    const body = `${seg({ alg: 'RS256', typ: 'JWT', kid: 'signing-2026' })}.${seg({
+      sub: 'ada',
+      iss: 'https://login.example.com',
+      aud: 'invoices-api',
+      iat: 1740000000,
+      exp: 1840000000,
+    })}`;
+    const mac = await crypto.subtle.sign(
+      params.name,
+      mine.privateKey,
+      new TextEncoder().encode(body),
+    );
+
+    return {
+      token: `${body}.${b64(new Uint8Array(mac))}`,
+      jwks: JSON.stringify({
+        keys: [
+          { ...(await crypto.subtle.exportKey('jwk', other.publicKey)), kid: 'retired-2024' },
+          { ...(await crypto.subtle.exportKey('jwk', mine.publicKey)), kid: 'signing-2026' },
+        ],
+      }),
+    };
+  });
+
+  await page.locator('#jwt-input').fill(token);
+  // The kid is what makes pasting the whole document the obvious move.
+  await expect(page.getByTestId('kid-hint')).toContainText('signing-2026');
+
+  await page.locator('#jwt-key').fill(jwks);
+  const verified = page.getByTestId('verify-ok');
+  await expect(verified).toContainText('Signature verified.');
+  // And it says which of the two it used, so the answer can be trusted.
+  await expect(verified).toContainText('kid “signing-2026”, key 2 of 2');
+
+  // A set that has been rotated past this token names what it does hold.
+  const stale = JSON.stringify({ keys: [JSON.parse(jwks).keys[0]] });
+  await page.locator('#jwt-key').fill(stale);
+  await expect(page.locator('.verify .status--err')).toContainText(
+    'No key in that set has kid “signing-2026”. It holds: retired-2024.',
+  );
+
+  expectClean(watch);
+});
+
 test('jwt-decoder hands a token to the editor with Send to', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'jwt-decoder', 'JWT Decoder');

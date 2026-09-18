@@ -212,23 +212,39 @@
             spellcheck="false"
             [value]="key()"
             (input)="onKeyInput($event)"
-            placeholder="HMAC secret for HS*, or a PEM public key for RS*/PS*/ES*…"
+            placeholder="A secret for HS*, a PEM public key, or a whole JWKS document…"
           ></textarea>
+
+          @if (decoded.kid) {
+            <p class="verify__kid" data-testid="kid-hint">
+              <ng-icon class="verify__kid-icon" aria-hidden="true" name="matVpnKeyOutline" />
+              <span>
+                This token names key <code>{{ decoded.kid }}</code
+                >. Paste your provider’s whole JWKS and the matching key is picked out of it.
+              </span>
+            </p>
+          }
 
           @switch (verifyState().kind) {
             @case ('verifying') {
               <p class="status" role="status">Checking…</p>
             }
             @case ('valid') {
-              <p class="status status--ok" role="status">
+              <p class="status status--ok" role="status" data-testid="verify-ok">
                 <ng-icon class="status__icon" aria-hidden="true" name="matVerifiedOutline" />
                 Signature verified.
+                @if ($any(verifyState()).via; as via) {
+                  <span class="verify__via">— {{ via }}</span>
+                }
               </p>
             }
             @case ('invalid') {
               <p class="status status--err" role="status">
                 <ng-icon class="status__icon" aria-hidden="true" name="matGppBadOutline" />
                 Signature does not match.
+                @if ($any(verifyState()).via; as via) {
+                  <span class="verify__via">— {{ via }}</span>
+                }
               </p>
             }
             @case ('unsupported') {
@@ -250,7 +266,8 @@
           <ng-icon class="segment__note-icon" aria-hidden="true" name="matInfoOutline" />
           <span>
             The secret or key is used only in your browser to check the signature — it is never sent
-            anywhere. Leave it blank to just decode.
+            anywhere, and a JWKS is read from what you paste rather than fetched from its URL, so
+            this page makes no request either. Leave it blank to just decode.
           </span>
         </p>
       </section>

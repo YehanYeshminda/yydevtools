@@ -385,3 +385,30 @@
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.85rem;
 }
+
+/* The kid hint, and which key a JWKS ended up using ---------------------- */
+
+.verify__kid {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.verify__kid-icon {
+  flex: none;
+  margin-top: 0.1rem;
+}
+
+.verify__kid code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--seg-signature-strong);
+}
+
+.verify__via {
+  color: var(--mat-sys-on-surface-variant);
+}

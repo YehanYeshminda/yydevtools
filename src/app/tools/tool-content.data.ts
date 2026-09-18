@@ -218,20 +218,21 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     slug: 'jwt-decoder',
     intro: [
       'A JSON Web Token looks like three chunks of gibberish separated by dots, but it is really just Base64URL-encoded JSON. This decoder splits it apart and shows you the header, the payload and every claim inside — issuer, subject, audience, and the issued-at and expiry times rendered as readable dates so you can see at a glance whether a token has expired.',
-      'It can also verify the signature, which is the part that actually tells you whether a token is genuine. Paste an HMAC secret for HS256/384/512, or a PEM public key for RSA and ECDSA tokens (RS, PS and ES families), and it checks the signature with the browser Web Crypto API. Both decoding and verification happen entirely on your device, so you can inspect real production tokens without the security risk of pasting them into a remote site.',
+      'It can also verify the signature, which is the part that actually tells you whether a token is genuine. Paste an HMAC secret for HS256/384/512, a PEM public key for RSA and ECDSA tokens (RS, PS and ES families), or the whole JWKS document your identity provider publishes — the key matching the token’s kid is found inside it — and it checks the signature with the browser Web Crypto API. Both decoding and verification happen entirely on your device, so you can inspect real production tokens without the security risk of pasting them into a remote site.',
     ],
     steps: [
       'Paste the token — or the whole Authorization header, curl command or JSON response you copied it from; the token is found inside.',
       'Read the claims table: every claim the token carries, with timestamps shown as dates and as how long ago or away they are.',
       'Check the "What to watch out for" panel, which reports what can be told from the token alone — no expiry, an unsigned algorithm, secrets in the payload.',
-      'To verify, paste the shared secret (HMAC) or the public key (RSA/ECDSA) into the key box under the signature.',
+      'To verify, paste the shared secret (HMAC), the public key (RSA/ECDSA), or your provider’s whole JWKS — the key matching the token’s kid is picked out of it.',
       'Check the verification result: verified, does not match, unsupported algorithm, or an error.',
     ],
     features: [
       'Lists every claim, not just the registered ones — scope, roles, permissions and anything else your issuer adds.',
       'Shows each timestamp as a date and in words ("expired 3 hours ago"), switchable between your own time zone and UTC.',
       'Flags what the token itself gives away: alg "none", no expiry, a lifetime measured in years, secrets in the payload, a size that will not fit in a cookie.',
-      'Verifies HS256/384/512 with a secret, and RS/PS/ES256/384/512 with a PEM public key.',
+      'Verifies HS256/384/512 with a secret, and RS/PS/ES256/384/512 with a PEM public key, a JWK, or a whole JWKS document.',
+      'Picks the right key out of a JWKS by the token’s kid, and says which one it used — useful while keys are being rotated.',
       'Recognises an encrypted token (JWE) and explains it instead of reporting a broken JWT.',
       'Uses the browser Web Crypto API — no library and no network request. Tokens and keys never leave your browser.',
     ],
@@ -261,6 +262,18 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
     ],
     faq: [
+      {
+        q: 'Can I use a JWKS instead of converting the key to PEM?',
+        a: 'Yes — paste the whole JWKS document your provider publishes, and the key whose kid matches the token’s kid header is used, with the page telling you which one that was. A single JWK works too, as does an oct JWK for an HMAC token. If the set has no kid to match, the only key that could verify that algorithm is used; if two could, it asks you to paste the one you mean rather than guessing. Auth0, Okta, Cognito, Firebase and every OIDC provider publish a JWKS, and nobody should have to convert one to PEM by hand.',
+      },
+      {
+        q: 'Why does it not just fetch the JWKS from its URL?',
+        a: 'Because that would mean this page making a request on your behalf, and the whole promise of the tool is that it makes none. Your JWKS URL would also reveal which provider and tenant you are working with. Opening the URL yourself and pasting what it returns keeps the page as inert as it claims to be — it is one extra step, once, and you can see exactly what you handed over.',
+      },
+      {
+        q: 'It says my key does not match, but I am sure it is the right one.',
+        a: 'Check the kid first: if the token names one and the set has been rotated since, the page names the kids it does hold so you can see the gap. Otherwise the usual cause is the algorithm — an RS256 key cannot verify a PS256 token even though both are RSA, and a key marked "use": "enc" is not a signing key at all. The page reports each of those as its own message rather than a generic failure. A key that imports cleanly but still says the signature does not match means exactly that: the token was signed by something else.',
+      },
       {
         q: 'Can I paste the whole Authorization header instead of just the token?',
         a: 'Yes. Paste an "Authorization: Bearer …" header, a curl command, a Set-Cookie value, a quoted string out of a JSON response, or a token your terminal wrapped across several lines — the token is found inside and decoded, and the page tells you it did that. Only if nothing token-shaped is in what you pasted do you get an error.',

@@ -56,6 +56,8 @@ export type DecodeResult =
       expired: boolean;
       /** The `alg` from the header, used to drive signature verification. */
       alg: string;
+      /** The `kid`, which is what picks a key out of a pasted JWKS. */
+      kid: string;
     };
 
 @Component({
@@ -259,6 +261,7 @@ export class JwtDecoderTool {
 
     const exp = payload['exp'];
     const algValue = header['alg'];
+    const kidValue = header['kid'];
 
     return {
       kind: 'ok',
@@ -269,6 +272,7 @@ export class JwtDecoderTool {
       payloadData: payload,
       expired: typeof exp === 'number' && exp < Math.floor(Date.now() / 1000),
       alg: typeof algValue === 'string' ? algValue : '',
+      kid: typeof kidValue === 'string' ? kidValue : '',
     };
   }
 }

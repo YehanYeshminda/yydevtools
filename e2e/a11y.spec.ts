@@ -274,11 +274,14 @@ for (const theme of ['dark', 'light'] as const) {
     // puts every level of the panel on screen at once, plus a warned claim row.
     const b64 = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
     const token =
-      `${b64({ alg: 'none', typ: 'JWT' })}.` +
+      `${b64({ alg: 'none', typ: 'JWT', kid: '2026-01' })}.` +
       `${b64({ sub: '42', iat: 1516239022, exp: 1516242622, password: 'hunter2' })}.`;
     await page.locator('#jwt-input').fill(token);
     await expect(page.getByTestId('checks')).toBeVisible();
     await expect(page.locator('.claim--warn')).toBeVisible();
+    // The kid hint, whose chip is the one element painted with the strengthened
+    // signature colour.
+    await expect(page.getByTestId('kid-hint')).toBeVisible();
 
     const results = await audit(page).analyze();
     expect(
