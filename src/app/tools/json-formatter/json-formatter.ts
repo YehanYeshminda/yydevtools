@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -8,7 +15,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClipboardService } from '../../core/clipboard.service';
 import { syncToolState } from '../../core/tool-state';
-import { describeProblem, excerptBlock } from './json-problem';
+import {
+  describeProblem,
+  excerptBlock,
+  findDuplicateKeys,
+  type DuplicateKey,
+} from './json-problem';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
@@ -20,6 +32,17 @@ import { TryExample } from '../../shared/try-example/try-example';
 
 type IndentOption = '2' | '4' | 'tab';
 type Validity = 'empty' | 'valid' | 'invalid';
+
+/**
+ * How long the box must be still before the duplicate-key scan runs.
+ *
+ * Unlike the parse error, this one cannot ride along on every keystroke. It
+ * needs a full grammar parse, which measures about 105ms on a one-megabyte
+ * document where `JSON.parse` takes 4ms, and that is a visible stutter while
+ * typing. It is also a question about a finished document rather than one
+ * mid-edit: half-typed keys would flicker warnings that fix themselves.
+ */
+const DUPLICATE_DEBOUNCE = 400;
 
 /**
  * A realistic minified payload for the "Try an example" button — dense enough
@@ -113,6 +136,27 @@ export class JsonFormatterTool {
     }
     return this.problem() === null ? 'valid' : 'invalid';
   });
+
+  /**
+   * Keys the document writes twice, which `JSON.parse` resolves silently by
+   * keeping the last one. Only ever asked of a document that parses.
+   */
+  protected readonly duplicates = signal<DuplicateKey[]>([]);
+
+  constructor() {
+    effect((onCleanup) => {
+      const text = this.input();
+      if (this.validity() !== 'valid') {
+        this.duplicates.set([]);
+        return;
+      }
+      const timer = setTimeout(
+        () => this.duplicates.set(findDuplicateKeys(text)),
+        DUPLICATE_DEBOUNCE,
+      );
+      onCleanup(() => clearTimeout(timer));
+    });
+  }
 
   protected onQueryInput(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value);

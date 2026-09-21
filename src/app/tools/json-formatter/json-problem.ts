@@ -27,6 +27,21 @@ export interface JsonProblem {
   excerpt: string;
 }
 
+/**
+ * A key written more than once in the same object.
+ *
+ * `JSON.parse` does not complain about this; it keeps the last one and drops
+ * the rest, silently. A config file with two "port" keys is the bug where
+ * everything looks right and the wrong value is in effect, and nothing in the
+ * pipeline ever says so.
+ */
+export interface DuplicateKey {
+  /** The key as JSON reads it, so "a" and "\\u0061" count as the same key. */
+  key: string;
+  /** 1-based lines where it appears, in document order. The last one wins. */
+  lines: number[];
+}
+
 /** "… in JSON at position 7 (line 1 column 8)" and the bare "position 7" form. */
 const POSITION = /\bposition (\d+)/i;
 /** SpiderMonkey's wording, and the parenthesised half of V8's. */
@@ -96,6 +111,85 @@ function locate(raw: string, text: string): { line: number; column: number } | n
     return { line: Number(pair[1]), column: Number(pair[2]) };
   }
   return null;
+}
+
+/**
+ * Every key written more than once within one object.
+ *
+ * An object is reported as it closes, so the innermost come first.
+ *
+ * Scoped per object, which is the whole difficulty: the same name in a sibling
+ * or a nested object is not a duplicate, and a plain text search for a repeated
+ * key cannot tell the difference. Lezer’s tree makes each object its own node,
+ * so the scoping comes for free — and it is the same parse the error locator
+ * uses, rather than a second hand-written scanner to keep correct.
+ *
+ * Only asked of documents that parse. A broken document has a parse error to
+ * report first, and its tree is full of recovered guesses.
+ */
+export function findDuplicateKeys(text: string): DuplicateKey[] {
+  // Nothing without an object, which also skips the scan for arrays of scalars
+  // and for the empty box on every keystroke.
+  if (!text.includes('{')) {
+    return [];
+  }
+  const found: DuplicateKey[] = [];
+  // One map per object currently open; the innermost is the last.
+  const scopes: Map<string, number[]>[] = [];
+
+  parser.parse(text).iterate({
+    enter: (node) => {
+      if (node.name === 'Object') {
+        scopes.push(new Map());
+        return;
+      }
+      if (node.name !== 'PropertyName' || scopes.length === 0) {
+        return;
+      }
+      const key = readKey(text.slice(node.from, node.to));
+      const scope = scopes[scopes.length - 1];
+      const lines = scope.get(key);
+      const line = lineOf(text, node.from);
+      if (lines) {
+        lines.push(line);
+      } else {
+        scope.set(key, [line]);
+      }
+    },
+    leave: (node) => {
+      if (node.name !== 'Object') {
+        return;
+      }
+      for (const [key, lines] of scopes.pop() ?? []) {
+        if (lines.length > 1) {
+          found.push({ key, lines });
+        }
+      }
+    },
+  });
+  return found;
+}
+
+/**
+ * A PropertyName token as the key it denotes.
+ *
+ * Read through `JSON.parse` so escapes are resolved: "caf\\u00e9" and "café" are
+ * one key to a parser, and comparing the raw tokens would miss it. Falls back
+ * to the token itself if it will not parse, which only happens in a document
+ * that was going to be reported broken anyway.
+ */
+function readKey(token: string): string {
+  try {
+    const parsed: unknown = JSON.parse(token);
+    return typeof parsed === 'string' ? parsed : token;
+  } catch {
+    return token;
+  }
+}
+
+/** The 1-based line a character offset falls on. */
+function lineOf(text: string, offset: number): number {
+  return (text.slice(0, offset).match(/\n/g)?.length ?? 0) + 1;
 }
 
 /** The start of the first token Lezer could not accept, or null if it found none. */

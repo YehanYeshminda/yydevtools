@@ -103,3 +103,20 @@
   white-space: pre;
   tab-size: 2;
 }
+
+.dupes__lead {
+  margin: 0;
+}
+
+.dupes__list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.dupes__list code {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}

@@ -38,6 +38,31 @@
         <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
         Valid JSON
       </p>
+
+      <!-- Valid and still wrong: JSON.parse keeps the last of a repeated key and
+           discards the rest without a word, so this is the one defect the green
+           tick above would otherwise hide. -->
+      @if (duplicates().length) {
+        <div class="status status--warn" role="status" data-testid="json-duplicates">
+          <ng-icon class="status__icon" aria-hidden="true" name="matWarningOutline" />
+          <div>
+            <p class="dupes__lead">
+              {{ duplicates().length === 1 ? 'A key is' : duplicates().length + ' keys are' }}
+              written more than once. Only the last of each survives parsing — the others are
+              discarded silently.
+            </p>
+            <ul class="dupes__list">
+              @for (duplicate of duplicates(); track duplicate.key) {
+                <li>
+                  <code>{{ duplicate.key }}</code>
+                  on {{ duplicate.lines.length === 1 ? 'line' : 'lines' }}
+                  {{ duplicate.lines.join(', ') }}
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+      }
     }
     @case ('invalid') {
       @let broken = problem()!;

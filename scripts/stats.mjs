@@ -72,7 +72,8 @@ function table(rows, heading) {
 }
 
 const url = await resolveUrl();
-const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? (await readDevVar('UPSTASH_REDIS_REST_TOKEN'));
+const token =
+  process.env.UPSTASH_REDIS_REST_TOKEN ?? (await readDevVar('UPSTASH_REDIS_REST_TOKEN'));
 
 if (!url || !token) {
   console.error(
@@ -110,6 +111,19 @@ for (const entry of await response.json()) {
   }
 }
 
+/**
+ * How many tools the catalogue holds.
+ *
+ * Counted from the catalogue rather than typed in. This line said "of 37" while
+ * there were 68, which is the worse half of the bug: the report exists to
+ * decide what to build next, and a denominator that never moves hides exactly
+ * the thing it is meant to show — how many tools nobody has opened.
+ */
+async function toolCount() {
+  const source = await readFile('src/app/tools/tools.data.ts', 'utf8');
+  return source.match(/^\s*slug: '[a-z0-9-]+',$/gm)?.length ?? 0;
+}
+
 const ranked = [...totals.entries()].sort((a, b) => b[1] - a[1]);
 const tools = ranked.filter(([path]) => path.startsWith('/tools/'));
 const rest = ranked.filter(([path]) => !path.startsWith('/tools/'));
@@ -118,7 +132,7 @@ console.log(
   `\n${grand.toLocaleString()} page views over ${DAYS} days (${activeDays} with data), bots excluded.`,
 );
 
-table(tools, `Tools — ${tools.length} of 37 opened at least once`);
+table(tools, `Tools — ${tools.length} of ${await toolCount()} opened at least once`);
 table(rest.slice(0, 15), 'Everything else');
 
 if (tools.length > 0) {

@@ -104,6 +104,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     features: [
       'Validation as you type, with the line, the column and the offending line quoted under a caret — not just a red outline saying something, somewhere, is wrong.',
+      'Warns when the same key is written twice in one object, which is valid JSON that quietly loses data — the parser keeps the last one and discards the rest.',
       'JSON to YAML and YAML to JSON, honouring your indent and sort-keys choices.',
       'JSONPath queries for pulling matching nodes out of large documents.',
       'Everything runs in your browser, so sensitive payloads never leave your machine.',
@@ -140,6 +141,10 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       {
         q: 'What is the difference between formatting and minifying?',
         a: 'Formatting adds indentation and line breaks so the JSON is easy to read. Minifying removes every unnecessary space and newline to make the file as small as possible, which is what you want when sending it over a network.',
+      },
+      {
+        q: 'My JSON is valid but a value is wrong. What else could it be?',
+        a: 'Check for a key written twice in the same object. JSON allows it, and JavaScript\u2019s parser resolves it by keeping the last one and silently discarding the earlier ones \u2014 so a config with two "port" keys is valid, parses cleanly, and uses a value you may not have meant. This tool flags it: paste the document and any repeated key is listed with the lines it appears on. The check is scoped per object, so the same name in two different objects, which is perfectly normal, is not reported.',
       },
       {
         q: 'Why does my JSON show an error?',

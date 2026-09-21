@@ -40,6 +40,36 @@ test('json-formatter formats, minifies and converts to YAML', async ({ page }) =
   expectClean(watch);
 });
 
+test('json-formatter warns about a key written twice', async ({ page }) => {
+  await gotoTool(page, 'json-formatter');
+  const input = editorByLabel(page, 'JSON input');
+
+  // Valid JSON, and still wrong. JSON.parse keeps 9090 and drops 8080 without
+  // a word, so the green tick is the whole of what anything else would say.
+  await setEditorText(
+    input,
+    ['{', '  "port": 8080,', '  "host": "a",', '  "port": 9090', '}'].join('\n'),
+  );
+  await expect(page.locator('.status--ok')).toContainText('Valid JSON');
+  const warning = page.getByTestId('json-duplicates');
+  await expect(warning).toBeVisible();
+  await expect(warning).toContainText('port');
+  await expect(warning).toContainText('lines 2, 4');
+
+  // The case a text search for a repeated key gets wrong: same name, different
+  // objects, and the parser keeps both.
+  await setEditorText(input, '[{"id":1},{"id":2}]');
+  await expect(page.locator('.status--ok')).toContainText('Valid JSON');
+  await expect(page.getByTestId('json-duplicates')).toHaveCount(0);
+
+  // A nested duplicate is still found, and reported before the outer one.
+  await setEditorText(input, '{"x":{"n":1,"n":2},"y":3,"y":4}');
+  await expect(page.getByTestId('json-duplicates').locator('li')).toHaveText([
+    /n\s+on lines 1, 1/,
+    /y\s+on lines 1, 1/,
+  ]);
+});
+
 test('json-formatter reports where a broken document failed', async ({ page }) => {
   await gotoTool(page, 'json-formatter');
   await setEditorText(editorByLabel(page, 'JSON input'), '{"a":1,}');
