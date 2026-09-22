@@ -62,21 +62,43 @@ test('text typed before a tool hydrates is not thrown away', async ({ page }) =>
   expectClean(watch);
 });
 
+/**
+ * The same window, given a file rather than typed text.
+ *
+ * Deliberately a local tool. This opened the workbook in Excel Viewer until it
+ * became the one test in the suite that failed on a clean tree: Excel Viewer is
+ * hosted, so the name it ended on only appeared once a Fly machine had woken,
+ * converted the file and answered — and past the timeout that reads as the
+ * handover having failed when nothing was wrong with it. CSV Viewer goes
+ * through the same window and then parses the file here, so what is asserted
+ * is the handover rather than someone else's cold start. `tools-files.spec.ts`
+ * draws the same line, stopping hosted tools at upload and pre-flight.
+ *
+ * What carries a file across is `withEventReplay()`, not the file branch of
+ * `PreHydrationInput`. Measured, because the wording used to imply otherwise:
+ * stub that branch out and this still passes; disable the whole of
+ * `PreHydrationInput` and this still passes while the text test above fails.
+ * So the property under test is the one in the name — a file chosen early is
+ * not lost — and not the belt-and-braces that also exists for it.
+ */
 test('a file chosen before a tool hydrates is not thrown away', async ({ page }) => {
   const watch = watchConsole(page);
   const release = await gateScripts(page);
 
-  await page.goto('/tools/excel-viewer', { waitUntil: 'commit' });
+  await page.goto('/tools/csv-viewer', { waitUntil: 'commit' });
   const input = page.locator('input[type="file"]').first();
   await expect(page.locator('.dropzone')).toBeVisible();
   await expectNotHydratedYet(page);
 
-  await input.setInputFiles(fixture('sample.xlsx'));
+  await input.setInputFiles(fixture('sample.csv'));
 
   release();
   await expect(page.locator('[ngh]')).toHaveCount(0, { timeout: 45_000 });
 
-  await expect(page.getByText(/sample.xlsx/)).toBeVisible({ timeout: 60_000 });
+  // Cells, not the file name: the bytes were read, not merely held on to.
+  const grid = page.locator('table.grid');
+  await expect(grid).toContainText('region', { timeout: 45_000 });
+  await expect(grid).toContainText('1284');
 
   expectClean(watch);
 });
