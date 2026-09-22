@@ -110,6 +110,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'email-template',
+    name: 'Email Template Generator',
+    description:
+      'Turn a plain-text draft into an email that holds up in Outlook, or into a Word document.',
+    icon: 'matMailOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'invoice-generator',
     name: 'Invoice & Receipt Generator',
     description:

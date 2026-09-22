@@ -3105,6 +3105,94 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     related: ['code-formatter', 'text-diff', 'json-formatter'],
   },
 
+  'email-template': {
+    slug: 'email-template',
+    intro: [
+      'Write your email as plain text and get back HTML that renders the same way in Outlook, Gmail, Apple Mail and the rest — plus the same words as a Word document, a rich-text file, or a .eml you can double-click to open a ready-made draft. There is no drag-and-drop canvas and no account: you type, and the layout is worked out for you.',
+      'The reason a tool like this exists is that email HTML is not web HTML. Outlook on Windows renders messages with Word’s layout engine rather than a browser’s, so flexbox, grid and even a plain max-width on a div are simply ignored. Gmail strips out stylesheets when a message is forwarded. What survives is nested tables with every style written inline — which is what this produces, along with the handful of Microsoft-specific hints that keep the spacing right.',
+    ],
+    steps: [
+      'Type or paste your draft on the left. Blank lines separate paragraphs; a line starting with a dash becomes a bullet.',
+      'Pick a look and an accent colour. The preview on the right updates as you type.',
+      'Copy the HTML into your sending tool, or download the .eml, .docx or .rtf.',
+    ],
+    features: [
+      'Table-based HTML with inline styles and an Outlook ghost table, so the 600-pixel column holds in the one client that ignores CSS widths.',
+      'A .eml download carrying the X-Unsent header, which is what makes a double-click open a new, editable draft rather than a read-only message.',
+      'A real .docx — a Word file with proper headings and lists you can keep editing, not a renamed HTML file.',
+      'Finds the subject, the greeting and the sign-off in your text, and can be switched off entirely if you would rather it read nothing at all.',
+      'Every message carries a plain-text part alongside the HTML one, so clients and readers that do not want HTML still get the words.',
+      'Runs entirely in your browser. Nothing you draft is uploaded, and no model is asked to rewrite it.',
+    ],
+    sections: [
+      {
+        heading: 'Why email HTML looks twenty years out of date',
+        body: [
+          'A web page and an email are written in the same language and rendered by completely different things. A browser is a modern layout engine kept current by a company with a great deal at stake. A mail client is whatever the recipient happens to open the message in, and the most commercially important of them — Outlook on Windows — hands HTML to Microsoft Word to draw. Word has no flexbox, no grid, no support for max-width on a block element, and its own ideas about the space around a table.',
+          'So the techniques that survive are the ones that predate all of it: nested tables for layout, widths stated as attributes as well as in CSS, and every style written inline on the element it applies to rather than collected in a stylesheet. That last point is not only about Outlook. Gmail removes style blocks in several situations, most reliably when somebody forwards your message, and a design that depended on one arrives as unstyled text.',
+          'There is a second, quieter reason to write the tables correctly. A screen reader treats a table as a data table unless it is told otherwise, and announces its dimensions before reading the contents. An email laid out in four nested tables is therefore announced as four tables before the reader hears a single word. Marking each one as presentational is what makes the difference, and it costs nothing.',
+        ],
+      },
+      {
+        heading: 'What a .eml file is, and why it opens as a draft',
+        body: [
+          'A .eml file is simply a message saved as a file, in the format messages travel in: a block of headers, a blank line, then the body. Because that is the same shape an email has on the wire, every mail client knows how to open one. What varies is whether it opens as something you can edit.',
+          'By default a client treats a .eml as mail that has already arrived, and shows it read-only. One non-standard header changes that: X-Unsent, set to 1, tells Outlook the message was never sent, so it opens in the composer with the subject and body filled in, waiting for a recipient. It appears in no specification, it is the single most useful line in the file, and it is the difference between a template you can send and a transcript you can only look at.',
+          'The file made here deliberately carries no From or To header. A template that arrives pre-addressed is one more thing to remember to change.',
+        ],
+      },
+      {
+        heading: 'Why there are two copies of your message inside',
+        body: [
+          'Open a .eml in a text editor and you will find the same email twice: once as plain text and once as HTML, separated by a boundary marker. This is multipart/alternative, and it is not redundancy — it is the client being offered a choice. Anything that will not or cannot render HTML takes the plain part, which is why a message sent as HTML alone can arrive completely blank.',
+          'The plain-text copy is also where a link has to earn its place. HTML can hide a URL behind the words "read the report"; plain text cannot, so the text part writes both the words and the address. It is worth reading that version before you send anything important, because it is what a good number of people will actually see.',
+        ],
+      },
+      {
+        heading: 'A Word file is a zip full of XML',
+        body: [
+          'Rename a .docx to .zip and open it, and you will find a small directory of XML files: the document itself, a list of styles, a numbering definition for lists, and a set of relationship files that tie them together. That structure is an open standard, which is why a Word document can be assembled in a browser tab with no software from Microsoft involved.',
+          'It is also why doing it carelessly produces a file Word simply refuses to open, with a dialog that says the content is unreadable and nothing about which part was wrong. Links are the usual culprit: a hyperlink in the document is not a URL but a reference to an entry in a separate relationships file, and the two have to agree. Control characters are the other one — a vertical tab pasted in from a PDF is not legal in XML at all, and one of them anywhere in the text is enough to make the whole document unopenable.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Does this use AI to write my email?',
+        a: 'No. Nothing you type is sent anywhere, and no model is involved. The tool reads the shape of your text — paragraphs, bullets, a greeting, a sign-off, a link on a line of its own — and lays it out. The words that come out are the words you put in.',
+      },
+      {
+        q: 'How do I use the HTML once I have it?',
+        a: 'Paste it wherever your sending tool accepts a raw HTML version of a message: the HTML or source view in Mailchimp, Brevo, Klaviyo and similar, or the html field of an API like SendGrid, Postmark or Amazon SES. If you just want to send it yourself, download the .eml instead and double-click it.',
+      },
+      {
+        q: 'Why does my email need to work in Outlook specifically?',
+        a: 'Because Outlook on Windows renders HTML with Word’s layout engine rather than a browser’s, and it remains the standard mail client in a great many companies. A layout built with modern CSS can look perfect in Gmail and in your own inbox while arriving in a single unstyled column for exactly the recipients you most wanted to reach.',
+      },
+      {
+        q: 'Do I have to write Markdown?',
+        a: 'No. Plain paragraphs separated by blank lines are enough, and most people already type the rest without thinking of it as Markdown: a dash for a bullet, a number for a numbered list. If your text contains asterisks or hashes that are meant literally, turn on Plain paragraphs and nothing at all will be interpreted.',
+      },
+      {
+        q: 'Can I add my logo or an image?',
+        a: 'Not in this version. An image in an email has to be hosted somewhere public and referenced by an absolute URL, so it is not something a browser-only tool can do for you without uploading your file somewhere first. You can add an img tag to the HTML afterwards; put the width on the tag as an attribute as well as in the style, because Outlook needs it there.',
+      },
+      {
+        q: 'What is the unsubscribe link in the newsletter look?',
+        a: 'A placeholder. Every sending platform substitutes its own merge tag for the real address, so the file carries {{unsubscribe_url}} for you to replace with whatever yours uses. If you are sending marketing email in bulk, a working unsubscribe link is a legal requirement in most places, not a nicety.',
+      },
+      {
+        q: 'Is the Word file a real .docx?',
+        a: 'Yes — a genuine Office Open XML package with styled headings, real bullet and numbered lists, and working hyperlinks, which opens in Word, LibreOffice, Pages and Google Docs. It is not an HTML file given a .docx name, which is what several converters produce and what makes Word show a compatibility warning.',
+      },
+      {
+        q: 'Is anything uploaded?',
+        a: 'No. The text is read, the four formats are generated and the preview is rendered entirely in your browser, and the preview frame runs with no permissions at all. Nothing you draft leaves your device.',
+      },
+    ],
+    related: ['markdown-editor', 'html-preview', 'text-cleaner'],
+  },
+
   'html-preview': {
     slug: 'html-preview',
     intro: [

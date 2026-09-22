@@ -1,0 +1,143 @@
+<app-tool-page slug="email-template">
+  Paste a plain-text draft and get an email that still holds together in Outlook — or the same
+  words as a Word document. Everything runs in your browser.
+</app-tool-page>
+
+<div class="options">
+  <div class="control">
+    <span class="control__label" id="look-label">Look</span>
+    <div class="chips" role="group" aria-labelledby="look-label">
+      @for (option of looks; track option.id) {
+        <button
+          type="button"
+          class="chip"
+          [class.chip--on]="look() === option.id"
+          [attr.aria-pressed]="look() === option.id"
+          (click)="setLook(option.id)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+    <span class="field__hint">{{ lookHint() }}</span>
+  </div>
+
+  <div class="control control--tight">
+    <label class="control__label" for="accent">Accent colour</label>
+    <input
+      id="accent"
+      class="accent"
+      type="color"
+      [value]="accent()"
+      (input)="onAccent($event)"
+    />
+  </div>
+
+  <div class="control control--tight">
+    <mat-checkbox [checked]="!infer()" (change)="setInfer(!$event.checked)">
+      Plain paragraphs
+    </mat-checkbox>
+    <span class="field__hint">
+      Take the text exactly as written: blank lines separate paragraphs and nothing else is read as
+      a heading, a bullet or a link.
+    </span>
+  </div>
+</div>
+
+<div class="editor">
+  <section class="pane" aria-label="Your text">
+    <div class="pane__bar">
+      <span class="pane__label">Your text</span>
+      @if (subject(); as line) {
+        <span class="pane__stats" data-testid="email-subject">Subject: {{ line }}</span>
+      }
+    </div>
+    <app-code-editor
+      class="pane__input"
+      label="Your text"
+      language="markdown"
+      placeholder="Paste or type your email…"
+      minHeight="0"
+      height="100%"
+      [frameless]="true"
+      [(value)]="source"
+    />
+  </section>
+
+  <section class="pane" aria-label="Email preview">
+    <div class="pane__bar">
+      <span class="pane__label">Preview</span>
+      <div class="seg" role="group" aria-label="Preview width">
+        <button
+          type="button"
+          class="seg__btn"
+          [class.seg__btn--on]="width() === 'desktop'"
+          [attr.aria-pressed]="width() === 'desktop'"
+          (click)="setWidth('desktop')"
+        >
+          Desktop
+        </button>
+        <button
+          type="button"
+          class="seg__btn"
+          [class.seg__btn--on]="width() === 'mobile'"
+          [attr.aria-pressed]="width() === 'mobile'"
+          (click)="setWidth('mobile')"
+        >
+          Mobile
+        </button>
+      </div>
+    </div>
+    <!-- A plain host; the component builds the preview iframe inside it, in the
+         browser only. Imperatively, because Angular forbids binding the
+         security-sensitive `sandbox` attribute (NG0910) and an iframe in
+         prerendered HTML trips the hydration walker (NG0500). `--preview-w`
+         inherits into that frame, so the width control restyles it rather than
+         reloading the message. -->
+    <div #frame class="frame-host" [style.--preview-w]="widthValue()"></div>
+  </section>
+</div>
+
+<div class="actions">
+  <button matButton="filled" (click)="copyHtml()" [disabled]="!hasText()">
+    <ng-icon name="matContentCopyOutline" />
+    Copy HTML
+  </button>
+  <button matButton (click)="downloadHtml()" [disabled]="!hasText()">
+    <ng-icon name="matDownloadOutline" />
+    .html
+  </button>
+  <button
+    matButton
+    (click)="downloadEml()"
+    [disabled]="!hasText()"
+    title="A message file: double-click it and your mail client opens it as a new draft"
+  >
+    <ng-icon name="matMailOutline" />
+    .eml
+  </button>
+  <button matButton (click)="downloadDocx()" [disabled]="!hasText()">
+    <ng-icon name="matDescriptionOutline" />
+    .docx
+  </button>
+  <button matButton (click)="downloadRtf()" [disabled]="!hasText()">
+    <ng-icon name="matDescriptionOutline" />
+    .rtf
+  </button>
+  <button matButton (click)="clear()" [disabled]="!hasText()">
+    <ng-icon name="matClearOutline" />
+    Clear
+  </button>
+  <app-try-example (loadExample)="loadExample()" />
+  <app-share-link [state]="shared" />
+  <app-send-to [text]="html()" from="email-template" />
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+  The HTML is laid out with tables and inline styles on purpose. Outlook on Windows draws email
+  with Word's engine rather than a browser's, so the stylesheets and flexbox a web page would use
+  are quietly ignored there.
+</p>
+
+<app-tool-content slug="email-template" />

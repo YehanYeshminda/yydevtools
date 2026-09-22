@@ -39,6 +39,7 @@ export const SEND_TARGETS: readonly SendTarget[] = [
   { slug: 'word-counter', label: 'Word Counter', field: 'text' },
   { slug: 'jwt-decoder', label: 'JWT Decoder', field: 'token' },
   { slug: 'jwt-editor', label: 'JWT Editor', field: 'token' },
+  { slug: 'email-template', label: 'Email Template', field: 'source' },
 ];
 
 /**

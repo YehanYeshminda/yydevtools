@@ -173,3 +173,22 @@ test('invoice-generator keeps a long line description inside the table', async (
   await expect(page.getByTestId('grand-total')).toBeVisible();
   await expectFitsAtEveryWidth(page);
 });
+
+test('email-template keeps a long link inside the message column', async ({ page }) => {
+  await gotoTool(page, 'email-template', 'Email Template Generator');
+  await setEditorText(editorByLabel(page, 'Your text'), `Hi,\n\nSee https://example.com/${TOKEN}`);
+
+  const body = page.frameLocator('iframe[title="Email preview"]').locator('body');
+  await expect(body).toContainText('example.com');
+
+  // The tool's own page first — the walker only sees this document, not the
+  // preview's.
+  await expectFitsAtEveryWidth(page);
+
+  // Then the email itself, which is the box that actually matters and is a
+  // separate document. An unbreakable URL is what splits a message column
+  // open, and 600 pixels is the one measurement every mail client agrees on.
+  // Checked at 375px, which expectFitsAtEveryWidth has just left us at.
+  const spill = await body.evaluate((el) => el.scrollWidth - el.clientWidth);
+  expect(spill).toBeLessThanOrEqual(1);
+});

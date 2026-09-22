@@ -31,6 +31,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Barcode Generator** | Code 128, EAN-13, EAN-8, UPC-A, Code 39 and ITF-14, with check digits calculated. |
 | **Slug Generator** | A list of titles into URL slugs — accents folded, length capped, collisions numbered. |
 | **Colour Palette Extractor** | The dominant colours of a photo or logo, with the share each one covers. |
+| **Email Template Generator** | Plain text into an HTML email that survives Outlook, or a .eml, Word or RTF file. |
 | **Invoice & Receipt Generator** | Fill in an invoice or receipt with a live preview and your logo, and download the PDF. |
 | **PDF Visual Diff** | Compare two PDFs page by page and see which pixels moved. |
 | **Text Cleaner** | Strip invisible characters, straighten curly quotes, trim, sort and de-duplicate lines. |

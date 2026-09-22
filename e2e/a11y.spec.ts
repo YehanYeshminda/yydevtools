@@ -333,3 +333,83 @@ for (const theme of ['dark', 'light'] as const) {
     ).toEqual([]);
   });
 }
+
+/**
+ * The Email Template Generator, which has a look selector built from the same
+ * `.chip--on` that shipped at 1.04:1 on the passport toggle, and an accent
+ * colour the person picks — so the one thing on the page whose contrast is not
+ * decided by a token at all.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`email-template's controls have no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'email-template');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    // Each look in turn, so the selected chip is audited in every position
+    // rather than only wherever it happened to start.
+    for (const look of ['Plain', 'Announcement', 'Newsletter']) {
+      await page.getByRole('button', { name: look, exact: true }).click();
+      // The preview frame is excluded because AXE cannot enter it: the frame
+      // has an empty `sandbox`, so nothing may run inside it, and axe-core
+      // waits for an injected script there that can never answer — the test
+      // hung for the full ninety seconds before this was added. The email is
+      // audited instead as its own document, below.
+      const results = await audit(page).exclude('iframe[title="Email preview"]').analyze();
+      expect(
+        results.violations.map(
+          (violation) =>
+            `${violation.id}: ${violation.nodes
+              .map((node) => node.target.join(' '))
+              .slice(0, 6)
+              .join(' | ')}`,
+        ),
+        `AXE violations with the ${look} look selected [${theme}]`,
+      ).toEqual([]);
+    }
+  });
+}
+
+/**
+ * The email itself, audited as the document it will be.
+ *
+ * The preview runs in a frame with an empty `sandbox`, which is exactly the
+ * point — an email has no scripts, so it is given no permissions — but it also
+ * means AXE cannot inject itself into that frame. Auditing only the tool page
+ * would therefore leave the actual deliverable unchecked, so the generated
+ * markup is loaded as a page of its own and audited there — and it is the file
+ * that leaves this site, which makes it the part most worth checking.
+ *
+ * What this covers is contrast, the document language and heading order inside
+ * the real message. It does *not* cover `role="presentation"` on the layout
+ * tables: removing it was tried, and this audit still passed, because axe does
+ * not raise a layout table under the wcag2a/aa tags. That guarantee is held by
+ * the unit test in email-html.spec.ts and by the frame check in
+ * tools-text.spec.ts, both of which do fail without it.
+ */
+test('the generated email has no AXE violations as a document in its own right', async ({
+  page,
+}) => {
+  await gotoTool(page, 'email-template');
+  await page.getByRole('button', { name: 'Newsletter', exact: true }).click();
+
+  const html = await page
+    .locator('iframe[title="Email preview"]')
+    .evaluate((frame) => (frame as HTMLIFrameElement).srcdoc);
+  expect(html).toContain('<table role="presentation"');
+
+  await page.setContent(html);
+  const results = await audit(page).analyze();
+  expect(
+    results.violations.map(
+      (violation) =>
+        `${violation.id}: ${violation.nodes
+          .map((node) => node.target.join(' '))
+          .slice(0, 6)
+          .join(' | ')}`,
+    ),
+    'AXE violations in the generated email',
+  ).toEqual([]);
+});

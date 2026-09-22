@@ -1314,3 +1314,76 @@ test('switching phase or mode asks before it throws a session away', async ({ pa
 
   expectClean(watch);
 });
+
+test('email-template turns a draft into an email, a message file and a Word document', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'email-template', 'Email Template Generator');
+
+  await setEditorText(
+    editorByLabel(page, 'Your text'),
+    [
+      'Subject: Quarterly update',
+      '',
+      'Hi Ada,',
+      '',
+      'The report is attached.',
+      '',
+      '- One point',
+      '- Another point',
+      '',
+      'Thanks,',
+      'Grace',
+    ].join('\n'),
+  );
+
+  // The subject is lifted out of the body rather than left sitting in it.
+  await expect(page.getByTestId('email-subject')).toHaveText('Subject: Quarterly update');
+
+  const preview = page.frameLocator('iframe[title="Email preview"]');
+  // exact, because the hidden preheader deliberately echoes this same
+  // sentence: it is what the inbox shows beside the subject.
+  await expect(preview.getByText('The report is attached.', { exact: true })).toBeVisible();
+  await expect(preview.getByRole('listitem').first()).toHaveText('One point');
+  // Every layout table is presentational, or a screen reader announces four
+  // tables and their dimensions before reaching a word of the message.
+  await expect(preview.locator('table:not([role="presentation"])')).toHaveCount(0);
+
+  for (const extension of ['html', 'eml', 'docx', 'rtf'] as const) {
+    const download = page.waitForEvent('download');
+    await page
+      .locator('.actions')
+      .getByRole('button', { name: `.${extension}`, exact: true })
+      .click();
+    // Named from the subject, so a folder of these can be read at a glance.
+    expect((await download).suggestedFilename()).toBe(`quarterly-update.${extension}`);
+  }
+
+  expectClean(watch);
+});
+
+test('email-template changes its look, and can be told to read nothing', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'email-template', 'Email Template Generator');
+
+  const editor = editorByLabel(page, 'Your text');
+  await setEditorText(editor, 'Subject: Release 4.2\n\nIt ships today.');
+
+  const preview = page.frameLocator('iframe[title="Email preview"]');
+  await expect(preview.getByText('It ships today.', { exact: true })).toBeVisible();
+  // A plain letter carries no title: the mail client already shows the subject,
+  // and repeating it in the body is what marketing mail does, not a person.
+  await expect(preview.locator('h1')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Announcement' }).click();
+  await expect(preview.locator('h1')).toHaveText('Release 4.2');
+
+  // With the shape switched off, a hash is a hash rather than a heading.
+  await setEditorText(editor, '# Not a heading\n\nBody.');
+  await page.getByRole('checkbox', { name: 'Plain paragraphs' }).check();
+  await expect(preview.getByText('# Not a heading', { exact: true })).toBeVisible();
+  await expect(preview.locator('h1')).toHaveCount(0);
+
+  expectClean(watch);
+});

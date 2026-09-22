@@ -141,6 +141,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/email-template',
+    loadComponent: () =>
+      import('./tools/email-template/email-template').then((m) => m.EmailTemplateTool),
+    title: 'Email Template Generator — Text to HTML Email — YYDevTools',
+    data: {
+      description:
+        'Turn plain text into an HTML email that survives Outlook, or download it as .eml, ' +
+        'Word or RTF. Runs in your browser. Free, no sign-up.',
+    },
+  },
+  {
     path: 'tools/markdown-editor',
     loadComponent: () =>
       import('./tools/markdown-editor/markdown-editor').then((m) => m.MarkdownEditorTool),
