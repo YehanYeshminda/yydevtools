@@ -54,7 +54,14 @@
           </button>
         </div>
       </div>
-      <pre class="key__pem">{{ keys.privatePem }}</pre>
+      <!-- Focusable because it scrolls sideways. PEM wraps its body at 64
+           characters, which needs about 455px and so overflows on a phone
+           while fitting on a desktop — and a scroll region that is not a focus
+           stop has its right-hand half unreachable without a mouse. Same
+           pattern as the guide template. -->
+      <pre class="key__pem" tabindex="0" role="group" aria-label="Private key, PKCS#8 PEM">{{
+        keys.privatePem
+      }}</pre>
     </div>
 
     <div class="key">
@@ -71,7 +78,9 @@
           </button>
         </div>
       </div>
-      <pre class="key__pem">{{ keys.publicPem }}</pre>
+      <pre class="key__pem" tabindex="0" role="group" aria-label="Public key, SPKI PEM">{{
+        keys.publicPem
+      }}</pre>
     </div>
   }
 </div>

@@ -81,9 +81,17 @@
         </p>
 
         @if (excerpt(); as block) {
+          <!-- Focusable because it scrolls sideways: the excerpt is one source
+               line, and a minified document is a single very long one, so it
+               overflows at any width. A scroll region that is not a focus stop
+               has its right-hand half unreachable without a mouse. Same
+               pattern as the guide template. -->
           <pre
             class="problem__excerpt"
             data-testid="json-problem-excerpt"
+            tabindex="0"
+            role="group"
+            aria-label="The line that failed to parse"
           ><code>{{ block }}</code></pre>
         }
       </div>

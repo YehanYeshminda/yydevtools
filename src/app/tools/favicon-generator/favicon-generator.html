@@ -123,7 +123,18 @@
 
     <div class="field">
       <span class="field__label">Paste into your &lt;head&gt;</span>
-      <pre class="snippet" data-testid="head-snippet"><code>{{ snippet() }}</code></pre>
+      <!-- Focusable because it scrolls sideways: the longest line here is 71
+           characters, which clears the column on a phone, and a scroll region
+           that is not a focus stop has its right-hand half unreachable without
+           a mouse. The group role and label keep it from being announced as an
+           unnamed stop. Same pattern as the guide template. -->
+      <pre
+        class="snippet"
+        data-testid="head-snippet"
+        tabindex="0"
+        role="group"
+        aria-label="Head snippet"
+      ><code>{{ snippet() }}</code></pre>
       <span class="field__hint">
         The ZIP also holds favicon.ico, site.webmanifest and this snippet as head-snippet.html. Put
         the files at the root of your site.

@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { editorByLabel, gotoTool, setEditorText, setTheme, uploadFiles } from './helpers';
 
@@ -30,6 +30,24 @@ const audit = (page: Page) =>
  */
 async function expectSplashGone(page: Page): Promise<void> {
   await expect(page.locator('#splash')).toHaveCount(0);
+}
+
+/**
+ * Insists a region really does scroll sideways before it is audited for being
+ * a scroll region.
+ *
+ * `scrollable-region-focusable` only fires on an element whose content is
+ * actually wider than its box, so an audit of a `<pre>` that happens to fit
+ * passes whether or not it is reachable by keyboard. That is not theoretical:
+ * the json-formatter block below was green for exactly that reason while the
+ * violation was still there. Asserting the precondition means the audit cannot
+ * quietly stop covering anything.
+ */
+async function expectScrolls(target: Locator): Promise<void> {
+  const overflow = await target.evaluate((el) => el.scrollWidth - el.clientWidth);
+  expect(overflow, 'this no longer overflows, so the audit below proves nothing').toBeGreaterThan(
+    0,
+  );
 }
 
 const SURFACES: Array<[string, string]> = [
@@ -311,6 +329,12 @@ for (const theme of ['dark', 'light'] as const) {
  * and a fixed-width excerpt on its own surface with a caret under the offending
  * character. All of it is drawn in colour over a container, and none of it
  * exists on the empty page.
+ *
+ * The document is minified on purpose. This ran on a four-line one and passed
+ * while the excerpt was still an unreachable scroll region — the offending
+ * line was simply too short to overflow, so the rule never fired and the pass
+ * meant nothing. A minified document is also the realistic case: it is one
+ * long line, which is exactly when an excerpt of it needs scrolling.
  */
 for (const theme of ['dark', 'light'] as const) {
   test(`json-formatter's error state has no AXE violations in the ${theme} theme`, async ({
@@ -321,10 +345,12 @@ for (const theme of ['dark', 'light'] as const) {
 
     await setEditorText(
       editorByLabel(page, 'JSON input'),
-      ['{', '  "a": 1,', '  "b": oops', '}'].join('\n'),
+      '{"order":{"id":"A-99213","customer":"Bakery Orders Tracker Ltd","lines":' +
+        '[{"sku":"FLOUR-25KG","qty":4},{"sku":"YEAST-500G","qty":12}],"total":184.5,"paid":oops}}',
     );
     await expect(page.getByTestId('json-problem')).toBeVisible();
     await expect(page.getByTestId('json-problem-excerpt')).toBeVisible();
+    await expectScrolls(page.getByTestId('json-problem-excerpt'));
 
     const results = await audit(page).analyze();
     expect(
@@ -336,6 +362,79 @@ for (const theme of ['dark', 'light'] as const) {
             .join(' | ')}`,
       ),
       `AXE violations with a broken document [${theme}]`,
+    ).toEqual([]);
+  });
+}
+
+/**
+ * The two tools that hand back a block of generated text to copy out.
+ *
+ * Favicon Generator's head snippet and Key Generator's PEM are both `<pre>`
+ * with `overflow-x: auto` and no wrapping, so past a certain line length they
+ * become scroll regions — and a scroll region that is not a focus stop has its
+ * right-hand half unavailable to anyone not using a mouse.
+ *
+ * Both are audited at phone width, which is the whole reason these are
+ * separate blocks rather than rows in SURFACES. Measured at the suite's usual
+ * 1440: the snippet's longest line is 71 characters and the PEM's is 64, and
+ * both sit in a 998px box with nothing to scroll. At 375 the snippet needs
+ * 535px and the PEM 455px. Audited at desktop width these would pass with or
+ * without the fix, which is the same trap the json-formatter block fell into.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`favicon-generator's head snippet has no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'favicon-generator', 'Favicon Generator');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await uploadFiles(page, ['sample-photo.jpg']);
+    await expect(page.getByTestId('icon-preview')).toHaveCount(7, { timeout: 60_000 });
+    await expect(page.getByTestId('head-snippet')).toContainText('rel="manifest"');
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await expectScrolls(page.getByTestId('head-snippet'));
+
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+      `AXE violations on the head snippet [${theme}]`,
+    ).toEqual([]);
+  });
+
+  test(`key-generator's PEM output has no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'key-generator', 'Key Generator');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await page.getByRole('button', { name: /^Generate/ }).click();
+    await expect(page.getByText('-----BEGIN PRIVATE KEY-----').first()).toBeVisible({
+      timeout: 45_000,
+    });
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    // The private key, which is the one carrying the error-tinted border.
+    await expectScrolls(page.locator('.key__pem').first());
+
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+      `AXE violations on the generated key pair [${theme}]`,
     ).toEqual([]);
   });
 }
