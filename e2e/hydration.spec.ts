@@ -65,40 +65,45 @@ test('text typed before a tool hydrates is not thrown away', async ({ page }) =>
 /**
  * The same window, given a file rather than typed text.
  *
- * Deliberately a local tool. This opened the workbook in Excel Viewer until it
- * became the one test in the suite that failed on a clean tree: Excel Viewer is
- * hosted, so the name it ended on only appeared once a Fly machine had woken,
- * converted the file and answered — and past the timeout that reads as the
- * handover having failed when nothing was wrong with it. CSV Viewer goes
- * through the same window and then parses the file here, so what is asserted
- * is the handover rather than someone else's cold start. `tools-files.spec.ts`
- * draws the same line, stopping hosted tools at upload and pre-flight.
+ * Excel Viewer rather than a lighter tool, on the record that the loss went
+ * with chunk size: measured against the unfixed app, hash-generator text and
+ * the excel-viewer file were both lost where a csv-viewer file survived,
+ * because `withEventReplay()` does rescue a file when the route chunk lands
+ * quickly enough. Retargeting this at a small-chunk tool therefore costs the
+ * coverage, and was tried and reverted.
  *
- * What carries a file across is `withEventReplay()`, not the file branch of
- * `PreHydrationInput`. Measured, because the wording used to imply otherwise:
- * stub that branch out and this still passes; disable the whole of
- * `PreHydrationInput` and this still passes while the text test above fails.
- * So the property under test is the one in the name — a file chosen early is
- * not lost — and not the belt-and-braces that also exists for it.
+ * Be aware that this run does not reprove it. Stub `PreHydrationInput` out
+ * altogether and this test still passes while the text test above fails, so
+ * against `ng serve` over localhost the 3.7 MB chunk is still winning the race
+ * that it loses in production. The tool is kept on the recorded measurement,
+ * not on anything asserted here — see the separate question of what it would
+ * take to make this fail.
+ *
+ * The hosted half is what made it flaky. It used to end on the name in the
+ * summary bar, which appears only once a Fly machine has woken, converted the
+ * workbook and answered, so a cold start read as the handover having failed.
+ * Holding the conversion open drops the round trip and keeps the window:
+ * `loading` and `name` are both set before the request, so `.loading` carrying
+ * the file name is the file having reached the component.
  */
 test('a file chosen before a tool hydrates is not thrown away', async ({ page }) => {
   const watch = watchConsole(page);
   const release = await gateScripts(page);
 
-  await page.goto('/tools/csv-viewer', { waitUntil: 'commit' });
+  // Held open, never answered. Everything under test happens before it.
+  await page.route('**/api/excel/import', () => {});
+
+  await page.goto('/tools/excel-viewer', { waitUntil: 'commit' });
   const input = page.locator('input[type="file"]').first();
   await expect(page.locator('.dropzone')).toBeVisible();
   await expectNotHydratedYet(page);
 
-  await input.setInputFiles(fixture('sample.csv'));
+  await input.setInputFiles(fixture('sample.xlsx'));
 
   release();
   await expect(page.locator('[ngh]')).toHaveCount(0, { timeout: 45_000 });
 
-  // Cells, not the file name: the bytes were read, not merely held on to.
-  const grid = page.locator('table.grid');
-  await expect(grid).toContainText('region', { timeout: 45_000 });
-  await expect(grid).toContainText('1284');
+  await expect(page.locator('.loading')).toContainText('sample.xlsx', { timeout: 45_000 });
 
   expectClean(watch);
 });
