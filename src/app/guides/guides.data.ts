@@ -3115,6 +3115,222 @@ export const GUIDES: Guide[] = [
       'https-explained',
     ],
   },
+
+  {
+    slug: 'html-email-explained',
+    title: 'HTML email explained: why Outlook still needs tables',
+    description:
+      'Email HTML is a different dialect from web HTML. Why Outlook lays out with Word, what actually survives, and how to build a message that holds together everywhere.',
+    category: 'Email',
+    readingMinutes: 13,
+    updated: '2026-09-22',
+    published: '2026-09-22',
+    intro: [
+      'You write a simple layout — a heading, a paragraph, a button — and it looks right in every browser you try. You send it as an email and it arrives in one column, in Times New Roman, with the button rendered as plain blue text. Nothing you wrote was wrong. It is just that the thing rendering it was never a browser.',
+      'Email HTML is a separate dialect, roughly two decades behind the web, and it is worth understanding rather than fighting. This guide covers why it diverged, what is actually safe to use, how a message is put together as a file, and the handful of details — a hidden preheader, one non-standard header, a table role — that make the difference between a message that works and one that merely displays.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'The one fact that explains all the others' },
+      {
+        kind: 'p',
+        text: 'Outlook on Windows does not render email with a browser engine. Since Outlook 2007 it has used the layout engine from Microsoft Word. That single decision is the source of nearly every strange rule in email design, and it is still true in the versions sitting on corporate desktops today.',
+      },
+      {
+        kind: 'p',
+        text: 'Word was built to lay out printed pages, not screens. It has no flexbox and no CSS grid. It ignores max-width on a div, so the usual way of constraining a column does nothing. It adds its own spacing around tables. It will not paint a background image without a proprietary vector markup. And it measures in points on a page rather than pixels on a display, so a stated width can come out a quarter too large on a scaled monitor unless you tell it otherwise.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'Be careful with the word "Outlook": it is at least three different renderers. Outlook on Windows uses Word. Outlook for Mac and the Outlook mobile apps use WebKit. Outlook.com and the newer Windows client are browser-based. When someone says a technique "breaks in Outlook", they almost always mean the Word one — and that is the one most likely to be reading your message at work.',
+      },
+      { kind: 'h2', text: 'Tables are not nostalgia, they are the only layout that works' },
+      {
+        kind: 'p',
+        text: 'Every serious email is built from nested tables, because a table is the one layout primitive all these engines agree on. The pattern is almost always the same: an outer table at full width to provide a background and something to centre against, and an inner table at a fixed width holding the actual content.',
+      },
+      {
+        kind: 'code',
+        caption: 'The skeleton every HTML email is built on',
+        code: '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">\n  <tr>\n    <td align="center" style="padding:24px 12px;">\n\n      <!--[if mso]><table role="presentation" width="600"><tr><td><![endif]-->\n      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"\n             style="width:100%; max-width:600px; border-collapse:collapse;\n                    mso-table-lspace:0pt; mso-table-rspace:0pt;">\n        <tr><td> … the message … </td></tr>\n      </table>\n      <!--[if mso]></td></tr></table><![endif]-->\n\n    </td>\n  </tr>\n</table>',
+      },
+      {
+        kind: 'p',
+        text: 'Three things in there are doing real work. The width is stated twice — once as CSS for clients that understand it, and once inside a conditional comment as a plain HTML attribute, because Word ignores the CSS and honours the attribute. The mso-table-lspace and mso-table-rspace properties remove the gutters Outlook inserts around every table on its own. And the whole thing is 600 pixels wide.',
+      },
+      {
+        kind: 'p',
+        text: 'That 600 is not arbitrary and not really negotiable. It descends from the width of the old Outlook reading pane, and it survived because it is roughly the widest a message can be while still fitting a preview pane, a phone in portrait, and a printed page. You can go a little wider, but 600 is the number everything is tested against.',
+      },
+      { kind: 'h2', text: 'Why every style has to be written inline' },
+      {
+        kind: 'p',
+        text: 'On the web you put your CSS in a stylesheet. In email you write it on each element, in a style attribute, over and over. This looks like carelessness and is not: a stylesheet in an email is unreliable. Gmail in particular strips style blocks in several situations — most dependably when someone forwards your message — and a design that depended on one arrives as unstyled text at exactly the moment it was being passed to someone new.',
+      },
+      {
+        kind: 'p',
+        text: 'The most common casualty is the typeface. Word does not inherit font-family reliably, and when it loses track of it, it does not continue down your font stack — it reverts to Times New Roman. So the font has to be repeated on every element that contains text: every cell, every paragraph, every list item, every heading. It is verbose and it is the difference between your message and a legal notice.',
+      },
+      {
+        kind: 'code',
+        caption: 'The font repeated, and a stack that ends somewhere Word recognises',
+        code: '<td style="font-family:-apple-system,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif;\n           font-size:16px; line-height:24px; mso-line-height-rule:exactly;\n           color:#1f2933;">\n  Text that will still be in a sans-serif face when it reaches Outlook.\n</td>',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Always end a font stack with Arial or Helvetica. Given a family it does not recognise, Word does not move on to the next name in the list — it gives up and uses its own default. A stack of nothing but modern web-safe names can therefore fail completely.',
+      },
+      {
+        kind: 'tool',
+        lead: 'Rather than assembling that by hand, paste a plain-text draft and have the skeleton generated:',
+        slug: 'email-template',
+      },
+      { kind: 'h2', text: 'The button that is not a button' },
+      {
+        kind: 'p',
+        text: 'A call-to-action button on the web is an anchor with a background colour and a border radius. Outlook will not paint either on an anchor, so the button arrives as ordinary underlined text. The workaround, universally known as the "bulletproof button", is to draw the shape twice: once as a vector rectangle only Outlook sees, and once as a normal anchor that Outlook is told to ignore.',
+      },
+      {
+        kind: 'code',
+        caption: 'The same button, drawn twice',
+        code: '<td align="center" bgcolor="#2563eb" style="border-radius:6px;">\n\n  <!--[if mso]>\n  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="https://example.com"\n               style="height:44px; v-text-anchor:middle; width:260px;"\n               arcsize="14%" stroke="f" fillcolor="#2563eb">\n    <w:anchorlock/>\n    <center style="color:#ffffff; font-family:Arial,sans-serif; font-weight:700;">Read it</center>\n  </v:roundrect>\n  <![endif]-->\n\n  <!--[if !mso]><!-- -->\n  <a href="https://example.com" style="display:inline-block; padding:13px 26px;\n     font-family:Arial,sans-serif; font-weight:700; color:#ffffff;\n     text-decoration:none; border-radius:6px; background:#2563eb;">Read it</a>\n  <!--<![endif]-->\n\n</td>',
+      },
+      {
+        kind: 'p',
+        text: 'VML — Vector Markup Language — is a shape format Microsoft proposed in 1998 and no browser has supported for years. Word still does, which is why it is here. The anchorlock element is the small detail people miss: without it Outlook lets the label be selected and dragged out of the shape, and the button stops behaving like one.',
+      },
+      { kind: 'h2', text: 'The preheader: the most valuable line you are probably not writing' },
+      {
+        kind: 'p',
+        text: 'Open any inbox and look at what sits beside each subject line. That grey snippet is the preheader, and most clients build it by reading the first text they find in the message body. If the first thing in your message is "View this email in your browser", that is what several hundred people see before deciding whether to open it.',
+      },
+      {
+        kind: 'p',
+        text: 'You control it by putting a hidden block at the very top of the body. The trick has two halves: hide the text, then pad it with invisible characters so the client stops reading before it reaches your actual opening line and staples the two together.',
+      },
+      {
+        kind: 'code',
+        caption: 'A preheader, hidden and padded',
+        code: '<div style="display:none; font-size:1px; line-height:1px; max-height:0;\n            max-width:0; opacity:0; overflow:hidden; mso-hide:all;">\n  The September invoice is ready, and two things changed.\n  &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp; … repeated …\n</div>',
+      },
+      {
+        kind: 'p',
+        text: 'Spend it on the first real sentence of the message, not on a greeting. "Hi Ada," tells the reader nothing they cannot already see from the sender name, and it is how most drafts begin — which is exactly why the preheader is worth setting deliberately rather than letting it fall out of the body.',
+      },
+      { kind: 'h2', text: 'Accessibility matters more in email, and is easier to get right' },
+      {
+        kind: 'p',
+        text: 'Email is one of the places assistive technology is used most heavily, and it is a simpler document than a web page: no scripting, no dynamic state, no focus management. There is correspondingly less to get wrong — but the one thing email uniquely gets wrong is the tables.',
+      },
+      {
+        kind: 'p',
+        text: 'A screen reader treats a table as a data table unless told otherwise, and announces its dimensions before reading the contents. A message laid out in four nested tables is therefore announced as four tables, with their row and column counts, before a single word of what you wrote. Marking each layout table with role="presentation" removes the scaffolding from the reading entirely. It costs nothing and almost no one does it.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'role="presentation" on every table used for layout, not for data.',
+          'A lang attribute on the html element, so the text is pronounced in the right language.',
+          'Real alt text on meaningful images, and alt="" on spacers and decoration so they are skipped rather than announced as filenames.',
+          'Link text that says where it goes. "Read the report" survives being read out of context; "click here" does not.',
+          'Body text at 16px and a line height around 1.5. Small type is harder to escape in an inbox than on a page you can zoom.',
+          'Contrast of at least 4.5:1 for body text, and never colour alone to carry meaning.',
+          'An explicit colour and text-decoration on every link — otherwise Apple Mail applies its own, and turns dates and phone numbers into blue links you did not write.',
+        ],
+      },
+      { kind: 'h2', text: 'Every email is sent twice' },
+      {
+        kind: 'p',
+        text: 'A well-formed HTML email is not one document but two, carried together in a structure called multipart/alternative: a plain-text version and an HTML version, separated by a boundary marker. The client picks one. This is not redundancy — it is the reason a message sent as HTML alone can arrive completely blank in a client configured to refuse HTML.',
+      },
+      {
+        kind: 'code',
+        caption: 'The shape of a multipart message',
+        code: 'MIME-Version: 1.0\nSubject: Your September invoice\nContent-Type: multipart/alternative; boundary="----=_boundary"\n\n------=_boundary\nContent-Type: text/plain; charset=utf-8\n\nHi Ada, the September invoice is ready.\nView it: https://example.com/invoices/2026-09\n\n------=_boundary\nContent-Type: text/html; charset=utf-8\n\n<!DOCTYPE html><html lang="en"> … </html>\n\n------=_boundary--',
+      },
+      {
+        kind: 'p',
+        text: 'The plain-text half is worth writing rather than generating carelessly, because it is where a link has to earn its place. HTML can hide a URL behind the words "view it"; plain text cannot, so the address has to be spelled out. Read that version before sending anything important — a surprising number of people will see it, and it is also the version many spam filters weigh.',
+      },
+      { kind: 'h2', text: 'The .eml file, and the header that turns it into a template' },
+      {
+        kind: 'p',
+        text: 'A .eml file is simply that same structure saved to disk: headers, a blank line, then the body. Because it is the format messages travel in, every mail client knows how to open one. What varies is whether it opens as something you can edit.',
+      },
+      {
+        kind: 'p',
+        text: 'By default a client treats a .eml as mail that has already arrived and shows it read-only. One non-standard header changes that. X-Unsent, set to 1, tells Outlook the message was never sent, so it opens in the composer with the subject and body filled in, waiting for a recipient. It appears in no specification, it is one line, and it is the entire difference between a template you can send and a transcript you can only look at.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'Two details that bite when assembling a .eml by hand: every line must end with a carriage return and a line feed, not the bare newline most languages give you; and a subject containing anything outside printable ASCII has to be encoded as RFC 2047 words — =?UTF-8?B?…?= — of no more than 75 characters each, split on character boundaries so no multi-byte character is cut in half.',
+      },
+      { kind: 'h2', text: 'Dark mode, honestly' },
+      {
+        kind: 'p',
+        text: 'There is no reliable way to design a dark-mode email. Clients do three different things: leave your colours alone, invert them wholesale, or partially invert them — which is the worst outcome, because it produces dark text on a dark background in places you did not anticipate. Support is inconsistent between Apple Mail, Gmail and Outlook.com, and the vendor-specific hooks people use to target them are undocumented and change without notice.',
+      },
+      {
+        kind: 'p',
+        text: 'The part actually worth doing is one line: a colour-scheme meta tag declaring that the message has been designed for both. Several clients read it as a signal to stop force-inverting and leave your colours as written. Beyond that, design defensively — avoid pure white and pure black, since those are what get inverted most aggressively, and avoid logos saved as black artwork on a white background, which become black on dark grey.',
+      },
+      {
+        kind: 'code',
+        caption: 'The part of dark mode that is genuinely honoured',
+        code: '<meta name="color-scheme" content="light dark">\n<meta name="supported-color-schemes" content="light dark">',
+      },
+      { kind: 'h2', text: 'What you simply cannot do' },
+      {
+        kind: 'p',
+        text: 'It is quicker to learn the boundaries than to discover them one client at a time.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'No JavaScript. Every client strips it, and a message containing it is more likely to be treated as suspicious.',
+          'No reliable forms. Some clients render inputs, most refuse to submit them, and asking for data inside an email trains recipients into exactly the habit that makes phishing work.',
+          'No dependable web fonts. Apple Mail will load one; Gmail and Outlook generally will not, so treat any web font as decoration over a working fallback.',
+          'No video that plays everywhere. Link to it behind an image instead.',
+          'No local images. Every image needs an absolute, publicly reachable URL — there is nowhere for a relative path to resolve against.',
+          'No guarantee images are shown at all. Many clients block them until the reader asks, so the message has to make sense with every image missing.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'That last point is the one most often designed around rather than for. If the whole message is one large image — still a surprisingly common approach — then with images blocked it is a blank rectangle, it is invisible to a screen reader, it cannot be searched, and it is a well-known spam signal. Text should be text.',
+      },
+      { kind: 'h2', text: 'What to check before sending' },
+      {
+        kind: 'ol',
+        items: [
+          'Read the plain-text version. It is the fastest way to spot a message that says nothing without its styling.',
+          'Turn images off and read it again.',
+          'Check it at 600 pixels and at phone width, and paste in your longest real URL — an unbroken link is what most often forces a column open.',
+          'Send it to yourself and open it in Outlook on Windows if you possibly can. It is the one renderer that behaves differently from all the others.',
+          'Check the preheader by looking at the inbox list, not the opened message.',
+          'Click every link from the delivered message rather than from your draft, in case a sending platform has rewritten them for tracking.',
+        ],
+      },
+      {
+        kind: 'tool',
+        lead: 'To see how a message renders before it goes anywhere near an inbox, paste the markup here:',
+        slug: 'html-preview',
+      },
+      { kind: 'h2', text: 'Why it stays this way' },
+      {
+        kind: 'p',
+        text: 'It is tempting to treat all of this as an oversight waiting to be fixed. It is not. A mail client renders documents from strangers, which is a genuinely hostile position to be in, and the conservatism follows from that: no scripting, no external resources without consent, no layout engine racing to add features. The web can afford to move quickly because a page comes from a site you chose to visit. An email did not.',
+      },
+      {
+        kind: 'p',
+        text: 'Seen that way the rules stop being arbitrary. Tables, inline styles and a 600-pixel column are what is left when you remove everything that could be used against the reader. Learn the shape once and it stays learned — it has barely moved in fifteen years, and it is not about to.',
+      },
+    ],
+    related: ['email-template', 'html-preview'],
+    relatedGuides: ['docx-files-explained', 'markdown-explained', 'character-encoding-explained'],
+  },
 ];
 
 /** Fast slug → guide lookup for the detail route. */

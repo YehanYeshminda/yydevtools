@@ -52,8 +52,18 @@
             </ol>
           }
           @case ('code') {
+            <!-- The <pre> scrolls sideways when a line is wider than the
+                 column, and a region that scrolls has to be reachable by
+                 keyboard or its right-hand half is simply unavailable to
+                 anyone not using a mouse. tabindex="0" makes it focusable so
+                 the arrow keys work; the group role and label stop it being
+                 announced as an unnamed focus stop. -->
             <figure class="doc__code">
-              <pre><code>{{ block.code }}</code></pre>
+              <pre
+                tabindex="0"
+                role="group"
+                [attr.aria-label]="block.caption || 'Code example'"
+              ><code>{{ block.code }}</code></pre>
               @if (block.caption) {
                 <figcaption>{{ block.caption }}</figcaption>
               }

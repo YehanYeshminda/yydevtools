@@ -1007,6 +1007,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'guides/html-email-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'HTML email explained: why Outlook still needs tables — YYDevTools',
+    data: {
+      slug: 'html-email-explained',
+      description:
+        'Email HTML is a different dialect from web HTML. Why Outlook lays out with Word, ' +
+        'what actually survives, and how to build a message that holds together everywhere.',
+    },
+  },
+  {
     path: 'guides/docx-files-explained',
     loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
     title: 'Inside a Word file: why .docx is a ZIP — YYDevTools',

@@ -251,6 +251,14 @@
   border-radius: var(--r-field);
 }
 
+/* The block is a keyboard focus stop, because a region that scrolls sideways
+   is otherwise half unreachable without a mouse. Being focusable, it has to
+   show where the focus is. */
+.doc__code pre:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .doc__code code {
   font-family: var(--mono);
   font-size: 13.5px;
