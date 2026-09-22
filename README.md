@@ -81,6 +81,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **PDF Watermark & Page Numbers** | Stamp text across every page and add page numbers, with a live preview. |
 | **PDF Form Fill & Flatten** | Fill a PDF form's fields with a live preview, then download it editable or flattened. |
 | **Sign PDF** | Draw, type or upload a signature and place it on a page. |
+| **PDF Editor** | Click a line of text in a PDF, type over it, and keep the original fonts. |
 | **Redact PDF** | Black out a phrase everywhere or draw boxes, and get a PDF with the content truly removed. |
 | **Protect PDF** / **Unlock PDF** | Lock a PDF with an AES-256 password, or remove a password you know. *(hosted)* |
 | **PDF Convert** | Turn a PDF into an editable Word or rich-text file. *(hosted)* |

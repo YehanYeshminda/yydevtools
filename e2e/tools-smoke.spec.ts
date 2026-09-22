@@ -108,3 +108,27 @@ test('every tool is exercised by a behavioural spec, not just this smoke pass', 
     [],
   );
 });
+
+/**
+ * The README's tool table, against the catalogue it is written from.
+ *
+ * Checked rather than generated, because the table is not a copy of the
+ * catalogue: its descriptions are shorter, plainer rewrites, and generating it
+ * would either flatten them into the catalogue's wording or need a second
+ * description field to keep them. The way it actually drifts is a tool
+ * shipping without its row — PDF Editor went out and the table sat one short —
+ * and that costs nothing to catch.
+ *
+ * Names only. A row may cover a pair of tools, so `**Protect PDF** /
+ * **Unlock PDF**` counts for both.
+ */
+test('every tool has a row in the README table', () => {
+  const readme = readFileSync(join(__dirname, '..', 'README.md'), 'utf8');
+  const listed = new Set(
+    [...readme.matchAll(/^\| \*\*(.+?)\*\* \|/gm)].flatMap((row) => row[1].split('** / **')),
+  );
+
+  const missing = READY.filter((tool) => !listed.has(tool.name)).map((tool) => tool.name);
+
+  expect(missing, `these tools have no row in README.md's table: ${missing.join(', ')}`).toEqual([]);
+});
