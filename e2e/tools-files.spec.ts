@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import QRCode from 'qrcode';
 
 import { EditablePdf } from '../src/app/core/pdf-edit/document';
 import { OPEN_IN_SLUGS } from '../src/app/core/open-in';
@@ -1635,3 +1636,136 @@ for (const { label, lines, expected } of [
     expectClean(watch);
   });
 }
+
+/** A QR code for `text`, as a PNG data URL, drawn by the same library the generator uses. */
+const qr = (text: string) => QRCode.toDataURL(text, { margin: 2, width: 280 });
+
+/** Several codes side by side in one screenshot. */
+async function qrSheet(page: Page, texts: string[]): Promise<Buffer> {
+  const images = await Promise.all(texts.map(qr));
+  const shot = await page.context().newPage();
+  await shot.setContent(
+    `<body style="margin:0;background:#fff"><div id="s" style="display:inline-flex;gap:40px;padding:20px">` +
+      images.map((src) => `<img src="${src}">`).join('') +
+      `</div></body>`,
+  );
+  const png = await shot.locator('#s').screenshot();
+  await shot.close();
+  return png;
+}
+
+async function pasteImage(page: Page, png: Buffer): Promise<void> {
+  await page.evaluate((data) => {
+    const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([bytes], 'screenshot.png', { type: 'image/png' }));
+    document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer }));
+  }, png.toString('base64'));
+}
+
+test('qr-reader explains a Wi-Fi code and a link, and loads its decoder from this site', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  const origin = new URL(test.info().project.use.baseURL!).origin;
+  const decoder: string[] = [];
+  page.on('request', (request) => {
+    if (/zxing|\.wasm/i.test(request.url())) decoder.push(request.url());
+  });
+  await gotoTool(page, 'qr-reader', 'QR Code Reader');
+  await waitForHydration(page);
+
+  // Two codes in one image; the Wi-Fi name and password need escaping.
+  await page
+    .locator('input[type="file"]')
+    .first()
+    .setInputFiles({
+      name: 'codes.png',
+      mimeType: 'image/png',
+      buffer: await qrSheet(page, [
+        'WIFI:T:WPA;S:Cafe\\;Bar;P:lat\\:te\\\\1;;',
+        'https://example.com/menu?table=12',
+      ]),
+    });
+
+  const results = page.getByTestId('qr-results');
+  await expect(results).toContainText('Found 2 codes.');
+  const wifi = page.getByTestId('qr-code').filter({ hasText: 'Wi-Fi network' });
+  await expect(wifi.locator('dd')).toHaveText(['Cafe;Bar', 'WPA', 'lat:te\\1']);
+
+  const link = page.getByTestId('qr-code').filter({ hasText: 'Link' });
+  await expect(link.locator('dd').first()).toHaveText('example.com');
+  const open = link.getByRole('link', { name: 'Open link' });
+  await expect(open).toHaveAttribute('href', 'https://example.com/menu?table=12');
+  await expect(open).toHaveAttribute('target', '_blank');
+  await expect(open).toHaveAttribute('rel', 'noopener noreferrer');
+
+  expect(decoder.length, 'the decoder was fetched at all').toBeGreaterThan(0);
+  expect(decoder.filter((url) => !url.startsWith(origin) && !url.startsWith('blob:'))).toEqual([]);
+  expectClean(watch);
+});
+
+test('qr-reader never offers a script link, and says so when there is no code', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'qr-reader', 'QR Code Reader');
+  await waitForHydration(page);
+
+  await pasteImage(page, await qrSheet(page, ['javascript:alert(document.cookie)']));
+  const code = page.getByTestId('qr-code');
+  await expect(code).toContainText('Text');
+  await expect(code.locator('textarea')).toHaveValue('javascript:alert(document.cookie)');
+  await expect(code.getByRole('link')).toHaveCount(0);
+
+  await uploadFiles(page, ['sample-photo.jpg']);
+  await expect(page.getByTestId('qr-results')).toContainText('No QR code or barcode was found');
+  expectClean(watch);
+});
+
+/**
+ * The camera, fed a QR code: getUserMedia is replaced by a canvas stream, so
+ * the real frame loop — <video>, grab, decode, stop — runs against a known
+ * picture without a physical camera.
+ */
+test('qr-reader scans from the camera and turns it off once it reads a code', async ({ page }) => {
+  const watch = watchConsole(page);
+  const code = await qr('tel:+94112345678');
+  await page.addInitScript((src) => {
+    navigator.mediaDevices.getUserMedia = async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 640;
+      canvas.height = 480;
+      const context = canvas.getContext('2d')!;
+      const img = new Image();
+      img.src = src;
+      await img.decode();
+      const paint = () => {
+        context.fillStyle = '#777';
+        context.fillRect(0, 0, 640, 480);
+        context.drawImage(img, 180, 100);
+      };
+      paint();
+      setInterval(paint, 100);
+      const stream = canvas.captureStream(10);
+      (window as unknown as { cameraStream: MediaStream }).cameraStream = stream;
+      return stream;
+    };
+  }, code);
+  await gotoTool(page, 'qr-reader', 'QR Code Reader');
+  await waitForHydration(page);
+
+  await page.getByRole('button', { name: 'Scan with camera' }).click();
+  const found = page.getByTestId('qr-code');
+  await expect(found).toContainText('Phone number');
+  await expect(found.getByRole('link', { name: 'Call' })).toHaveAttribute('href', 'tel:+94112345678');
+
+  // The camera is off, not just hidden.
+  await expect(page.getByTestId('qr-camera')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Scan with camera' })).toBeVisible();
+  const live = await page.evaluate(() =>
+    (window as unknown as { cameraStream: MediaStream }).cameraStream
+      .getTracks()
+      .some((track) => track.readyState === 'live'),
+  );
+  expect(live).toBe(false);
+  expectClean(watch);
+});

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import QRCode from 'qrcode';
 
 import { editorByLabel, gotoTool, setEditorText, setTheme, uploadFiles } from './helpers';
 
@@ -585,6 +586,37 @@ for (const theme of ['dark', 'light'] as const) {
             .join(' | ')}`,
       ),
       `AXE violations on image OCR [${theme}]`,
+    ).toEqual([]);
+  });
+}
+
+/** QR Code Reader with results on screen: fields, the raw text and an Open link button. */
+for (const theme of ['dark', 'light'] as const) {
+  test(`qr-reader has no AXE violations in the ${theme} theme with a result`, async ({ page }) => {
+    await gotoTool(page, 'qr-reader', 'QR Code Reader');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await page
+      .locator('input[type="file"]')
+      .first()
+      .setInputFiles({
+        name: 'code.png',
+        mimeType: 'image/png',
+        buffer: await QRCode.toBuffer('https://example.com/menu', { margin: 2, width: 280 }),
+      });
+    await expect(page.getByRole('link', { name: 'Open link' })).toBeVisible();
+
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+      `AXE violations on the QR reader [${theme}]`,
     ).toEqual([]);
   });
 }

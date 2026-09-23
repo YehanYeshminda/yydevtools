@@ -40,6 +40,7 @@ const GROUPS: { ext: RegExp; mime?: RegExp; slugs: string[] }[] = [
     slugs: [
       'image-viewer',
       'image-ocr',
+      'qr-reader',
       'exif-viewer',
       'image-converter',
       'image-compressor',

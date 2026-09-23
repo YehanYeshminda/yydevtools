@@ -1,0 +1,150 @@
+<app-tool-page slug="qr-reader">
+  Read a QR code or barcode from a screenshot, a photo or your camera, and see what it really
+  holds — the full link, a Wi-Fi password, a contact card — before you act on it. Nothing is
+  uploaded.
+</app-tool-page>
+
+<div class="panel">
+  <app-dropzone accept="image/*,.heic,.heif,.avif,.bmp" (filesSelected)="openFiles($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matQrCodeScannerOutline" />
+    <span class="dropzone__title">Drop an image of a code, click to choose, or paste a screenshot</span>
+    <span class="dropzone__hint">QR codes and barcodes — PNG, JPEG, WebP, HEIC… Ctrl+V pastes</span>
+  </app-dropzone>
+
+  <div class="actions">
+    @if (scanning()) {
+      <button matButton="filled" (click)="stopCamera()">
+        <ng-icon name="matVideocamOffOutline" />
+        Stop camera
+      </button>
+    } @else {
+      <button matButton="filled" (click)="startCamera()">
+        <ng-icon name="matVideocamOutline" />
+        Scan with camera
+      </button>
+    }
+    @if (codes() || error()) {
+      <button matButton (click)="clear()">
+        <ng-icon name="matClearOutline" />
+        Clear
+      </button>
+    }
+  </div>
+
+  <div class="camera" [hidden]="!scanning()">
+    <video
+      #camera
+      class="camera__video"
+      playsinline
+      muted
+      aria-label="Camera preview"
+      data-testid="qr-camera"
+    ></video>
+    <p class="working" role="status">
+      <app-spinner />
+      Point the camera at a code — it reads as soon as it sees one.
+    </p>
+  </div>
+
+  @if (busy()) {
+    <p class="working" role="status">
+      <app-spinner />
+      Looking for codes…
+    </p>
+  }
+
+  @if (error()) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      <span>{{ error() }}</span>
+    </p>
+  }
+
+  @if (codes(); as found) {
+    <div class="found" data-testid="qr-results">
+      @if (source(); as image) {
+        <img class="found__image" [src]="image.url" [alt]="image.name" />
+      }
+
+      <div class="found__codes">
+        <p class="status" [class.status--ok]="found.length" [class.status--err]="!found.length" role="status">
+          <ng-icon
+            class="status__icon"
+            aria-hidden="true"
+            [name]="found.length ? 'matCheckCircleOutline' : 'matInfoOutline'"
+          />
+          @if (found.length === 0) {
+            No QR code or barcode was found. Try a sharper image, or crop closer to the code.
+          } @else if (found.length === 1) {
+            Found 1 code.
+          } @else {
+            Found {{ found.length }} codes.
+          }
+        </p>
+
+        @for (code of found; track $index) {
+          <section class="code" [attr.aria-labelledby]="'qr-kind-' + $index" data-testid="qr-code">
+            <h2 class="code__kind" [id]="'qr-kind-' + $index">
+              {{ code.content.label }}
+              <span class="code__format">{{ code.format }}</span>
+            </h2>
+
+            @if (code.content.fields.length) {
+              <dl class="code__fields">
+                @for (field of code.content.fields; track field.label) {
+                  <div class="code__field">
+                    <dt>{{ field.label }}</dt>
+                    <dd>{{ field.value }}</dd>
+                  </div>
+                }
+              </dl>
+            }
+
+            <div class="field">
+              <label class="field__label" [for]="'qr-text-' + $index">Raw content</label>
+              <textarea
+                class="field__input code__text"
+                [id]="'qr-text-' + $index"
+                rows="3"
+                readonly
+                [value]="code.text"
+              ></textarea>
+              @if (code.content.kind === 'url') {
+                <span class="field__hint">
+                  Check the site name before opening — a code can point anywhere, and this one is
+                  never opened for you.
+                </span>
+              }
+            </div>
+
+            <div class="actions">
+              @if (code.content.href; as href) {
+                <a matButton="filled" [href]="href" target="_blank" rel="noopener noreferrer">
+                  <ng-icon name="matOpenInNewOutline" />
+                  {{ code.content.action }}
+                </a>
+              }
+              <button matButton (click)="copy(code.text)">
+                <ng-icon name="matContentCopyOutline" />
+                Copy text
+              </button>
+              <app-send-to [text]="code.text" from="qr-reader" />
+            </div>
+          </section>
+        }
+      </div>
+    </div>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+    <span class="note__text">
+      Images and camera frames are read in your browser and never uploaded; the camera stops the
+      moment a code is found.
+    </span>
+  </p>
+</div>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="qr-reader" />
+}

@@ -263,7 +263,7 @@ export const routes: Routes = [
     data: {
       description:
         'Extract text from a screenshot, photo or scanned image in English, Sinhala or Tamil. ' +
-        'Runs in your browser, so the image is never uploaded. Copy or download the text.',
+        'Runs in your browser, so the image is never uploaded.',
     },
   },
   {
@@ -631,6 +631,16 @@ export const routes: Routes = [
       description:
         'Make a QR code for a link, Wi-Fi network, contact card, email, SMS, phone, location ' +
         'or event; set size, colours and error correction; download PNG or SVG.',
+    },
+  },
+  {
+    path: 'tools/qr-reader',
+    loadComponent: () => import('./tools/qr-reader/qr-reader').then((m) => m.QrReaderTool),
+    title: 'QR Code Reader — Scan from Image or Camera — YYDevTools',
+    data: {
+      description:
+        'Scan a QR code or barcode from an image or your camera, and see the full link or Wi-Fi ' +
+        'password before you use it. Runs in your browser — nothing is uploaded.',
     },
   },
   {

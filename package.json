@@ -102,7 +102,8 @@
     "tesseract.js": "^7.0.0",
     "tslib": "^2.3.0",
     "wasm-feature-detect": "^1.8.0",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "zxing-wasm": "^3.1.4"
   },
   "comments": {
     "overrides": "GHSA-frvp-7c67-39w9 reaches us through @angular/cli's optional MCP server. npm's suggested fix downgrades the CLI, which is worse; these pin the two packages forward instead. Drop them once @angular/cli ships a dependency tree that resolves cleanly on its own."

@@ -28,6 +28,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Regex Tester** | Test a regular expression live, with match highlighting and capture groups. |
 | **Cron Explainer** | Read a cron expression in plain English and preview its next run times. |
 | **QR Code Generator** | QR codes for links, Wi-Fi, contact cards, events or locations — as PNG or SVG. |
+| **QR Code Reader** | Read a QR code or barcode from an image or your camera, and see the full link or Wi-Fi password before you use it. |
 | **Barcode Generator** | Code 128, EAN-13, EAN-8, UPC-A, Code 39 and ITF-14, with check digits calculated. |
 | **Slug Generator** | A list of titles into URL slugs — accents folded, length capped, collisions numbered. |
 | **Colour Palette Extractor** | The dominant colours of a photo or logo, with the share each one covers. |

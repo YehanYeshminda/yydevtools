@@ -92,6 +92,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'qr-reader',
+    name: 'QR Code Reader',
+    description:
+      'Read a QR code or barcode from an image or your camera, and see the full link before you open it.',
+    icon: 'matQrCodeScannerOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'barcode-generator',
     name: 'Barcode Generator',
     description:

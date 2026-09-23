@@ -102,6 +102,11 @@
                                                                                                            "glob":  "tam.traineddata.gz",
                                                                                                            "input":  "node_modules/@tesseract.js-data/tam/4.0.0_best_int",
                                                                                                            "output":  "tesseract"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "glob":  "zxing_reader.wasm",
+                                                                                                           "input":  "node_modules/zxing-wasm/dist/reader",
+                                                                                                           "output":  "zxing"
                                                                                                        }
                                                                                                    ],
                                                                                         "styles":  [

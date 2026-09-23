@@ -709,7 +709,51 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Yes. The QR code is rendered locally in your browser, so the text, link or password you encode is never sent anywhere.',
       },
     ],
-    related: ['base64-converter', 'color-converter', 'uuid-generator'],
+    related: ['qr-reader', 'base64-converter', 'color-converter', 'uuid-generator'],
+  },
+  'qr-reader': {
+    slug: 'qr-reader',
+    intro: [
+      'A QR code is a link you cannot read. Scanning one with a phone usually opens whatever it points to straight away, which is exactly how a sticker over a parking meter or a code in a phishing email gets someone onto the wrong site. This reader shows you what a code holds first: the full address with the site name on its own line, the network and password in a Wi-Fi code, the fields of a contact card or calendar event. Nothing is opened until you choose to open it.',
+      'It reads from a screenshot, a saved photo or your camera, and it is not limited to QR codes — the same engine reads the barcodes on products and parcels (EAN, UPC, Code 128 and more), Data Matrix and PDF417. It all runs in your browser: the image is never uploaded, and the camera switches off the moment a code is found.',
+    ],
+    steps: [
+      'Drop in an image of the code, click to choose one, or paste a screenshot with Ctrl+V.',
+      'Or press Scan with camera and point it at the code; it reads as soon as it sees one.',
+      'Read what the code contains — for a link, check the site name before anything else.',
+      'Open the link, copy the text, or send it to another tool.',
+    ],
+    features: [
+      'Reads QR codes, Micro QR, Data Matrix, Aztec, PDF417 and the common 1D barcodes (EAN-13, UPC-A, Code 128, Code 39 and more).',
+      'Finds several codes in one image, and reads codes that are rotated, inverted or on a busy background.',
+      'Explains what it found: links, Wi-Fi networks, contacts, emails, text messages, phone numbers, locations and calendar events.',
+      'Shows the site a link really goes to, and never opens anything by itself. Script and data links are shown as text, never as something to click.',
+      'Scans with the camera on a phone or laptop, and stops the camera as soon as a code is read.',
+      'Nothing is uploaded: images and camera frames are decoded in your browser.',
+    ],
+    faq: [
+      {
+        q: 'How do I scan a QR code from a screenshot or image?',
+        a: 'Drop the image here, click to choose it, or copy the screenshot and press Ctrl+V on this page. The code is found and decoded in a moment, and what it contains is shown below — a link, a Wi-Fi network, a contact and so on. If there are several codes in the image, each one is listed.',
+      },
+      {
+        q: 'Is it safe to scan a QR code with this tool?',
+        a: 'Safer than a phone camera, because nothing happens automatically. A phone often jumps straight to the link; this reader shows you the full address and the site name first, and only opens it if you press the button. Codes that try to run a script or open a data: URL are shown as plain text and cannot be clicked at all.',
+      },
+      {
+        q: 'How do I see the password in a Wi-Fi QR code?',
+        a: 'Scan it here. Wi-Fi codes follow a standard format that holds the network name, the security type and the password, and the reader lays those out as separate fields — including names and passwords with semicolons or other special characters in them.',
+      },
+      {
+        q: 'Can it read barcodes as well as QR codes?',
+        a: 'Yes. It reads the barcodes on retail products (EAN-13, EAN-8, UPC-A, UPC-E), shipping and inventory codes like Code 128, Code 39 and ITF, and 2D codes such as Data Matrix, Aztec and PDF417. The kind of code is shown next to each result.',
+      },
+      {
+        q: 'Is my image or camera sent anywhere?',
+        a: 'No. The decoder runs in your browser as WebAssembly, served from this site, and both images and camera frames are read on your device. The camera is only switched on when you press Scan with camera, and it switches off as soon as a code is found or you press Stop.',
+      },
+    ],
+    related: ['qr-generator', 'image-ocr', 'url-encoder', 'image-viewer'],
   },
 
   'text-cleaner': {
