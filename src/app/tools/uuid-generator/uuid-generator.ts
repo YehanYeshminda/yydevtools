@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { downloadText } from '../../core/download';
 import { syncToolState } from '../../core/tool-state';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ShareLink } from '../../shared/share-link/share-link';
@@ -131,13 +132,7 @@ export class UuidGeneratorTool {
   }
 
   protected download(): void {
-    const blob = new Blob([this.uuids().join('\n')], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `uuids-${this.version()}.txt`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadText(this.uuids().join('\n'), `uuids-${this.version()}.txt`);
   }
 }
 

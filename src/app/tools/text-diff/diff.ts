@@ -1,8 +1,15 @@
+import { diffArrays } from 'diff';
+
 /**
- * A line-oriented diff, computed with the classic Myers longest-common-
- * subsequence recurrence over a memoised LCS table. No dependency: the input a
- * developer pastes here is small (two revisions of a file), so an O(n·m) table
- * is more than fast enough and far simpler than the full Myers edit graph.
+ * A line-oriented diff over the normalised lines, by one of two algorithms.
+ *
+ * An exact LCS table is lines × lines: quick and memory-cheap up to a few
+ * thousand lines a side however different they are, but two 20k-line files
+ * need 1.6 GB and several seconds even for a one-line edit. Myers (jsdiff) is
+ * the reverse — milliseconds when the edits are few, whatever the size, but
+ * seconds when the sides share little. So the table is used while it fits in
+ * {@link MAX_TABLE_CELLS}, and Myers beyond that, where "two big revisions of
+ * one file" is by far the likelier input.
  *
  * The output is a flat list of rows the UI renders in either a unified or a
  * split view — both are just two projections of the same row list.
@@ -66,14 +73,27 @@ function normalise(line: string, options: DiffOptions): string {
 }
 
 /**
- * Build the LCS length table for two line arrays. `table[i][j]` is the length
- * of the longest common subsequence of `a[i..]` and `b[j..]`.
+ * 16M cells is 64 MB of Uint32Array, about 4k lines a side. Measured in Node,
+ * 25M cells (5k × 5k) took 158 ms; the margin is for phones.
  */
-function lcsTable(a: string[], b: string[]): Uint32Array[] {
-  const rows = a.length + 1;
-  const cols = b.length + 1;
-  const table: Uint32Array[] = Array.from({ length: rows }, () => new Uint32Array(cols));
+const MAX_TABLE_CELLS = 16_000_000;
 
+/**
+ * How long Myers may run before the diff is reported as everything replaced.
+ * It only gets slow when two large sides share almost nothing, and then that
+ * is close to the true answer anyway.
+ */
+const MYERS_TIMEOUT_MS = 2_000;
+
+interface Run {
+  count: number;
+  added: boolean;
+  removed: boolean;
+}
+
+/** Exact LCS: `table[i][j]` is the LCS length of `a[i..]` and `b[j..]`. */
+function lcsRuns(a: string[], b: string[]): Run[] {
+  const table = Array.from({ length: a.length + 1 }, () => new Uint32Array(b.length + 1));
   for (let i = a.length - 1; i >= 0; i--) {
     const row = table[i];
     const next = table[i + 1];
@@ -81,7 +101,33 @@ function lcsTable(a: string[], b: string[]): Uint32Array[] {
       row[j] = a[i] === b[j] ? next[j + 1] + 1 : Math.max(next[j], row[j + 1]);
     }
   }
-  return table;
+
+  const runs: Run[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length || j < b.length) {
+    if (i < a.length && j < b.length && a[i] === b[j]) {
+      runs.push({ count: 1, added: false, removed: false });
+      i++;
+      j++;
+    } else if (j >= b.length || (i < a.length && table[i + 1][j] >= table[i][j + 1])) {
+      runs.push({ count: 1, added: false, removed: true });
+      i++;
+    } else {
+      runs.push({ count: 1, added: true, removed: false });
+      j++;
+    }
+  }
+  return runs;
+}
+
+function myersRuns(a: string[], b: string[]): Run[] {
+  return (
+    diffArrays(a, b, { timeout: MYERS_TIMEOUT_MS }) ?? [
+      { count: a.length, added: false, removed: true },
+      { count: b.length, added: true, removed: false },
+    ]
+  );
 }
 
 export function diffLines(
@@ -94,37 +140,32 @@ export function diffLines(
   const left = leftText.map((line) => normalise(line, options));
   const right = rightText.map((line) => normalise(line, options));
 
-  const table = lcsTable(left, right);
+  const changes =
+    (left.length + 1) * (right.length + 1) <= MAX_TABLE_CELLS
+      ? lcsRuns(left, right)
+      : myersRuns(left, right);
+
   const rows: DiffRow[] = [];
   const stats: DiffStats = { added: 0, removed: 0, unchanged: 0 };
-
   let i = 0;
   let j = 0;
-  while (i < left.length && j < right.length) {
-    if (left[i] === right[j]) {
-      rows.push({ kind: 'equal', text: leftText[i], leftLine: i + 1, rightLine: j + 1 });
-      stats.unchanged++;
-      i++;
-      j++;
-    } else if (table[i + 1][j] >= table[i][j + 1]) {
-      rows.push({ kind: 'remove', text: leftText[i], leftLine: i + 1, rightLine: null });
-      stats.removed++;
-      i++;
-    } else {
-      rows.push({ kind: 'add', text: rightText[j], leftLine: null, rightLine: j + 1 });
-      stats.added++;
-      j++;
+  for (const change of changes) {
+    for (let k = 0; k < change.count; k++) {
+      if (change.removed) {
+        rows.push({ kind: 'remove', text: leftText[i], leftLine: i + 1, rightLine: null });
+        stats.removed++;
+        i++;
+      } else if (change.added) {
+        rows.push({ kind: 'add', text: rightText[j], leftLine: null, rightLine: j + 1 });
+        stats.added++;
+        j++;
+      } else {
+        rows.push({ kind: 'equal', text: leftText[i], leftLine: i + 1, rightLine: j + 1 });
+        stats.unchanged++;
+        i++;
+        j++;
+      }
     }
-  }
-  while (i < left.length) {
-    rows.push({ kind: 'remove', text: leftText[i], leftLine: i + 1, rightLine: null });
-    stats.removed++;
-    i++;
-  }
-  while (j < right.length) {
-    rows.push({ kind: 'add', text: rightText[j], leftLine: null, rightLine: j + 1 });
-    stats.added++;
-    j++;
   }
 
   return { rows, stats };

@@ -17,6 +17,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { downloadBlob } from '../../core/download';
 import { syncToolState } from '../../core/tool-state';
 import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
@@ -291,7 +292,7 @@ export class Base64Tool implements OnDestroy {
       return;
     }
     const name = this.fileName() || 'encoded';
-    this.saveBlob(new Blob([value], { type: 'text/plain' }), `${name}.base64.txt`);
+    downloadBlob(new Blob([value], { type: 'text/plain' }), `${name}.base64.txt`);
   }
 
   /**
@@ -417,13 +418,13 @@ export class Base64Tool implements OnDestroy {
     // Reuse what is already on screen when it still matches the input.
     const rendered = this.preview();
     if (rendered && !this.previewStale()) {
-      this.saveBlob(new Blob([rendered.bytes], { type: rendered.mime }), name);
+      downloadBlob(new Blob([rendered.bytes], { type: rendered.mime }), name);
       return;
     }
     this.rendering.set(true);
     try {
       const { bytes, mime } = await this.codec.decodeBytes(this.decodeSource.value);
-      this.saveBlob(new Blob([bytes], { type: mime }), name);
+      downloadBlob(new Blob([bytes], { type: mime }), name);
     } catch (error) {
       this.showError(base64ErrorMessage(error));
     } finally {
@@ -625,7 +626,7 @@ export class Base64Tool implements OnDestroy {
         : view === 'text'
           ? 'decoded.txt'
           : `decoded.${view}.txt`;
-    this.saveBlob(new Blob([this.textResult], { type: 'text/plain' }), name);
+    downloadBlob(new Blob([this.textResult], { type: 'text/plain' }), name);
   }
 
   private scheduleTextConvert(): void {
@@ -699,16 +700,6 @@ export class Base64Tool implements OnDestroy {
     void this.clipboard.copy(text, {
       errorMessage: 'That value is too large for the clipboard — download it instead.',
     });
-  }
-
-  private saveBlob(blob: Blob, name: string): void {
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = name;
-    anchor.click();
-    // Firefox needs the URL to outlive the click.
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
   private showError(message: string): void {

@@ -12,6 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import QRCode, { type QRCodeErrorCorrectionLevel } from 'qrcode';
+import { downloadText } from '../../core/download';
 import { syncToolState } from '../../core/tool-state';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ToolContent } from '../../shared/tool-content/tool-content';
@@ -313,17 +314,14 @@ export class QrGeneratorTool {
     if (!svg) {
       return;
     }
-    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-    this.saveBlob(url, `${this.fileStem()}.svg`, true);
+    downloadText(svg, `${this.fileStem()}.svg`, 'image/svg+xml');
   }
 
-  private saveBlob(href: string, filename: string, revoke = false): void {
+  /** The PNG is already a data URL, so there is no object URL to manage. */
+  private saveBlob(href: string, filename: string): void {
     const anchor = document.createElement('a');
     anchor.href = href;
     anchor.download = filename;
     anchor.click();
-    if (revoke) {
-      URL.revokeObjectURL(href);
-    }
   }
 }

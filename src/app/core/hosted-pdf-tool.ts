@@ -1,5 +1,6 @@
 import { afterNextRender, computed, inject, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { downloadBytes } from './download';
 import { FileHandoff } from './file-handoff';
 import { describeFile, formatBytes } from './format';
 import { looksLikePdf, readPageCount } from './pdf-probe';
@@ -165,13 +166,7 @@ export abstract class HostedPdfTool {
   }
 
   protected download(bytes: Uint8Array, name: string): void {
-    const blob = new Blob([bytes.slice()]);
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = name;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadBytes(bytes, name, '');
   }
 
   /** The input's name without its `.pdf` extension, for naming the output. */

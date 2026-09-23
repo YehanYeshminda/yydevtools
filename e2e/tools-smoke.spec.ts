@@ -132,3 +132,26 @@ test('every tool has a row in the README table', () => {
 
   expect(missing, `these tools have no row in README.md's table: ${missing.join(', ')}`).toEqual([]);
 });
+
+/**
+ * Revoking a download's object URL on the line after `click()` is a race: the
+ * browser has to have started reading the blob first, and Firefox and Safari
+ * need not have. Chromium reads synchronously, so no browser test here can see
+ * it fail — hence a check on the source. `core/download.ts` keeps the URL alive
+ * for ten seconds; five tools (four of them through hosted-pdf-tool) had drifted
+ * back to hand-rolling it.
+ */
+test('no download revokes its object URL straight after the click', () => {
+  const root = join(__dirname, '..', 'src', 'app');
+  const offenders = (readdirSync(root, { recursive: true }) as string[])
+    .filter((file) => file.endsWith('.ts') && !file.endsWith('.spec.ts'))
+    .filter((file) =>
+      /\.click\(\);\s*(?:if \([^)]*\) \{\s*)?URL\.revokeObjectURL/.test(
+        readFileSync(join(root, file), 'utf8'),
+      ),
+    );
+
+  expect(offenders, 'use downloadBlob / downloadBytes / downloadText from core/download').toEqual(
+    [],
+  );
+});

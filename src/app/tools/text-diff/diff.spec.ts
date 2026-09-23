@@ -58,4 +58,34 @@ describe('diffLines', () => {
     const { stats } = diffLines('', 'a\nb');
     expect(stats).toEqual({ added: 2, removed: 0, unchanged: 0 });
   });
+
+  // The old LCS table was lines × lines: two 20k-line files meant a 1.6 GB
+  // allocation and a crashed tab, for the ordinary case of one edited line.
+  it('diffs two large files that differ in one line, quickly', () => {
+    const lines = Array.from({ length: 20_000 }, (_, i) => `line ${i}`);
+    const edited = [...lines];
+    edited[12_345] = 'changed';
+    const started = performance.now();
+    const { stats } = diffLines(lines.join('\n'), edited.join('\n'));
+    expect(performance.now() - started).toBeLessThan(1_000);
+    expect(stats).toEqual({ added: 1, removed: 1, unchanged: 19_999 });
+  });
+
+  // Measured in Node: the exact table does this in ~80 ms, Myers in ~1 s — which
+  // is why the two are combined rather than one swapped for the other.
+  it('stays on the fast exact path for a mid-sized, heavily edited file', () => {
+    const left = Array.from({ length: 3_900 }, (_, i) => `l${i}`);
+    const right = left.map((line, i) => (i % 2 ? `x${i}` : line));
+    const started = performance.now();
+    const { stats } = diffLines(left.join('\n'), right.join('\n'));
+    expect(performance.now() - started).toBeLessThan(400);
+    expect(stats).toEqual({ added: 1_950, removed: 1_950, unchanged: 1_950 });
+  });
+
+  it('still produces a valid diff for two large, entirely different files', () => {
+    const left = Array.from({ length: 5_000 }, (_, i) => `a${i}`).join('\n');
+    const right = Array.from({ length: 5_000 }, (_, i) => `b${i}`).join('\n');
+    const { stats } = diffLines(left, right);
+    expect(stats).toEqual({ added: 5_000, removed: 5_000, unchanged: 0 });
+  });
 });

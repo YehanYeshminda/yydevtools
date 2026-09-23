@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 
 import { ClipboardService } from '../../core/clipboard.service';
+import { downloadText } from '../../core/download';
 import { syncToolState } from '../../core/tool-state';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import { ShareLink } from '../../shared/share-link/share-link';
@@ -303,13 +304,7 @@ export class PasswordGeneratorTool {
   }
 
   protected download(): void {
-    const blob = new Blob([this.results().join('\n')], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = `${this.mode()}s.txt`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadText(this.results().join('\n'), `${this.mode()}s.txt`);
   }
 
   // --- Helpers ----------------------------------------------------------
