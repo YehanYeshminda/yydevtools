@@ -1,0 +1,30 @@
+/* Image beside its text on a wide screen, so a misread word can be checked
+   against the original at a glance; stacked on a narrow one. */
+.result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .result {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.result__image {
+  display: block;
+  max-width: 100%;
+  max-height: 28rem;
+  margin-inline: auto;
+  object-fit: contain;
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+}
+
+/* Recognised prose, not code: the body face reads Sinhala and Tamil properly. */
+.output {
+  font-family: inherit;
+  font-size: 0.95rem;
+}

@@ -92,6 +92,16 @@
                                                                                                            "glob":  "eng.traineddata.gz",
                                                                                                            "input":  "node_modules/@tesseract.js-data/eng/4.0.0_best_int",
                                                                                                            "output":  "tesseract"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "glob":  "sin.traineddata.gz",
+                                                                                                           "input":  "node_modules/@tesseract.js-data/sin/4.0.0_best_int",
+                                                                                                           "output":  "tesseract"
+                                                                                                       },
+                                                                                                       {
+                                                                                                           "glob":  "tam.traineddata.gz",
+                                                                                                           "input":  "node_modules/@tesseract.js-data/tam/4.0.0_best_int",
+                                                                                                           "output":  "tesseract"
                                                                                                        }
                                                                                                    ],
                                                                                         "styles":  [

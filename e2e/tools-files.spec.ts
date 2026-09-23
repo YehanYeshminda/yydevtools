@@ -1541,3 +1541,97 @@ test('every Open-in target has a dropzone waiting when it opens', async ({ page 
   }
   expect(missing, 'these would drop a handed-over file').toEqual([]);
 });
+
+/**
+ * A PNG of `lines`, rendered by the browser itself, so the test knows exactly
+ * what the image says. Sinhala and Tamil come from the system's Indic fonts
+ * (Nirmala UI on Windows).
+ */
+async function textImage(page: Page, lines: string[], px: number): Promise<Buffer> {
+  const shot = await page.context().newPage();
+  await shot.setContent(
+    `<body style="margin:0;background:#fff"><div id="t" style="display:inline-block;padding:12px;` +
+      `font:${px}px 'Segoe UI','Nirmala UI','Iskoola Pota',sans-serif;color:#111">` +
+      lines.map((line) => `<p style="margin:0 0 .4em">${line}</p>`).join('') +
+      `</div></body>`,
+  );
+  const png = await shot.locator('#t').screenshot();
+  await shot.close();
+  return png;
+}
+
+test('image-ocr reads a small screenshot, and never asks another site for anything', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  const watch = watchConsole(page);
+  const origin = new URL(test.info().project.use.baseURL!).origin;
+  // The engine, its WebAssembly core and the language models. (Ads load from
+  // elsewhere on every page; they are not what this promise is about.)
+  const engine: string[] = [];
+  page.on('request', (request) => {
+    const url = request.url();
+    if (/tesseract|traineddata|\.wasm/i.test(url)) engine.push(url);
+  });
+  await gotoTool(page, 'image-ocr', 'Image OCR');
+
+  // 10 px text only reads cleanly enlarged: read as it is, it came back with
+  // "£521" for 4821 and "127.00.15432" for the address (93% of characters).
+  const png = await textImage(
+    page,
+    [
+      'Invoice 4821 was paid on 23 September 2026.',
+      'The quick brown fox jumps over the lazy dog.',
+      'Error: ECONNREFUSED 127.0.0.1:5432 (retry 3/5)',
+    ],
+    10,
+  );
+  await waitForHydration(page);
+  await page
+    .locator('input[type="file"]')
+    .first()
+    .setInputFiles({ name: 'receipt.png', mimeType: 'image/png', buffer: png });
+
+  const text = page.getByTestId('ocr-text');
+  await expect(page.getByTestId('ocr-summary')).toContainText('confidence', { timeout: 60_000 });
+  await expect(text).toHaveValue(/Invoice 4821 was paid on 23 September 2026\./);
+  await expect(text).toHaveValue(/quick brown fox jumps over the lazy dog/);
+  await expect(text).toHaveValue(/Error: ECONNREFUSED 127\.0\.0\.1:5432 \(retry 3\/5\)/);
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Download .txt' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe('receipt.txt');
+
+  // Tesseract's own CDN default would show up here.
+  expect(engine.length, 'the engine was fetched at all').toBeGreaterThan(0);
+  expect(engine.filter((url) => !url.startsWith(origin) && !url.startsWith('blob:'))).toEqual([]);
+  expectClean(watch);
+});
+
+for (const { label, lines, expected } of [
+  { label: 'Sinhala', lines: ['ශ්‍රී ලංකාව', 'ආයුබෝවන්'], expected: /ලංකාව[\s\S]*ආයුබෝවන්/ },
+  { label: 'Tamil', lines: ['இலங்கை', 'வணக்கம்'], expected: /இலங்கை[\s\S]*வணக்கம்/ },
+]) {
+  test(`image-ocr reads ${label} from a pasted screenshot`, async ({ page }) => {
+    test.setTimeout(90_000);
+    const watch = watchConsole(page);
+    await gotoTool(page, 'image-ocr', 'Image OCR');
+    await waitForHydration(page);
+    await page.getByLabel('Text language').selectOption({ label });
+
+    // Ctrl+V of an image: a paste event carrying a file, sent to the document.
+    const base64 = (await textImage(page, lines, 32)).toString('base64');
+    await page.evaluate((data) => {
+      const bytes = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([bytes], 'screenshot.png', { type: 'image/png' }));
+      document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer }));
+    }, base64);
+
+    await expect(page.getByTestId('ocr-summary')).toContainText('confidence', { timeout: 60_000 });
+    await expect(page.getByTestId('ocr-text')).toHaveValue(expected);
+    expectClean(watch);
+  });
+}

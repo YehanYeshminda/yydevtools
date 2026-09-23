@@ -30,7 +30,7 @@ declare module 'tesseract.js/dist/tesseract.esm.min.js' {
       image: HTMLCanvasElement,
       options?: Record<string, unknown>,
       output?: Record<string, boolean>,
-    ): Promise<{ data: { blocks: TesseractBlock[] | null } }>;
+    ): Promise<{ data: { text: string; confidence: number; blocks: TesseractBlock[] | null } }>;
     terminate(): Promise<void>;
   }
 

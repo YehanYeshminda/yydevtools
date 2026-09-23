@@ -257,6 +257,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/image-ocr',
+    loadComponent: () => import('./tools/image-ocr/image-ocr').then((m) => m.ImageOcrTool),
+    title: 'Image to Text OCR — English, Sinhala & Tamil — YYDevTools',
+    data: {
+      description:
+        'Extract text from a screenshot, photo or scanned image in English, Sinhala or Tamil. ' +
+        'Runs in your browser, so the image is never uploaded. Copy or download the text.',
+    },
+  },
+  {
     path: 'tools/exif-viewer',
     loadComponent: () => import('./tools/exif-viewer/exif-viewer').then((m) => m.ExifViewerTool),
     title: 'EXIF Viewer & Metadata Remover — YYDevTools',

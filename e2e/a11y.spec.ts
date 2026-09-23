@@ -563,3 +563,28 @@ for (const theme of ['dark', 'light'] as const) {
     await report('zoomed with the checkerboard');
   });
 }
+
+/** Image OCR with a result on screen: the image, the editable text and its hint. */
+for (const theme of ['dark', 'light'] as const) {
+  test(`image-ocr has no AXE violations in the ${theme} theme with a result`, async ({ page }) => {
+    test.setTimeout(90_000);
+    await gotoTool(page, 'image-ocr', 'Image OCR');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await uploadFiles(page, ['sample.png']);
+    await expect(page.getByTestId('ocr-summary')).toBeVisible({ timeout: 60_000 });
+
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+      `AXE violations on image OCR [${theme}]`,
+    ).toEqual([]);
+  });
+}

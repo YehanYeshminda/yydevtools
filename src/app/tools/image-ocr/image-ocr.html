@@ -1,0 +1,117 @@
+<app-tool-page slug="image-ocr">
+  Pull the text out of a screenshot, a photo of a page or a scanned image — in English, Sinhala or
+  Tamil. Recognition runs in your browser, so the image is never uploaded.
+</app-tool-page>
+
+<div class="panel">
+  <app-dropzone
+    accept="image/*,.heic,.heif,.avif,.bmp"
+    (filesSelected)="openFiles($event)"
+  >
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matTextSnippetOutline" />
+    <span class="dropzone__title">
+      @if (source()) {
+        Drop another image here, or click to replace
+      } @else {
+        Drop an image here, click to choose, or paste a screenshot
+      }
+    </span>
+    <span class="dropzone__hint">PNG, JPEG, WebP, GIF, BMP, AVIF and HEIC — Ctrl+V pastes</span>
+  </app-dropzone>
+
+  <div class="field">
+    <label class="field__label" for="ocr-language">Text language</label>
+    <select
+      id="ocr-language"
+      class="select"
+      [value]="language()"
+      [disabled]="busy()"
+      (change)="onLanguageChange($event)"
+    >
+      @for (option of languages; track option.code) {
+        <option [value]="option.code">{{ option.label }}</option>
+      }
+    </select>
+    <span class="field__hint">
+      Pick the language on the image. Each one downloads (2–3 MB) the first time you use it.
+    </span>
+  </div>
+
+  @if (error()) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      <span>{{ error() }}</span>
+    </p>
+  }
+
+  @if (source(); as current) {
+    <div class="result">
+      <img class="result__image" [src]="current.url" [alt]="current.file.name" />
+
+      <div class="field result__text">
+        <label class="field__label" for="ocr-text">Recognised text</label>
+        <textarea
+          id="ocr-text"
+          class="field__input output"
+          rows="12"
+          spellcheck="false"
+          [value]="text()"
+          [readOnly]="busy()"
+          (input)="onTextInput($event)"
+          data-testid="ocr-text"
+        ></textarea>
+        @if (done()) {
+          <span class="field__hint" data-testid="ocr-summary">
+            @if (text()) {
+              Average confidence {{ confidence() }}%. Check names and numbers before relying on
+              them — you can correct the text here.
+            } @else {
+              No text was found. Check the language, or try a sharper, straighter image.
+            }
+          </span>
+        }
+      </div>
+    </div>
+
+    @if (busy()) {
+      <p class="working" role="status">
+        <app-spinner />
+        {{ progress() }}
+      </p>
+    }
+
+    <div class="actions">
+      @if (busy()) {
+        <button matButton (click)="stop()">
+          <ng-icon name="matStopCircleOutline" />
+          Stop
+        </button>
+      }
+      <button matButton="filled" [disabled]="!text()" (click)="copy()">
+        <ng-icon name="matContentCopyOutline" />
+        Copy text
+      </button>
+      <button matButton [disabled]="!text()" (click)="download()">
+        <ng-icon name="matDownloadOutline" />
+        Download .txt
+      </button>
+      <app-send-to [text]="text()" from="image-ocr" />
+      <button matButton [disabled]="busy()" (click)="clear()">
+        <ng-icon name="matClearOutline" />
+        Clear
+      </button>
+    </div>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+    <span class="note__text">
+      The engine and language files come from this site and run in your browser; the image never
+      leaves your device. For a scanned PDF, use <a routerLink="/tools/pdf-ocr">PDF OCR</a>.
+    </span>
+  </p>
+</div>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="image-ocr" />
+}

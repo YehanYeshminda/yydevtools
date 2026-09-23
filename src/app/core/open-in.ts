@@ -39,6 +39,7 @@ const GROUPS: { ext: RegExp; mime?: RegExp; slugs: string[] }[] = [
     mime: /^image\//,
     slugs: [
       'image-viewer',
+      'image-ocr',
       'exif-viewer',
       'image-converter',
       'image-compressor',

@@ -74,6 +74,8 @@
     "@syncfusion/ej2-angular-documenteditor": "^34.2.6",
     "@syncfusion/ej2-angular-spreadsheet": "^34.2.6",
     "@tesseract.js-data/eng": "^1.0.0",
+    "@tesseract.js-data/sin": "^1.0.0",
+    "@tesseract.js-data/tam": "^1.0.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "@zxcvbn-ts/core": "^4.1.2",

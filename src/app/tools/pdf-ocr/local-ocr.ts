@@ -98,12 +98,12 @@ interface TesseractParagraph {
 interface TesseractBlock {
   paragraphs: TesseractParagraph[];
 }
-interface TesseractWorker {
+export interface TesseractWorker {
   recognize(
     image: HTMLCanvasElement,
     options?: Record<string, unknown>,
     output?: Record<string, boolean>,
-  ): Promise<{ data: { blocks: TesseractBlock[] | null } }>;
+  ): Promise<{ data: { text: string; confidence: number; blocks: TesseractBlock[] | null } }>;
   terminate(): Promise<void>;
 }
 
@@ -227,7 +227,12 @@ function scaleFor(size: { width: number; height: number }): number {
  */
 const OEM_LSTM_ONLY = 1;
 
-async function createWorker(): Promise<TesseractWorker> {
+/**
+ * A recognition worker for `langs` — Tesseract's codes, joined with `+` to
+ * read more than one script at once (`sin+eng`). Each model must be one the
+ * build copies into /tesseract (see `assets` in angular.json).
+ */
+export async function createWorker(langs = 'eng'): Promise<TesseractWorker> {
   // The prebuilt browser bundle, not the package entry point: tesseract.js has
   // no ESM entry, and its CommonJS `main` reaches for `node-fetch` and friends,
   // which drags Node plumbing into a browser build.
@@ -241,7 +246,7 @@ async function createWorker(): Promise<TesseractWorker> {
   // wrapped for ESM, so there are no named exports to destructure.
   const { default: Tesseract } = await import('tesseract.js/dist/tesseract.esm.min.js');
 
-  return Tesseract.createWorker('eng', OEM_LSTM_ONLY, {
+  return Tesseract.createWorker(langs, OEM_LSTM_ONLY, {
     workerPath: `${TESSERACT_BASE}worker.min.js`,
     corePath: TESSERACT_BASE,
     langPath: TESSERACT_BASE,

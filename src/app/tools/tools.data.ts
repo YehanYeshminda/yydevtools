@@ -362,6 +362,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'image-ocr',
+    name: 'Image OCR',
+    description:
+      'Copy the text out of a screenshot or photo — English, Sinhala or Tamil, without uploading it.',
+    icon: 'matTextSnippetOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'exif-viewer',
     name: 'EXIF Viewer',
     description:

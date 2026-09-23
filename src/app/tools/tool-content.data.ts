@@ -2927,6 +2927,50 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['base64-converter', 'exif-viewer', 'image-converter', 'image-compressor'],
   },
+  'image-ocr': {
+    slug: 'image-ocr',
+    intro: [
+      'Text trapped in an image is text you have to retype: an error message in a screenshot, a table in a photo of a whiteboard, an address on a scanned letter. This tool reads it for you. Drop the image in, or just paste a screenshot with Ctrl+V, and the words come back as plain text you can copy, correct and paste wherever you need them.',
+      'It reads English, Sinhala and Tamil, and the mixed Sinhala-and-English or Tamil-and-English text that most Sri Lankan documents and signs actually contain. Recognition runs in your browser with Tesseract, the open-source OCR engine, so a photo of a payslip or an ID card is read on your own device and never sent anywhere.',
+    ],
+    steps: [
+      'Choose the language of the text in the image.',
+      'Drop an image in, click to choose one, or paste a screenshot with Ctrl+V.',
+      'Wait a few seconds while the text is read; the first run also downloads the language.',
+      'Correct anything that was misread, then copy the text, download it as a .txt file or send it to another tool.',
+    ],
+    features: [
+      'Reads English, Sinhala and Tamil, and mixed Sinhala + English or Tamil + English.',
+      'Paste a screenshot straight from the clipboard; no need to save it first.',
+      'Opens PNG, JPEG, WebP, GIF, BMP, AVIF and HEIC photos from an iPhone.',
+      'Small screenshots are enlarged before reading, which makes small interface text far more accurate.',
+      'Shows the result beside the image, with an average confidence score, so misreads are easy to spot and fix.',
+      'Nothing is uploaded: the engine and language files are served by this site and run on your device.',
+    ],
+    faq: [
+      {
+        q: 'How do I copy text from an image?',
+        a: 'Choose the language, then drop the image here or paste it with Ctrl+V. After a few seconds the recognised text appears in the box beside the picture. Fix any word that was misread, then press Copy text. You can also download it as a .txt file, or send it to another tool such as the Word Counter or the Text Diff.',
+      },
+      {
+        q: 'Can it read Sinhala and Tamil?',
+        a: 'Yes. Choose Sinhala or Tamil from the language list, or Sinhala + English or Tamil + English when the image mixes the two, as bills, forms and signs often do. Each language is a 2–3 MB download the first time you use it, and your browser keeps it afterwards. Accuracy is best on clear printed text; handwriting and decorative fonts are much harder for any OCR engine.',
+      },
+      {
+        q: 'Is my image uploaded?',
+        a: 'No. The image is read by an OCR engine running in your own browser, and the engine and language files are downloaded from this site rather than a third party. Nothing about the image, or the text found in it, is sent to a server.',
+      },
+      {
+        q: 'Why is some of the text wrong?',
+        a: 'OCR guesses each word from its shape, so it struggles with blurry photos, tilted pages, low contrast, very small text, handwriting and unusual fonts. Choosing the right language matters most; after that, a sharper and straighter image helps more than anything. The confidence score is a quick guide: well above 80% usually means clean text, and a low score means it is worth reading the result carefully.',
+      },
+      {
+        q: 'Can it read a scanned PDF?',
+        a: 'Not this tool — it reads images. For a scanned PDF, use PDF OCR, which adds an invisible, searchable text layer to every page and keeps the document as a PDF. If you only need the text from one page, you can also take a screenshot of it and paste that here.',
+      },
+    ],
+    related: ['pdf-ocr', 'image-viewer', 'word-counter', 'text-cleaner'],
+  },
   'exif-viewer': {
     slug: 'exif-viewer',
     intro: [
