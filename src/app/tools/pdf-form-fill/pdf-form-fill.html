@@ -181,4 +181,6 @@
   </p>
 </div>
 
-<app-tool-content slug="pdf-form-fill" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="pdf-form-fill" />
+}

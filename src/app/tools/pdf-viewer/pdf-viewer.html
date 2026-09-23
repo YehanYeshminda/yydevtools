@@ -33,4 +33,6 @@
   }
 </div>
 
-<app-tool-content slug="pdf-viewer" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="pdf-viewer" />
+}

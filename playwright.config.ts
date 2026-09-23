@@ -58,7 +58,10 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: 'npm start',
+        // No HMR: under it Angular loads every @defer block's dependencies
+        // eagerly, so the dev server stops behaving like the build on exactly
+        // the thing hydration.spec checks — each tool's deferred copy.
+        command: 'npm start -- --no-hmr',
         url: 'http://localhost:4200',
         reuseExistingServer: true,
         timeout: 180_000,

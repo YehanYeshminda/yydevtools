@@ -210,4 +210,6 @@
   </p>
 </div>
 
-<app-tool-content slug="color-converter" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="color-converter" />
+}

@@ -194,4 +194,6 @@
   }
 </div>
 
-<app-tool-content slug="document-scanner" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="document-scanner" />
+}

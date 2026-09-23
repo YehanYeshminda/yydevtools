@@ -437,4 +437,6 @@
   </mat-tab>
 </mat-tab-group>
 
-<app-tool-content slug="base64-converter" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="base64-converter" />
+}

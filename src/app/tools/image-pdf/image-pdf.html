@@ -349,4 +349,6 @@
   }
 </div>
 
-<app-tool-content slug="image-pdf" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="image-pdf" />
+}

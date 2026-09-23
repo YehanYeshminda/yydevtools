@@ -107,4 +107,6 @@
   </p>
 </div>
 
-<app-tool-content [slug]="slug" />
+@defer (hydrate on interaction) {
+  <app-tool-content [slug]="slug" />
+}

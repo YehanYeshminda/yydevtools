@@ -149,4 +149,6 @@
   </p>
 </div>
 
-<app-tool-content slug="base-converter" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="base-converter" />
+}

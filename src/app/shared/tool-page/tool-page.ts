@@ -1,8 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 
 import { FavoritesService } from '../../core/favorites.service';
+import { StructuredDataService } from '../../core/structured-data.service';
 import { CATEGORY_META } from '../../tools/tool.model';
 import { TOOLS } from '../../tools/tools.data';
 
@@ -66,6 +74,15 @@ import { TOOLS } from '../../tools/tools.data';
 })
 export class ToolPage {
   private readonly favorites = inject(FavoritesService);
+
+  constructor() {
+    // The tool's JSON-LD is written by <app-tool-content>, which sits in a
+    // hydrate-on-interaction @defer and so usually never exists on the client —
+    // its own ngOnDestroy cannot be relied on to remove the prerendered schema
+    // when you navigate away. The masthead always hydrates, so it does it.
+    const structuredData = inject(StructuredDataService);
+    inject(DestroyRef).onDestroy(() => structuredData.clear());
+  }
 
   /** Catalog slug. Everything on show but the description comes from it. */
   readonly slug = input.required<string>();

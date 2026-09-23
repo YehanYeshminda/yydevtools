@@ -357,4 +357,6 @@
   </p>
 </div>
 
-<app-tool-content slug="pdf-edit" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="pdf-edit" />
+}

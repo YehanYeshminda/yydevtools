@@ -137,4 +137,6 @@
   </p>
 </div>
 
-<app-tool-content slug="barcode-generator" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="barcode-generator" />
+}

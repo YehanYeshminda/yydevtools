@@ -74,9 +74,16 @@ export function expectClean(watch: ConsoleWatch): void {
  * component and the client removes each one as that component hydrates, so none
  * left means the page is live. Waiting on a heading proves nothing — the
  * heading is prerendered too.
+ *
+ * Markers inside an `[ngb]` element are excluded: that is a `@defer` block with
+ * a hydrate trigger (each tool's long-form copy, `hydrate on interaction`),
+ * which is meant to stay server-rendered until someone touches it, so its
+ * marker never clears on a page nobody interacts with.
  */
+export const UNHYDRATED = '[ngh]:not([ngb], [ngb] *)';
+
 export async function waitForHydration(page: Page): Promise<void> {
-  await expect(page.locator('[ngh]')).toHaveCount(0);
+  await expect(page.locator(UNHYDRATED)).toHaveCount(0);
 }
 
 /** Navigates to a tool and waits for its masthead to be painted — and for it to work. */

@@ -133,4 +133,6 @@
   </p>
 </div>
 
-<app-tool-content slug="slug-generator" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="slug-generator" />
+}

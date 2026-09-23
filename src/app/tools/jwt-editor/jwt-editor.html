@@ -211,4 +211,6 @@
   }
 </div>
 
-<app-tool-content slug="jwt-editor" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="jwt-editor" />
+}

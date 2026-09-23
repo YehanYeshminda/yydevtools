@@ -118,4 +118,6 @@
   }
 </div>
 
-<app-tool-content slug="pdf-merge" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="pdf-merge" />
+}

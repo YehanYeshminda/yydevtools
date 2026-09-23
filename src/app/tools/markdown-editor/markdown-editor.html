@@ -49,4 +49,6 @@
   <app-send-to [text]="source()" from="markdown-editor" />
 </div>
 
-<app-tool-content slug="markdown-editor" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="markdown-editor" />
+}

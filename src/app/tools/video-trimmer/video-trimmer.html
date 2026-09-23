@@ -213,4 +213,6 @@
   file you picked and never leaves the tab — only the engine itself is downloaded, once.
 </p>
 
-<app-tool-content slug="video-trimmer" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="video-trimmer" />
+}

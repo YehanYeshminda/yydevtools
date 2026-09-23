@@ -114,4 +114,6 @@
   </p>
 </div>
 
-<app-tool-content slug="unit-converter" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="unit-converter" />
+}

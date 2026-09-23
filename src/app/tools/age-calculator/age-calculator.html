@@ -97,4 +97,6 @@
   </p>
 </div>
 
-<app-tool-content slug="age-calculator" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="age-calculator" />
+}

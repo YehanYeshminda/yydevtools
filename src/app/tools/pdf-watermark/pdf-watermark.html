@@ -198,4 +198,6 @@
   </p>
 </div>
 
-<app-tool-content slug="pdf-watermark" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="pdf-watermark" />
+}

@@ -125,4 +125,6 @@
   }
 </div>
 
-<app-tool-content slug="pdf-split" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="pdf-split" />
+}

@@ -112,4 +112,6 @@
   </span>
 </p>
 
-<app-tool-content slug="word-viewer" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="word-viewer" />
+}

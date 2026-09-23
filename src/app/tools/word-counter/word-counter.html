@@ -92,4 +92,6 @@
   </p>
 </div>
 
-<app-tool-content slug="word-counter" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="word-counter" />
+}

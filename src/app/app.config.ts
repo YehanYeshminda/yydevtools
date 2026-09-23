@@ -11,7 +11,11 @@ import { provideIcons, provideNgIconsConfig } from '@ng-icons/core';
 import { routes } from './app.routes';
 import { APP_ICONS } from './core/icons';
 import { PreHydrationInput } from './core/pre-hydration-input';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+import {
+  provideClientHydration,
+  withEventReplay,
+  withIncrementalHydration,
+} from '@angular/platform-browser';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -42,7 +46,11 @@ export const appConfig: ApplicationConfig = {
       withInMemoryScrolling({ scrollPositionRestoration: 'enabled' }),
     ),
     provideHttpClient(),
-    provideClientHydration(withEventReplay()),
+    // Incremental hydration lets each tool's long-form copy stay server-rendered
+    // HTML until someone interacts with it (`@defer (hydrate on interaction)` in
+    // every tool template). That copy is ~650 KB of JS for all tools at once and
+    // was downloaded on every tool page only to re-create text already on screen.
+    provideClientHydration(withEventReplay(), withIncrementalHydration()),
     // Hands a tool back anything typed or dropped before its lazy chunk landed;
     // the recording half is inline in index.html, ahead of the bundle.
     provideAppInitializer(() => inject(PreHydrationInput).start()),

@@ -329,4 +329,6 @@
   </p>
 </div>
 
-<app-tool-content slug="invoice-generator" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="invoice-generator" />
+}

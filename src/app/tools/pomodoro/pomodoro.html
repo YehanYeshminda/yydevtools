@@ -141,4 +141,6 @@
   </p>
 </div>
 
-<app-tool-content slug="pomodoro" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="pomodoro" />
+}

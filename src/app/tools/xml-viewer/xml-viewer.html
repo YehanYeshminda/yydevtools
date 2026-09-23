@@ -192,4 +192,6 @@
   </span>
 </p>
 
-<app-tool-content slug="xml-viewer" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="xml-viewer" />
+}

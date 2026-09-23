@@ -180,4 +180,6 @@
   on this site, because the whole point of the tool is the sensitive data your photos carry.
 </p>
 
-<app-tool-content slug="exif-viewer" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="exif-viewer" />
+}

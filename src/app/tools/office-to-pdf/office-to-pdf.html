@@ -65,4 +65,6 @@
   </p>
 </div>
 
-<app-tool-content slug="office-to-pdf" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="office-to-pdf" />
+}

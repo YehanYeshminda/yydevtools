@@ -52,4 +52,6 @@
   </p>
 </div>
 
-<app-tool-content slug="case-converter" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="case-converter" />
+}

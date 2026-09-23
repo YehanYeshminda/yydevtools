@@ -277,4 +277,6 @@
   </p>
 </div>
 
-<app-tool-content slug="image-resize" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="image-resize" />
+}

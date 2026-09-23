@@ -196,4 +196,6 @@
   bring the result straight back here.
 </p>
 
-<app-tool-content slug="passport-photo" />
+@defer (hydrate on interaction) {
+  <app-tool-content slug="passport-photo" />
+}
