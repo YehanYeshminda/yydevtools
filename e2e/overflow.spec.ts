@@ -192,3 +192,12 @@ test('email-template keeps a long link inside the message column', async ({ page
   const spill = await body.evaluate((el) => el.scrollWidth - el.clientWidth);
   expect(spill).toBeLessThanOrEqual(1);
 });
+
+test('image-viewer keeps a long pasted token inside the page', async ({ page }) => {
+  await gotoTool(page, 'image-viewer', 'Image Viewer');
+  // Valid Base64 of text, so it also puts up the "not an image" message and
+  // the Open in button beside the box.
+  await page.locator('#iv-paste').fill(TOKEN);
+  await expect(page.getByRole('alert')).toContainText('not an image');
+  await expectFitsAtEveryWidth(page);
+});

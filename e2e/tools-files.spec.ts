@@ -5,7 +5,15 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 
 import { EditablePdf } from '../src/app/core/pdf-edit/document';
-import { expectClean, fixture, gotoTool, uploadFiles, watchConsole } from './helpers';
+import { OPEN_IN_SLUGS } from '../src/app/core/open-in';
+import {
+  expectClean,
+  fixture,
+  gotoTool,
+  uploadFiles,
+  waitForHydration,
+  watchConsole,
+} from './helpers';
 
 /**
  * The file-based tools, driven with real generated fixtures.
@@ -1417,4 +1425,119 @@ test('invoice-generator says so when the invoice runs to a second page', async (
   await expect(page.getByTestId('preview-pages')).toHaveText('Page 1 of 2', { timeout: 30_000 });
 
   expectClean(watch);
+});
+
+/** A fixture as a data URI, the way someone would paste it into Base64. */
+function dataUri(name: string, mime: string): string {
+  return `data:${mime};base64,${readFileSync(fixture(name)).toString('base64')}`;
+}
+
+/** Decode `uri` in the Base64 converter and hand the file on with Open in. */
+async function openViaBase64(page: Page, uri: string, target: string): Promise<void> {
+  await gotoTool(page, 'base64-converter', 'Base64 Converter');
+  await page.getByRole('tab', { name: 'Decode file' }).click();
+  await page.locator('#b64-in').fill(uri);
+  await page.getByRole('button', { name: 'Render preview' }).click();
+  await page.getByRole('button', { name: 'Open in' }).click();
+  await page.getByRole('menuitem', { name: target, exact: true }).click();
+}
+
+test('base64-converter opens a decoded PDF in the PDF Viewer', async ({ page }) => {
+  const watch = watchConsole(page);
+  await openViaBase64(page, dataUri('sample.pdf', 'application/pdf'), 'PDF Viewer');
+
+  await expect(page).toHaveURL(/\/tools\/pdf-viewer$/);
+  // The same 3-page fixture the viewer's own test drops in.
+  await expect(page.getByText(/\b3\b/).first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('canvas, iframe, .pdf-preview').first()).toBeVisible();
+
+  expectClean(watch);
+});
+
+test('base64-converter opens a decoded image in the Image Viewer', async ({ page }) => {
+  const watch = watchConsole(page);
+  const png = readFileSync(fixture('sample.png'));
+  // Read off the PNG header rather than hard-coded, so this stays true to the fixture.
+  const size = `${png.readUInt32BE(16)} × ${png.readUInt32BE(20)}`;
+
+  await openViaBase64(page, dataUri('sample.png', 'image/png'), 'Image Viewer');
+
+  await expect(page).toHaveURL(/\/tools\/image-viewer$/);
+  await expect(page.getByTestId('image-view')).toBeVisible();
+  await expect(page.getByTestId('image-dimensions')).toHaveText(size);
+
+  expectClean(watch);
+});
+
+test('image-viewer opens a file or pasted Base64, zooms, and hands a PDF on', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'image-viewer', 'Image Viewer');
+
+  await uploadFiles(page, ['sample-photo.jpg']);
+  const img = page.getByTestId('image-view');
+  await expect(img).toBeVisible();
+  const natural = await img.evaluate((el: HTMLImageElement) => el.naturalWidth);
+  expect(natural).toBeGreaterThan(0);
+  await expect(page.getByTestId('image-dimensions')).toContainText(`${natural} ×`);
+
+  // 100% draws it pixel for pixel; zooming in steps to 150%.
+  await page.getByRole('button', { name: '100%' }).click();
+  await expect(page.locator('.zoom')).toHaveText('100%');
+  await page.getByRole('button', { name: 'Zoom in' }).click();
+  await expect(page.locator('.zoom')).toHaveText('150%');
+  expect(await img.evaluate((el) => el.getBoundingClientRect().width)).toBeCloseTo(natural * 1.5, 0);
+  // Fit gives the sizing back to the pane.
+  await page.getByRole('button', { name: 'Fit' }).click();
+  await expect(page.getByRole('button', { name: 'Fit' })).toHaveAttribute('aria-pressed', 'true');
+
+  const transparency = page.getByRole('button', { name: 'Transparency' });
+  await transparency.click();
+  await expect(transparency).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('image-stage')).toHaveClass(/stage--checker/);
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Download' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe('sample-photo.jpg');
+
+  // Pasted, bare Base64 with no data: prefix — the type comes from the bytes.
+  await page.getByRole('button', { name: 'Clear' }).click();
+  await page.locator('#iv-paste').fill(readFileSync(fixture('sample.png')).toString('base64'));
+  await expect(page.getByTestId('image-view')).toBeVisible();
+  await expect(page.locator('.fact').filter({ hasText: 'Format' })).toContainText('PNG');
+
+  // A PDF is recognised as one and offered to the right tool, not refused blankly.
+  await page.getByRole('button', { name: 'Clear' }).click();
+  await page.locator('#iv-paste').fill(readFileSync(fixture('sample.pdf')).toString('base64'));
+  await expect(page.getByRole('alert')).toContainText('PDF, not an image');
+  await page.getByRole('button', { name: 'Open in' }).click();
+  await expect(page.getByRole('menuitem').first()).toHaveText('PDF Viewer');
+
+  expectClean(watch);
+});
+
+/**
+ * Every tool "Open in" can send a file to must actually take it.
+ *
+ * The file travels through FileHandoff, and the only thing that picks it up is
+ * an <app-dropzone> rendered when the page opens. A tool whose dropzone appears
+ * only in a second mode navigates fine and drops the file on the floor — the
+ * Hash Generator, which opens on its Text tab, was exactly that.
+ *
+ * Handing a real file to all of them (tried first) shows the same thing more
+ * slowly and less clearly: several tools take a file without printing its name,
+ * and the Office viewers need the hosted converter.
+ */
+test('every Open-in target has a dropzone waiting when it opens', async ({ page }) => {
+  test.setTimeout(180_000);
+  const missing: string[] = [];
+  for (const slug of OPEN_IN_SLUGS) {
+    await page.goto(`/tools/${slug}`);
+    await waitForHydration(page);
+    if ((await page.locator('app-dropzone').count()) === 0) {
+      missing.push(slug);
+    }
+  }
+  expect(missing, 'these would drop a handed-over file').toEqual([]);
 });

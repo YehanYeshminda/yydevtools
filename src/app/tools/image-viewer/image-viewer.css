@@ -1,0 +1,74 @@
+.paste {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  resize: vertical;
+}
+
+.toolbar {
+  align-items: center;
+}
+
+.zoom {
+  min-width: 3.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--on-var);
+}
+
+/* At 100% and above the image can be larger than the pane in both directions,
+   so the stage scrolls rather than the page. */
+.stage {
+  display: grid;
+  /* `safe`: an image wider than the stage starts at its left edge instead of
+     overflowing both sides, where the left half could never be scrolled to. */
+  place-items: safe center;
+  min-height: 12rem;
+  max-height: 70vh;
+  overflow: auto;
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+  padding: 1rem;
+}
+
+.stage--checker {
+  background: repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 0 0 / 16px 16px;
+}
+
+.stage__img {
+  display: block;
+  max-width: none;
+  image-rendering: auto;
+}
+
+.stage--fit .stage__img {
+  max-width: 100%;
+  max-height: calc(70vh - 2rem);
+  object-fit: contain;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+}
+
+.fact dt {
+  color: var(--on-var);
+}
+
+.fact dd {
+  margin: 0;
+  color: var(--on);
+  min-width: 0;
+}
+
+.fact__name {
+  overflow-wrap: anywhere;
+}

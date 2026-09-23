@@ -14,7 +14,8 @@ const DROP_TARGETS: { slug: string; ext: RegExp; mime?: RegExp }[] = [
   { slug: 'csv-viewer', ext: /\.(csv|tsv)$/, mime: /^text\/(csv|tab-separated-values)$/ },
   { slug: 'xml-viewer', ext: /\.(xml|xsd|xsl|svg|rss|atom)$/, mime: /xml$/ },
   { slug: 'certificate-decoder', ext: /\.(pem|crt|cer|der)$/ },
-  { slug: 'image-compressor', ext: /\.(heic|heif)$/, mime: /^image\// },
+  { slug: 'image-compressor', ext: /\.(heic|heif)$/ },
+  { slug: 'image-viewer', ext: /\.(png|jpe?g|gif|webp|avif|bmp)$/, mime: /^image\// },
 ];
 
 /**

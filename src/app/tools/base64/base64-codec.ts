@@ -323,6 +323,25 @@ export function extForMime(mime: string): string {
       return 'html';
     case 'text/plain':
       return 'txt';
+    // Types only a data: prefix can declare — the bytes alone read as a zip or
+    // as plain text. The extension matters: it is what "Open in" and the
+    // receiving tool go by.
+    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+      return 'docx';
+    case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+      return 'xlsx';
+    case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+      return 'pptx';
+    case 'text/csv':
+      return 'csv';
+    case 'image/avif':
+      return 'avif';
+    case 'image/bmp':
+      return 'bmp';
+    case 'video/webm':
+      return 'webm';
+    case 'video/mp4':
+      return 'mp4';
     default:
       return 'bin';
   }

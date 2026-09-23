@@ -518,3 +518,48 @@ test('the generated email has no AXE violations as a document in its own right',
     'AXE violations in the generated email',
   ).toEqual([]);
 });
+
+/**
+ * The Image Viewer's view chips are toggles, and this repo has shipped a
+ * `.chip--on` at 1.04:1 once — so each state is audited, not just the resting
+ * one. Zoomed in, the stage scrolls both ways, which is when it has to be a
+ * focus stop (scrollable-region-focusable); `expectScrolls` proves it does.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`image-viewer has no AXE violations in the ${theme} theme, chips on and off`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'image-viewer', 'Image Viewer');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await uploadFiles(page, ['sample-photo.jpg']);
+    await expect(page.getByTestId('image-view')).toBeVisible();
+
+    const report = async (state: string) => {
+      const results = await audit(page).analyze();
+      expect(
+        results.violations.map(
+          (violation) =>
+            `${violation.id}: ${violation.nodes
+              .map((node) => node.target.join(' '))
+              .slice(0, 6)
+              .join(' | ')}`,
+        ),
+        `AXE violations on the image viewer, ${state} [${theme}]`,
+      ).toEqual([]);
+    };
+
+    // Fit on, Transparency off.
+    await report('fitted');
+
+    // Fit off, Transparency on, zoomed well past the pane.
+    await page.getByRole('button', { name: 'Transparency' }).click();
+    await page.getByRole('button', { name: '100%' }).click();
+    for (let i = 0; i < 4; i++) {
+      await page.getByRole('button', { name: 'Zoom in' }).click();
+    }
+    await expectScrolls(page.getByTestId('image-stage'));
+    await report('zoomed with the checkerboard');
+  });
+}

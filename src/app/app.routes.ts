@@ -247,6 +247,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/image-viewer',
+    loadComponent: () => import('./tools/image-viewer/image-viewer').then((m) => m.ImageViewerTool),
+    title: 'Image Viewer — Open Base64 & Image Files Online — YYDevTools',
+    data: {
+      description:
+        'View an image from a file or pasted Base64 / data URI: fit or actual size, zoom, ' +
+        'transparency checkerboard. PNG, JPEG, WebP, SVG, HEIC. Nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/exif-viewer',
     loadComponent: () => import('./tools/exif-viewer/exif-viewer').then((m) => m.ExifViewerTool),
     title: 'EXIF Viewer & Metadata Remover — YYDevTools',

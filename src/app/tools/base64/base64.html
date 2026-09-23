@@ -367,6 +367,18 @@
               <ng-icon name="matDownloadOutline" />
               Download file
             </button>
+            <!-- Reuses what the preview already decoded; offered only while the
+                 preview still matches the input, so it cannot send stale bytes. -->
+            @if (preview(); as rendered) {
+              @if (!previewStale()) {
+                <app-open-in
+                  [bytes]="rendered.bytes"
+                  [name]="decodeFileName().trim() || 'decoded.bin'"
+                  [mime]="rendered.mime"
+                  from="base64-converter"
+                />
+              }
+            }
           </div>
         </section>
 

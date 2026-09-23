@@ -1,0 +1,162 @@
+<app-tool-page slug="image-viewer">
+  Open an image from a file or from pasted Base64 and look at it properly — fit or actual size,
+  zoom, and a checkerboard to show transparency. Nothing is uploaded.
+</app-tool-page>
+
+<div class="panel">
+  @if (!source()) {
+    <app-dropzone
+      accept="image/*,.heic,.heif,.svg,.avif,.bmp"
+      (filesSelected)="openFiles($event)"
+    >
+      <ng-icon class="dropzone__icon" aria-hidden="true" name="matImageOutline" />
+      <span class="dropzone__title">Drop an image here, or click to choose</span>
+      <span class="dropzone__hint">PNG, JPEG, GIF, WebP, AVIF, SVG, BMP and HEIC</span>
+    </app-dropzone>
+
+    <div class="field">
+      <label class="field__label" for="iv-paste">Or paste Base64 or a data URI</label>
+      <textarea
+        id="iv-paste"
+        class="field__input paste"
+        rows="4"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder="data:image/png;base64,iVBORw0KGgo…"
+        (input)="onPaste($event)"
+      ></textarea>
+    </div>
+
+    <div class="actions">
+      <app-try-example (loadExample)="loadExample()" />
+    </div>
+
+    @if (error(); as message) {
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        <span>{{ message }}</span>
+      </p>
+    }
+    @if (other(); as file) {
+      <div class="actions">
+        <app-open-in [bytes]="file.bytes" [name]="file.name" [mime]="file.mime" from="image-viewer" />
+      </div>
+    }
+  } @else {
+    <div class="toolbar chips" role="group" aria-label="View">
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="fit()"
+        [attr.aria-pressed]="fit()"
+        (click)="toggleFit()"
+        title="Shrink the image to fit the pane"
+      >
+        <ng-icon aria-hidden="true" name="matFitScreenOutline" />
+        Fit
+      </button>
+      <button type="button" class="chip" (click)="actualSize()" title="Show at actual size">
+        100%
+      </button>
+      <button type="button" class="chip chip--icon" (click)="zoomBy(-1)" aria-label="Zoom out">
+        <ng-icon aria-hidden="true" name="matZoomOutOutline" />
+      </button>
+      <span class="zoom" aria-live="polite">{{ zoomLabel() }}</span>
+      <button type="button" class="chip chip--icon" (click)="zoomBy(1)" aria-label="Zoom in">
+        <ng-icon aria-hidden="true" name="matZoomInOutline" />
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="checker()"
+        [attr.aria-pressed]="checker()"
+        (click)="toggleChecker()"
+        title="Show transparent areas as a checkerboard"
+      >
+        <ng-icon aria-hidden="true" name="matGridOnOutline" />
+        Transparency
+      </button>
+    </div>
+
+    <!-- Focusable because at 100% and above it scrolls in both directions, and a
+         scroll region that is not a focus stop cannot be reached without a mouse. -->
+    <div
+      class="stage"
+      [class.stage--fit]="fit()"
+      [class.stage--checker]="checker()"
+      tabindex="0"
+      role="group"
+      aria-label="Image"
+      data-testid="image-stage"
+    >
+      @if (url(); as src) {
+        <img
+          class="stage__img"
+          data-testid="image-view"
+          [src]="src"
+          [alt]="source()!.name"
+          [style.width.px]="drawnWidth()"
+          (load)="onLoad($event)"
+          (error)="onImageError()"
+        />
+      }
+    </div>
+
+    <dl class="facts">
+      <div class="fact">
+        <dt>File</dt>
+        <dd class="fact__name">{{ source()!.name }}</dd>
+      </div>
+      <div class="fact">
+        <dt>Format</dt>
+        <dd>{{ format() }}</dd>
+      </div>
+      @if (width()) {
+        <div class="fact">
+          <dt>Dimensions</dt>
+          <dd data-testid="image-dimensions">{{ width() }} × {{ height() }}</dd>
+        </div>
+      }
+      <div class="fact">
+        <dt>Size</dt>
+        <dd>{{ formatBytes(source()!.bytes.length) }}</dd>
+      </div>
+    </dl>
+
+    @if (error(); as message) {
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        <span>{{ message }}</span>
+      </p>
+    }
+
+    <div class="actions">
+      <button matButton="filled" (click)="download()">
+        <ng-icon name="matDownloadOutline" />
+        Download
+      </button>
+      <app-open-in
+        [bytes]="source()!.bytes"
+        [name]="source()!.name"
+        [mime]="source()!.mime"
+        from="image-viewer"
+      />
+      <button matButton (click)="clear()">
+        <ng-icon name="matClearOutline" />
+        Clear
+      </button>
+    </div>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
+    <span class="note__text">
+      The image is read and drawn by your browser; it is never uploaded. HEIC, which browsers
+      cannot draw, is converted for display in a background thread on this device.
+    </span>
+  </p>
+</div>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="image-viewer" />
+}

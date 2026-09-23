@@ -19,6 +19,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { ClipboardService } from '../../core/clipboard.service';
 import { downloadBlob } from '../../core/download';
 import { syncToolState } from '../../core/tool-state';
+import { OpenIn } from '../../shared/open-in/open-in';
 import { SendTo } from '../../shared/send-to/send-to';
 import { ShareLink } from '../../shared/share-link/share-link';
 import { ToolPage } from '../../shared/tool-page/tool-page';
@@ -146,6 +147,7 @@ interface RenderedPreview {
     TryExample,
     ShareLink,
     SendTo,
+    OpenIn,
   ],
   templateUrl: './base64.html',
   styleUrls: ['../tool-shell.css', './base64.css'],

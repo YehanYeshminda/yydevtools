@@ -353,6 +353,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'image-viewer',
+    name: 'Image Viewer',
+    description:
+      'Open an image from a file or pasted Base64 — fit, zoom and check its transparency.',
+    icon: 'matImageOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'exif-viewer',
     name: 'EXIF Viewer',
     description:

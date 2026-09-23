@@ -2883,6 +2883,50 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['image-compressor', 'image-converter', 'exif-viewer', 'image-pdf'],
   },
+  'image-viewer': {
+    slug: 'image-viewer',
+    intro: [
+      'Sometimes you just need to see an image properly. A Base64 string in an API response, a data URI in a stylesheet, a file someone sent with no extension — this opens any of them and draws the picture, with the facts next to it: the real format, the pixel dimensions and the size in bytes.',
+      'It is built for looking closely. Fit shrinks a large image into view; 100% shows it pixel for pixel, and zoom goes from a quarter size up to eight times, so you can check an icon for stray pixels or a screenshot for blurred text. A checkerboard background shows which parts are transparent, which a white page hides completely.',
+    ],
+    steps: [
+      'Drop an image in, or paste Base64 or a data URI into the box.',
+      'Switch between Fit and 100%, and zoom in or out to inspect detail.',
+      'Turn on the checkerboard to see transparent areas.',
+      'Download the image, or open it in another tool — compress, resize, convert or read its metadata.',
+    ],
+    features: [
+      'Opens PNG, JPEG, GIF, WebP, AVIF, SVG, BMP and HEIC.',
+      'Accepts bare Base64 as well as full data URIs; the type is read from the bytes when the string does not say.',
+      'Shows the true format and pixel dimensions, whatever the file happens to be called.',
+      'HEIC, which browsers cannot draw, is converted for display on your device.',
+      'Something that is not an image — a PDF pasted as Base64, say — is recognised and offered to the right tool.',
+      'Nothing is uploaded: the image is decoded and drawn by your own browser.',
+    ],
+    faq: [
+      {
+        q: 'How do I view a Base64 image?',
+        a: 'Paste the string into the box — either the bare Base64 or a full data URI that starts with "data:image/". The viewer decodes it in your browser and shows the picture along with its real format and dimensions. If the string has no type prefix, the format is worked out from the first bytes of the image.',
+      },
+      {
+        q: 'Is my image uploaded anywhere?',
+        a: 'No. The file or the pasted text is decoded by your browser and drawn on this page; it never leaves your device. HEIC photos are converted for display by a background thread on the same device, not by a server.',
+      },
+      {
+        q: 'Why does my image look blurry when zoomed in?',
+        a: 'Above 100% each pixel of the image covers several pixels of your screen, and the browser smooths between them. That softness is the browser scaling, not a flaw in the file. At exactly 100% you see the image pixel for pixel, which is the view to use when judging sharpness.',
+      },
+      {
+        q: 'How can I tell whether an image has a transparent background?',
+        a: 'Turn on the transparency checkerboard. Any area the image leaves transparent shows the grey-and-white squares through it, including soft semi-transparent edges. On a plain white page a transparent PNG and one with a white background look identical; the checkerboard is how you tell them apart.',
+      },
+      {
+        q: 'Why does it say my Base64 is not an image?',
+        a: 'Because the decoded bytes are something else — often a PDF, or text that was Base64-encoded. The viewer reads the type from the data itself rather than trusting a name, and offers an "Open in" menu for whatever it actually is. If it says the input is not valid Base64 at all, check that nothing was cut off when you copied it.',
+      },
+    ],
+    related: ['base64-converter', 'exif-viewer', 'image-converter', 'image-compressor'],
+  },
   'exif-viewer': {
     slug: 'exif-viewer',
     intro: [

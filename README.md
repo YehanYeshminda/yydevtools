@@ -63,6 +63,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Image Converter** | Convert between HEIC, JPEG, PNG, WebP and AVIF in bulk — iPhone photos included — without uploading them. |
 | **Video Trimmer & GIF Maker** | Cut a clip, drop the sound, pull out the audio as an MP3, or turn it into a GIF. ffmpeg runs in your browser. |
 | **Image Resizer & Cropper** | Crop with a draggable box, resize to exact pixels or a file size, and save as JPEG, PNG or WebP. |
+| **Image Viewer** | Open an image from a file or pasted Base64, and zoom in or check its transparency. |
 | **EXIF Viewer** | See the camera, timestamp and GPS location hidden in a photo, then strip it out without re-compressing. |
 | **Pomodoro Timer & Stopwatch** | Focus sessions with automatic breaks, or a stopwatch with laps. Keeps running across the site. |
 | **Unit Converter** | Length, weight, temperature, volume, speed, area, data and time, with every unit at once. |

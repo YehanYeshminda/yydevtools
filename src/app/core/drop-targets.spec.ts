@@ -10,8 +10,13 @@ describe('toolForFile', () => {
   });
 
   it('falls back to the MIME type when the name says nothing', () => {
-    expect(toolForFile('', 'image/webp')).toBe('image-compressor');
+    expect(toolForFile('', 'image/webp')).toBe('image-viewer');
     expect(toolForFile('photo', 'application/pdf')).toBe('pdf-viewer');
+  });
+
+  it('opens images in the viewer, but still sends an iPhone HEIC to be converted', () => {
+    expect(toolForFile('shot.png', 'image/png')).toBe('image-viewer');
+    expect(toolForFile('IMG_0001.HEIC', 'image/heic')).toBe('image-compressor');
   });
 
   it('sends everything else to the inspector', () => {
