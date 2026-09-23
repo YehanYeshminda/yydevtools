@@ -2954,7 +2954,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
       {
         q: 'Can it read Sinhala and Tamil?',
-        a: 'Yes. Choose Sinhala or Tamil from the language list, or Sinhala + English or Tamil + English when the image mixes the two, as bills, forms and signs often do. Each language is a 2–3 MB download the first time you use it, and your browser keeps it afterwards. Accuracy is best on clear printed text; handwriting and decorative fonts are much harder for any OCR engine.',
+        a: 'Yes. Choose Sinhala or Tamil from the language list, or Sinhala + English or Tamil + English when the image mixes the two, as bills, forms and signs often do. Each language is a 1–3 MB download the first time you use it, and your browser keeps it afterwards. Accuracy is best on clear printed text; handwriting and decorative fonts are much harder for any OCR engine.',
       },
       {
         q: 'Is my image uploaded?',
