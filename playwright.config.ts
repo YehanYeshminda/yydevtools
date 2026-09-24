@@ -32,6 +32,8 @@ export default defineConfig({
   ],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:4200',
+    // Explicit rather than inherited: no window opens, whichever machine runs it.
+    headless: true,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',

@@ -201,3 +201,11 @@ test('image-viewer keeps a long pasted token inside the page', async ({ page }) 
   await expect(page.getByRole('alert')).toContainText('not an image');
   await expectFitsAtEveryWidth(page);
 });
+
+test('jsonpath-tester keeps a long key and value inside the matches', async ({ page }) => {
+  await gotoTool(page, 'jsonpath-tester', 'JSONPath Tester');
+  await setEditorText(editorByLabel(page, 'JSON'), `{"${TOKEN}": "${TOKEN}"}`);
+  await page.locator('#jsonpath').fill('$.*');
+  await expect(page.locator('.match__path')).toHaveCount(1);
+  await expectFitsAtEveryWidth(page);
+});

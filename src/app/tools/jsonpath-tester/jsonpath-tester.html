@@ -1,0 +1,117 @@
+<app-tool-page slug="jsonpath-tester">
+  Test a JSONPath expression against your JSON as you type, and see every match with the exact
+  path that reaches it. Runs in your browser — nothing is uploaded.
+</app-tool-page>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="jsonpath">JSONPath expression</label>
+    <input
+      id="jsonpath"
+      class="field__input"
+      type="text"
+      spellcheck="false"
+      autocomplete="off"
+      autocapitalize="off"
+      placeholder="$.store.book[*].title"
+      [value]="path()"
+      (input)="onPathInput($event)"
+    />
+  </div>
+
+  @if (pathError()) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      <span>{{ pathError() }}</span>
+    </p>
+  }
+
+  <div class="actions">
+    <app-try-example (loadExample)="loadExample()" />
+    <app-share-link [state]="shared" />
+  </div>
+
+  <div class="field">
+    <span class="field__label">JSON</span>
+    <app-code-editor
+      label="JSON"
+      language="json"
+      placeholder="Paste JSON here…"
+      minHeight="14rem"
+      [(value)]="json"
+    />
+  </div>
+
+  @if (jsonError()) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      <span>{{ jsonError() }}</span>
+    </p>
+  }
+
+  @if (ran() && !pathError()) {
+    <section aria-labelledby="jp-results" data-testid="jp-results">
+      <h2 class="section__title" id="jp-results" aria-live="polite">
+        {{ matches().length }} {{ matches().length === 1 ? 'match' : 'matches' }}
+      </h2>
+
+      @if (matches().length) {
+        <ol class="matches">
+          @for (match of shown(); track $index) {
+            <li class="match">
+              <code class="match__path">{{ match.path }}</code>
+              <pre class="match__value" tabindex="0">{{ match.text }}</pre>
+            </li>
+          }
+        </ol>
+        @if (matches().length > maxShown) {
+          <p class="note">
+            <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+            <span class="note__text">
+              Showing the first {{ maxShown }}. Copy values gives you all {{ matches().length }}.
+            </span>
+          </p>
+        }
+
+        <div class="actions">
+          <button matButton="filled" (click)="copyValues()">
+            <ng-icon name="matContentCopyOutline" />
+            Copy values
+          </button>
+          <button matButton (click)="copyPaths()">
+            <ng-icon name="matContentCopyOutline" />
+            Copy paths
+          </button>
+          <app-send-to [text]="valuesJson()" from="jsonpath-tester" />
+        </div>
+      } @else {
+        <p class="field__hint">
+          Nothing in the document matches. Check the key names — JSONPath is case-sensitive.
+        </p>
+      }
+    </section>
+  }
+
+  <section aria-labelledby="jp-syntax">
+    <h2 class="section__title" id="jp-syntax">Syntax</h2>
+    <p class="field__hint">Click an expression to try it (on the sample, if the box is empty).</p>
+    <table class="syntax">
+      <tbody>
+        @for (row of cheatSheet; track row.path) {
+          <tr>
+            <td>
+              <button type="button" class="syntax__path" (click)="usePath(row.path)">
+                {{ row.path }}
+              </button>
+            </td>
+            <td>{{ row.meaning }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+</div>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="jsonpath-tester" />
+}

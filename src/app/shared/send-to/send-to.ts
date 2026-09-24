@@ -26,7 +26,7 @@ import { SEND_TARGETS, sendFragment, type SendTarget } from '../../core/send-to'
       <ng-icon name="matSendOutline" />
       Send to
     </button>
-    <mat-menu #menu>
+    <mat-menu #menu class="menu--long">
       @for (target of targets(); track target.slug) {
         <button mat-menu-item (click)="send(target)">{{ target.label }}</button>
       }

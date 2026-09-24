@@ -17,6 +17,14 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'jsonpath-tester',
+    name: 'JSONPath Tester',
+    description: 'Test a JSONPath expression live, and see every match with the path that reaches it.',
+    icon: 'matManageSearchOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'json-to-types',
     name: 'JSON to Types',
     description: 'Turn JSON into TypeScript, Python, Rust, Kotlin, Java, JSON Schema and more.',

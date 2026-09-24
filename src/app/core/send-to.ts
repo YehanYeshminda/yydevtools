@@ -23,6 +23,7 @@ export interface SendTarget {
 export const SEND_TARGETS: readonly SendTarget[] = [
   { slug: 'json-formatter', label: 'JSON Formatter', field: 'input' },
   { slug: 'json-to-types', label: 'JSON to Types', field: 'input' },
+  { slug: 'jsonpath-tester', label: 'JSONPath Tester', field: 'json' },
   { slug: 'xml-viewer', label: 'XML Viewer', field: 'source' },
   { slug: 'sql-formatter', label: 'SQL Formatter', field: 'input' },
   { slug: 'code-formatter', label: 'Code Formatter', field: 'input' },

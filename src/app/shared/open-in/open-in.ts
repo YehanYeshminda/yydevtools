@@ -27,7 +27,7 @@ import { openTargets } from '../../core/open-in';
       <ng-icon name="matOpenInNewOutline" />
       Open in
     </button>
-    <mat-menu #menu>
+    <mat-menu #menu class="menu--long">
       @for (target of targets(); track target.slug) {
         <button mat-menu-item (click)="open(target.slug)">{{ target.name }}</button>
       }

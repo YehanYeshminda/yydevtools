@@ -1,0 +1,79 @@
+#jsonpath {
+  font-size: 1rem;
+}
+
+.matches {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.match {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.match__path {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--mat-sys-primary);
+  overflow-wrap: anywhere;
+}
+
+/* A value can be a whole object; it scrolls rather than stretching the page. */
+.match__value {
+  margin: 0;
+  max-height: 16rem;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.syntax {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.syntax td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  vertical-align: baseline;
+}
+
+.syntax td:first-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.syntax__path {
+  padding: 0.15rem 0.4rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--mat-sys-primary);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.syntax__path:hover {
+  background: color-mix(in srgb, var(--mat-sys-primary) 10%, transparent);
+}
+
+@media (max-width: 600px) {
+  .syntax td:first-child {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

@@ -159,7 +159,51 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'JSONPath is a query language for JSON, similar to what XPath is for XML. It lets you select specific nodes from a large document — for example every id inside an items array — without scrolling through the whole thing.',
       },
     ],
-    related: ['json-to-types', 'code-formatter', 'base64-converter'],
+    related: ['jsonpath-tester', 'json-to-types', 'code-formatter', 'base64-converter'],
+  },
+  'jsonpath-tester': {
+    slug: 'jsonpath-tester',
+    intro: [
+      'JSONPath is to JSON what XPath is to XML: a short expression that picks values out of a document. $.store.book[*].title means "the title of every book in the store", and $..book[?(@.price < 10)] means "every book, anywhere, cheaper than 10". It is how you pull fields out of API responses in tools like Postman, Kubernetes (kubectl -o jsonpath), AWS Step Functions and many test frameworks.',
+      'The hard part is getting an expression right, and this is where you do it. Paste your JSON, type an expression, and the matches update on every keystroke. Each match shows the exact path that reaches it — $.store.book[2].title, not just "Moby Dick" — so you can see why it matched and copy the precise path into your code.',
+    ],
+    steps: [
+      'Paste your JSON into the editor, or press Try an example to load a sample bookstore.',
+      'Type a JSONPath expression; the results update as you type.',
+      'Read each match and the path that reaches it. An invalid document or expression is explained right away.',
+      'Copy the matched values as a JSON array, copy the paths, or send the values to another tool. Share link saves the JSON and the expression in a URL.',
+    ],
+    features: [
+      'Live results on every keystroke, with the number of matches.',
+      'The exact path of every match, written so keys with spaces, dots or quotes are unambiguous.',
+      'Recursive descent (..), wildcards (*), array slices and negative indexes, unions and filter expressions like ?(@.price < 10).',
+      'A clickable syntax reference: each example runs against your JSON, or the sample if the editor is empty.',
+      'Clear JSON errors with the line and column of the problem.',
+      'Filters are evaluated safely: an expression cannot run code on the page, even one opened from a shared link.',
+    ],
+    faq: [
+      {
+        q: 'What is JSONPath?',
+        a: 'A query language for JSON, first described by Stefan Goessner in 2007 and standardised as RFC 9535 in 2024. An expression starts at the root, $, and walks down: .name picks a key, [0] an array item, * every child, .. every descendant, and [?( )] keeps only the items that pass a test. It is supported by Postman, kubectl, Jayway in Java, and JSONPath libraries in most languages.',
+      },
+      {
+        q: 'How do I filter an array in JSONPath?',
+        a: 'Use a filter expression: [?( )] with @ standing for the current item. $..book[?(@.price < 10)] keeps books cheaper than 10, $..book[?(@.isbn)] keeps books that have an isbn, and $..book[?(@.category == \'fiction\')] keeps fiction. Add a key after the filter to pick one field from each match, as in $..book[?(@.price < 10)].title.',
+      },
+      {
+        q: 'What is the difference between $.store.book and $..book?',
+        a: 'A single dot follows one exact step, so $.store.book only finds book directly inside store. Two dots search at every depth, so $..book finds a key called book anywhere in the document. Recursive descent is convenient but can match more than you expect in a large document; the path shown for each match tells you exactly where each one came from.',
+      },
+      {
+        q: 'Why does my expression match nothing?',
+        a: 'Most often it is a key name: JSONPath is case-sensitive, so $.Store and $.store are different. Keys with spaces, dots or dashes need bracket notation, as in $[\'first name\'] or $[\'content-type\']. Also check whether a value is an array — $.items.name will not look inside each item of an array, but $.items[*].name will.',
+      },
+      {
+        q: 'Is my JSON uploaded?',
+        a: 'No. The JSON is parsed and queried in your browser, and nothing is sent to a server. Share link puts the JSON and the expression in the part of the URL after the #, which browsers never send to the server either.',
+      },
+    ],
+    related: ['json-formatter', 'json-to-types', 'regex-tester', 'json-diff'],
   },
 
   'json-to-types': {

@@ -120,6 +120,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/jsonpath-tester',
+    loadComponent: () =>
+      import('./tools/jsonpath-tester/jsonpath-tester').then((m) => m.JsonPathTesterTool),
+    title: 'JSONPath Tester — Evaluate JSONPath Online — YYDevTools',
+    data: {
+      description:
+        'Test JSONPath expressions against your JSON as you type: filters, slices, wildcards and ' +
+        'the exact path of every match. Runs in your browser — free.',
+    },
+  },
+  {
     path: 'tools/json-to-types',
     loadComponent: () =>
       import('./tools/json-to-types/json-to-types').then((m) => m.JsonToTypesTool),

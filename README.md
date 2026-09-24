@@ -19,6 +19,7 @@ the homepage grid, search, command palette and this table all come from it.
 | Tool | Description |
 | --- | --- |
 | **JSON Formatter** | Format, validate and minify JSON, convert to/from YAML and query with JSONPath. |
+| **JSONPath Tester** | Test a JSONPath expression live against your JSON, and see every match with the path that reaches it. |
 | **JSON to Types** | Turn JSON into TypeScript, Python, Rust, Kotlin, Java, JSON Schema and more. |
 | **JWT Decoder** | Decode JWT headers and claims, and verify the signature. |
 | **JWT Editor** | Edit a JWT's claims and re-sign it into a new, valid token (HS/RS/PS/ES). |

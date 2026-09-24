@@ -7,6 +7,7 @@ import {
   getEditorText,
   gotoTool,
   setEditorText,
+  waitForHydration,
   watchConsole,
 } from './helpers';
 
@@ -1384,6 +1385,81 @@ test('email-template changes its look, and can be told to read nothing', async (
   await page.getByRole('checkbox', { name: 'Plain paragraphs' }).check();
   await expect(preview.getByText('# Not a heading', { exact: true })).toBeVisible();
   await expect(preview.locator('h1')).toHaveCount(0);
+
+  expectClean(watch);
+});
+
+test('jsonpath-tester answers as you type, with the path of every match', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'jsonpath-tester', 'JSONPath Tester');
+
+  await setEditorText(
+    editorByLabel(page, 'JSON'),
+    JSON.stringify({
+      orders: [
+        { id: 1, total: 40, 'ship to': { city: 'Colombo' } },
+        { id: 2, total: 5, 'ship to': { city: 'Kandy' } },
+      ],
+    }),
+  );
+  const path = page.locator('#jsonpath');
+  const results = page.getByTestId('jp-results');
+
+  await path.fill('$.orders[?(@.total > 10)].id');
+  await expect(results.locator('h2')).toHaveText('1 match');
+  await expect(results.locator('.match__path')).toHaveText(['$.orders[0].id']);
+  await expect(results.locator('.match__value')).toHaveText(['1']);
+
+  // A key with a space comes back in brackets, ready to paste into code.
+  await path.fill('$..city');
+  await expect(results.locator('.match__path')).toHaveText([
+    "$.orders[0]['ship to'].city",
+    "$.orders[1]['ship to'].city",
+  ]);
+
+  // The syntax table runs against the document that is already there.
+  await page.getByRole('button', { name: '$..*', exact: true }).click();
+  await expect(path).toHaveValue('$..*');
+  await expect(results.locator('h2')).toHaveText('11 matches');
+
+  // Filters cannot reach outside the data, even from a shared link.
+  await path.fill('$..orders[?(@.total.constructor)]');
+  await expect(page.getByRole('alert')).toContainText('constructor');
+  await expect(results).toHaveCount(0);
+
+  // A broken document is explained with where it broke.
+  await setEditorText(editorByLabel(page, 'JSON'), '{\n  "a": 1,\n  "b": oops\n}');
+  await expect(page.getByRole('alert')).toContainText('line 3');
+
+  expectClean(watch);
+});
+
+test('jsonpath-tester takes JSON from Send to, and hands its matches on', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'json-formatter', 'JSON Formatter');
+  await setEditorText(editorByLabel(page, 'JSON input'), '{"users":[{"name":"Ada"},{"name":"Alan"}]}');
+  await page.getByRole('button', { name: 'Send to' }).click();
+  await page.getByRole('menuitem', { name: 'JSONPath Tester' }).click();
+
+  await expect(page).toHaveURL(/\/tools\/jsonpath-tester#s=/);
+  await waitForHydration(page);
+  await page.locator('#jsonpath').fill('$.users[*].name');
+  const results = page.getByTestId('jp-results');
+  await expect(results.locator('.match__value')).toHaveText(['"Ada"', '"Alan"']);
+
+  // Opened from mid-page, the twenty-item menu once ran off the top of the
+  // screen with its first entries — this one among them — out of reach.
+  await results.getByRole('button', { name: 'Send to' }).click();
+  const panel = await page.locator('.mat-mdc-menu-panel').boundingBox();
+  const viewport = page.viewportSize()!;
+  expect(panel!.y, 'menu top on screen').toBeGreaterThanOrEqual(0);
+  expect(panel!.y + panel!.height, 'menu bottom on screen').toBeLessThanOrEqual(viewport.height);
+  await page.getByRole('menuitem', { name: 'JSON Formatter' }).click();
+  await expect(page).toHaveURL(/\/tools\/json-formatter#s=/);
+  await waitForHydration(page);
+  await expect
+    .poll(async () => JSON.parse(await getEditorText(editorByLabel(page, 'JSON input'))))
+    .toEqual(['Ada', 'Alan']);
 
   expectClean(watch);
 });

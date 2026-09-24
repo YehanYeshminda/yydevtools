@@ -620,3 +620,37 @@ for (const theme of ['dark', 'light'] as const) {
     ).toEqual([]);
   });
 }
+
+/**
+ * JSONPath Tester with results showing: a whole object as a match scrolls
+ * inside its box, which is when that box has to be a focus stop.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`jsonpath-tester has no AXE violations in the ${theme} theme with matches`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'jsonpath-tester', 'JSONPath Tester');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await page.getByRole('button', { name: /try an example/i }).click();
+    await page.locator('#jsonpath').fill('$.store');
+    const value = page.locator('.match__value').first();
+    await expect(value).toBeVisible();
+    // It wraps, so it scrolls down rather than across — which expectScrolls does not measure.
+    const overflow = await value.evaluate((el) => el.scrollHeight - el.clientHeight);
+    expect(overflow, 'this no longer scrolls, so the audit below proves nothing').toBeGreaterThan(0);
+
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+      `AXE violations on the JSONPath tester [${theme}]`,
+    ).toEqual([]);
+  });
+}

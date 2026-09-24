@@ -526,3 +526,12 @@ html {
 ::view-transition-group(root) {
   overflow: clip;
 }
+
+/* Send to and Open in list up to twenty tools. Material sets no height on a
+   menu panel, so a list that tall cannot fit above or below a button in the
+   middle of the screen and its first items end up off the top, out of reach.
+   Capped, the panel always fits one side and scrolls within itself. It lives
+   here because the panel renders in the overlay, outside any component. */
+.mat-mdc-menu-panel.menu--long {
+  max-height: min(24rem, calc(100vh - 32px));
+}
