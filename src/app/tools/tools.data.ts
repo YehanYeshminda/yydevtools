@@ -316,6 +316,14 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'toml-converter',
+    name: 'TOML Converter',
+    description: 'Convert TOML to JSON or YAML and back, live, with a warning wherever a value cannot carry over.',
+    icon: 'matSyncAltOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'background-remover',
     name: 'Background Remover',
     description:

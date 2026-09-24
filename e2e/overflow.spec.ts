@@ -209,3 +209,10 @@ test('jsonpath-tester keeps a long key and value inside the matches', async ({ p
   await expect(page.locator('.match__path')).toHaveCount(1);
   await expectFitsAtEveryWidth(page);
 });
+
+test('toml-converter keeps a long value inside both panes', async ({ page }) => {
+  await gotoTool(page, 'toml-converter', 'TOML Converter');
+  await setEditorText(editorByLabel(page, 'TOML input'), `token = "${TOKEN}"`);
+  await expect(page.locator('app-code-editor').nth(1)).toContainText(TOKEN.slice(0, 20));
+  await expectFitsAtEveryWidth(page);
+});

@@ -1,0 +1,106 @@
+<app-tool-page slug="toml-converter">
+  Convert TOML to JSON or YAML and back, live as you type — with a clear warning wherever a format
+  cannot hold a value, instead of a silent loss. Runs in your browser.
+</app-tool-page>
+
+<div class="panel">
+  <div class="formats">
+    <div class="field">
+      <span class="field__label" id="from-label">From</span>
+      <div class="chips" role="group" aria-labelledby="from-label">
+        @for (format of formats; track format.value) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="from() === format.value"
+            [attr.aria-pressed]="from() === format.value"
+            (click)="setFrom(format.value)"
+          >
+            {{ format.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <button matButton class="formats__swap" (click)="swap()" title="Swap: the result becomes the input">
+      <ng-icon name="matSwapHorizOutline" />
+      Swap
+    </button>
+
+    <div class="field">
+      <span class="field__label" id="to-label">To</span>
+      <div class="chips" role="group" aria-labelledby="to-label">
+        @for (format of formats; track format.value) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="to() === format.value"
+            [attr.aria-pressed]="to() === format.value"
+            (click)="setTo(format.value)"
+          >
+            {{ format.label }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <app-try-example (loadExample)="loadExample()" />
+    <app-share-link [state]="shared" />
+  </div>
+
+  <div class="panes">
+    <div class="field">
+      <span class="field__label">{{ fromLabel() }} input</span>
+      <app-code-editor
+        [label]="fromLabel() + ' input'"
+        [language]="from()"
+        [placeholder]="'Paste ' + fromLabel() + ' here…'"
+        minHeight="18rem"
+        [(value)]="text"
+      />
+    </div>
+
+    <div class="field">
+      <span class="field__label">{{ toLabel() }} output</span>
+      <app-code-editor
+        [label]="toLabel() + ' output'"
+        [language]="to()"
+        minHeight="18rem"
+        [readOnly]="true"
+        [value]="output()"
+      />
+    </div>
+  </div>
+
+  @if (problem()) {
+    <p class="status status--err" role="alert" data-testid="toml-problem">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      <span>{{ problem() }}</span>
+    </p>
+  }
+
+  @for (warning of warnings(); track warning) {
+    <p class="note" role="status" data-testid="toml-warning">
+      <ng-icon class="note__icon" aria-hidden="true" name="matWarningOutline" />
+      <span class="note__text">{{ warning }}</span>
+    </p>
+  }
+
+  <div class="actions">
+    <button matButton="filled" [disabled]="!output()" (click)="copy()">
+      <ng-icon name="matContentCopyOutline" />
+      Copy {{ toLabel() }}
+    </button>
+    <button matButton [disabled]="!output()" (click)="download()">
+      <ng-icon name="matDownloadOutline" />
+      Download .{{ to() }}
+    </button>
+    <app-send-to [text]="output()" from="toml-converter" />
+  </div>
+</div>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="toml-converter" />
+}

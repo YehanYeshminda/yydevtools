@@ -1463,3 +1463,70 @@ test('jsonpath-tester takes JSON from Send to, and hands its matches on', async 
 
   expectClean(watch);
 });
+
+test('toml-converter converts live, both ways, and swaps for a round trip', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'toml-converter', 'TOML Converter');
+
+  await page.getByRole('button', { name: /try an example/i }).click();
+  const output = editorByLabel(page, 'JSON output');
+  const json = JSON.parse(await editorTextWhen(output, (text) => text.includes('weather-cli')));
+  expect(json.dependencies.serde).toEqual({ version: '1.0', features: ['derive'] });
+  expect(json.bin).toEqual([{ name: 'weather', path: 'src/main.rs' }]);
+
+  // To YAML, then swap: the YAML becomes the input and converts back to TOML.
+  await page.getByRole('group', { name: 'To' }).getByRole('button', { name: 'YAML' }).click();
+  await editorTextWhen(editorByLabel(page, 'YAML output'), (text) => text.includes('name: weather-cli'));
+  await page.getByRole('button', { name: 'Swap' }).click();
+  await expect(page.getByRole('group', { name: 'From' }).getByRole('button', { name: 'YAML' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  const toml = await editorTextWhen(editorByLabel(page, 'TOML output'), (text) => text.includes('[[bin]]'));
+  expect(toml).toContain('[profile.release]');
+  expect(toml).toContain('opt-level = 3');
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Download .toml' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe('converted.toml');
+  expectClean(watch);
+});
+
+test('toml-converter names what TOML cannot hold, and where input is broken', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'toml-converter', 'TOML Converter');
+
+  await page.getByRole('group', { name: 'From' }).getByRole('button', { name: 'JSON' }).click();
+  await expect(page.getByRole('group', { name: 'To' }).getByRole('button', { name: 'TOML' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await setEditorText(editorByLabel(page, 'JSON input'), '{"name": "api", "timeout": null, "id": 9007199254740993}');
+  await expect(page.getByTestId('toml-warning')).toHaveText('TOML has no null, so "timeout" was left out.');
+  await editorTextWhen(editorByLabel(page, 'TOML output'), (text) => text.includes('name = "api"'));
+
+  await page.getByRole('group', { name: 'From' }).getByRole('button', { name: 'TOML' }).click();
+  await setEditorText(editorByLabel(page, 'TOML input'), 'a = 1\nb = \n');
+  await expect(page.getByTestId('toml-problem')).toHaveText('Invalid value (line 2, column 5)');
+  expectClean(watch);
+});
+
+test('toml-converter works out the format of text sent from another tool', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'json-formatter', 'JSON Formatter');
+  await setEditorText(editorByLabel(page, 'JSON input'), '{"server": {"port": 8080, "hosts": ["a", "b"]}}');
+  await page.getByRole('button', { name: 'Send to' }).click();
+  await page.getByRole('menuitem', { name: 'TOML Converter' }).click();
+
+  await expect(page).toHaveURL(/\/tools\/toml-converter#s=/);
+  await waitForHydration(page);
+  await expect(page.getByRole('group', { name: 'From' }).getByRole('button', { name: 'JSON' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  const toml = await editorTextWhen(editorByLabel(page, 'TOML output'), (text) => text.includes('[server]'));
+  expect(toml).toContain('port = 8080');
+  expectClean(watch);
+});

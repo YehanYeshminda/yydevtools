@@ -58,6 +58,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Number Base Converter** | Binary, octal, decimal, hex and any base up to 36, with a clickable bit view. |
 | **Base64 Converter** | Encode and decode text or files to and from Base64. |
 | **JSON ↔ CSV Converter** | Turn a JSON array into a spreadsheet-ready CSV or a CSV into JSON objects, nested fields included. |
+| **TOML Converter** | Convert TOML to JSON or YAML and back, live, with a warning wherever a value cannot carry over. |
 | **URL Encoder / Decoder** | Percent-encode or decode URLs and query values, and break a URL into its parts. |
 | **Image Compressor** | Shrink JPEG, PNG and HEIC images in bulk — by quality or to a target size, with Exif control. |
 | **Background Remover** | Cut the background out of a photo and save a transparent PNG, or put the subject on a colour. Runs in your browser. |

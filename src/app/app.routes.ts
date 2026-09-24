@@ -99,6 +99,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/toml-converter',
+    loadComponent: () =>
+      import('./tools/toml-converter/toml-converter').then((m) => m.TomlConverterTool),
+    title: 'TOML to JSON & YAML Converter — YYDevTools',
+    data: {
+      description:
+        'Convert TOML to JSON or YAML and back as you type, with warnings for nulls and other ' +
+        'values a format cannot hold. Runs in your browser — nothing is uploaded.',
+    },
+  },
+  {
     path: 'tools/url-encoder',
     loadComponent: () => import('./tools/url-encoder/url-encoder').then((m) => m.UrlEncoderTool),
     title: 'URL Encoder / Decoder — YYDevTools',

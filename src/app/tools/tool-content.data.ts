@@ -2201,6 +2201,50 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['exif-viewer', 'hash-generator', 'pdf-viewer', 'word-viewer', 'pdf-redact'],
   },
+  'toml-converter': {
+    slug: 'toml-converter',
+    intro: [
+      'TOML is the configuration format behind Cargo.toml in Rust, pyproject.toml in Python, Hugo sites and a growing number of tools that wanted something easier to read than JSON and less surprising than YAML. Sooner or later you need the same data in another shape: a TOML config as JSON for a script or an API, a YAML file moved to TOML, or a quick check of what a TOML file actually parses to.',
+      'This converter goes between TOML, JSON and YAML in any direction, live as you type. The formats do not hold exactly the same things — TOML has no null, JSON has no infinity — and most converters deal with that by quietly dropping or changing values. This one tells you: every key that cannot carry over is named in a warning, and large integers and dates come through exactly as they were written.',
+    ],
+    steps: [
+      'Choose the format you have under From, and the one you want under To.',
+      'Paste your TOML, JSON or YAML into the input; the result updates as you type.',
+      'Read any warning under the editors — it names every value the target format could not hold.',
+      'Copy or download the result, or press Swap to turn the result into the input and check the round trip.',
+    ],
+    features: [
+      'Converts TOML ↔ JSON, TOML ↔ YAML and JSON ↔ YAML, following the TOML 1.0 specification.',
+      'Warns by name for every null key that TOML cannot hold, and refuses a null inside an array rather than writing something different.',
+      'Integers larger than 2^53 keep every digit, and TOML dates and times keep the form they were written in.',
+      'Tables, arrays of tables, inline tables and dotted keys all convert both ways.',
+      'Errors point to the line and column where the input stopped making sense.',
+      'Nothing is uploaded: the conversion runs in your browser.',
+    ],
+    faq: [
+      {
+        q: 'How do I convert TOML to JSON?',
+        a: 'Leave From on TOML and To on JSON, then paste your TOML — a Cargo.toml or pyproject.toml, for example. The JSON appears next to it as you type. Tables become objects, arrays of tables ([[bin]]) become arrays of objects, and dates are written as ISO 8601 strings, since JSON has no date type.',
+      },
+      {
+        q: 'Why is a key missing after converting JSON to TOML?',
+        a: 'Because its value was null, and TOML has no way to write null — the specification leaves it out on purpose. Other converters drop those keys without saying so; this one lists every one of them in a warning under the editors. A null inside an array cannot be left out without changing the positions of the other items, so that is reported as an error instead.',
+      },
+      {
+        q: 'Can TOML have an array at the top level?',
+        a: 'No. A TOML document is always a table — a set of keys — at the top level. To convert a JSON array, put it under a key first, for example {"items": [...]}, and it becomes an array of tables in TOML.',
+      },
+      {
+        q: 'Are large numbers and dates converted exactly?',
+        a: 'Yes. TOML integers can be up to 64 bits, beyond what a JavaScript number holds exactly, so large ones are read as big integers and written back with every digit. TOML dates keep their form: a local date stays a date and an offset date-time keeps its offset. Going to JSON they become strings, because JSON has no date type.',
+      },
+      {
+        q: 'Is my file uploaded?',
+        a: 'No. Parsing and conversion run in your browser, and nothing is sent to a server. If you use Share link, the input is stored in the part of the URL after the #, which browsers do not send to the server either.',
+      },
+    ],
+    related: ['json-formatter', 'json-csv', 'jsonpath-tester', 'json-to-types'],
+  },
   'json-csv': {
     slug: 'json-csv',
     intro: [

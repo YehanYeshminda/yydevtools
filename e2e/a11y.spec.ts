@@ -654,3 +654,30 @@ for (const theme of ['dark', 'light'] as const) {
     ).toEqual([]);
   });
 }
+
+/** TOML Converter with output and a warning showing, the format chips in both states. */
+for (const theme of ['dark', 'light'] as const) {
+  test(`toml-converter has no AXE violations in the ${theme} theme with a warning`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'toml-converter', 'TOML Converter');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await page.getByRole('group', { name: 'From' }).getByRole('button', { name: 'JSON' }).click();
+    await setEditorText(editorByLabel(page, 'JSON input'), '{"name": "api", "timeout": null}');
+    await expect(page.getByTestId('toml-warning')).toBeVisible();
+
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+      `AXE violations on the TOML converter [${theme}]`,
+    ).toEqual([]);
+  });
+}

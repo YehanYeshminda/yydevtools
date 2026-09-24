@@ -30,6 +30,7 @@ export const SEND_TARGETS: readonly SendTarget[] = [
   { slug: 'markdown-editor', label: 'Markdown Editor', field: 'source' },
   { slug: 'html-preview', label: 'HTML Preview', field: 'source' },
   { slug: 'json-csv', label: 'JSON ↔ CSV', field: 'input' },
+  { slug: 'toml-converter', label: 'TOML Converter', field: 'text' },
   { slug: 'url-encoder', label: 'URL Encoder', field: 'input' },
   { slug: 'base64-converter', label: 'Base64 Converter', field: 'text' },
   { slug: 'text-cleaner', label: 'Text Cleaner', field: 'input' },
