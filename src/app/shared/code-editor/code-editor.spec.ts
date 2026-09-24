@@ -50,6 +50,7 @@ async function mount(initial = 'first'): Promise<Harness> {
           setLanguage: async (language: EditorLanguage) => void recorder.languages.push(language),
           setReadOnly: (readOnly: boolean) => recorder.readOnly.push(readOnly),
           setWrap: () => {},
+          setLabel: () => {},
           focus: () => {},
           destroy: () => {},
         }),
@@ -155,5 +156,57 @@ describe('CodeEditor', () => {
     await editor.flush();
 
     expect(editor.recorder.readOnly).toContain(true);
+  });
+});
+
+/**
+ * An input that changes while the editor chunk is still loading.
+ *
+ * Its effect runs with no handle to tell, so the change only lands if the
+ * upgrade re-applies it. It once re-applied the value alone: a share link or
+ * Send to that switched the TOML Converter from TOML to JSON left the panes
+ * named "TOML input" and "JSON output" for screen readers.
+ */
+describe('CodeEditor, changed before it mounts', () => {
+  it('gives the mounted editor the label as it is now, not as it was', async () => {
+    const labels: string[] = [];
+    let release!: () => void;
+    const loaded = new Promise<void>((resolve) => (release = resolve));
+
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: CODE_EDITOR_ENGINE,
+          useValue: async () => {
+            await loaded;
+            return {
+              setValue: () => {},
+              setLanguage: async () => {},
+              setReadOnly: () => {},
+              setWrap: () => {},
+              setLabel: (label: string) => labels.push(label),
+              focus: () => {},
+              destroy: () => {},
+            };
+          },
+        },
+      ],
+    });
+    const label = signal('TOML input');
+    const fixture = TestBed.createComponent(CodeEditor, {
+      bindings: [inputBinding('label', label), inputBinding('value', () => '')],
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    label.set('JSON input');
+    fixture.detectChanges();
+    release();
+    for (let attempt = 0; attempt < 20 && labels.length === 0; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+    }
+
+    expect(labels.at(-1)).toBe('JSON input');
   });
 });

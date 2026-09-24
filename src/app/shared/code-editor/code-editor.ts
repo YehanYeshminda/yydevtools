@@ -132,12 +132,9 @@ export class CodeEditor implements OnDestroy {
   readonly language = input<EditorLanguage>('text');
   /**
    * Accessible name. Required — neither the editor nor the fallback has a
-   * label.
-   *
-   * Keep it constant for the life of the component. CodeMirror reads it once,
-   * when it mounts, so a label bound to something that changes goes stale on
-   * the editor while staying correct on the fallback textarea — which means it
-   * looks right until the chunk lands.
+   * label. It may change (the TOML Converter's panes are named after their
+   * format); CodeMirror only reads it on mount, so changes go through a
+   * compartment like the language does.
    */
   readonly label = input.required<string>();
   readonly placeholder = input('');
@@ -183,6 +180,10 @@ export class CodeEditor implements OnDestroy {
       const wrap = this.wrap();
       this.handle?.setWrap(wrap);
     });
+    effect(() => {
+      const label = this.label();
+      this.handle?.setLabel(label);
+    });
   }
 
   ngOnDestroy(): void {
@@ -225,8 +226,14 @@ export class CodeEditor implements OnDestroy {
       return;
     }
 
-    // Anything typed into the textarea while the chunk was in flight wins.
+    // Anything that changed while the chunk was in flight wins — typing into the
+    // textarea, and inputs rebound by a share link or Send to, whose effects
+    // ran while there was no handle to tell.
     this.handle.setValue(this.value());
+    this.handle.setLabel(this.label());
+    this.handle.setReadOnly(this.readOnly());
+    this.handle.setWrap(this.wrap());
+    void this.handle.setLanguage(this.language());
     this.upgraded.set(true);
     if (hadFocus) {
       this.handle.focus();

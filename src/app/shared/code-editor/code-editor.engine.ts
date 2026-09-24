@@ -28,7 +28,7 @@ export type EditorLanguage =
   | 'typescript'
   | 'yaml'
   | 'xml'
-  // These six have no Lezer grammar of their own and come from the legacy
+  // These seven have no Lezer grammar of their own and come from the legacy
   // stream parsers instead. The highlighting is coarser — no syntax tree, so
   // no folding or indentation support — but it colours keywords, strings,
   // comments and numbers, which is the whole job for read-only generated code.
@@ -37,12 +37,14 @@ export type EditorLanguage =
   | 'go'
   | 'java'
   | 'csharp'
-  | 'kotlin';
+  | 'kotlin'
+  | 'toml';
 
 export interface EditorHandle {
   /** Replace the document, but only when it really differs from what is shown. */
   setValue(text: string): void;
   setLanguage(language: EditorLanguage): Promise<void>;
+  setLabel(label: string): void;
   setReadOnly(readOnly: boolean): void;
   setWrap(wrap: boolean): void;
   focus(): void;
@@ -205,6 +207,7 @@ export async function createEditor(options: EditorOptions): Promise<EditorHandle
   const languageSlot = new Compartment();
   const readOnlySlot = new Compartment();
   const wrapSlot = new Compartment();
+  const labelSlot = new Compartment();
 
   const extensions = [
     lineNumbers(),
@@ -226,7 +229,7 @@ export async function createEditor(options: EditorOptions): Promise<EditorHandle
     // WCAG-conformant behaviour, and it is worth more than tab-to-indent.
     keymap.of([...commands.defaultKeymap, ...commands.historyKeymap, ...search.searchKeymap]),
     placeholder(options.placeholder),
-    EditorView.contentAttributes.of({ 'aria-label': options.label }),
+    labelSlot.of(EditorView.contentAttributes.of({ 'aria-label': options.label })),
     EditorView.theme(THEME_SPEC),
     wrapSlot.of(options.wrap ? EditorView.lineWrapping : []),
     readOnlySlot.of(EditorState.readOnly.of(options.readOnly)),
@@ -251,6 +254,11 @@ export async function createEditor(options: EditorOptions): Promise<EditorHandle
   await setLanguage(options.language);
 
   return {
+    setLabel(label: string): void {
+      editor.dispatch({
+        effects: labelSlot.reconfigure(EditorView.contentAttributes.of({ 'aria-label': label })),
+      });
+    },
     setValue(text: string): void {
       // Guarding on equality is what stops the round trip — component writes to
       // the signal, the signal writes back here — from moving the cursor to the
@@ -307,6 +315,8 @@ async function loadLanguage(id: EditorLanguage) {
       return stream((await import('@codemirror/legacy-modes/mode/clike')).csharp);
     case 'kotlin':
       return stream((await import('@codemirror/legacy-modes/mode/clike')).kotlin);
+    case 'toml':
+      return stream((await import('@codemirror/legacy-modes/mode/toml')).toml);
     default:
       return null;
   }
