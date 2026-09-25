@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
@@ -565,13 +566,20 @@ test('pdf-edit zooms into the page, shows the change before saving, and takes a 
   const sheet = page.locator('.sheet__page');
   await expect(sheet).toBeVisible({ timeout: 45_000 });
 
-  /** Clicks a zoom button until the label says what it should. */
+  /**
+   * Clicks a zoom button until the label says what it should. Each click waits
+   * for the label to move first: reading it again straight away can still see
+   * the old value, and the extra click then overshoots (50% became 25% in CI).
+   */
   const zoomTo = async (label: string, button: string) => {
+    const zoom = page.getByTestId('zoom');
     for (let step = 0; step < 12; step++) {
-      if ((await page.getByTestId('zoom').textContent())?.trim() === label) break;
+      const current = (await zoom.textContent())?.trim();
+      if (current === label) break;
       await page.getByRole('button', { name: button }).click();
+      await expect(zoom).not.toHaveText(current ?? '');
     }
-    await expect(page.getByTestId('zoom')).toHaveText(label);
+    await expect(zoom).toHaveText(label);
   };
   const shownWidth = () => page.getByTestId('sheet-outer').evaluate((node) => node.clientWidth);
   const drawnWidth = () => sheet.evaluate((node) => (node as HTMLImageElement).naturalWidth);
@@ -1544,6 +1552,16 @@ test('every Open-in target has a dropzone waiting when it opens', async ({ page 
 });
 
 /**
+ * Latin text is drawn in the site's own Geist, embedded, so the image does not
+ * depend on which fonts a machine has. With system fonts it did: at 10 px,
+ * Linux's DejaVu and Liberation Sans both came back as "Emor" for "Error", where
+ * Segoe UI on Windows read cleanly.
+ */
+const GEIST = readFileSync(
+  join(__dirname, '../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2'),
+).toString('base64');
+
+/**
  * A PNG of `lines`, rendered by the browser itself, so the test knows exactly
  * what the image says. Sinhala and Tamil come from the system's Indic fonts
  * (Nirmala UI on Windows).
@@ -1551,11 +1569,13 @@ test('every Open-in target has a dropzone waiting when it opens', async ({ page 
 async function textImage(page: Page, lines: string[], px: number): Promise<Buffer> {
   const shot = await page.context().newPage();
   await shot.setContent(
-    `<body style="margin:0;background:#fff"><div id="t" style="display:inline-block;padding:12px;` +
-      `font:${px}px 'Segoe UI','Nirmala UI','Iskoola Pota',sans-serif;color:#111">` +
+    `<style>@font-face{font-family:Fixture;src:url(data:font/woff2;base64,${GEIST}) format('woff2')}</style>` +
+      `<body style="margin:0;background:#fff"><div id="t" style="display:inline-block;padding:12px;` +
+      `font:${px}px Fixture,'Nirmala UI','Iskoola Pota',sans-serif;color:#111">` +
       lines.map((line) => `<p style="margin:0 0 .4em">${line}</p>`).join('') +
       `</div></body>`,
   );
+  await shot.evaluate(() => document.fonts.ready);
   const png = await shot.locator('#t').screenshot();
   await shot.close();
   return png;
@@ -1576,8 +1596,9 @@ test('image-ocr reads a small screenshot, and never asks another site for anythi
   });
   await gotoTool(page, 'image-ocr', 'Image OCR');
 
-  // 10 px text only reads cleanly enlarged: read as it is, it came back with
-  // "£521" for 4821 and "127.00.15432" for the address (93% of characters).
+  // Small text reads cleanly only enlarged: 10 px Segoe UI read as it is came
+  // back with "£521" for 4821 and "127.00.15432" for the address. Below 14 px the
+  // embedded Geist still loses a dot even enlarged ("127.0.01"), so 14 it is.
   const png = await textImage(
     page,
     [
@@ -1585,7 +1606,7 @@ test('image-ocr reads a small screenshot, and never asks another site for anythi
       'The quick brown fox jumps over the lazy dog.',
       'Error: ECONNREFUSED 127.0.0.1:5432 (retry 3/5)',
     ],
-    10,
+    14,
   );
   await waitForHydration(page);
   await page
