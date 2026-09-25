@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
@@ -1552,16 +1551,6 @@ test('every Open-in target has a dropzone waiting when it opens', async ({ page 
 });
 
 /**
- * Latin text is drawn in the site's own Geist, embedded, so the image does not
- * depend on which fonts a machine has. With system fonts it did: at 10 px,
- * Linux's DejaVu and Liberation Sans both came back as "Emor" for "Error", where
- * Segoe UI on Windows read cleanly.
- */
-const GEIST = readFileSync(
-  join(__dirname, '../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2'),
-).toString('base64');
-
-/**
  * A PNG of `lines`, rendered by the browser itself, so the test knows exactly
  * what the image says. Sinhala and Tamil come from the system's Indic fonts
  * (Nirmala UI on Windows).
@@ -1569,13 +1558,11 @@ const GEIST = readFileSync(
 async function textImage(page: Page, lines: string[], px: number): Promise<Buffer> {
   const shot = await page.context().newPage();
   await shot.setContent(
-    `<style>@font-face{font-family:Fixture;src:url(data:font/woff2;base64,${GEIST}) format('woff2')}</style>` +
-      `<body style="margin:0;background:#fff"><div id="t" style="display:inline-block;padding:12px;` +
-      `font:${px}px Fixture,'Nirmala UI','Iskoola Pota',sans-serif;color:#111">` +
+    `<body style="margin:0;background:#fff"><div id="t" style="display:inline-block;padding:12px;` +
+      `font:${px}px 'Segoe UI','Nirmala UI','Iskoola Pota',sans-serif;color:#111">` +
       lines.map((line) => `<p style="margin:0 0 .4em">${line}</p>`).join('') +
       `</div></body>`,
   );
-  await shot.evaluate(() => document.fonts.ready);
   const png = await shot.locator('#t').screenshot();
   await shot.close();
   return png;
@@ -1597,8 +1584,10 @@ test('image-ocr reads a small screenshot, and never asks another site for anythi
   await gotoTool(page, 'image-ocr', 'Image OCR');
 
   // Small text reads cleanly only enlarged: 10 px Segoe UI read as it is came
-  // back with "£521" for 4821 and "127.00.15432" for the address. Below 14 px the
-  // embedded Geist still loses a dot even enlarged ("127.0.01"), so 14 it is.
+  // back with "£521" for 4821 and "127.00.15432" for the address. 10 px is too
+  // small to rely on, though: on Linux the fallback DejaVu Sans reads "Error" as
+  // "Emor" even enlarged. From 12 to 18 px it reads exactly, so 16 sits clear of
+  // the edge; the image is still well under 1500 px and is still enlarged.
   const png = await textImage(
     page,
     [
@@ -1606,7 +1595,7 @@ test('image-ocr reads a small screenshot, and never asks another site for anythi
       'The quick brown fox jumps over the lazy dog.',
       'Error: ECONNREFUSED 127.0.0.1:5432 (retry 3/5)',
     ],
-    14,
+    16,
   );
   await waitForHydration(page);
   await page
