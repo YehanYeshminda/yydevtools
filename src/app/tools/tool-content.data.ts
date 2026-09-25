@@ -173,6 +173,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'base64-converter',
       'toml-converter',
       'xml-viewer',
+      'ai-status',
     ],
   },
   'jsonpath-tester': {
@@ -374,7 +375,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. Anyone can decode the payload — it is only Base64, not encryption. A token is only trustworthy if its signature verifies against the correct key, which is what the verification step checks.',
       },
     ],
-    related: ['jwt-editor', 'base64-converter', 'hash-generator'],
+    related: ['jwt-editor', 'base64-converter', 'hash-generator', 'ai-status'],
   },
 
   'jwt-editor': {
@@ -718,6 +719,80 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
     ],
     related: ['timestamp-converter', 'regex-tester', 'uuid-generator'],
+  },
+
+  'ai-status': {
+    slug: 'ai-status',
+    intro: [
+      'When a request to an AI API starts failing, the first question is whether the problem is yours or the provider’s. This board answers it at a glance: the current status of OpenAI, Anthropic, Google Gemini, Mistral, Deepgram, OpenRouter and dozens more, each read from the provider’s own status page and refreshed every minute.',
+      'Star the services your product depends on and they stay at the top of the list. The Issues view shows only what is degraded, down or under maintenance right now, and each service shows its active incidents and, where known, its uptime over the last 30 days. Below the board, the badge maker gives you the code for a live status badge to put in a README or a docs page.',
+    ],
+    steps: [
+      'Search for a service, or switch to Issues to see only the ones that are not fully operational.',
+      'Star the services you use so they stay at the top; the stars are kept in this browser.',
+      'To add a badge to a README, pick a service, choose Markdown or HTML, and copy the code.',
+    ],
+    features: [
+      'Live status of dozens of AI APIs in one list, refreshed every minute.',
+      'Operational, degraded, outage and maintenance states, with active incident counts.',
+      'Uptime over the last 30 days, where the provider reports it.',
+      'Starred services pinned to the top, remembered in your browser.',
+      'Markdown or HTML for a live status badge, ready to paste.',
+      'Status data from Prismix, fetched through this site’s server; nothing about you is sent on.',
+    ],
+    sections: [
+      {
+        heading: 'Is it you or them?',
+        body: [
+          'A green board does not clear the provider, and a red one does not clear your code. Status pages are updated by people, so an incident usually starts minutes before it is posted, and a problem that affects one model, one region or only accounts on a particular tier may never be posted at all. Treat the board as one piece of evidence: if it shows an incident that matches what you see, stop debugging and wait; if it shows green, look at your own requests first.',
+          'The quickest check on your side is to send the smallest request you can — one short prompt to a small model — with the same key. If that fails the same way, the problem is the key, the account or the provider. If it works, the problem is in the larger request: its size, the model it names, or how often you are sending it.',
+        ],
+      },
+      {
+        heading: 'What 429, 500, 503 and 529 usually mean',
+        body: [
+          '429 means too many requests. Either you have hit a rate limit — requests or tokens per minute for your account — or, with some providers, you have run out of credit or quota. It is about you, not an outage, and a status page will stay green through it. Slow down, and read the error body: it usually says which limit you hit.',
+          '500 and 503 are errors on the provider’s side: something failed, or the service is temporarily unavailable. A single one is noise; a run of them is when the status board is worth a look. Anthropic also uses 529, which means its API is overloaded. That is capacity across the service rather than your account, so it tends to line up with incidents on the board.',
+        ],
+      },
+      {
+        heading: 'Retrying without making it worse',
+        body: [
+          'Retry only what can succeed on a second try: 429, 500, 503, 529 and timeouts. A 400 or a 401 will fail the same way however often you send it. When a response includes a Retry-After header, wait at least that long.',
+          'Otherwise back off exponentially — wait one second, then two, then four — and add a random amount to each wait, so that thousands of clients do not all retry in the same instant. Cap the number of attempts, and when a provider is down, fail fast and tell the user rather than letting requests pile up behind it.',
+        ],
+      },
+      {
+        heading: 'Status badges',
+        body: [
+          'A status badge is a small image that shows a service’s current state wherever it is embedded, and updates on its own because the image itself is generated live. Putting one for each provider you depend on into a README or an internal docs page gives everyone on a team the same first check when something breaks.',
+          'The badges are served by Prismix and link to its status page. Because the image loads from prismix.dev, the preview on this page loads from there too.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Where does the status come from?',
+        a: 'From Prismix, which polls the official status page of each provider and publishes the combined result. This page reads it through its own server, cached for a minute, so the list is at most about a minute behind Prismix.',
+      },
+      {
+        q: 'The board is green but my requests fail. Why?',
+        a: 'Status pages lag behind real incidents and do not list problems that affect only some models, regions or accounts. Rate limits (429) and bad requests (400) never appear on a status page at all. Check the error body and try the smallest possible request with the same key.',
+      },
+      {
+        q: 'What does "No data" mean?',
+        a: 'Prismix could not read that provider’s status page on its last check, or the provider reported a state it does not recognise. It says nothing about whether the service itself is up.',
+      },
+      {
+        q: 'Is anything about me sent to Prismix?',
+        a: 'No. The list is fetched by this site’s server and shared by every visitor, so your browser never contacts Prismix for it. The only exception is the badge preview, which is an image served by prismix.dev and is loaded only after you pick a service.',
+      },
+      {
+        q: 'Where are my starred services kept?',
+        a: 'In your browser’s local storage, on this device only. Clearing site data removes them.',
+      },
+    ],
+    related: ['jwt-decoder', 'json-formatter', 'timestamp-converter', 'cron-explainer'],
   },
 
   'qr-generator': {

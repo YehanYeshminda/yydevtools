@@ -681,6 +681,16 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/ai-status',
+    loadComponent: () => import('./tools/ai-status/ai-status').then((m) => m.AiStatusTool),
+    title: 'AI API Status — Is Claude or OpenAI Down? — YYDevTools',
+    data: {
+      description:
+        'Live status of OpenAI, Anthropic Claude, Google Gemini and dozens more AI APIs, updated ' +
+        'every minute, with README status badges. Free, no sign-up.',
+    },
+  },
+  {
     path: 'tools/qr-generator',
     loadComponent: () => import('./tools/qr-generator/qr-generator').then((m) => m.QrGeneratorTool),
     title: 'QR Code Generator — YYDevTools',

@@ -91,6 +91,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'ai-status',
+    name: 'AI API Status',
+    description:
+      'Live status of OpenAI, Anthropic, Gemini and dozens more AI APIs, with README status badges.',
+    icon: 'matMonitorHeartOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'qr-generator',
     name: 'QR Code Generator',
     description:

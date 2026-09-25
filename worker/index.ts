@@ -12,6 +12,7 @@
 import { ServiceError, serviceEndpoint, forwardToService } from './services';
 import { allowRequest } from './rate-limit';
 import { createSecret, isId, takeSecret, validateCreate, type SecretStore } from './secrets';
+import { getAiStatus } from './ai-status';
 import { getNews } from './news';
 import { cacheControlFor } from './asset-cache';
 import { canonicalPath } from './canonical-path';
@@ -293,6 +294,45 @@ async function handleNews(request: Request, env: Env, ctx: ExecutionContext): Pr
   return response;
 }
 
+/**
+ * Browser and edge both keep the AI status for a minute: the same window as
+ * Prismix's own cache, so a longer one would only serve staler data and a
+ * shorter one would only add upstream calls.
+ */
+const AI_STATUS_CACHE_CONTROL = 'public, max-age=60';
+
+/** GET /api/ai-status: the AI API status board's data, from Prismix via the edge cache. */
+async function handleAiStatus(request: Request, ctx: ExecutionContext): Promise<Response> {
+  if (request.method !== 'GET') {
+    return fail('NOT_FOUND', 'Unknown endpoint.');
+  }
+
+  // One query-free cache entry, so every visitor shares one upstream request.
+  const cache = caches.default;
+  const cacheKey = new Request(new URL('/api/ai-status', request.url).toString(), {
+    method: 'GET',
+  });
+  const hit = await cache.match(cacheKey);
+  if (hit) {
+    return hit;
+  }
+
+  const result = await getAiStatus();
+  if (!result.ok) {
+    // Not cached: the board should come back the moment Prismix does.
+    return fail(result.code, 'The AI status feed could not be reached right now.');
+  }
+
+  const response = new Response(JSON.stringify(result.payload), {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': AI_STATUS_CACHE_CONTROL,
+    },
+  });
+  ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  return response;
+}
+
 /** How long a wake is assumed to still be in effect, so repeat visits are free. */
 const WARM_TTL_SECONDS = 60;
 
@@ -438,11 +478,14 @@ async function handleApi(
     return fail('INVALID_INPUT', 'Cross-origin requests are not accepted.');
   }
 
-  // The news feed and the pre-warm are cached GETs, handled before the
-  // POST-only gate below. Neither is metered, so neither pays the per-IP
-  // limiter that guards the Fly operations.
+  // The news feed, the AI status board and the pre-warm are cached GETs,
+  // handled before the POST-only gate below. None is metered, so none pays the
+  // per-IP limiter that guards the Fly operations.
   if (path === '/api/news') {
     return handleNews(request, env, ctx);
+  }
+  if (path === '/api/ai-status') {
+    return handleAiStatus(request, ctx);
   }
   if (path === '/api/warm') {
     return handleWarm(request, env, ctx);

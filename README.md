@@ -28,6 +28,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **JSON Diff** | Compare two JSON payloads by structure: reordered keys are not changes, type changes are, and every difference comes with its path. |
 | **Regex Tester** | Test a regular expression live, with match highlighting and capture groups. |
 | **Cron Explainer** | Read a cron expression in plain English and preview its next run times. |
+| **AI API Status** | Live status of OpenAI, Anthropic, Gemini and dozens more AI APIs, with README status badges. |
 | **QR Code Generator** | QR codes for links, Wi-Fi, contact cards, events or locations — as PNG or SVG. |
 | **QR Code Reader** | Read a QR code or barcode from an image or your camera, and see the full link or Wi-Fi password before you use it. |
 | **Barcode Generator** | Code 128, EAN-13, EAN-8, UPC-A, Code 39 and ITF-14, with check digits calculated. |

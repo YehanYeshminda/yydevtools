@@ -1,0 +1,202 @@
+<app-tool-page slug="ai-status">
+  Is it your code, or is the API down? The live status of OpenAI, Anthropic, Gemini and dozens more
+  AI APIs, in one place.
+</app-tool-page>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="ai-status-search">Find a service</label>
+    <input
+      id="ai-status-search"
+      class="field__input"
+      type="search"
+      spellcheck="false"
+      autocomplete="off"
+      placeholder="anthropic, openai, gemini…"
+      [value]="query()"
+      (input)="onQuery($event)"
+    />
+  </div>
+
+  <div class="actions">
+    <div class="tabs" role="group" aria-label="Show">
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="filter() === 'all'"
+        [attr.aria-pressed]="filter() === 'all'"
+        (click)="filter.set('all')"
+      >
+        All {{ services().length || '' }}
+      </button>
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="filter() === 'issues'"
+        [attr.aria-pressed]="filter() === 'issues'"
+        (click)="filter.set('issues')"
+      >
+        Issues {{ load() === 'ready' ? issues().length : '' }}
+      </button>
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="filter() === 'starred'"
+        [attr.aria-pressed]="filter() === 'starred'"
+        (click)="filter.set('starred')"
+      >
+        Starred {{ stars().length || '' }}
+      </button>
+    </div>
+    <button matButton (click)="refresh()" [disabled]="load() === 'loading'">
+      <ng-icon name="matRefreshOutline" />
+      Refresh
+    </button>
+    @if (updatedAgo()) {
+      <span class="updated">Updated {{ updatedAgo() }}</span>
+    }
+  </div>
+
+  @if (services().length) {
+    @if (issues().length) {
+      <p class="status status--err" role="status">
+        <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+        {{ issues().length }} of {{ services().length }}
+        {{ services().length === 1 ? 'service has' : 'services have' }} issues right now.
+      </p>
+    } @else {
+      <p class="status status--ok" role="status">
+        <ng-icon class="status__icon" aria-hidden="true" name="matCheckCircleOutline" />
+        No known issues across {{ services().length }} services.
+      </p>
+    }
+
+    @if (rows().length) {
+      <ul class="board" aria-label="AI services">
+        @for (service of rows(); track service.id) {
+          <li class="svc" [class]="'svc--' + service.state">
+            <span class="svc__dot" aria-hidden="true"></span>
+            <span class="svc__body">
+              <span class="svc__name">{{ service.name }}</span>
+              <span class="svc__state">
+                {{ labels[service.state] }}
+                @if (service.description && service.description !== labels[service.state]) {
+                  · {{ service.description }}
+                }
+              </span>
+              <span class="svc__meta">
+                @if (service.activeIncidents) {
+                  <span class="svc__incidents"
+                    >{{ service.activeIncidents }} active
+                    {{ service.activeIncidents === 1 ? 'incident' : 'incidents' }}</span
+                  >
+                }
+                @if (uptime(service); as uptime) {
+                  <span>{{ uptime }}</span>
+                }
+              </span>
+            </span>
+            <button
+              type="button"
+              matIconButton
+              class="svc__star"
+              [attr.aria-pressed]="isStarred(service.id)"
+              [attr.aria-label]="(isStarred(service.id) ? 'Unstar ' : 'Star ') + service.name"
+              (click)="toggleStar(service.id)"
+            >
+              <ng-icon
+                aria-hidden="true"
+                [name]="isStarred(service.id) ? 'matStarOutline' : 'matStarBorderOutline'"
+              />
+            </button>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="status" role="status">
+        @if (filter() === 'starred' && !stars().length) {
+          Star the services you depend on and they stay at the top of the list.
+        } @else {
+          No services match.
+        }
+      </p>
+    }
+  } @else if (load() === 'unavailable') {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matCloudOffOutline" />
+      Live status could not be loaded right now. Try again in a minute.
+    </p>
+  } @else {
+    <p class="status" role="status">Loading live status…</p>
+  }
+
+  <section aria-labelledby="badge-heading">
+    <h2 id="badge-heading" class="section__title">Status badge for your README</h2>
+    <div class="badge">
+      <div class="field">
+        <label class="field__label" for="badge-service">Badge service</label>
+        <select
+          id="badge-service"
+          class="field__input"
+          [value]="badgeId()"
+          [disabled]="!services().length"
+          (change)="onBadgeService($event)"
+        >
+          <option value="">Choose a service…</option>
+          @for (service of services(); track service.id) {
+            <option [value]="service.id">{{ service.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="tabs" role="group" aria-label="Format">
+        <button
+          type="button"
+          class="tab"
+          [class.tab--active]="badgeFormat() === 'markdown'"
+          [attr.aria-pressed]="badgeFormat() === 'markdown'"
+          (click)="badgeFormat.set('markdown')"
+        >
+          Markdown
+        </button>
+        <button
+          type="button"
+          class="tab"
+          [class.tab--active]="badgeFormat() === 'html'"
+          [attr.aria-pressed]="badgeFormat() === 'html'"
+          (click)="badgeFormat.set('html')"
+        >
+          HTML
+        </button>
+      </div>
+    </div>
+
+    @if (badgeService(); as service) {
+      <div class="badge__preview">
+        <img [src]="badgeUrl()" [alt]="service.name + ' status badge'" height="20" />
+      </div>
+      <pre class="badge__code" tabindex="0" aria-label="Badge code">{{ badgeCode() }}</pre>
+      <div class="actions">
+        <button matButton (click)="copyBadge()">
+          <ng-icon name="matContentCopyOutline" />
+          Copy
+        </button>
+      </div>
+    } @else {
+      <p class="field__hint">
+        Pick a service to get the code for a live status badge. The badge is an image served by
+        Prismix, so the preview here loads from prismix.dev.
+      </p>
+    }
+  </section>
+
+  <p class="note">
+    Status data from
+    <a [href]="statusPage" target="_blank" rel="noopener">Prismix</a>, which checks each provider's
+    own status page. It refreshes every minute, and nothing about you is sent to it: the list comes
+    through this site's server.
+  </p>
+</div>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="ai-status" />
+}

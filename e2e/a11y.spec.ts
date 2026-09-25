@@ -69,6 +69,8 @@ const SURFACES: Array<[string, string]> = [
   // One template serves all three category pages; this one also carries the
   // "Uses a hosted service" badges, the smallest text on it.
   ['category page', '/document-tools'],
+  // Live data from an API: the board's state styles and its badge panel.
+  ['tool (live status)', '/tools/ai-status'],
   // An article, not just the list of them. The guides are the site's largest
   // prose surface and none was audited: the index only exercises cards. This
   // one is picked because it uses every block the model has — headings, lists,
@@ -715,5 +717,63 @@ for (const theme of ['dark', 'light'] as const) {
       ),
       `AXE violations with the Back button [${theme}]`,
     ).toEqual([]);
+  });
+}
+
+/**
+ * The AI status board with data in it. The surface above is audited with no
+ * Worker behind the dev server, so it only ever shows the "unavailable" line;
+ * the rows, their state colours, the star buttons and the badge panel only
+ * exist once the feed answers, so it is served from a fixture here.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`the AI status board with data has no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    const service = (id: string, name: string, state: string, activeIncidents = 0) => ({
+      id,
+      name,
+      state,
+      description: 'All Systems Operational',
+      activeIncidents,
+      uptime30dPct: 99.9,
+      latencyMs: 200,
+      updated: null,
+    });
+    await page.route('**/api/ai-status', (route) =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          updated: new Date().toISOString(),
+          services: [
+            service('anthropic', 'Anthropic', 'operational'),
+            service('openai', 'OpenAI', 'degraded', 1),
+            service('gemini', 'Google Gemini', 'outage', 2),
+            service('cohere', 'Cohere', 'maintenance'),
+            service('deepgram', 'Deepgram', 'unknown'),
+          ],
+        }),
+      }),
+    );
+    await page.route('https://prismix.dev/api/badge/**', (route) =>
+      route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="20"/>',
+      }),
+    );
+
+    await page.goto('/tools/ai-status');
+    await setTheme(page, theme);
+    await expect(page.locator('.svc')).toHaveCount(5);
+    await page.getByRole('button', { name: 'Star Anthropic' }).click();
+    await page.getByLabel('Badge service').selectOption('anthropic');
+    await expect(page.locator('.badge__code')).toBeVisible();
+    await expectSplashGone(page);
+
+    const results = await audit(page).analyze();
+    const summary = results.violations.map(
+      (v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`,
+    );
+    expect(summary, summary.join('\n')).toEqual([]);
   });
 }

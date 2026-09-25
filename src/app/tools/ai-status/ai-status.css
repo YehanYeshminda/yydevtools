@@ -1,0 +1,130 @@
+.updated {
+  margin-inline-start: auto;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--on-var);
+}
+
+/* The board --------------------------------------------------------------- */
+.board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+  border-left: 1px solid var(--rule);
+}
+
+.svc {
+  --state: var(--on-dim);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.8rem 0.5rem 0.8rem 1rem;
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+/* The dot carries the state, and the label beside it says it in words too. */
+.svc--operational {
+  --state: var(--success);
+}
+.svc--degraded,
+.svc--maintenance {
+  --state: var(--brand);
+}
+.svc--outage {
+  --state: var(--error);
+}
+
+.svc__dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 0.4rem;
+  border-radius: 50%;
+  background: var(--state);
+}
+
+.svc__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.svc__name {
+  font-weight: 600;
+  color: var(--on);
+}
+
+.svc__state {
+  font-size: 0.85rem;
+  color: var(--on-var);
+  overflow-wrap: anywhere;
+}
+
+.svc__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--on-dim);
+}
+
+.svc__incidents {
+  color: var(--on);
+  font-weight: 600;
+}
+
+.svc__star {
+  flex: none;
+}
+
+/* Badge panel -------------------------------------------------------------- */
+.badge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+}
+
+.badge .field {
+  flex: 1 1 14rem;
+}
+
+.badge__preview {
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.badge__code {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--on);
+}
+
+.badge__code:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .board {
+    grid-template-columns: 1fr;
+  }
+}
