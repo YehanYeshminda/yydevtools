@@ -367,6 +367,16 @@
   border-left: 2px solid var(--brand);
 }
 
+/* Inside a panel the flex gap spaces a note. A dozen tools put their privacy
+   note after the panel instead, straight in the block-level host, where nothing
+   did: it sat flush against the panel's last row. Only there, and by the
+   panel's own gap, so both placements look the same — a wider selector doubled
+   the gap for notes that follow a row of actions inside a panel. */
+:host > .panel + .note,
+:host > .actions + .note {
+  margin-top: 1.25rem;
+}
+
 /* A note's link is a short authored label, never user input, so holding it on
    one line costs nothing and keeps the click target a single rectangle instead
    of a word at the end of one line and a word at the start of the next. */

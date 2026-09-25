@@ -258,6 +258,60 @@ export async function expectNoClippedContent(page: Page): Promise<void> {
   expect(offenders, ['content overflows its box:', ...offenders].join(' | ')).toEqual([]);
 }
 
+/**
+ * Fails if two of a tool's stacked blocks — panels, notes, status lines, rows
+ * of actions, fields — touch with no space between them.
+ *
+ * A note placed after its panel rather than in it sat flush against the
+ * panel's last row on a dozen tools, and nothing noticed: the page rendered,
+ * AXE passed and nothing overflowed. Only the gap between the boxes shows it.
+ */
+export async function expectBlocksSpaced(page: Page): Promise<void> {
+  const touching = await page.evaluate(() => {
+    const host = document.querySelector('main app-tool-page')?.parentElement;
+    if (!host) return [];
+    const BLOCKS = ['note', 'status', 'actions', 'field', 'panel', 'section__title', 'split'];
+    const isBlock = (el: Element) =>
+      el.tagName === 'APP-DROPZONE' ||
+      (typeof el.className === 'string' &&
+        el.className.split(/\s+/).some((name) => BLOCKS.includes(name)));
+    const inFlow = (el: Element) => {
+      const box = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      return (
+        box.height > 0 &&
+        style.visibility !== 'hidden' &&
+        style.position !== 'absolute' &&
+        style.position !== 'fixed'
+      );
+    };
+    const label = (el: Element) =>
+      el.tagName.toLowerCase() +
+      (typeof el.className === 'string' && el.className.trim()
+        ? `.${el.className.trim().split(/\s+/)[0]}`
+        : '');
+    const bad: string[] = [];
+    const parents = [host, ...Array.from(host.querySelectorAll('*'))].filter(
+      (el) => !el.closest('app-tool-content, app-tool-page'),
+    );
+    for (const parent of parents) {
+      const kids = Array.from(parent.children).filter(inFlow);
+      for (let i = 1; i < kids.length; i++) {
+        if (!isBlock(kids[i - 1]) && !isBlock(kids[i])) continue;
+        const above = kids[i - 1].getBoundingClientRect();
+        const below = kids[i].getBoundingClientRect();
+        const stacked =
+          below.top >= above.bottom - 1 && below.left < above.right && above.left < below.right;
+        if (stacked && below.top - above.bottom < 4) {
+          bad.push(`${label(kids[i - 1])} → ${label(kids[i])}`);
+        }
+      }
+    }
+    return bad;
+  });
+  expect(touching, ['blocks touch with no space between:', ...touching].join(' | ')).toEqual([]);
+}
+
 /** Switches the colour theme the way the header's menu does. */
 export async function setTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
   await page.evaluate((value) => {

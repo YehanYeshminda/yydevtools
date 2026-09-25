@@ -4,7 +4,12 @@ import { join } from 'node:path';
 
 import { CATEGORY_META } from '../src/app/tools/tool.model';
 import { TOOLS } from '../src/app/tools/tools.data';
-import { expectClean, expectNoHorizontalOverflow, watchConsole } from './helpers';
+import {
+  expectBlocksSpaced,
+  expectClean,
+  expectNoHorizontalOverflow,
+  watchConsole,
+} from './helpers';
 
 /**
  * One pass over every tool in the catalogue.
@@ -40,6 +45,8 @@ test.describe('every tool page', () => {
 
       // The tool itself rendered something interactive.
       await expect(page.locator('.panel, app-code-editor, app-dropzone').first()).toBeVisible();
+      // ...and its blocks are spaced, not stacked flush against each other.
+      await expectBlocksSpaced(page);
 
       // Each route carries its own SEO title. Several are deliberately written
       // for search rather than matching the catalogue name ("Image ↔ PDF" ships
