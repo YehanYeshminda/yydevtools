@@ -1,3 +1,4 @@
+import { fromFragment } from './return-trip';
 import { encodeState } from './tool-state';
 
 /**
@@ -45,11 +46,12 @@ export const SEND_TARGETS: readonly SendTarget[] = [
 ];
 
 /**
- * The fragment that makes `target` open with `text` already in it, or null if
- * it will not encode (see encodeState) — the caller should then do nothing
- * rather than navigate to a tool that silently drops the payload.
+ * The fragment that makes `target` open with `text` already in it, and a way
+ * back to `from`; or null if it will not encode (see encodeState) — the caller
+ * should then do nothing rather than navigate to a tool that silently drops
+ * the payload.
  */
-export function sendFragment(target: SendTarget, text: string): string | null {
+export function sendFragment(target: SendTarget, text: string, from: string): string | null {
   const encoded = encodeState({ [target.field]: text });
-  return encoded === null ? null : `s=${encoded}`;
+  return encoded === null ? null : `s=${encoded}&${fromFragment(from)}`;
 }

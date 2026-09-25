@@ -24,8 +24,18 @@
 }
 
 /* Breadcrumb ------------------------------------------------------------ */
-.crumbs {
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
   margin-bottom: 1rem;
+}
+
+/* Back after Send to or Open in: to the tool you came from, as you left it. */
+.back {
+  flex-shrink: 0;
 }
 
 .breadcrumb {

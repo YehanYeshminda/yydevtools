@@ -25,9 +25,9 @@ export class FileHandoff {
     this.sendFile(new File([file.bytes.slice()], file.name, { type: 'application/pdf' }), slug);
   }
 
-  sendFile(file: File, slug: string): void {
+  sendFile(file: File, slug: string, fragment?: string): void {
     this.pending = file;
-    void this.router.navigate(['/tools', slug]);
+    void this.router.navigate(['/tools', slug], { fragment });
   }
 
   /** The file parked by the previous page, if this navigation brought one. */

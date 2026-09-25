@@ -1454,7 +1454,7 @@ test('base64-converter opens a decoded PDF in the PDF Viewer', async ({ page }) 
   const watch = watchConsole(page);
   await openViaBase64(page, dataUri('sample.pdf', 'application/pdf'), 'PDF Viewer');
 
-  await expect(page).toHaveURL(/\/tools\/pdf-viewer$/);
+  await expect(page).toHaveURL(/\/tools\/pdf-viewer#from=base64-converter$/);
   // The same 3-page fixture the viewer's own test drops in.
   await expect(page.getByText(/\b3\b/).first()).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('canvas, iframe, .pdf-preview').first()).toBeVisible();
@@ -1470,9 +1470,17 @@ test('base64-converter opens a decoded image in the Image Viewer', async ({ page
 
   await openViaBase64(page, dataUri('sample.png', 'image/png'), 'Image Viewer');
 
-  await expect(page).toHaveURL(/\/tools\/image-viewer$/);
+  await expect(page).toHaveURL(/\/tools\/image-viewer#from=base64-converter$/);
   await expect(page.getByTestId('image-view')).toBeVisible();
   await expect(page.getByTestId('image-dimensions')).toHaveText(size);
+
+  // Back finds the Decode file tab as it was left: the Base64, and its preview.
+  await page.getByRole('button', { name: 'Back to Base64 Converter' }).click();
+  await expect(page).toHaveURL(/\/tools\/base64-converter$/);
+  await waitForHydration(page);
+  await expect(page.getByRole('tab', { name: 'Decode file' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#b64-in')).toHaveValue(/^data:image\/png;base64,iVBOR/);
+  await expect(page.getByRole('button', { name: 'Open in' })).toBeEnabled();
 
   expectClean(watch);
 });
@@ -1777,5 +1785,70 @@ test('qr-reader scans from the camera and turns it off once it reads a code', as
       .some((track) => track.readyState === 'live'),
   );
   expect(live).toBe(false);
+  expectClean(watch);
+});
+
+/**
+ * Back after Send to or Open in, for tools whose state is an image. It cannot
+ * go in session storage, so it is handed back in memory and read again.
+ */
+test('image-ocr comes back from Send to with its image, language and text', async ({ page }) => {
+  test.setTimeout(120_000);
+  const watch = watchConsole(page);
+  await gotoTool(page, 'image-ocr', 'Image OCR');
+  await page.getByLabel('Text language').selectOption({ label: 'Sinhala + English' });
+  await pasteImage(page, await textImage(page, ['The quick brown fox jumps over the lazy dog.'], 32));
+  const text = page.getByTestId('ocr-text');
+  await expect(page.getByTestId('ocr-summary')).toContainText('confidence', { timeout: 60_000 });
+  await expect(text).toHaveValue(/quick brown fox/);
+
+  await page.getByRole('button', { name: 'Send to' }).click();
+  await page.getByRole('menuitem', { name: 'Word Counter' }).click();
+  await expect(page).toHaveURL(/\/tools\/word-counter#s=[^&]+&from=image-ocr$/);
+  await waitForHydration(page);
+  await expect(page.locator('#wc-input')).toHaveValue(/quick brown fox/);
+
+  await page.getByRole('button', { name: 'Back to Image OCR' }).click();
+  await expect(page).toHaveURL(/\/tools\/image-ocr$/);
+  await expect(page.getByLabel('Text language')).toHaveValue('sin+eng');
+  await expect(page.getByTestId('ocr-summary')).toContainText('confidence', { timeout: 60_000 });
+  await expect(text).toHaveValue(/quick brown fox/);
+  expectClean(watch);
+});
+
+test('qr-reader comes back from Send to with the codes it found', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'qr-reader', 'QR Code Reader');
+  await pasteImage(page, await qrSheet(page, ['https://example.com/menu?table=12']));
+  const link = page.getByTestId('qr-code').filter({ hasText: 'Link' });
+  await expect(link.locator('dd').first()).toHaveText('example.com');
+
+  await link.getByRole('button', { name: 'Send to' }).click();
+  await page.getByRole('menuitem', { name: 'URL Encoder' }).click();
+  await expect(page).toHaveURL(/\/tools\/url-encoder#s=[^&]+&from=qr-reader$/);
+  await waitForHydration(page);
+
+  await page.getByRole('button', { name: 'Back to QR Code Reader' }).click();
+  await expect(page).toHaveURL(/\/tools\/qr-reader$/);
+  await expect(link.locator('dd').first()).toHaveText('example.com');
+  await expect(page.getByTestId('qr-results')).toContainText('Found 1 code');
+  expectClean(watch);
+});
+
+test('image-viewer comes back from Open in with its image', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'image-viewer', 'Image Viewer');
+  await uploadFiles(page, ['sample-photo.jpg']);
+  await expect(page.getByTestId('image-view')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Open in' }).click();
+  await page.getByRole('menuitem', { name: 'QR Code Reader' }).click();
+  await expect(page).toHaveURL(/\/tools\/qr-reader#from=image-viewer$/);
+  await expect(page.getByTestId('qr-results')).toContainText('No QR code or barcode was found');
+
+  await page.getByRole('button', { name: 'Back to Image Viewer' }).click();
+  await expect(page).toHaveURL(/\/tools\/image-viewer$/);
+  await expect(page.getByTestId('image-view')).toBeVisible();
+  await expect(page.locator('.fact__name')).toHaveText('sample-photo.jpg');
   expectClean(watch);
 });

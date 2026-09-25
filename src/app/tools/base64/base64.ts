@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  afterNextRender,
   computed,
   ElementRef,
   OnDestroy,
@@ -18,6 +19,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 
 import { ClipboardService } from '../../core/clipboard.service';
 import { downloadBlob } from '../../core/download';
+import { ReturnTrip } from '../../core/return-trip';
 import { syncToolState } from '../../core/tool-state';
 import { OpenIn } from '../../shared/open-in/open-in';
 import { SendTo } from '../../shared/send-to/send-to';
@@ -66,6 +68,16 @@ const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
  * history and selection all become O(n) on every keystroke.
  */
 const INLINE_LIMIT = 20_000;
+
+const SLUG = 'base64-converter';
+
+/** The Decode file tab, held by ReturnTrip while you are in another tool. */
+interface ParkedDecode {
+  tab: number;
+  text: string;
+  fileName: string;
+  rendered: boolean;
+}
 
 /** How much of an oversized value the textarea shows instead. */
 const PREVIEW_CHARS = 2_000;
@@ -156,6 +168,7 @@ interface RenderedPreview {
 export class Base64Tool implements OnDestroy {
   private readonly snackBar = inject(MatSnackBar);
   private readonly clipboard = inject(ClipboardService);
+  private readonly trip = inject(ReturnTrip);
   /** All encoding and decoding happens off the main thread. */
   private readonly codec = new Base64WorkerClient();
 
@@ -192,7 +205,21 @@ export class Base64Tool implements OnDestroy {
     }
   }
 
+  constructor() {
+    afterNextRender(() => this.restoreDecode());
+  }
+
   ngOnDestroy(): void {
+    // The Decode file tab stays out of session storage (a photo's data URI is
+    // megabytes), so it waits in memory — Back after Open in finds it as left.
+    if (this.decodeSource.length() > 0) {
+      this.trip.park(SLUG, {
+        tab: this.tab(),
+        text: this.decodeSource.value,
+        fileName: this.decodeFileName(),
+        rendered: this.preview() !== null && !this.previewStale(),
+      } satisfies ParkedDecode);
+    }
     if (this.textTimer !== null) {
       clearTimeout(this.textTimer);
     }
@@ -477,7 +504,7 @@ export class Base64Tool implements OnDestroy {
    * the result never does — the recipient's browser recomputes it.
    */
   protected readonly shared = syncToolState({
-    key: 'base64-converter',
+    key: SLUG,
     snapshot: () => ({
       text: this.textSource.length() > INLINE_LIMIT ? '' : this.textSource.value,
       choice: this.choice(),
@@ -607,6 +634,20 @@ export class Base64Tool implements OnDestroy {
   }
 
   /** Hand a payload that decodes to a file over to the tab that can show and save it. */
+  private restoreDecode(): void {
+    const parked = this.trip.unpark(SLUG) as ParkedDecode | undefined;
+    if (!parked) {
+      return;
+    }
+    this.setDecodeSource(parked.text);
+    this.write(this.decodeArea, this.decodeSource.display);
+    this.decodeFileName.set(parked.fileName);
+    this.tab.set(parked.tab);
+    if (parked.rendered) {
+      void this.render();
+    }
+  }
+
   protected openInDecodeTab(): void {
     this.setDecodeSource(this.textSource.value);
     this.write(this.decodeArea, this.decodeSource.display);

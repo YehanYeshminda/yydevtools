@@ -4,6 +4,7 @@ import {
   editorByLabel,
   editorTextWhen,
   expectClean,
+  expectNoHorizontalOverflow,
   getEditorText,
   gotoTool,
   setEditorText,
@@ -1529,4 +1530,72 @@ test('toml-converter works out the format of text sent from another tool', async
   const toml = await editorTextWhen(editorByLabel(page, 'TOML output'), (text) => text.includes('[server]'));
   expect(toml).toContain('port = 8080');
   expectClean(watch);
+});
+
+/**
+ * Send to leaves a way back. Each tool must come back as it was left — the
+ * text, and anything changed after arriving — not as it was first opened.
+ */
+test('Send to leaves a Back button that returns each tool as it was left', async ({ page }) => {
+  const watch = watchConsole(page);
+  // The state is saved 300 ms after the last change. Someone quick sends
+  // sooner than that — made certain here by never letting that wait end — so
+  // what Back restores must have been saved on the way out.
+  await page.addInitScript(() => {
+    const wait = window.setTimeout;
+    window.setTimeout = ((handler: TimerHandler, ms?: number, ...args: unknown[]) =>
+      wait(handler, ms === 300 ? 3_600_000 : ms, ...args)) as typeof window.setTimeout;
+  });
+  await gotoTool(page, 'json-formatter', 'JSON Formatter');
+  const json = '{"server": {"port": 8080}}';
+  await setEditorText(editorByLabel(page, 'JSON input'), json);
+  await page.getByRole('button', { name: 'Send to' }).click();
+  await page.getByRole('menuitem', { name: 'TOML Converter' }).click();
+
+  await expect(page).toHaveURL(/\/tools\/toml-converter#s=[^&]+&from=json-formatter$/);
+  await waitForHydration(page);
+  // Changed after arriving, so the way back has to be to this, not the link.
+  await page.getByRole('group', { name: 'To' }).getByRole('button', { name: 'YAML' }).click();
+  await editorTextWhen(editorByLabel(page, 'YAML output'), (text) => text.includes('port: 8080'));
+  await page.getByRole('button', { name: 'Send to' }).click();
+  await page.getByRole('menuitem', { name: 'Word Counter' }).click();
+
+  await expect(page).toHaveURL(/\/tools\/word-counter#s=[^&]+&from=toml-converter$/);
+  await waitForHydration(page);
+  await expect(page.locator('#wc-input')).toHaveValue(/port: 8080/);
+
+  // Two steps back, each tool as it was left.
+  await page.getByRole('button', { name: 'Back to TOML Converter' }).click();
+  await expect(page).toHaveURL(/\/tools\/toml-converter#from=json-formatter$/);
+  await waitForHydration(page);
+  await expect(page.getByRole('group', { name: 'To' }).getByRole('button', { name: 'YAML' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await editorTextWhen(editorByLabel(page, 'YAML output'), (text) => text.includes('port: 8080'));
+
+  await page.getByRole('button', { name: 'Back to JSON Formatter' }).click();
+  await expect(page).toHaveURL(/\/tools\/json-formatter$/);
+  await waitForHydration(page);
+  await editorTextWhen(editorByLabel(page, 'JSON input'), (text) => text === json);
+  await expect(page.getByRole('button', { name: /^Back to/ })).toHaveCount(0);
+  expectClean(watch);
+});
+
+test('the Back button fits a phone, and a made-up origin shows none', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/tools/json-csv#from=markdown-editor');
+  await waitForHydration(page);
+  const back = page.getByRole('button', { name: 'Back to Markdown Editor' });
+  await expect(back).toBeVisible();
+  const box = (await back.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(375);
+  await expectNoHorizontalOverflow(page);
+
+  // The fragment is anyone's to edit: only a real tool gets a button.
+  await page.goto('/tools/word-counter#from=javascript:alert(1)');
+  await waitForHydration(page);
+  await expect(page.locator('.head__title')).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Back to/ })).toHaveCount(0);
 });

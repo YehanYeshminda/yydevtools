@@ -128,7 +128,7 @@
                 <ng-icon name="matContentCopyOutline" />
                 Copy text
               </button>
-              <app-send-to [text]="code.text" from="qr-reader" />
+              <app-send-to [text]="code.text" from="qr-reader" [returnFile]="source()?.file ?? null" />
             </div>
           </section>
         }

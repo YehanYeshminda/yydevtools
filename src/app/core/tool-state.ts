@@ -29,6 +29,7 @@
  * it survives a reload of the tab and nothing more.
  */
 import {
+  DestroyRef,
   Injector,
   afterNextRender,
   computed,
@@ -168,6 +169,15 @@ export function syncToolState<T extends object>(options: ToolStateOptions<T>): T
     },
     { injector },
   );
+
+  // Leaving the page cancels the debounced write above, which would lose the
+  // last keystrokes — and they are what Back after Send to must restore.
+  inject(DestroyRef).onDestroy(() => {
+    const json = restored() ? safeStringify(untracked(() => options.snapshot())) : null;
+    if (json !== null) {
+      writeStorage(storageKey, json, initialJson);
+    }
+  });
 
   return {
     link,

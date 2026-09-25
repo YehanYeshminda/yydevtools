@@ -50,7 +50,7 @@ export class QrReaderTool implements OnDestroy {
   private run = 0;
   private nextId = 0;
 
-  protected readonly source = signal<{ name: string; url: string } | null>(null);
+  protected readonly source = signal<{ file: File; name: string; url: string } | null>(null);
   protected readonly codes = signal<ScannedCode[] | null>(null);
   protected readonly busy = signal(false);
   protected readonly scanning = signal(false);
@@ -97,7 +97,7 @@ export class QrReaderTool implements OnDestroy {
         ? await this.codec.preview(`qr-${this.nextId++}`, file)
         : file;
       const url = URL.createObjectURL(blob);
-      this.source.set({ name: file.name, url });
+      this.source.set({ file, name: file.name, url });
       const codes = await scan(await pixels(url), { tryHarder: true, maxNumberOfSymbols: 8 });
       if (run === this.run) {
         this.codes.set(codes);

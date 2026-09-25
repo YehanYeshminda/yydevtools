@@ -4,6 +4,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { Router } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
 
+import { ReturnTrip } from '../../core/return-trip';
 import { SEND_TARGETS, sendFragment, type SendTarget } from '../../core/send-to';
 
 /**
@@ -43,11 +44,17 @@ import { SEND_TARGETS, sendFragment, type SendTarget } from '../../core/send-to'
 })
 export class SendTo {
   private readonly router = inject(Router);
+  private readonly trip = inject(ReturnTrip);
 
   /** The text to hand over. Empty disables the button. */
   readonly text = input.required<string>();
   /** This tool's slug, so it is not offered as a destination for itself. */
   readonly from = input.required<string>();
+  /**
+   * For a tool whose state is a file rather than text: the file it reloads
+   * when Back brings you here again.
+   */
+  readonly returnFile = input<File | null>(null);
 
   protected readonly targets = computed(() =>
     SEND_TARGETS.filter((target) => target.slug !== this.from()),
@@ -60,8 +67,9 @@ export class SendTo {
   );
 
   protected send(target: SendTarget): void {
-    const fragment = sendFragment(target, this.text());
+    const fragment = sendFragment(target, this.text(), this.from());
     if (fragment) {
+      this.trip.leave(this.from(), this.returnFile());
       void this.router.navigate(['/tools', target.slug], { fragment });
     }
   }

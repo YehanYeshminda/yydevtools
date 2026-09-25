@@ -95,7 +95,7 @@
         <ng-icon name="matDownloadOutline" />
         Download .txt
       </button>
-      <app-send-to [text]="text()" from="image-ocr" />
+      <app-send-to [text]="text()" from="image-ocr" [returnFile]="source()?.file ?? null" />
       <button matButton [disabled]="busy()" (click)="clear()">
         <ng-icon name="matClearOutline" />
         Clear

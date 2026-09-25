@@ -1,10 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { NgIcon } from '@ng-icons/core';
 
 import { FileHandoff } from '../../core/file-handoff';
 import { openTargets } from '../../core/open-in';
+import { ReturnTrip, fromFragment } from '../../core/return-trip';
 
 /**
  * "Open in" — the file counterpart of Send to. Hands a finished file to another
@@ -44,6 +52,7 @@ import { openTargets } from '../../core/open-in';
 })
 export class OpenIn {
   private readonly handoff = inject(FileHandoff);
+  private readonly trip = inject(ReturnTrip);
 
   /** The file's contents. Null or empty disables the button. */
   readonly bytes = input.required<Uint8Array | null>();
@@ -51,6 +60,11 @@ export class OpenIn {
   readonly mime = input.required<string>();
   /** This tool's slug, so it is not offered as a destination for itself. */
   readonly from = input.required<string>();
+  /**
+   * Set when this file is the tool's whole state (the Image Viewer), so Back
+   * hands it to the tool again. Tools with text state come back from storage.
+   */
+  readonly bringBack = input(false, { transform: booleanAttribute });
 
   protected readonly hint =
     'Opens this file in another tool. It is passed along inside your browser — nothing is uploaded.';
@@ -63,7 +77,8 @@ export class OpenIn {
     const bytes = this.bytes();
     if (bytes?.length) {
       const file = new File([bytes.slice()], this.name(), { type: this.mime() });
-      this.handoff.sendFile(file, slug);
+      this.trip.leave(this.from(), this.bringBack() ? file : null);
+      this.handoff.sendFile(file, slug, fromFragment(this.from()));
     }
   }
 }

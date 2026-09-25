@@ -2,7 +2,14 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import QRCode from 'qrcode';
 
-import { editorByLabel, gotoTool, setEditorText, setTheme, uploadFiles } from './helpers';
+import {
+  editorByLabel,
+  gotoTool,
+  setEditorText,
+  setTheme,
+  uploadFiles,
+  waitForHydration,
+} from './helpers';
 
 /**
  * CLAUDE.md sets the bar: the site must pass AXE and meet WCAG AA. The redesign
@@ -678,6 +685,32 @@ for (const theme of ['dark', 'light'] as const) {
             .join(' | ')}`,
       ),
       `AXE violations on the TOML converter [${theme}]`,
+    ).toEqual([]);
+  });
+}
+
+/** The Back button Send to leaves on the tool it opened. */
+for (const theme of ['dark', 'light'] as const) {
+  test(`a tool reached by Send to has no AXE violations in the ${theme} theme`, async ({ page }) => {
+    await page.goto('/tools/word-counter#from=json-formatter');
+    await waitForHydration(page);
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+    const back = page.getByRole('button', { name: 'Back to JSON Formatter' });
+    await expect(back).toBeVisible();
+    // The label is read against its own hover tint, not only the resting page.
+    await back.hover();
+
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+      `AXE violations with the Back button [${theme}]`,
     ).toEqual([]);
   });
 }

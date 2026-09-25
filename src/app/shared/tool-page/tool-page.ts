@@ -2,16 +2,20 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  afterNextRender,
   computed,
   inject,
   input,
+  signal,
 } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 import { RouterLink } from '@angular/router';
 
 import { FavoritesService } from '../../core/favorites.service';
+import { ReturnTrip, sentFrom } from '../../core/return-trip';
 import { StructuredDataService } from '../../core/structured-data.service';
-import { CATEGORY_META } from '../../tools/tool.model';
+import { CATEGORY_META, type Tool } from '../../tools/tool.model';
 import { TOOLS } from '../../tools/tools.data';
 
 /**
@@ -31,21 +35,29 @@ import { TOOLS } from '../../tools/tools.data';
  */
 @Component({
   selector: 'app-tool-page',
-  imports: [RouterLink, NgIcon],
+  imports: [RouterLink, NgIcon, MatButtonModule],
   template: `
-    <nav class="crumbs" aria-label="Breadcrumb">
-      <ol class="breadcrumb" [class]="'cat--' + accent()">
-        <li><a routerLink="/">All tools</a></li>
-        <li class="breadcrumb__sep" aria-hidden="true">/</li>
-        <li>
-          <a class="breadcrumb__cat" routerLink="/" [queryParams]="{ category: category() }">{{
-            category()
-          }}</a>
-        </li>
-        <li class="breadcrumb__sep" aria-hidden="true">/</li>
-        <li aria-current="page">{{ name() }}</li>
-      </ol>
-    </nav>
+    <div class="top">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <ol class="breadcrumb" [class]="'cat--' + accent()">
+          <li><a routerLink="/">All tools</a></li>
+          <li class="breadcrumb__sep" aria-hidden="true">/</li>
+          <li>
+            <a class="breadcrumb__cat" routerLink="/" [queryParams]="{ category: category() }">{{
+              category()
+            }}</a>
+          </li>
+          <li class="breadcrumb__sep" aria-hidden="true">/</li>
+          <li aria-current="page">{{ name() }}</li>
+        </ol>
+      </nav>
+      @if (backTo(); as origin) {
+        <button matButton class="back" (click)="back(origin.slug)">
+          <ng-icon name="matArrowBackOutline" />
+          Back to {{ origin.name }}
+        </button>
+      }
+    </div>
 
     <header class="head" [class]="'cat--' + accent()">
       <div class="head__icon" aria-hidden="true">
@@ -61,11 +73,16 @@ import { TOOLS } from '../../tools/tools.data';
         [class.head__fav--on]="isFavorite()"
         [attr.aria-pressed]="isFavorite()"
         [attr.aria-label]="
-          isFavorite() ? 'Remove ' + name() + ' from favourites' : 'Add ' + name() + ' to favourites'
+          isFavorite()
+            ? 'Remove ' + name() + ' from favourites'
+            : 'Add ' + name() + ' to favourites'
         "
         (click)="toggleFavorite()"
       >
-        <ng-icon aria-hidden="true" [name]="isFavorite() ? 'matStarOutline' : 'matStarBorderOutline'" />
+        <ng-icon
+          aria-hidden="true"
+          [name]="isFavorite() ? 'matStarOutline' : 'matStarBorderOutline'"
+        />
       </button>
     </header>
   `,
@@ -74,8 +91,23 @@ import { TOOLS } from '../../tools/tools.data';
 })
 export class ToolPage {
   private readonly favorites = inject(FavoritesService);
+  private readonly trip = inject(ReturnTrip);
+
+  /**
+   * The tool that sent you here with Send to or Open in. Read after hydration:
+   * the prerender has no fragment, so the button can only appear in the browser.
+   */
+  protected readonly backTo = signal<Tool | null>(null);
 
   constructor() {
+    afterNextRender(() => {
+      const origin = sentFrom(location.hash, this.slug());
+      if (origin) {
+        this.trip.arrived(this.slug(), origin.slug);
+        this.backTo.set(origin);
+      }
+    });
+
     // The tool's JSON-LD is written by <app-tool-content>, which sits in a
     // hydrate-on-interaction @defer and so usually never exists on the client —
     // its own ngOnDestroy cannot be relied on to remove the prerendered schema
@@ -101,6 +133,10 @@ export class ToolPage {
    * the server produced and the star fills in a moment later.
    */
   protected readonly isFavorite = computed(() => this.favorites.favorites().includes(this.slug()));
+
+  protected back(slug: string): void {
+    this.trip.back(slug);
+  }
 
   protected toggleFavorite(): void {
     this.favorites.toggle(this.slug());

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TOOLS } from '../tools/tools.data';
 import { SEND_TARGETS, sendFragment } from './send-to';
+import { decodeState } from './tool-state';
 
 /**
  * The guard this table was missing.
@@ -39,8 +40,8 @@ describe('SEND_TARGETS', () => {
 
   it('encodes the text under that target field', () => {
     const target = SEND_TARGETS.find((entry) => entry.slug === 'email-template')!;
-    const fragment = sendFragment(target, 'Hi Ada,');
-    expect(fragment).not.toBeNull();
-    expect(fragment!.startsWith('s=')).toBe(true);
+    const fragment = new URLSearchParams(sendFragment(target, 'Hi Ada,', 'markdown-editor')!);
+    expect(decodeState(fragment.get('s')!)).toEqual({ source: 'Hi Ada,' });
+    expect(fragment.get('from')).toBe('markdown-editor');
   });
 });

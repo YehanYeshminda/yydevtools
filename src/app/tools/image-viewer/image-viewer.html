@@ -39,7 +39,7 @@
     }
     @if (other(); as file) {
       <div class="actions">
-        <app-open-in [bytes]="file.bytes" [name]="file.name" [mime]="file.mime" from="image-viewer" />
+        <app-open-in [bytes]="file.bytes" [name]="file.name" [mime]="file.mime" from="image-viewer" bringBack />
       </div>
     }
   } @else {
@@ -140,6 +140,7 @@
         [name]="source()!.name"
         [mime]="source()!.mime"
         from="image-viewer"
+        bringBack
       />
       <button matButton (click)="clear()">
         <ng-icon name="matClearOutline" />

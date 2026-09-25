@@ -14,6 +14,7 @@ import { ClipboardService } from '../../core/clipboard.service';
 import { downloadText, fileStem } from '../../core/download';
 import { formatBytes } from '../../core/format';
 import { ImageCodecClient } from '../../core/image/image-codec.client';
+import { syncToolState } from '../../core/tool-state';
 import { Dropzone } from '../../shared/dropzone/dropzone';
 import { SendTo } from '../../shared/send-to/send-to';
 import { Spinner } from '../../shared/spinner/spinner';
@@ -66,6 +67,20 @@ export class ImageOcrTool implements OnDestroy {
   protected readonly error = signal('');
 
   protected readonly done = computed(() => this.confidence() !== null);
+
+  // Only the language: the image cannot go in storage (Back after Send to
+  // hands it over in memory instead), and it is restored before that image is
+  // read, so coming back reads it in the language it was read in.
+  protected readonly shared = syncToolState({
+    key: 'image-ocr',
+    shareable: false,
+    snapshot: () => ({ language: this.language() }),
+    restore: ({ language }) => {
+      if (OCR_LANGUAGES.some((option) => option.code === language)) {
+        this.language.set(language!);
+      }
+    },
+  });
   protected readonly fileName = computed(() => this.source()?.file.name ?? '');
 
   ngOnDestroy(): void {
@@ -218,9 +233,11 @@ export class ImageOcrTool implements OnDestroy {
   private stopWorker(): void {
     const worker = this.worker;
     this.worker = null;
-    void worker?.ready.then((live) => live.terminate()).catch(() => {
-      // Never started, or already gone.
-    });
+    void worker?.ready
+      .then((live) => live.terminate())
+      .catch(() => {
+        // Never started, or already gone.
+      });
   }
 
   private revoke(): void {
