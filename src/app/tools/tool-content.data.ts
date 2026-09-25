@@ -86,7 +86,14 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Only up to a point, and not across algorithms. P-256 is comparable to RSA 3072 despite the far smaller number, because the two rest on different mathematics. Within RSA, moving from 2048 to 3072 is a meaningful step; 3072 to 4096 much less so, for a real cost in speed.',
       },
     ],
-    related: ['jwt-decoder', 'jwt-editor', 'hash-generator', 'password-generator'],
+    related: [
+      'jwt-decoder',
+      'jwt-editor',
+      'hash-generator',
+      'password-generator',
+      'certificate-decoder',
+      'secret-link',
+    ],
   },
 
   'json-formatter': {
@@ -159,7 +166,14 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'JSONPath is a query language for JSON, similar to what XPath is for XML. It lets you select specific nodes from a large document — for example every id inside an items array — without scrolling through the whole thing.',
       },
     ],
-    related: ['jsonpath-tester', 'json-to-types', 'code-formatter', 'base64-converter'],
+    related: [
+      'jsonpath-tester',
+      'json-to-types',
+      'code-formatter',
+      'base64-converter',
+      'toml-converter',
+      'xml-viewer',
+    ],
   },
   'jsonpath-tester': {
     slug: 'jsonpath-tester',
@@ -450,7 +464,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Drop in as many files as you like and each is hashed in turn. "Download .txt" then exports them in the two-space format that sha256sum and its relatives read, so the same list can be checked on another machine with sha256sum -c.',
       },
     ],
-    related: ['jwt-decoder', 'base64-converter', 'uuid-generator'],
+    related: ['jwt-decoder', 'base64-converter', 'uuid-generator', 'certificate-decoder'],
   },
 
   'json-diff': {
@@ -576,7 +590,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Yes. The whole comparison runs locally in your browser. Neither block of text is uploaded, so it is safe for private documents and logs.',
       },
     ],
-    related: ['code-formatter', 'json-formatter', 'markdown-editor'],
+    related: ['code-formatter', 'json-formatter', 'markdown-editor', 'json-diff', 'pdf-diff'],
   },
 
   'regex-tester': {
@@ -753,7 +767,13 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Yes. The QR code is rendered locally in your browser, so the text, link or password you encode is never sent anywhere.',
       },
     ],
-    related: ['qr-reader', 'base64-converter', 'color-converter', 'uuid-generator'],
+    related: [
+      'qr-reader',
+      'base64-converter',
+      'color-converter',
+      'uuid-generator',
+      'barcode-generator',
+    ],
   },
   'qr-reader': {
     slug: 'qr-reader',
@@ -797,7 +817,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. The decoder runs in your browser as WebAssembly, served from this site, and both images and camera frames are read on your device. The camera is only switched on when you press Scan with camera, and it switches off as soon as a code is found or you press Stop.',
       },
     ],
-    related: ['qr-generator', 'image-ocr', 'url-encoder', 'image-viewer'],
+    related: ['qr-generator', 'barcode-generator', 'image-ocr', 'url-encoder', 'image-viewer'],
   },
 
   'text-cleaner': {
@@ -1435,7 +1455,13 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Because several languages permit them in numeric literals — 1_000_000 in JavaScript, Python, Rust and Java — and refusing a value you can legally paste out of your own source would be pedantry. Spaces are ignored for the same reason, since binary is often written in groups.',
       },
     ],
-    related: ['base64-converter', 'hash-generator', 'color-converter', 'timestamp-converter'],
+    related: [
+      'base64-converter',
+      'hash-generator',
+      'color-converter',
+      'timestamp-converter',
+      'unit-converter',
+    ],
   },
   'age-calculator': {
     slug: 'age-calculator',
@@ -1503,7 +1529,14 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. The calculation is a few lines of arithmetic in your browser, and a date of birth is exactly the sort of thing that should not be sent to a server to be subtracted.',
       },
     ],
-    related: ['timestamp-converter', 'cron-explainer', 'word-counter', 'qr-generator'],
+    related: [
+      'timestamp-converter',
+      'cron-explainer',
+      'word-counter',
+      'qr-generator',
+      'unit-converter',
+      'pomodoro',
+    ],
   },
   'lorem-ipsum': {
     slug: 'lorem-ipsum',
@@ -1626,7 +1659,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. The conversion is pure string manipulation that runs entirely in your browser, so nothing you type is sent anywhere.',
       },
     ],
-    related: ['regex-tester', 'json-to-types', 'code-formatter'],
+    related: ['regex-tester', 'json-to-types', 'code-formatter', 'slug-generator', 'lorem-ipsum'],
   },
 
   'sql-formatter': {
@@ -1752,7 +1785,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Yes. Formatting runs entirely in your browser. Your source is never uploaded, so proprietary code is safe to paste.',
       },
     ],
-    related: ['sql-formatter', 'json-formatter', 'json-to-types'],
+    related: ['sql-formatter', 'json-formatter', 'json-to-types', 'xml-viewer'],
   },
 
   'uuid-generator': {
@@ -1941,7 +1974,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. Reuse is the single most common way accounts are compromised, because a password exposed in one service breach is then tried everywhere else. Generate a separate password for every account and let a password manager remember them, which is also what makes long random strings practical.',
       },
     ],
-    related: ['hash-generator', 'uuid-generator', 'jwt-decoder'],
+    related: ['hash-generator', 'uuid-generator', 'jwt-decoder', 'secret-link'],
   },
 
   'color-converter': {
@@ -2003,7 +2036,13 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. All the conversions, palette generation and contrast checks run locally in your browser.',
       },
     ],
-    related: ['image-compressor', 'qr-generator', 'code-formatter'],
+    related: [
+      'image-compressor',
+      'qr-generator',
+      'code-formatter',
+      'palette-extractor',
+      'base-converter',
+    ],
   },
 
   'base64-converter': {
@@ -2131,7 +2170,13 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'At the root, so they are reachable as /favicon.ico, /site.webmanifest and so on — the head snippet uses those root paths. If you must put them in a folder, edit the paths in the snippet and inside site.webmanifest to match.',
       },
     ],
-    related: ['image-resize', 'image-converter', 'image-compressor', 'qr-generator'],
+    related: [
+      'image-resize',
+      'image-converter',
+      'image-compressor',
+      'qr-generator',
+      'palette-extractor',
+    ],
   },
   'file-inspector': {
     slug: 'file-inspector',
@@ -2306,7 +2351,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. The conversion is plain JavaScript running in your browser; nothing leaves the page. The "Copy link" button puts your input in the part of the URL that browsers never send to a server, so even sharing a link does not upload it.',
       },
     ],
-    related: ['csv-viewer', 'json-formatter', 'json-to-types', 'excel-viewer'],
+    related: ['csv-viewer', 'json-formatter', 'json-to-types', 'excel-viewer', 'toml-converter'],
   },
   'url-encoder': {
     slug: 'url-encoder',
@@ -2373,7 +2418,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. It is a transport format, not encryption — it is fully reversible, as the decode direction shows. It keeps data intact as it travels through a URL; it does not hide or protect it.',
       },
     ],
-    related: ['base64-converter', 'json-formatter', 'timestamp-converter'],
+    related: ['base64-converter', 'json-formatter', 'timestamp-converter', 'slug-generator'],
   },
 
   'csv-viewer': {
@@ -2526,7 +2571,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'It cannot be opened. A protected .docx is encrypted, so there is nothing to unzip until it is decrypted with the password — remove the protection in Word first, then open the resulting file here.',
       },
     ],
-    related: ['pdf-convert', 'pdf-viewer', 'word-counter'],
+    related: ['pdf-convert', 'pdf-viewer', 'word-counter', 'powerpoint-viewer'],
   },
 
   'excel-viewer': {
@@ -2610,7 +2655,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Up to 20 MB, which covers the overwhelming majority of real workbooks. Very large sheets will take a moment to convert and render, since the whole workbook is processed rather than streamed a page at a time.',
       },
     ],
-    related: ['csv-viewer', 'word-viewer', 'pdf-viewer'],
+    related: ['csv-viewer', 'word-viewer', 'pdf-viewer', 'powerpoint-viewer'],
   },
 
   'xml-viewer': {
@@ -2734,7 +2779,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. The decoding and encoding both run in your browser using WebAssembly, so the files never leave your device. You can confirm it by opening this page, disconnecting from the internet, and converting an image anyway — it still works.',
       },
     ],
-    related: ['image-compressor', 'exif-viewer', 'image-pdf'],
+    related: ['image-compressor', 'exif-viewer', 'image-pdf', 'video-trimmer'],
   },
 
   'background-remover': {
@@ -2803,7 +2848,13 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Files up to 20 MB, and anything longer than 4096 pixels on its long edge is scaled down to that first. The mask is 320 by 320 regardless, so the cap costs no accuracy and saves the tab from decoding several hundred megabytes of pixels.',
       },
     ],
-    related: ['image-converter', 'image-resize', 'image-compressor', 'exif-viewer'],
+    related: [
+      'image-converter',
+      'image-resize',
+      'image-compressor',
+      'exif-viewer',
+      'passport-photo',
+    ],
   },
   'passport-photo': {
     slug: 'passport-photo',
@@ -3013,7 +3064,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. Decoding, cropping, resizing and encoding all run in your browser.',
       },
     ],
-    related: ['image-compressor', 'image-converter', 'exif-viewer', 'image-pdf'],
+    related: ['image-compressor', 'image-converter', 'exif-viewer', 'image-pdf', 'passport-photo'],
   },
   'image-viewer': {
     slug: 'image-viewer',
@@ -3057,7 +3108,14 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Because the decoded bytes are something else — often a PDF, or text that was Base64-encoded. The viewer reads the type from the data itself rather than trusting a name, and offers an "Open in" menu for whatever it actually is. If it says the input is not valid Base64 at all, check that nothing was cut off when you copied it.',
       },
     ],
-    related: ['base64-converter', 'exif-viewer', 'image-converter', 'image-compressor'],
+    related: [
+      'base64-converter',
+      'exif-viewer',
+      'image-converter',
+      'image-compressor',
+      'image-ocr',
+      'qr-reader',
+    ],
   },
   'image-ocr': {
     slug: 'image-ocr',
@@ -3101,7 +3159,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Not this tool — it reads images. For a scanned PDF, use PDF OCR, which adds an invisible, searchable text layer to every page and keeps the document as a PDF. If you only need the text from one page, you can also take a screenshot of it and paste that here.',
       },
     ],
-    related: ['pdf-ocr', 'image-viewer', 'word-counter', 'text-cleaner'],
+    related: ['pdf-ocr', 'image-viewer', 'word-counter', 'text-cleaner', 'qr-reader'],
   },
   'exif-viewer': {
     slug: 'exif-viewer',
@@ -3204,7 +3262,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'A PNG with transparency is best kept as WebP, which supports an alpha channel. Converting it to JPEG would flatten the transparency onto a solid background, since JPEG has no transparency.',
       },
     ],
-    related: ['pdf-compress', 'color-converter', 'base64-converter'],
+    related: ['pdf-compress', 'color-converter', 'base64-converter', 'video-trimmer'],
   },
 
   'timestamp-converter': {
@@ -3322,7 +3380,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Yes. Because the preview updates instantly as you type, it is a good way to experiment and see exactly what each piece of syntax produces.',
       },
     ],
-    related: ['code-formatter', 'text-diff', 'json-formatter'],
+    related: ['code-formatter', 'text-diff', 'json-formatter', 'email-template'],
   },
 
   'email-template': {
@@ -3470,7 +3528,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No — it shows you how the browser renders your HTML, which is the most honest test of what a visitor would see, but it does not check the markup against the HTML specification or flag standards violations.',
       },
     ],
-    related: ['code-formatter', 'markdown-editor', 'url-encoder'],
+    related: ['code-formatter', 'markdown-editor', 'url-encoder', 'email-template', 'lorem-ipsum'],
   },
 
   'pdf-watermark': {
@@ -3532,7 +3590,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. Everything, including the preview, runs in your browser.',
       },
     ],
-    related: ['pdf-sign', 'pdf-protect', 'pdf-merge', 'pdf-organizer'],
+    related: ['pdf-sign', 'pdf-protect', 'pdf-merge', 'pdf-organizer', 'invoice-generator'],
   },
   'office-to-pdf': {
     slug: 'office-to-pdf',
@@ -3597,7 +3655,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Files up to 20 MB are accepted. Larger files are refused before any upload happens.',
       },
     ],
-    related: ['word-viewer', 'excel-viewer', 'pdf-convert', 'pdf-compress'],
+    related: ['word-viewer', 'excel-viewer', 'pdf-convert', 'pdf-compress', 'powerpoint-viewer'],
   },
   'certificate-decoder': {
     slug: 'certificate-decoder',
@@ -3844,7 +3902,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. Rendering, placement and embedding all run in your browser. Nothing leaves your device.',
       },
     ],
-    related: ['pdf-edit', 'pdf-protect', 'pdf-merge', 'pdf-organizer'],
+    related: ['pdf-edit', 'pdf-protect', 'pdf-merge', 'pdf-organizer', 'invoice-generator'],
   },
   'pdf-edit': {
     slug: 'pdf-edit',
@@ -4221,7 +4279,14 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. The original pages are copied across untouched and the recognised words are added as text that draws nothing at all, so the file renders pixel for pixel as it did before. Nothing is re-compressed and no image is re-rendered.',
       },
     ],
-    related: ['pdf-edit', 'pdf-convert', 'pdf-viewer', 'pdf-compress'],
+    related: [
+      'pdf-edit',
+      'pdf-convert',
+      'pdf-viewer',
+      'pdf-compress',
+      'image-ocr',
+      'document-scanner',
+    ],
   },
 
   'pdf-compress': {
@@ -4392,7 +4457,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. The previews are rendered by your browser and the finished PDF is assembled there too. Nothing is sent to a server at any point, which is what makes this safe for documents you would not email.',
       },
     ],
-    related: ['pdf-merge', 'pdf-split', 'pdf-compress'],
+    related: ['pdf-merge', 'pdf-split', 'pdf-compress', 'pdf-diff'],
   },
   'pdf-merge': {
     slug: 'pdf-merge',
@@ -4572,7 +4637,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. Decoding, straightening, cleaning and building the PDF all happen in your browser. The page never talks to a server for this tool.',
       },
     ],
-    related: ['pdf-ocr', 'pdf-protect', 'image-pdf', 'pdf-compress'],
+    related: ['pdf-ocr', 'pdf-protect', 'image-pdf', 'pdf-compress', 'image-ocr'],
   },
   'image-pdf': {
     slug: 'image-pdf',
@@ -4628,7 +4693,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Yes. Drag any image to a new position, or use the left and right arrows on each card, which do the same thing from the keyboard. The pages of the finished PDF follow the order shown.',
       },
     ],
-    related: ['pdf-organizer', 'image-compressor', 'pdf-merge'],
+    related: ['pdf-organizer', 'image-compressor', 'pdf-merge', 'document-scanner'],
   },
   'word-counter': {
     slug: 'word-counter',
@@ -4684,6 +4749,6 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'An emoji or an accented letter counts as one character rather than the two units it may occupy internally, which matches what you see on screen.',
       },
     ],
-    related: ['case-converter', 'markdown-editor', 'text-diff'],
+    related: ['case-converter', 'markdown-editor', 'text-diff', 'lorem-ipsum', 'pomodoro'],
   },
 };

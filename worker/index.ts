@@ -14,6 +14,7 @@ import { allowRequest } from './rate-limit';
 import { createSecret, isId, takeSecret, validateCreate, type SecretStore } from './secrets';
 import { getNews } from './news';
 import { cacheControlFor } from './asset-cache';
+import { canonicalPath } from './canonical-path';
 import { withSecurityHeaders } from './security-headers';
 import { dayKey, isBot, isPageView, recordPageView } from './stats';
 
@@ -731,12 +732,21 @@ async function route(request: Request, env: Env, ctx: ExecutionContext): Promise
   if (path === FFMPEG_CORE_PATH) {
     return handleFfmpegCore(env);
   }
+  // One URL per page: /x/ and /x/index.html move permanently to /x. See
+  // canonical-path.ts for why this is not left to the asset server's 307.
+  const canonical = canonicalPath(path);
+  if (canonical) {
+    url.pathname = canonical;
+    return Response.redirect(url.toString(), 301);
+  }
   // Every route is prerendered to its own HTML file, so a miss is a genuine
   // miss. Serve the prerendered 404 page, but with a 404 status — returning
   // the homepage with 200 (the old SPA fallback) made every bad URL a soft
-  // 404 in Search Console and is a common AdSense rejection reason.
+  // 404 in Search Console and is a common AdSense rejection reason. /404
+  // itself is a file that exists, so it is sent down the same path by name;
+  // otherwise a request for it would be the one 404 page answering 200.
   const response = await env.ASSETS.fetch(request);
-  if (response.status !== 404) {
+  if (response.status !== 404 && path !== '/404') {
     // Count the view off the response path, so the visitor never waits on it.
     // A 404 is not a page view, asset fetches are not page views, and bots are
     // not people — all three are excluded here rather than counted and filtered

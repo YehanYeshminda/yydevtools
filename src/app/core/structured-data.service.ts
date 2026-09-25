@@ -76,6 +76,8 @@ export class StructuredDataService {
         articleSection: guide.category,
         url,
         mainEntityOfPage: url,
+        // The same card image the page's og:image points at.
+        image: `${SITE_URL}/og-image.png`,
         datePublished: guide.published,
         dateModified: guide.updated,
         inLanguage: 'en',

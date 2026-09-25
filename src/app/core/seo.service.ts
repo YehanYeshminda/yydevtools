@@ -82,7 +82,9 @@ export class SeoService {
     this.meta.updateTag({ property: 'og:title', content: title });
     this.meta.updateTag({ property: 'og:description', content: description });
     this.meta.updateTag({ property: 'og:url', content: canonical });
-    this.meta.updateTag({ property: 'og:type', content: 'website' });
+    // A guide is an article (and its JSON-LD says so); every other page is a tool or a site page.
+    const type = path.startsWith('/guides/') ? 'article' : 'website';
+    this.meta.updateTag({ property: 'og:type', content: type });
     this.meta.updateTag({ property: 'og:site_name', content: SITE_NAME });
     this.meta.updateTag({ property: 'og:image', content: SOCIAL_IMAGE });
     this.meta.updateTag({ property: 'og:image:width', content: '1200' });

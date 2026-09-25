@@ -232,8 +232,8 @@ export const routes: Routes = [
     title: 'Background Remover — Transparent PNG from a photo — YYDevTools',
     data: {
       description:
-        'Remove the background from a photo and download a transparent PNG, or drop the subject ' +
-        'onto a colour. The segmentation model runs in your browser, so nothing is uploaded.',
+        'Remove the background from a photo and download a transparent PNG, or put the subject ' +
+        'on a colour. The model runs in your browser; nothing is uploaded.',
     },
   },
   {
@@ -244,14 +244,14 @@ export const routes: Routes = [
     data: {
       description:
         'Crop a photo to UK, US, EU, Indian, Canadian, Chinese, Australian or Japanese passport ' +
-        'size with head-position guides, then print one or a sheet. Runs in your browser, free.',
+        'size with head guides, then print it. Free, in your browser.',
     },
   },
   {
     path: 'tools/video-trimmer',
     loadComponent: () =>
       import('./tools/video-trimmer/video-trimmer').then((m) => m.VideoTrimmerTool),
-    title: 'Video Trimmer & GIF Maker — Cut a clip in your browser — YYDevTools',
+    title: 'Video Trimmer & GIF Maker, in your browser — YYDevTools',
     data: {
       description:
         'Trim a video, remove its sound, extract the audio as an MP3 or make a GIF. ffmpeg runs ' +
@@ -554,8 +554,8 @@ export const routes: Routes = [
     title: 'One-Time Secret Link — Share a password safely — YYDevTools',
     data: {
       description:
-        'Share a password or API key as a link that works exactly once. Encrypted in your ' +
-        'browser with AES-256-GCM; the key travels in the URL fragment and never reaches a server.',
+        'Share a password or API key as a link that works once. Encrypted in your browser with ' +
+        'AES-256-GCM; the key stays in the URL fragment, never on a server.',
     },
   },
   {
@@ -586,11 +586,11 @@ export const routes: Routes = [
     path: 'tools/file-inspector',
     loadComponent: () =>
       import('./tools/file-inspector/file-inspector').then((m) => m.FileInspectorTool),
-    title: 'What is this file? — File Inspector & Metadata Cleaner — YYDevTools',
+    title: 'File Inspector & Metadata Cleaner — YYDevTools',
     data: {
       description:
-        'Find out what a file really is from its bytes, get its MD5 and SHA checksums, see the ' +
-        'author and history a PDF or Office file carries, and download a clean copy. Nothing is uploaded.',
+        'Find out what a file really is from its bytes, get MD5 and SHA checksums, see the ' +
+        'metadata a PDF or Office file carries, and save a clean copy. No upload.',
     },
   },
   {
@@ -620,8 +620,8 @@ export const routes: Routes = [
     title: 'JSON Diff — Compare two JSON documents by structure — YYDevTools',
     data: {
       description:
-        'Semantic JSON diff: compare two JSON documents by key and value rather than by line, ' +
-        'with the path of every added, removed and changed field. Runs in your browser, free.',
+        'Compare two JSON documents by key and value rather than by line, with the path of ' +
+        'every added, removed and changed field. Runs in your browser, free.',
     },
   },
   {
@@ -668,7 +668,7 @@ export const routes: Routes = [
   {
     path: 'tools/text-cleaner',
     loadComponent: () => import('./tools/text-cleaner/text-cleaner').then((m) => m.TextCleanerTool),
-    title: 'Text Cleaner — Remove invisible characters and tidy lines — YYDevTools',
+    title: 'Text Cleaner — Remove invisible characters — YYDevTools',
     data: {
       description:
         'Clean up pasted text: remove zero-width and invisible characters, straighten curly ' +
@@ -701,7 +701,7 @@ export const routes: Routes = [
     path: 'tools/palette-extractor',
     loadComponent: () =>
       import('./tools/palette-extractor/palette-extractor').then((m) => m.PaletteExtractorTool),
-    title: 'Colour Palette Extractor — Get the Colours From an Image — YYDevTools',
+    title: 'Colour Palette Extractor — Colours From an Image — YYDevTools',
     data: {
       description:
         'Extract the dominant colours from a photo or logo as HEX, RGB, HSL and OKLCH, with the ' +
@@ -715,8 +715,8 @@ export const routes: Routes = [
     title: 'Invoice & Receipt Generator — Free PDF Invoices — YYDevTools',
     data: {
       description:
-        'Make an invoice or a receipt with a live preview and your own logo, and download it as ' +
-        'a PDF. Ten currencies, tax, line items and notes. No account, and nothing is uploaded.',
+        'Make an invoice or receipt with a live preview and your own logo, then download a PDF. ' +
+        'Ten currencies, tax, line items and notes. Nothing is uploaded.',
     },
   },
   {
@@ -768,8 +768,8 @@ export const routes: Routes = [
     title: 'Age Calculator & Date Difference — YYDevTools',
     data: {
       description:
-        'Work out an age from a date of birth, or the difference between any two dates, in ' +
-        'years, months and days and in total days, weeks, weekdays and hours. Free, in your browser.',
+        'Work out an age from a date of birth, or the time between two dates, in years, months ' +
+        'and days, or total days, weeks and hours. Free, in your browser.',
     },
   },
   {
@@ -1094,7 +1094,7 @@ export const routes: Routes = [
   {
     path: 'guides/xlsx-files-explained',
     loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
-    title: 'Inside an .xlsx file: shared strings and serial dates — YYDevTools',
+    title: 'Inside an .xlsx file: shared strings, serial dates — YYDevTools',
     data: {
       slug: 'xlsx-files-explained',
       description:
@@ -1138,7 +1138,7 @@ export const routes: Routes = [
   {
     path: 'guides/sql-dialects-explained',
     loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
-    title: 'SQL dialects: Postgres, MySQL and SQL Server compared — YYDevTools',
+    title: 'SQL dialects compared: Postgres, MySQL, SQL Server — YYDevTools',
     data: {
       slug: 'sql-dialects-explained',
       description:
