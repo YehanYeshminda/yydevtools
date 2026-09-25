@@ -57,6 +57,17 @@ describe('withSecurityHeaders', () => {
     expect(policy).not.toContain('default-src');
   });
 
+  it('lets this origin use the camera, and nothing else it has no use for', () => {
+    // The QR Code Reader scans through the camera. `camera=()` here turned it
+    // off on every page: getUserMedia failed with NotAllowedError on
+    // production and the browser never asked. The reader's e2e stubs
+    // getUserMedia and runs without this Worker, so only this test pins it.
+    const policy = SECURITY_HEADERS['Permissions-Policy'];
+    expect(policy).toBe('camera=(self), microphone=(), geolocation=(), payment=(), usb=()');
+    expect(policy).not.toContain('camera=()');
+    expect(policy).not.toContain('camera=*');
+  });
+
   it('does not preload HSTS', () => {
     // Preloading is effectively irreversible and is the domain owner's call.
     expect(SECURITY_HEADERS['Strict-Transport-Security']).not.toContain('preload');

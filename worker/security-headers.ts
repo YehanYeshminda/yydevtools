@@ -48,12 +48,22 @@ export const SECURITY_HEADERS: Record<string, string> = {
   'X-Frame-Options': 'SAMEORIGIN',
 
   /**
-   * None of these tools needs a camera, a microphone, a location or a payment
-   * sheet, and saying so means an injected script cannot ask on our behalf.
-   * Anything not listed keeps its browser default, which is why the clipboard
-   * — which the copy buttons do use — is absent.
+   * The camera is allowed for this origin only: the QR Code Reader scans
+   * through it. `camera=()` here once switched it off for every page, and the
+   * reader's "Scan with camera" failed with NotAllowedError on production
+   * without the browser ever asking. The e2e did not notice, because it stubs
+   * getUserMedia and runs without the Worker in front. `(self)` still refuses
+   * it to any cross-origin frame.
+   *
+   * No tool needs a microphone, a location or a payment sheet, and saying so
+   * means an injected script cannot ask on our behalf. Anything not listed
+   * keeps its browser default, which is why the clipboard (the copy buttons
+   * use it) is absent.
+   *
+   * public/_headers repeats this value for the paths the Worker never sees.
+   * Change both together.
    */
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  'Permissions-Policy': 'camera=(self), microphone=(), geolocation=(), payment=(), usb=()',
 };
 
 /**

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { diffLines } from './diff';
+import { diffAlgorithm, diffLines } from './diff';
 
 describe('diffLines', () => {
   it('reports two identical inputs as all equal', () => {
@@ -72,14 +72,19 @@ describe('diffLines', () => {
   });
 
   // Measured in Node: the exact table does this in ~80 ms, Myers in ~1 s — which
-  // is why the two are combined rather than one swapped for the other.
+  // is why the two are combined rather than one swapped for the other. It asks
+  // which path runs instead of timing it: a 400 ms budget failed on a loaded
+  // machine (471–686 ms) while the table path was still the one taken.
   it('stays on the fast exact path for a mid-sized, heavily edited file', () => {
     const left = Array.from({ length: 3_900 }, (_, i) => `l${i}`);
     const right = left.map((line, i) => (i % 2 ? `x${i}` : line));
-    const started = performance.now();
+    expect(diffAlgorithm(left.length, right.length)).toBe('table');
     const { stats } = diffLines(left.join('\n'), right.join('\n'));
-    expect(performance.now() - started).toBeLessThan(400);
     expect(stats).toEqual({ added: 1_950, removed: 1_950, unchanged: 1_950 });
+  });
+
+  it('hands two sides too big for the table to Myers', () => {
+    expect(diffAlgorithm(20_000, 20_000)).toBe('myers');
   });
 
   it('still produces a valid diff for two large, entirely different files', () => {

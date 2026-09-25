@@ -130,6 +130,11 @@ function myersRuns(a: string[], b: string[]): Run[] {
   );
 }
 
+/** Which algorithm {@link diffLines} runs for sides of these line counts. */
+export function diffAlgorithm(leftLines: number, rightLines: number): 'table' | 'myers' {
+  return (leftLines + 1) * (rightLines + 1) <= MAX_TABLE_CELLS ? 'table' : 'myers';
+}
+
 export function diffLines(
   original: string,
   changed: string,
@@ -141,7 +146,7 @@ export function diffLines(
   const right = rightText.map((line) => normalise(line, options));
 
   const changes =
-    (left.length + 1) * (right.length + 1) <= MAX_TABLE_CELLS
+    diffAlgorithm(left.length, right.length) === 'table'
       ? lcsRuns(left, right)
       : myersRuns(left, right);
 

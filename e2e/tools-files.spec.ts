@@ -1771,6 +1771,20 @@ test('qr-reader scans from the camera and turns it off once it reads a code', as
   await gotoTool(page, 'qr-reader', 'QR Code Reader');
   await waitForHydration(page);
 
+  // The stub above takes the place of getUserMedia, so it would work even where
+  // the page's Permissions-Policy forbids the camera. That is how `camera=()` in
+  // the Worker's headers once shipped: the button failed for every visitor on
+  // production while this test passed. Ask the document itself. Chromium has
+  // `featurePolicy`; an engine without it proves nothing, so it is skipped.
+  const cameraAllowed = await page.evaluate(() => {
+    const policy = (document as unknown as { featurePolicy?: { allowsFeature(f: string): boolean } })
+      .featurePolicy;
+    return policy ? policy.allowsFeature('camera') : null;
+  });
+  if (cameraAllowed !== null) {
+    expect(cameraAllowed, 'Permissions-Policy blocks the camera on this page').toBe(true);
+  }
+
   await page.getByRole('button', { name: 'Scan with camera' }).click();
   const found = page.getByTestId('qr-code');
   await expect(found).toContainText('Phone number');
