@@ -43,6 +43,8 @@ const TOOLS_BY_SLUG = new Map(TOOLS.map((tool) => [tool.slug, tool]));
 interface CategoryLink {
   name: string;
   icon: string;
+  /** The category's landing page, e.g. /developer-tools. */
+  path: string;
   count: number;
 }
 
@@ -53,6 +55,7 @@ interface CategoryLink {
 const CATEGORY_LINKS: readonly CategoryLink[] = TOOL_CATEGORIES.map((category) => ({
   name: category,
   icon: CATEGORY_META[category].icon,
+  path: CATEGORY_META[category].path,
   count: TOOLS.filter((tool) => tool.category === category).length,
 }));
 

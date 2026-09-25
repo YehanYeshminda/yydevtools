@@ -45,3 +45,15 @@ test('a tool page keeps its masthead and controls inside the viewport', async ({
   await expect(page.locator('app-dropzone, input[type="file"]').first()).toBeAttached();
   await expectNoHorizontalOverflow(page);
 });
+
+test('the category pages collapse to one column without sideways scroll', async ({ page }) => {
+  for (const path of ['/developer-tools', '/converter-tools', '/document-tools']) {
+    await page.goto(path);
+    await expect(page.locator('h1')).toBeVisible();
+    const columns = await page
+      .locator('.tools')
+      .evaluate((list) => getComputedStyle(list).gridTemplateColumns.split(' ').length);
+    expect(columns, path).toBe(1);
+    await expectNoHorizontalOverflow(page);
+  }
+});

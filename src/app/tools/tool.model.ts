@@ -13,16 +13,35 @@ export interface Tool {
 }
 
 /**
- * How each category presents itself: the modifier suffix for its accent colour
- * and the glyph that stands for it.
+ * How each category presents itself: the modifier suffix for its accent colour,
+ * the glyph that stands for it, and the name and path of its landing page.
  *
- * It lives beside the model rather than in a component because two places now
- * render categories — the homepage sections and the header's Browse menu — and
- * a category that wore different icons in the menu and on the page it links to
- * would read as two different things.
+ * It lives beside the model rather than in a component because several places
+ * render categories — the homepage sections, the header's Browse menu, a tool's
+ * breadcrumb and the landing pages themselves — and a category that wore
+ * different icons, or linked somewhere different, in each would read as several
+ * different things.
  */
-export const CATEGORY_META: Record<ToolCategory, { accent: string; icon: string }> = {
-  Developer: { accent: 'dev', icon: 'matTerminalOutline' },
-  Converter: { accent: 'conv', icon: 'matSyncAltOutline' },
-  Document: { accent: 'doc', icon: 'matDescriptionOutline' },
+export const CATEGORY_META: Record<
+  ToolCategory,
+  { accent: string; icon: string; heading: string; path: string }
+> = {
+  Developer: {
+    accent: 'dev',
+    icon: 'matTerminalOutline',
+    heading: 'Developer tools',
+    path: '/developer-tools',
+  },
+  Converter: {
+    accent: 'conv',
+    icon: 'matSyncAltOutline',
+    heading: 'Converters',
+    path: '/converter-tools',
+  },
+  Document: {
+    accent: 'doc',
+    icon: 'matDescriptionOutline',
+    heading: 'Document tools',
+    path: '/document-tools',
+  },
 };

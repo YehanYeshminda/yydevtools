@@ -20,10 +20,13 @@ const OUT_DIR = 'dist/yydevtools/browser';
  */
 const EXCLUDED = new Set(['/404', '/news']);
 
-/** Home first, then tools, then the rest — purely for a readable file. */
+/** The category landing pages — the `path`s in CATEGORY_META (src/app/tools/tool.model.ts). */
+const CATEGORY_PAGES = new Set(['/developer-tools', '/converter-tools', '/document-tools']);
+
+/** Home first, then tools and their category pages, then the rest — purely for a readable file. */
 function priorityFor(path) {
   if (path === '/') return '1.0';
-  if (path.startsWith('/tools/')) return '0.8';
+  if (path.startsWith('/tools/') || CATEGORY_PAGES.has(path)) return '0.8';
   return '0.5';
 }
 

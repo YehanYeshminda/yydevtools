@@ -224,18 +224,12 @@
         <div class="browse-menu__group" cdkMenuGroup aria-label="Categories">
           <p class="browse-menu__label" aria-hidden="true">Categories</p>
           @for (category of categoryLinks; track category.name) {
-            <a
-              class="browse-menu__item"
-              cdkMenuItem
-              routerLink="/"
-              [queryParams]="{ category: category.name }"
-            >
+            <a class="browse-menu__item" cdkMenuItem [routerLink]="category.path">
               <ng-icon class="browse-menu__icon" aria-hidden="true" [name]="category.icon" />
               <span class="browse-menu__name">{{ category.name }}</span>
               <span class="browse-menu__count">{{ category.count }}</span>
             </a>
           }
-          <!-- No `category` param at all, which is how the homepage spells "All". -->
           <a class="browse-menu__item" cdkMenuItem routerLink="/">
             <ng-icon class="browse-menu__icon" aria-hidden="true" name="matAppsOutline" />
             <span class="browse-menu__name">All tools</span>

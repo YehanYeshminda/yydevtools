@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test';
 
 import { GUIDES, GUIDES_BY_TOOL } from '../src/app/guides/guides.data';
+import { CATEGORY_META } from '../src/app/tools/tool.model';
+import { HOSTED_SLUGS, TOOLS, TOOL_CATEGORIES } from '../src/app/tools/tools.data';
 import { expectClean, watchConsole } from './helpers';
 
-/** Guides, news and the static pages — everything that is prose rather than UI. */
+/** Guides, category pages, news and the static pages — everything that is prose rather than UI. */
 
 test('guides index lists every guide and filters by category', async ({ page }) => {
   const watch = watchConsole(page);
@@ -34,6 +36,52 @@ test('every guide route resolves', async ({ page }) => {
     const response = await page.request.get(`/guides/${guide.slug}`);
     expect(response.status(), `${guide.slug} responded ${response.status()}`).toBeLessThan(400);
   }
+});
+
+for (const category of TOOL_CATEGORIES) {
+  const { heading, path } = CATEGORY_META[category];
+  const tools = TOOLS.filter((tool) => tool.category === category);
+
+  test(`${path} lists every ${category} tool, and only those`, async ({ page }) => {
+    const watch = watchConsole(page);
+    await page.goto(path);
+
+    await expect(page.locator('h1')).toHaveText(heading);
+    await expect(page.locator('.breadcrumb [aria-current="page"]')).toHaveText(heading);
+
+    const list = page.locator('.tools');
+    const hrefs = await list
+      .locator('a')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
+    expect(hrefs).toEqual(tools.map((tool) => `/tools/${tool.slug}`));
+
+    // The hosted-service badge is derived, so it has to agree with the list it comes from.
+    const hosted = tools.filter((tool) => HOSTED_SLUGS.includes(tool.slug));
+    await expect(list.getByText('Uses a hosted service')).toHaveCount(hosted.length);
+
+    // The structured data lists the same tools, in the same order.
+    const graph = JSON.parse(
+      (await page.locator('script[data-page-jsonld]').textContent()) ?? '{}',
+    )['@graph'];
+    const listing = graph.find((node: { '@type': string }) => node['@type'] === 'CollectionPage');
+    expect(listing.mainEntity.itemListElement.map((item: { url: string }) => item.url)).toEqual(
+      tools.map((tool) => `https://yydevtools.com/tools/${tool.slug}`),
+    );
+
+    expectClean(watch);
+  });
+}
+
+test('the homepage links each category section to its landing page', async ({ page }) => {
+  await page.goto('/');
+  for (const category of TOOL_CATEGORIES) {
+    await expect(
+      page.locator(`.section__more[href="${CATEGORY_META[category].path}"]`),
+    ).toHaveCount(1);
+  }
+  await page.locator('.section__more[href="/converter-tools"]').click();
+  await expect(page).toHaveURL(/\/converter-tools$/);
+  await expect(page.locator('h1')).toHaveText('Converters');
 });
 
 test('news page renders without error', async ({ page }) => {

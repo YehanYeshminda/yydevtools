@@ -1,7 +1,7 @@
 import { DOCUMENT, Injectable, inject } from '@angular/core';
 
 import type { Guide } from '../guides/guide.model';
-import type { Tool } from '../tools/tool.model';
+import { CATEGORY_META, type Tool, type ToolCategory } from '../tools/tool.model';
 import type { ToolContent } from '../tools/tool-content.model';
 import { SITE_URL } from './seo.service';
 
@@ -45,7 +45,13 @@ export class StructuredDataService {
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'All tools', item: `${SITE_URL}/` },
-          { '@type': 'ListItem', position: 2, name: tool.name, item: url },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: CATEGORY_META[tool.category].heading,
+            item: SITE_URL + CATEGORY_META[tool.category].path,
+          },
+          { '@type': 'ListItem', position: 3, name: tool.name, item: url },
         ],
       },
     ];
@@ -154,6 +160,38 @@ export class StructuredDataService {
             url: `${SITE_URL}/guides/${guide.slug}`,
           })),
         },
+      },
+    ]);
+  }
+
+  /** Replace the page's structured data with a listing graph for one category page. */
+  setCategoryPage(category: ToolCategory, description: string, tools: readonly Tool[]): void {
+    const { heading, path } = CATEGORY_META[category];
+    const url = SITE_URL + path;
+
+    this.set([
+      {
+        '@type': 'CollectionPage',
+        name: `${heading} — YYDevTools`,
+        url,
+        description,
+        isPartOf: { '@id': `${SITE_URL}/#website` },
+        mainEntity: {
+          '@type': 'ItemList',
+          itemListElement: tools.map((tool, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: tool.name,
+            url: `${SITE_URL}/tools/${tool.slug}`,
+          })),
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'All tools', item: `${SITE_URL}/` },
+          { '@type': 'ListItem', position: 2, name: heading, item: url },
+        ],
       },
     ]);
   }

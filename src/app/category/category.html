@@ -1,0 +1,51 @@
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumb">
+    <li><a routerLink="/">All tools</a></li>
+    <li class="breadcrumb__sep" aria-hidden="true">/</li>
+    <li aria-current="page">{{ heading }}</li>
+  </ol>
+</nav>
+
+<header class="head" [class]="'cat--' + accent">
+  <p class="head__eyebrow">{{ category }} · {{ tools.length }} tools</p>
+  <h1 class="head__title">{{ heading }}</h1>
+  <p class="head__lead">{{ copy.lead }}</p>
+  <p class="head__note">
+    <strong>{{ localCount }} of {{ tools.length }}</strong> run entirely in this tab.
+    <a class="head__link" routerLink="/privacy">How your files are handled</a>
+  </p>
+</header>
+
+<ul class="tools" role="list" [class]="'cat--' + accent">
+  @for (tool of tools; track tool.slug) {
+    <li class="tool">
+      <a class="tool__link" [routerLink]="['/tools', tool.slug]">
+        <span class="tool__sig" aria-hidden="true"><ng-icon [name]="tool.icon" /></span>
+        <span class="tool__body">
+          <h2 class="tool__name">{{ tool.name }}</h2>
+          <span class="tool__desc">{{ tool.description }}</span>
+          @if (isHosted(tool.slug)) {
+            <span class="tool__badge">Uses a hosted service</span>
+          }
+        </span>
+      </a>
+    </li>
+  }
+</ul>
+
+<section class="about" aria-labelledby="about-category">
+  <h2 id="about-category" class="about__title">About these tools</h2>
+  @for (paragraph of copy.about; track $index) {
+    <p class="about__p">{{ paragraph }}</p>
+  }
+
+  <h2 class="about__title">More tools</h2>
+  <p class="about__p">
+    @for (other of others; track other.path; let last = $last) {
+      <a class="about__link" [routerLink]="other.path">{{ other.heading }}</a
+      >{{ last ? '' : ', ' }}
+    }
+    — or <a class="about__link" routerLink="/">every tool on one page</a>, and the
+    <a class="about__link" routerLink="/guides">guides</a> that explain the ideas behind them.
+  </p>
+</section>

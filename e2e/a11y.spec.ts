@@ -66,6 +66,9 @@ const SURFACES: Array<[string, string]> = [
   // none of which the other two tool surfaces have.
   ['tool (live preview)', '/tools/invoice-generator'],
   ['guides index', '/guides'],
+  // One template serves all three category pages; this one also carries the
+  // "Uses a hosted service" badges, the smallest text on it.
+  ['category page', '/document-tools'],
   // An article, not just the list of them. The guides are the site's largest
   // prose surface and none was audited: the index only exercises cards. This
   // one is picked because it uses every block the model has — headings, lists,

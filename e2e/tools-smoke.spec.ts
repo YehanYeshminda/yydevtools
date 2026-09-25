@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { CATEGORY_META } from '../src/app/tools/tool.model';
 import { TOOLS } from '../src/app/tools/tools.data';
 import { expectClean, expectNoHorizontalOverflow, watchConsole } from './helpers';
 
@@ -32,7 +33,9 @@ test.describe('every tool page', () => {
       // Breadcrumb: All tools / Category / This tool.
       const crumbs = page.locator('.breadcrumb');
       await expect(crumbs.getByRole('link', { name: 'All tools' })).toBeVisible();
-      await expect(crumbs.getByRole('link', { name: tool.category })).toBeVisible();
+      await expect(
+        crumbs.getByRole('link', { name: CATEGORY_META[tool.category].heading }),
+      ).toHaveAttribute('href', CATEGORY_META[tool.category].path);
       await expect(crumbs.locator('[aria-current="page"]')).toHaveText(tool.name);
 
       // The tool itself rendered something interactive.
@@ -63,12 +66,12 @@ test.describe('every tool page', () => {
     }
   });
 
-  test('the breadcrumb category link filters the home grid', async ({ page }) => {
+  test('the breadcrumb category link opens the category page', async ({ page }) => {
     await page.goto('/tools/pdf-merge');
-    await page.locator('.breadcrumb').getByRole('link', { name: 'Document' }).click();
+    await page.locator('.breadcrumb').getByRole('link', { name: 'Document tools' }).click();
 
-    await expect(page).toHaveURL(/category=Document/);
-    await expect(page.locator('.work__title')).toContainText('Documents');
+    await expect(page).toHaveURL(/\/document-tools$/);
+    await expect(page.locator('h1')).toHaveText('Document tools');
   });
 
   test('favouriting from a tool page shows up on the home rail', async ({ page }) => {

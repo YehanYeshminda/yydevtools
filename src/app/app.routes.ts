@@ -57,6 +57,41 @@ export const routes: Routes = [
         'GitHub issue to report a bug or suggest a new tool.',
     },
   },
+  // Category landing pages. One component; `data.category` picks the category,
+  // and CATEGORY_META in tool.model.ts holds the path every link to them uses.
+  {
+    path: 'developer-tools',
+    loadComponent: () => import('./category/category').then((m) => m.CategoryPage),
+    title: 'Free Developer Tools — JSON, JWT, Hash & More — YYDevTools',
+    data: {
+      category: 'Developer',
+      description:
+        'Free developer tools that run in your browser: format JSON, decode JWTs, hash text, ' +
+        'test regular expressions, explain cron and generate UUIDs and passwords.',
+    },
+  },
+  {
+    path: 'converter-tools',
+    loadComponent: () => import('./category/category').then((m) => m.CategoryPage),
+    title: 'Free Online Converters — Images, Base64, Units — YYDevTools',
+    data: {
+      category: 'Converter',
+      description:
+        'Free converters that run in your browser: images between HEIC, JPEG, PNG, WebP and ' +
+        'AVIF, Base64, URL encoding, JSON to CSV, TOML, timestamps and units.',
+    },
+  },
+  {
+    path: 'document-tools',
+    loadComponent: () => import('./category/category').then((m) => m.CategoryPage),
+    title: 'Free PDF & Document Tools — Merge, Sign, Edit — YYDevTools',
+    data: {
+      category: 'Document',
+      description:
+        'Free PDF and document tools: merge, split, compress, sign, redact and edit PDFs, and ' +
+        'view Word, Excel and PowerPoint files. Most run in your browser.',
+    },
+  },
   {
     path: 'tools/base64-converter',
     loadComponent: () => import('./tools/base64/base64').then((m) => m.Base64Tool),

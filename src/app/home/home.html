@@ -71,6 +71,9 @@
             <div class="section__head">
               <h2 class="section__tag" [id]="'cat-' + group.accent">{{ group.title }}</h2>
               <span class="section__count">{{ group.tools.length }} of {{ group.total }}</span>
+              <a class="section__more" [routerLink]="group.path"
+                >All {{ group.heading | lowercase }} →</a
+              >
             </div>
 
             <div class="grid">

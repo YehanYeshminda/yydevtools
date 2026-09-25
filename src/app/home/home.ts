@@ -9,6 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { LowerCasePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
@@ -37,6 +38,9 @@ interface ToolGroup {
   /** Modifier suffix for the section's accent colour. */
   accent: string;
   icon: string;
+  /** The category's landing page, linked from the section head. */
+  heading: string;
+  path: string;
   /** How many tools the category holds in total, for the "X of Y" count. */
   total: number;
   tools: CardTool[];
@@ -59,7 +63,7 @@ const CATEGORY_TITLES: Record<ToolCategory, string> = {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, NgIcon, AdSlot],
+  imports: [RouterLink, NgIcon, AdSlot, LowerCasePipe],
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

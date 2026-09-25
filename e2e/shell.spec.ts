@@ -52,13 +52,13 @@ test.describe('app shell', () => {
     await expect(menu.getByRole('menuitem', { name: /All tools/ })).toBeVisible();
   });
 
-  test('Browse menu navigates to a filtered home', async ({ page }) => {
+  test('Browse menu opens a category page', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /^Browse/ }).click();
     await page.getByRole('menuitem', { name: /Document/ }).click();
 
-    await expect(page).toHaveURL(/category=Document/);
-    await expect(page.locator('.work__title')).toContainText('Documents');
+    await expect(page).toHaveURL(/\/document-tools$/);
+    await expect(page.locator('h1')).toHaveText('Document tools');
   });
 
   test('theme menu switches the painted theme, and the choice survives a reload', async ({

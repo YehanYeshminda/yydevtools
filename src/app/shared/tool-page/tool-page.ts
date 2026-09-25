@@ -43,8 +43,8 @@ import { TOOLS } from '../../tools/tools.data';
           <li><a routerLink="/">All tools</a></li>
           <li class="breadcrumb__sep" aria-hidden="true">/</li>
           <li>
-            <a class="breadcrumb__cat" routerLink="/" [queryParams]="{ category: category() }">{{
-              category()
+            <a class="breadcrumb__cat" [routerLink]="categoryMeta().path">{{
+              categoryMeta().heading
             }}</a>
           </li>
           <li class="breadcrumb__sep" aria-hidden="true">/</li>
@@ -124,8 +124,10 @@ export class ToolPage {
   protected readonly name = computed(() => this.tool()?.name ?? '');
   protected readonly icon = computed(() => this.tool()?.icon ?? 'matBoltOutline');
   protected readonly category = computed(() => this.tool()?.category ?? 'Developer');
+  /** The category's accent (dev/conv/doc), and the name and path of its landing page. */
+  protected readonly categoryMeta = computed(() => CATEGORY_META[this.category()]);
   /** Modifier suffix (dev/conv/doc) that hands the masthead its accent trio. */
-  protected readonly accent = computed(() => CATEGORY_META[this.category()].accent);
+  protected readonly accent = computed(() => this.categoryMeta().accent);
 
   /**
    * Starts false on every page, matching the prerendered HTML — the service
