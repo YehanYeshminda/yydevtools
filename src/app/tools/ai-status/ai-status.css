@@ -85,6 +85,76 @@
   flex: none;
 }
 
+.svc__note {
+  font-size: 0.8rem;
+  color: var(--on-var);
+}
+
+.svc__history summary {
+  width: fit-content;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+/* Incidents: in a service's history and across providers ------------------ */
+.incidents {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.incidents--timeline {
+  margin-bottom: 0.75rem;
+}
+
+.incident {
+  --impact: var(--on-dim);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.6rem;
+  padding-inline-start: 0.6rem;
+  border-inline-start: 3px solid var(--impact);
+  font-size: 0.85rem;
+}
+
+.incident--minor,
+.incident--maintenance {
+  --impact: var(--brand);
+}
+.incident--major,
+.incident--critical {
+  --impact: var(--error);
+}
+
+.incident__service {
+  font-weight: 600;
+  color: var(--on);
+}
+
+.incident__impact {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--on-var);
+}
+
+.incident__name {
+  min-width: 0;
+  color: var(--on);
+  overflow-wrap: anywhere;
+}
+
+.incident__when {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--on-dim);
+}
+
 /* Badge panel -------------------------------------------------------------- */
 .badge {
   display: flex;
@@ -106,7 +176,13 @@
   background: var(--surface);
 }
 
-.badge__code {
+/* The dark badge is drawn for dark pages, so it is previewed on one. */
+.badge__preview--dark {
+  background: #0d1117;
+}
+
+.badge__code,
+.mcp__code {
   margin: 0;
   padding: 0.75rem 0.9rem;
   border: 1px solid var(--rule);
@@ -118,7 +194,8 @@
   color: var(--on);
 }
 
-.badge__code:focus-visible {
+.badge__code:focus-visible,
+.mcp__code:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }

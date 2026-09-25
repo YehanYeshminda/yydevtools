@@ -2,6 +2,16 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { expectClean, gotoTool, waitForHydration, watchConsole } from './helpers';
 
+const HOUR = 3_600_000;
+const iso = (hoursAgo: number) => new Date(Date.now() - hoursAgo * HOUR).toISOString();
+const incident = (name: string, hoursAgo: number, impact = 'minor', lasted: number | null = 1) => ({
+  name,
+  impact,
+  started: iso(hoursAgo),
+  resolved: lasted === null ? null : iso(hoursAgo - lasted),
+  link: `https://stspg.io/${name.length}`,
+});
+
 /** What the Worker's /api/ai-status returns: Prismix's statuses, normalised. */
 const PAYLOAD = {
   updated: new Date().toISOString(),
@@ -15,6 +25,16 @@ const PAYLOAD = {
       uptime30dPct: 99.41,
       latencyMs: 340,
       updated: null,
+      incidents30d: 6,
+      lastIncidentAt: iso(2),
+      recentIncidents: [
+        incident('Elevated errors on the Responses API', 2, 'major', null),
+        incident('Slow file uploads', 30),
+        incident('Login issues for some users', 100),
+        incident('Batch jobs delayed', 150),
+        incident('Realtime API errors', 200),
+      ],
+      note: null,
     },
     {
       id: 'anthropic',
@@ -25,6 +45,15 @@ const PAYLOAD = {
       uptime30dPct: 99.87,
       latencyMs: 212,
       updated: null,
+      incidents30d: 4,
+      lastIncidentAt: iso(5),
+      recentIncidents: [
+        incident('Elevated errors for multiple models', 5, 'major', 1.5),
+        incident('Claude.ai sign-in failures', 60),
+        incident('Console usage page delayed', 120, 'none'),
+        incident('Increased latency on Haiku', 250),
+      ],
+      note: null,
     },
     {
       id: 'mistral',
@@ -35,6 +64,10 @@ const PAYLOAD = {
       uptime30dPct: null,
       latencyMs: null,
       updated: null,
+      incidents30d: null,
+      lastIncidentAt: null,
+      recentIncidents: [],
+      note: 'Its status page could not be read. The site itself answers, and that is all this shows.',
     },
   ],
 };
@@ -125,5 +158,73 @@ test('ai-status says so plainly when the feed is down', async ({ page }) => {
 
   // A 502 from our own API is the expected answer here, not a page error.
   watch.errors = watch.errors.filter((error) => !/502/.test(error));
+  expectClean(watch);
+});
+
+test('ai-status shows each service’s recent incidents, and all of them in one timeline', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  await stubFeed(page);
+  await gotoTool(page, 'ai-status', 'AI API Status');
+  await waitForHydration(page);
+
+  const openai = page.locator('.svc').filter({ hasText: 'OpenAI' });
+  await expect(openai).toContainText('6 incidents in 30 days, last 2 h ago');
+  await openai.getByText('Recent incidents (5)').click();
+  const first = openai.locator('.incident').first();
+  await expect(first).toContainText('Major');
+  await expect(first).toContainText('Ongoing');
+  const link = first.getByRole('link', { name: 'Elevated errors on the Responses API' });
+  await expect(link).toHaveAttribute('href', /^https:\/\/stspg\.io\//);
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+
+  // A thin reading says why, instead of passing for a full one.
+  await expect(page.locator('.svc').filter({ hasText: 'Mistral' })).toContainText(
+    'Its status page could not be read.',
+  );
+
+  // Nine incidents across two providers, newest first; eight show until asked.
+  const timeline = page.getByTestId('ai-timeline').locator('.incident');
+  await expect(timeline).toHaveCount(8);
+  await expect(timeline.first()).toContainText('OpenAI');
+  await expect(timeline.first()).toContainText('Elevated errors on the Responses API');
+  await expect(timeline.nth(1)).toContainText('Anthropic');
+  await expect(timeline.nth(1)).toContainText('1 h 30 min');
+  await page.getByRole('button', { name: 'Show all 9' }).click();
+  await expect(timeline).toHaveCount(9);
+  await expect(timeline.last()).toContainText('Increased latency on Haiku');
+
+  expectClean(watch);
+});
+
+test('ai-status makes a dark badge, and hands over the MCP config', async ({ page, context }) => {
+  const watch = watchConsole(page);
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await stubFeed(page);
+  await gotoTool(page, 'ai-status', 'AI API Status');
+  await waitForHydration(page);
+  await expect(page.locator('.svc')).toHaveCount(3);
+
+  await page.getByLabel('Badge service').selectOption('openai');
+  await page
+    .getByRole('group', { name: 'Badge theme' })
+    .getByRole('button', { name: 'Dark' })
+    .click();
+  await expect(page.locator('.badge__preview img')).toHaveAttribute(
+    'src',
+    'https://prismix.dev/api/badge/openai.svg?theme=dark',
+  );
+  await expect(page.locator('.badge__code')).toHaveText(
+    '[![OpenAI status](https://prismix.dev/api/badge/openai.svg?theme=dark)](https://prismix.dev/status)',
+  );
+
+  await page.getByRole('button', { name: 'Copy config' }).click();
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(JSON.parse(copied)).toEqual({
+    mcpServers: { 'prismix-status': { url: 'https://prismix.dev/api/v1/mcp' } },
+  });
+
   expectClean(watch);
 });

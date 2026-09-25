@@ -7,29 +7,38 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 
-import { AiStatusService, type AiService } from '../../core/ai-status.client';
+import { AiStatusService, type AiIncident, type AiService } from '../../core/ai-status.client';
 import { ClipboardService } from '../../core/clipboard.service';
 import { ToolContent } from '../../shared/tool-content/tool-content';
 import { ToolPage } from '../../shared/tool-page/tool-page';
 import {
-  BADGE_BASE,
+  IMPACT_LABELS,
+  MCP_CONFIG,
   STATE_LABELS,
   STATUS_PAGE,
   badgeSnippet,
-  minutesAgo,
+  badgeUrl,
+  incidentDuration,
+  timeAgo,
+  timeline,
   type BadgeFormat,
+  type BadgeTheme,
 } from './ai-status-format';
 
 type Filter = 'all' | 'issues' | 'starred';
 
 const STARS_KEY = 'ai-status-stars';
 
+/** How many cross-provider incidents show before "Show all". */
+const TIMELINE_PREVIEW = 8;
+
 @Component({
   selector: 'app-ai-status',
-  imports: [ToolPage, ToolContent, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, MatButtonModule, NgIcon, DatePipe, NgTemplateOutlet],
   templateUrl: './ai-status.html',
   styleUrls: ['../tool-shell.css', './ai-status.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +49,7 @@ export class AiStatusTool {
 
   protected readonly labels = STATE_LABELS;
   protected readonly statusPage = STATUS_PAGE;
+  protected readonly mcpConfig = MCP_CONFIG;
 
   protected readonly load = this.feed.status;
   protected readonly services = this.feed.services;
@@ -73,22 +83,30 @@ export class AiStatusTool {
 
   protected readonly updatedAgo = computed(() => {
     const updated = this.feed.updated();
-    return updated && this.now() ? minutesAgo(updated, this.now()) : '';
+    return updated && this.now() ? timeAgo(updated, this.now()) : '';
   });
+
+  // Incidents across every provider -------------------------------------------
+  protected readonly entries = computed(() => timeline(this.services()));
+  protected readonly showAllIncidents = signal(false);
+  protected readonly shownEntries = computed(() =>
+    this.showAllIncidents() ? this.entries() : this.entries().slice(0, TIMELINE_PREVIEW),
+  );
 
   // Badge panel ------------------------------------------------------------
   protected readonly badgeId = signal('');
   protected readonly badgeFormat = signal<BadgeFormat>('markdown');
+  protected readonly badgeTheme = signal<BadgeTheme>('light');
   protected readonly badgeService = computed(() =>
     this.services().find((service) => service.id === this.badgeId()),
   );
   protected readonly badgeUrl = computed(() => {
     const service = this.badgeService();
-    return service ? `${BADGE_BASE}${service.id}.svg` : '';
+    return service ? badgeUrl(service.id, this.badgeTheme()) : '';
   });
   protected readonly badgeCode = computed(() => {
     const service = this.badgeService();
-    return service ? badgeSnippet(service, this.badgeFormat()) : '';
+    return service ? badgeSnippet(service, this.badgeFormat(), this.badgeTheme()) : '';
   });
 
   constructor() {
@@ -132,6 +150,28 @@ export class AiStatusTool {
 
   protected copyBadge(): void {
     void this.clipboard.copy(this.badgeCode(), { label: 'Badge code' });
+  }
+
+  protected copyMcp(): void {
+    void this.clipboard.copy(this.mcpConfig, { label: 'MCP config' });
+  }
+
+  protected impactLabel(incident: AiIncident): string {
+    return IMPACT_LABELS[incident.impact];
+  }
+
+  protected duration(incident: AiIncident): string {
+    return incidentDuration(incident);
+  }
+
+  /** "15 incidents in 30 days, last 3 days ago" — blank until the page is live. */
+  protected history(service: AiService): string {
+    const count = service.incidents30d;
+    if (count === null) return '';
+    const total = `${count} ${count === 1 ? 'incident' : 'incidents'} in 30 days`;
+    return service.lastIncidentAt && this.now()
+      ? `${total}, last ${timeAgo(service.lastIncidentAt, this.now())}`
+      : total;
   }
 
   protected uptime(service: AiService): string {

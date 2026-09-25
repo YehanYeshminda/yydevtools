@@ -295,11 +295,12 @@ async function handleNews(request: Request, env: Env, ctx: ExecutionContext): Pr
 }
 
 /**
- * Browser and edge both keep the AI status for a minute: the same window as
- * Prismix's own cache, so a longer one would only serve staler data and a
- * shorter one would only add upstream calls.
+ * Browser and edge both keep the AI status for five minutes. Prismix re-reads
+ * the providers' status pages about that often, and publishes an anonymous
+ * limit of 60 requests an hour; a one-minute cache sat right on that limit in a
+ * busy location while showing nothing newer.
  */
-const AI_STATUS_CACHE_CONTROL = 'public, max-age=60';
+const AI_STATUS_CACHE_CONTROL = 'public, max-age=300';
 
 /** GET /api/ai-status: the AI API status board's data, from Prismix via the edge cache. */
 async function handleAiStatus(request: Request, ctx: ExecutionContext): Promise<Response> {

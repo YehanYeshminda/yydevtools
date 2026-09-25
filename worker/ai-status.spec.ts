@@ -26,6 +26,7 @@ const PRISMIX = {
           impact: 'minor',
           createdAt: '2026-09-20T08:00:00.000Z',
           resolvedAt: '2026-09-20T09:00:00.000Z',
+          shortlink: 'https://stspg.io/x1',
         },
       ],
       cachedAt: '2026-09-25T12:00:00.000Z',
@@ -100,6 +101,18 @@ describe('normalise', () => {
         uptime30dPct: 99.87,
         latencyMs: 212,
         updated: '2026-09-25T11:58:00.000Z',
+        incidents30d: 3,
+        lastIncidentAt: '2026-09-20T08:00:00.000Z',
+        recentIncidents: [
+          {
+            name: 'Elevated errors',
+            impact: 'minor',
+            started: '2026-09-20T08:00:00.000Z',
+            resolved: '2026-09-20T09:00:00.000Z',
+            link: 'https://stspg.io/x1',
+          },
+        ],
+        note: null,
       },
       {
         id: 'openai',
@@ -110,6 +123,10 @@ describe('normalise', () => {
         uptime30dPct: null,
         latencyMs: 340,
         updated: null,
+        incidents30d: null,
+        lastIncidentAt: null,
+        recentIncidents: [],
+        note: null,
       },
       {
         id: 'deepgram',
@@ -120,6 +137,10 @@ describe('normalise', () => {
         uptime30dPct: null,
         latencyMs: 8000,
         updated: null,
+        incidents30d: null,
+        lastIncidentAt: null,
+        recentIncidents: [],
+        note: 'Its status page could not be read, so there is no reading.',
       },
     ]);
   });
@@ -159,6 +180,67 @@ describe('normalise', () => {
       latencyMs: null,
       uptime30dPct: null,
     });
+  });
+
+  it('keeps the five newest incidents, and only https links', () => {
+    const brief = (day: number, extra: object = {}) => ({
+      id: `i${day}`,
+      name: `Incident ${day}`,
+      impact: 'major',
+      createdAt: `2026-09-${String(day).padStart(2, '0')}T10:00:00.000Z`,
+      resolvedAt: null,
+      shortlink: 'https://stspg.io/ok',
+      ...extra,
+    });
+    const payload = normalise({
+      services: [
+        {
+          ...PRISMIX.services[0],
+          recentIncidentBriefs: [
+            brief(3),
+            brief(9, { shortlink: 'javascript:alert(1)' }),
+            brief(5, { impact: 'apocalyptic' }),
+            brief(7, { shortlink: 'http://stspg.io/plain' }),
+            brief(1),
+            brief(8, { name: '' }),
+            brief(6, { createdAt: 'yesterday' }),
+            brief(4),
+            'junk',
+          ],
+        },
+      ],
+    })!;
+    const incidents = payload.services[0].recentIncidents;
+    expect(incidents.map((incident) => incident.name)).toEqual([
+      'Incident 9',
+      'Incident 7',
+      'Incident 5',
+      'Incident 4',
+      'Incident 3',
+    ]);
+    expect(incidents.map((incident) => incident.link)).toEqual([
+      null,
+      null,
+      'https://stspg.io/ok',
+      'https://stspg.io/ok',
+      'https://stspg.io/ok',
+    ]);
+    // An impact Prismix has not documented is not guessed at.
+    expect(incidents[2].impact).toBe('none');
+    expect(incidents[0].resolved).toBeNull();
+  });
+
+  it('says in words why a reading is thin', () => {
+    const [known, unknown] = normalise({
+      services: [
+        { ...PRISMIX.services[0], unreachableReason: 'statuspage_unreachable_homepage_ok' },
+        { ...PRISMIX.services[0], unreachableReason: 'something_new' },
+      ],
+    })!.services;
+    expect(known.note).toBe(
+      'Its status page could not be read. The site itself answers, and that is all this shows.',
+    );
+    expect(unknown.note).toBe('Its status page could not be read, so there is no reading.');
   });
 
   it('rejects anything that is not the expected shape', () => {

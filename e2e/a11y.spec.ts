@@ -739,6 +739,18 @@ for (const theme of ['dark', 'light'] as const) {
       uptime30dPct: 99.9,
       latencyMs: 200,
       updated: null,
+      incidents30d: activeIncidents ? 3 : null,
+      lastIncidentAt: activeIncidents ? new Date(Date.now() - 3_600_000).toISOString() : null,
+      recentIncidents: activeIncidents
+        ? ['critical', 'major', 'minor', 'none', 'maintenance'].map((impact, index) => ({
+            name: `${name} ${impact} incident`,
+            impact,
+            started: new Date(Date.now() - (index + 1) * 3_600_000).toISOString(),
+            resolved: index ? new Date(Date.now() - index * 3_600_000).toISOString() : null,
+            link: index % 2 ? 'https://stspg.io/abc' : null,
+          }))
+        : [],
+      note: state === 'unknown' ? 'Its status page could not be read, so there is no reading.' : null,
     });
     await page.route('**/api/ai-status', (route) =>
       route.fulfill({
@@ -766,7 +778,10 @@ for (const theme of ['dark', 'light'] as const) {
     await setTheme(page, theme);
     await expect(page.locator('.svc')).toHaveCount(5);
     await page.getByRole('button', { name: 'Star Anthropic' }).click();
+    await page.locator('.svc').filter({ hasText: 'OpenAI' }).getByText('Recent incidents').click();
+    await page.getByRole('button', { name: /^Show all/ }).click();
     await page.getByLabel('Badge service').selectOption('anthropic');
+    await page.getByRole('group', { name: 'Badge theme' }).getByRole('button', { name: 'Dark' }).click();
     await expect(page.locator('.badge__code')).toBeVisible();
     await expectSplashGone(page);
 

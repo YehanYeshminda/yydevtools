@@ -724,7 +724,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   'ai-status': {
     slug: 'ai-status',
     intro: [
-      'When a request to an AI API starts failing, the first question is whether the problem is yours or the provider’s. This board answers it at a glance: the current status of OpenAI, Anthropic, Google Gemini, Mistral, Deepgram, OpenRouter and dozens more, each read from the provider’s own status page and refreshed every minute.',
+      'When a request to an AI API starts failing, the first question is whether the problem is yours or the provider’s. This board answers it at a glance: the current status of OpenAI, Anthropic, Google Gemini, Mistral, Deepgram, OpenRouter and dozens more, each read from the provider’s own status page and refreshed every five minutes.',
       'Star the services your product depends on and they stay at the top of the list. The Issues view shows only what is degraded, down or under maintenance right now, and each service shows its active incidents and, where known, its uptime over the last 30 days. Below the board, the badge maker gives you the code for a live status badge to put in a README or a docs page.',
     ],
     steps: [
@@ -733,7 +733,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'To add a badge to a README, pick a service, choose Markdown or HTML, and copy the code.',
     ],
     features: [
-      'Live status of dozens of AI APIs in one list, refreshed every minute.',
+      'Live status of dozens of AI APIs in one list, refreshed every five minutes.',
       'Operational, degraded, outage and maintenance states, with active incident counts.',
       'Uptime over the last 30 days, where the provider reports it.',
       'Starred services pinned to the top, remembered in your browser.',
@@ -773,7 +773,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     faq: [
       {
         q: 'Where does the status come from?',
-        a: 'From Prismix, which polls the official status page of each provider and publishes the combined result. This page reads it through its own server, cached for a minute, so the list is at most about a minute behind Prismix.',
+        a: 'From Prismix, which polls the official status page of each provider and publishes the combined result. This page reads it through its own server, cached for five minutes — about as often as Prismix itself re-reads the status pages.',
       },
       {
         q: 'The board is green but my requests fail. Why?',

@@ -24,6 +24,22 @@ export interface AiService {
   uptime30dPct: number | null;
   latencyMs: number | null;
   updated: string | null;
+  incidents30d: number | null;
+  lastIncidentAt: string | null;
+  recentIncidents: AiIncident[];
+  note: string | null;
+}
+
+export type IncidentImpact = 'none' | 'minor' | 'major' | 'critical' | 'maintenance';
+
+/** Matches the Worker's `AiIncident`. */
+export interface AiIncident {
+  name: string;
+  impact: IncidentImpact;
+  started: string;
+  resolved: string | null;
+  /** Always https when present — the Worker drops anything else. */
+  link: string | null;
 }
 
 interface AiStatusPayload {

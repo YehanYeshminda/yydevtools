@@ -94,7 +94,27 @@
                 @if (uptime(service); as uptime) {
                   <span>{{ uptime }}</span>
                 }
+                @if (history(service); as history) {
+                  <span>{{ history }}</span>
+                }
               </span>
+              @if (service.note) {
+                <span class="svc__note">{{ service.note }}</span>
+              }
+              @if (service.recentIncidents.length) {
+                <details class="svc__history">
+                  <summary>Recent incidents ({{ service.recentIncidents.length }})</summary>
+                  <ul class="incidents">
+                    @for (incident of service.recentIncidents; track $index) {
+                      <li class="incident" [class]="'incident--' + incident.impact">
+                        <ng-container
+                          *ngTemplateOutlet="incidentLine; context: { $implicit: incident }"
+                        />
+                      </li>
+                    }
+                  </ul>
+                </details>
+              }
             </span>
             <button
               type="button"
@@ -128,6 +148,29 @@
     </p>
   } @else {
     <p class="status" role="status">Loading live status…</p>
+  }
+
+  @if (entries().length) {
+    <section aria-labelledby="incidents-heading">
+      <h2 id="incidents-heading" class="section__title">Recent incidents across providers</h2>
+      <ol class="incidents incidents--timeline" data-testid="ai-timeline">
+        @for (entry of shownEntries(); track $index) {
+          <li class="incident" [class]="'incident--' + entry.incident.impact">
+            <span class="incident__service">{{ entry.service.name }}</span>
+            <ng-container
+              *ngTemplateOutlet="incidentLine; context: { $implicit: entry.incident }"
+            />
+          </li>
+        }
+      </ol>
+      @if (entries().length > shownEntries().length) {
+        <div class="actions">
+          <button matButton (click)="showAllIncidents.set(true)">
+            Show all {{ entries().length }}
+          </button>
+        </div>
+      }
+    </section>
   }
 
   <section aria-labelledby="badge-heading">
@@ -168,10 +211,30 @@
           HTML
         </button>
       </div>
+      <div class="tabs" role="group" aria-label="Badge theme">
+        <button
+          type="button"
+          class="tab"
+          [class.tab--active]="badgeTheme() === 'light'"
+          [attr.aria-pressed]="badgeTheme() === 'light'"
+          (click)="badgeTheme.set('light')"
+        >
+          Light
+        </button>
+        <button
+          type="button"
+          class="tab"
+          [class.tab--active]="badgeTheme() === 'dark'"
+          [attr.aria-pressed]="badgeTheme() === 'dark'"
+          (click)="badgeTheme.set('dark')"
+        >
+          Dark
+        </button>
+      </div>
     </div>
 
     @if (badgeService(); as service) {
-      <div class="badge__preview">
+      <div class="badge__preview" [class.badge__preview--dark]="badgeTheme() === 'dark'">
         <img [src]="badgeUrl()" [alt]="service.name + ' status badge'" height="20" />
       </div>
       <pre class="badge__code" tabindex="0" aria-label="Badge code">{{ badgeCode() }}</pre>
@@ -189,13 +252,45 @@
     }
   </section>
 
+  <section aria-labelledby="mcp-heading">
+    <h2 id="mcp-heading" class="section__title">Ask your AI assistant instead</h2>
+    <p class="field__hint">
+      Prismix also runs an MCP server, so an assistant such as Claude or Cursor can answer &ldquo;Is
+      OpenAI down?&rdquo; itself. This is the config Prismix&rsquo;s API docs give; add it to your
+      MCP client.
+    </p>
+    <pre class="mcp__code" tabindex="0" aria-label="MCP config">{{ mcpConfig }}</pre>
+    <div class="actions">
+      <button matButton (click)="copyMcp()">
+        <ng-icon name="matContentCopyOutline" />
+        Copy config
+      </button>
+    </div>
+  </section>
+
   <p class="note">
     Status data from
     <a [href]="statusPage" target="_blank" rel="noopener">Prismix</a>, which checks each provider's
-    own status page. It refreshes every minute, and nothing about you is sent to it: the list comes
-    through this site's server.
+    own status page. It refreshes every five minutes, and nothing about you is sent to it: the list
+    comes through this site's server.
   </p>
 </div>
+
+<ng-template #incidentLine let-incident>
+  <span class="incident__impact">{{ impactLabel($any(incident)) }}</span>
+  <span class="incident__name">
+    @if ($any(incident).link) {
+      <a [href]="$any(incident).link" target="_blank" rel="noopener noreferrer">{{
+        $any(incident).name
+      }}</a>
+    } @else {
+      {{ $any(incident).name }}
+    }
+  </span>
+  <span class="incident__when"
+    >{{ $any(incident).started | date: 'd MMM, HH:mm' }} · {{ duration($any(incident)) }}</span
+  >
+</ng-template>
 
 @defer (hydrate on interaction) {
   <app-tool-content slug="ai-status" />
