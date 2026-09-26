@@ -792,3 +792,50 @@ for (const theme of ['dark', 'light'] as const) {
     expect(summary, summary.join('\n')).toEqual([]);
   });
 }
+
+/**
+ * The Password Generator's breach check, in each of its verdicts.
+ *
+ * Leaked and not-found use the shared status colours, but the could-not-check
+ * line has its own amber tint, and none of the three exists until the API has
+ * answered, so the plain tool-page audit never sees any of them.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`password-generator's breach verdicts have no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    let answer: 'leaked' | 'padding' | 'offline' = 'leaked';
+    await page.route('https://api.pwnedpasswords.com/range/*', (route) => {
+      if (answer === 'offline') return route.abort('internetdisconnected');
+      const count = answer === 'leaked' ? 52372427 : 0;
+      return route.fulfill({
+        body: `1E4C9B93F3F0682250B6CF8331B7EE68FD8:${count}`,
+        headers: { 'access-control-allow-origin': '*' },
+      });
+    });
+    await gotoTool(page, 'password-generator', 'Password Generator');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+    await page.getByLabel('Password to check').fill('password');
+
+    const verdicts = [
+      ['leaked', 'seen 52,372,427 times'],
+      ['padding', 'Not found in any known breach'],
+      ['offline', 'Could not reach Have I Been Pwned'],
+    ] as const;
+    for (const [state, text] of verdicts) {
+      answer = state;
+      await page.getByRole('button', { name: 'Check', exact: true }).click();
+      await expect(page.getByTestId('leak-result')).toContainText(text);
+
+      const results = await audit(page).include('.panel').analyze();
+      expect(
+        results.violations.map(
+          (violation) =>
+            `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(' | ')}`,
+        ),
+        `AXE violations with the ${state} verdict [${theme}]`,
+      ).toEqual([]);
+    }
+  });
+}

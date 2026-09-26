@@ -40,6 +40,19 @@
     </p>
   </section>
 
+  <section class="section" aria-labelledby="p-pwned">
+    <h2 id="p-pwned" class="section__title">The Password Generator’s breach check</h2>
+    <p class="section__text">
+      Passwords made by the <strong>Password Generator</strong> never leave your browser. Its
+      optional <em>Has a password leaked?</em> check runs only when you press Check, and even
+      then it does not send the password: your browser computes the password’s SHA-1 hash and
+      sends only the first 5 of its 40 characters directly to Have I Been Pwned
+      (api.pwnedpasswords.com). The reply lists every breached hash that begins with those 5
+      characters, padded with decoys, and the comparison happens on your device. Neither the
+      password nor its full hash is sent to us or to anyone else, logged or stored.
+    </p>
+  </section>
+
   <section class="section" aria-labelledby="p-storage">
     <h2 id="p-storage" class="section__title">What is stored on your device</h2>
     <p class="section__text">
@@ -87,6 +100,10 @@
       <li>
         <strong>Fly.io</strong> — hosts the services that perform PDF conversion, OCR,
         compression and image compression.
+      </li>
+      <li>
+        <strong>Have I Been Pwned</strong> — receives the 5-character hash prefix when you use
+        the Password Generator’s breach check, and nothing else.
       </li>
       <li><strong>Google AdSense</strong> — supplies the advertising that funds the site.</li>
       <li><strong>Google Fonts</strong> — serves the typefaces used by the site.</li>

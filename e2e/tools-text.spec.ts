@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { createHash } from 'node:crypto';
 
 import {
   editorByLabel,
@@ -655,6 +656,84 @@ test('password-generator produces a password of the requested length', async ({ 
   expect((await value.textContent())!.trim()).toHaveLength(24);
 
   expectClean(watch);
+});
+
+test('password-generator checks a typed password against Have I Been Pwned', async ({ page }) => {
+  // SHA-1("password") is 5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8. Only the
+  // prefix may leave the page; the suffix is matched here, and padding rows
+  // (count 0) must never read as a hit.
+  const PASSWORD = 'password';
+  const SUFFIX = '1E4C9B93F3F0682250B6CF8331B7EE68FD8';
+  const ranges: string[] = [];
+  let answer: 'leaked' | 'padding' | 'offline' = 'leaked';
+  await page.route('https://api.pwnedpasswords.com/range/*', async (route) => {
+    const request = route.request();
+    if (request.method() !== 'GET') return route.fallback();
+    ranges.push(`${request.url()} add-padding=${(await request.allHeaders())['add-padding']}`);
+    if (answer === 'offline') return route.abort('internetdisconnected');
+    // The API answers CRLF-separated SUFFIX:COUNT lines.
+    const rows =
+      answer === 'leaked'
+        ? ['0018A45C4D1DEF81644B54AB7F969B88D65:10', `${SUFFIX}:52372427`]
+        : [`${SUFFIX}:0`, '0018A45C4D1DEF81644B54AB7F969B88D65:0'];
+    const body = rows.join(String.fromCharCode(13, 10));
+    return route.fulfill({ body, headers: { 'access-control-allow-origin': '*' } });
+  });
+  // Nothing the page sends anywhere may carry the password or its full hash.
+  const sent: string[] = [];
+  page.on('request', (request) => sent.push(`${request.url()} ${request.postData() ?? ''}`));
+
+  await gotoTool(page, 'password-generator', 'Password Generator');
+  const input = page.getByLabel('Password to check');
+  await expect(input).toHaveAttribute('type', 'password');
+  await expect(input).toHaveAttribute('autocomplete', 'off');
+  const check = page.getByRole('button', { name: 'Check', exact: true });
+  const result = page.getByTestId('leak-result');
+
+  // Generating never calls the API; only the button does.
+  await page.getByRole('button', { name: /^Generate/ }).click();
+  expect(ranges).toEqual([]);
+
+  await input.fill(PASSWORD);
+  await check.click();
+  await expect(result).toContainText('seen 52,372,427 times');
+  expect(ranges).toEqual(['https://api.pwnedpasswords.com/range/5BAA6 add-padding=true']);
+
+  // Enter checks too, and a suffix present only as padding is "not found".
+  answer = 'padding';
+  await input.fill('');
+  await expect(result).toBeEmpty();
+  await input.fill(PASSWORD);
+  await input.press('Enter');
+  await expect(result).toContainText('Not found in any known breach');
+
+  // No network is an error, never a reassuring "not found".
+  answer = 'offline';
+  await check.click();
+  await expect(result).toContainText('Could not reach Have I Been Pwned');
+
+  // Reveal shows it as text without making it autocomplete.
+  await page.getByRole('button', { name: 'Show password' }).click();
+  await expect(input).toHaveAttribute('type', 'text');
+  await expect(input).toHaveAttribute('autocomplete', 'off');
+
+  // A password nothing else on the page could contain, then every request the
+  // page made is searched for it, for its full hash, and for the suffixes.
+  answer = 'padding';
+  const probe = 'Zq7-e2e-probe-Kx';
+  const probeHash = createHash('sha1').update(probe).digest('hex').toUpperCase();
+  await input.fill(probe);
+  await check.click();
+  await expect(result).toContainText('Not found in any known breach');
+  expect(ranges.at(-1)).toBe(
+    `https://api.pwnedpasswords.com/range/${probeHash.slice(0, 5)} add-padding=true`,
+  );
+  const leaks = sent.filter((line) =>
+    [probe, encodeURIComponent(probe), probeHash, probeHash.slice(5), SUFFIX].some((secret) =>
+      line.toUpperCase().includes(secret.toUpperCase()),
+    ),
+  );
+  expect(leaks).toEqual([]);
 });
 
 test('color-converter converts a hex colour and checks contrast', async ({ page }) => {

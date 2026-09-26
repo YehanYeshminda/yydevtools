@@ -601,7 +601,7 @@ export const routes: Routes = [
     data: {
       description:
         'Generate strong random passwords and memorable EFF passphrases in your browser, with ' +
-        'a strength meter and crack-time estimate. Nothing uploaded. Free.',
+        'a strength meter and a Have I Been Pwned leak check that never sends your password. Free.',
     },
   },
   {

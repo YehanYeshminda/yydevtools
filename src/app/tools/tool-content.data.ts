@@ -2000,6 +2000,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Generate a strong password or a memorable passphrase, and see honestly how strong it is. Password mode builds a random string from the character sets you choose — lower case, upper case, digits and symbols — at any length up to 128. Passphrase mode strings together random words from the Electronic Frontier Foundation 7,776-word list, producing something like correct-battery-house-staple that is far easier to type on a phone or read aloud down a phone line, while still being genuinely random.',
       'The important word in both cases is random. Passwords people invent themselves cluster in predictable ways: a capital at the front, a digit and an exclamation mark at the end, a name or a date in the middle. Cracking tools model those habits directly, which is why a password that looks complicated to a human can fall in seconds. Every value here is drawn from your browser cryptographic random source, with the byte-to-character conversion done by rejection sampling so that no character is even slightly more likely than another.',
       'Nothing you generate is transmitted or stored. The page makes no network request when you press Generate, so the secret exists only in your browser and on your clipboard until you paste it somewhere. That is also why there is no history: closing the tab is the only cleanup required.',
+      'Below the generator, Has a password leaked? checks a password you already use against Have I Been Pwned, a public list of hundreds of millions of passwords exposed in real data breaches. Your browser hashes the password with SHA-1 and sends only the first 5 of the 40 hexadecimal characters of that hash to api.pwnedpasswords.com. The service replies with every breached hash that starts the same way, several hundred of them plus random decoys, and the match is made on your device. The password, and even its full hash, never leave the page, and the check only runs when you press Check.',
     ],
     steps: [
       'Pick Password for a random string, or Passphrase for random words.',
@@ -2007,13 +2008,15 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Optionally turn on no look-alikes to drop I, l, 1, |, O and 0, which are easy to confuse when reading a password aloud or copying it by hand.',
       'Press Generate for a fresh value, or raise How many to produce a batch at once.',
       'Copy the result, and read the strength meter and crack-time estimates below it.',
+      'To find out whether a password you already use has leaked, type it into Password to check and press Check.',
     ],
     features: [
       'Random passwords from 4 to 128 characters, with per-set control and an option to guarantee one character from each set.',
       'EFF passphrases of 3 to 12 words, with a choice of separator, optional capitalisation and an optional digit.',
       'Entropy in bits, plus a strength score and estimated crack times from the zxcvbn analyser.',
       'Bulk generation of up to 50 values, with copy-all and download.',
-      'Runs entirely in your browser; no password is uploaded, logged or stored.',
+      'A breach check against Have I Been Pwned that sends only the first 5 characters of the password’s SHA-1 hash, never the password.',
+      'Generation runs entirely in your browser; no password is uploaded, logged or stored.',
     ],
     faq: [
       {
@@ -2022,7 +2025,19 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
       {
         q: 'Is my password sent to a server?',
-        a: 'No. Generation, the strength check and the crack-time estimates all run locally in your browser, and the page makes no network request when you generate. Nothing is stored either, so there is no history to clear beyond closing the tab.',
+        a: 'No. Generation, the strength check and the crack-time estimates all run locally in your browser, and the page makes no network request when you generate. The one request the page can make is the breach check, and only when you press Check: it sends the first 5 characters of the password’s SHA-1 hash to Have I Been Pwned, never the password or the rest of the hash. Nothing is stored either, so there is no history to clear beyond closing the tab.',
+      },
+      {
+        q: 'How can a breach check work without sending my password?',
+        a: 'It uses a technique called k-anonymity. Your browser turns the password into a 40-character SHA-1 hash and sends only the first 5 characters. There are only about a million possible prefixes, and each is shared by hundreds of breached passwords and countless others, so the prefix alone cannot identify yours. Have I Been Pwned answers with every breached hash that starts with those 5 characters, padded with random decoys so even the size of the reply gives nothing away, and your browser looks for the remaining 35 characters in that list itself.',
+      },
+      {
+        q: 'Why is a newly generated password not checked automatically?',
+        a: 'Because it cannot be in a breach: it did not exist until you pressed Generate, and the chance of a 20-character random password matching one of the leaked ones is effectively zero. Checking it would add a network request to a button that promises none and prove nothing. The check is for passwords you already use, especially ones you chose yourself.',
+      },
+      {
+        q: 'My password was found in a breach. What should I do?',
+        a: 'Stop using it, and change it on every account where you have used it, starting with email and anything financial. Being found does not always mean your own account was breached, since someone else may have used the same password, but it does mean the password is on the lists attackers try first. Replace it with a generated one and turn on two-factor authentication where you can.',
       },
       {
         q: 'Which is better, a password or a passphrase?',

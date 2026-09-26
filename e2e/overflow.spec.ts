@@ -22,6 +22,21 @@ async function expectFitsAtEveryWidth(page: Page): Promise<void> {
   await expectNoClippedContent(page);
 }
 
+test('password-generator keeps a long password and its breach verdict inside the panel', async ({
+  page,
+}) => {
+  await page.route('https://api.pwnedpasswords.com/range/*', (route) =>
+    route.fulfill({ body: '', headers: { 'access-control-allow-origin': '*' } }),
+  );
+  await gotoTool(page, 'password-generator', 'Password Generator');
+  const input = page.getByLabel('Password to check');
+  await input.fill(TOKEN);
+  await page.getByRole('button', { name: 'Show password' }).click();
+  await page.getByRole('button', { name: 'Check', exact: true }).click();
+  await expect(page.getByTestId('leak-result')).toContainText('Not found');
+  await expectFitsAtEveryWidth(page);
+});
+
 test('word-counter keeps the longest word inside its card', async ({ page }) => {
   await gotoTool(page, 'word-counter', 'Word & Character Counter');
   await page.locator('#wc-input').fill(TOKEN);

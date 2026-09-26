@@ -6,6 +6,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 
@@ -25,6 +26,7 @@ import {
   passphraseEntropy,
   passwordEntropy,
 } from './generate';
+import { pwnedCount } from './pwned';
 import { SCORE_LABELS, StrengthReading, StrengthScore, estimateStrength, scoreFromEntropy } from './strength';
 
 export type Mode = 'password' | 'passphrase';
@@ -40,6 +42,13 @@ interface SeparatorOption {
   label: string;
 }
 
+/** The breach check's verdict on the password typed into it. */
+export type LeakCheck =
+  | { state: 'checking' }
+  | { state: 'leaked'; count: number }
+  | { state: 'clean' }
+  | { state: 'error' };
+
 const SEPARATORS: readonly SeparatorOption[] = [
   { value: '-', label: 'Hyphen' },
   { value: ' ', label: 'Space' },
@@ -50,7 +59,7 @@ const SEPARATORS: readonly SeparatorOption[] = [
 
 @Component({
   selector: 'app-password-generator',
-  imports: [ToolPage, ToolContent, ShareLink, MatButtonModule, NgIcon],
+  imports: [ToolPage, ToolContent, ShareLink, MatButtonModule, NgIcon, DecimalPipe],
   templateUrl: './password-generator.html',
   styleUrls: ['../tool-shell.css', './password-generator.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -92,6 +101,20 @@ export class PasswordGeneratorTool {
   /** zxcvbn's verdict on the first result; null until its dictionaries land. */
   protected readonly strength = signal<StrengthReading | null>(null);
   protected readonly strengthLoading = signal(false);
+
+  // --- Breach check ---------------------------------------------------
+  /**
+   * The password being checked is read from the input on demand and never held
+   * in a signal, a shared link or session state: only its verdict lives here.
+   */
+  protected readonly leakCheck = signal<LeakCheck | null>(null);
+  protected readonly revealCheck = signal(false);
+  protected readonly canCheck = signal(false);
+  protected readonly leakedCount = computed(() => {
+    const check = this.leakCheck();
+    return check?.state === 'leaked' ? check.count : 0;
+  });
+  private leakToken = 0;
 
   private wordlist: readonly string[] | null = null;
   /** Guards against an out-of-order strength reading overwriting a newer one. */
@@ -289,6 +312,37 @@ export class PasswordGeneratorTool {
         this.strengthLoading.set(false);
       }
     }
+  }
+
+  // --- Breach check -----------------------------------------------------
+  /**
+   * Runs only on a button press or Enter, never on generated values: a fresh
+   * random password cannot be in a breach corpus, and checking on every
+   * Generate would put a network request behind a button that promises none.
+   */
+  protected async checkLeak(password: string): Promise<void> {
+    if (!password) {
+      return;
+    }
+    const token = ++this.leakToken;
+    this.leakCheck.set({ state: 'checking' });
+    let verdict: LeakCheck;
+    try {
+      const count = await pwnedCount(password);
+      verdict = count > 0 ? { state: 'leaked', count } : { state: 'clean' };
+    } catch {
+      verdict = { state: 'error' };
+    }
+    if (token === this.leakToken) {
+      this.leakCheck.set(verdict);
+    }
+  }
+
+  /** A verdict belongs to the text it was given; editing the text retires it. */
+  protected onCheckInput(event: Event): void {
+    this.canCheck.set((event.target as HTMLInputElement).value.length > 0);
+    this.leakToken++;
+    this.leakCheck.set(null);
   }
 
   // --- Output -----------------------------------------------------------

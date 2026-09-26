@@ -251,7 +251,7 @@ export const TOOLS: Tool[] = [
     slug: 'password-generator',
     name: 'Password Generator',
     description:
-      'Create strong random passwords or memorable passphrases, with a strength and crack-time check.',
+      'Create strong random passwords or memorable passphrases, with a strength check and a check for leaked passwords.',
     icon: 'matPasswordOutline',
     category: 'Developer',
     ready: true,
