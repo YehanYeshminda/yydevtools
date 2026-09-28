@@ -1720,6 +1720,7 @@ test('package-json-checker reports drift, deprecation and advisories, and sends 
         '@scope/pkg': '~1.1.0',
         pad: 'npm:left-pad@^1.3.0',
         '@corp/private': '^1.0.0',
+        'gone-pkg': '^1.0.0',
         'slow-pkg': '^1.0.0',
         'probe-workspace-pkg': 'workspace:*',
         'probe-git-dep': 'github:someone/repo#main',
@@ -1736,7 +1737,7 @@ test('package-json-checker reports drift, deprecation and advisories, and sends 
 
   const summary = page.getByTestId('pkg-summary');
   await expect(summary).toHaveText(
-    '10 packages: 3 behind latest, 1 deprecated, 1 with known vulnerabilities, 2 not looked up, 1 could not be checked.',
+    '11 packages: 3 behind latest, 1 deprecated, 1 with known vulnerabilities, 2 not looked up, 1 could not be checked.',
   );
   // No row name here is a substring of another's.
   const row = (name: string) =>
@@ -1758,7 +1759,9 @@ test('package-json-checker reports drift, deprecation and advisories, and sends 
   await expect(row('pad')).toContainText('Alias of');
   await expect(row('pad')).toContainText('left-pad');
   await expect(row('typescript')).toContainText('Ahead of latest');
+  // A scoped 404 arrives without a CORS header, as on the real registry.
   await expect(row('@corp/private')).toContainText('Not on the public npm registry.');
+  await expect(row('gone-pkg')).toContainText('Not on the public npm registry.');
   await expect(row('slow-pkg')).toContainText('The registry could not be reached.');
   await expect(row('probe-workspace-pkg')).toContainText('Workspace package, not looked up.');
   await expect(row('probe-git-dep')).toContainText('Git dependency, not looked up.');
@@ -1772,6 +1775,7 @@ test('package-json-checker reports drift, deprecation and advisories, and sends 
       '@scope%2Fpkg',
       'left-pad',
       '@corp%2Fprivate',
+      'gone-pkg',
       'slow-pkg',
       'typescript',
     ]

@@ -197,16 +197,32 @@ export class PackageJsonCheckerTool {
         parsed.deps.flatMap((dep) => (dep.parsed.kind === 'registry' ? [dep.parsed.target.name] : [])),
       ),
     ];
+    const unreadable: string[] = [];
     await eachLimited(names, CONCURRENCY, async (name) => {
       let lookup: Lookup;
       try {
-        lookup = await fetchPackument(name);
+        const answer = await fetchPackument(name);
+        if (answer === 'unreadable') {
+          unreadable.push(name);
+          return;
+        }
+        lookup = answer;
       } catch {
         lookup = 'failed';
       }
       if (run === this.run) this.lookups.update((map) => new Map(map).set(name, lookup));
     });
     if (run !== this.run) return;
+    // A scoped name the browser could not read is the registry's CORS-less
+    // 404 when other lookups got through, and a real failure when none did.
+    // ponytail: a blip on that one request would read as "not found"; a
+    // same-origin proxy for scoped names would remove the guess.
+    const reachable = [...this.lookups().values()].some((lookup) => lookup !== 'failed');
+    this.lookups.update((map) => {
+      const next = new Map(map);
+      for (const name of unreadable) next.set(name, reachable ? null : 'failed');
+      return next;
+    });
 
     // 2. OSV, in one batch, for the version each range resolves to today.
     const targets = new Map<string, { name: string; version: string }>();

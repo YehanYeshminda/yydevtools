@@ -27,13 +27,29 @@ const OSV_BATCH_MAX = 1000;
 
 const INIT: RequestInit = { referrerPolicy: 'no-referrer', credentials: 'omit' };
 
-/** `null` when the package is not on the public registry (a 404). Throws on anything else. */
-export async function fetchPackument(name: string): Promise<Packument | null> {
-  const response = await fetch(REGISTRY + registryPath(name), {
-    ...INIT,
-    headers: { Accept: 'application/vnd.npm.install-v1+json' },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
+/**
+ * `null` when the package is not on the public registry (a 404), and
+ * `'unreadable'` for a scoped name the browser could not read at all. Throws
+ * on anything else.
+ *
+ * The registry answers a missing *scoped* package with a 404 that carries no
+ * `Access-Control-Allow-Origin` (an unscoped 404 does carry it; checked
+ * 2026-09-28), so the browser reports it as a network error, the same
+ * TypeError as being offline. The caller decides which it was.
+ */
+export async function fetchPackument(name: string): Promise<Packument | null | 'unreadable'> {
+  let response: Response;
+  try {
+    response = await fetch(REGISTRY + registryPath(name), {
+      ...INIT,
+      headers: { Accept: 'application/vnd.npm.install-v1+json' },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+  } catch (error) {
+    // A timeout is a DOMException, not a TypeError, so it is still a failure.
+    if (name.startsWith('@') && error instanceof TypeError) return 'unreadable';
+    throw error;
+  }
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`The registry answered ${response.status}`);
   return toPackument(await response.json());

@@ -371,6 +371,10 @@ export async function mockNpmAndOsv(
     const name = decodeURIComponent(url.slice('https://registry.npmjs.org/'.length));
     if (options.failing?.includes(name)) return route.abort('timedout');
     const pkg = options.packages[name];
+    // The real registry sends a missing scoped package's 404 without a CORS
+    // header, so the page sees a network error, not a 404. A fulfilled
+    // response is not CORS-checked here, so that is reproduced as an abort.
+    if (!pkg && name.startsWith('@')) return route.abort('failed');
     if (!pkg) return route.fulfill({ status: 404, headers: cors, body: '{"error":"Not found"}' });
     const versions = Object.fromEntries(
       pkg.versions.map((v) => [v, pkg.deprecated?.[v] ? { deprecated: pkg.deprecated[v] } : {}]),
