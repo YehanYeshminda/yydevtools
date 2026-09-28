@@ -8,6 +8,7 @@ import {
   expectNoHorizontalOverflow,
   getEditorText,
   gotoTool,
+  mockNpmAndOsv,
   setEditorText,
   waitForHydration,
   watchConsole,
@@ -1677,4 +1678,138 @@ test('the Back button fits a phone, and a made-up origin shows none', async ({ p
   await waitForHydration(page);
   await expect(page.locator('.head__title')).toBeVisible();
   await expect(page.getByRole('button', { name: /^Back to/ })).toHaveCount(0);
+});
+
+test('package-json-checker reports drift, deprecation and advisories, and sends only names and versions', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  const seen = await mockNpmAndOsv(page, {
+    packages: {
+      lodash: { latest: '4.17.21', versions: ['4.17.15', '4.17.21'] },
+      request: {
+        latest: '2.88.2',
+        versions: ['2.88.0', '2.88.2'],
+        deprecated: {
+          '2.88.0': 'request has been deprecated, see https://github.com/request/request/issues/3142',
+          '2.88.2': 'request has been deprecated, see https://github.com/request/request/issues/3142',
+        },
+      },
+      react: { latest: '19.1.0', versions: ['17.0.2', '18.3.1', '19.1.0'] },
+      '@scope/pkg': { latest: '1.2.0', versions: ['1.1.0', '1.1.3', '1.2.0'] },
+      'left-pad': { latest: '1.3.0', versions: ['1.3.0'] },
+      typescript: { latest: '5.9.2', versions: ['5.9.2', '6.0.0-dev.1'], tags: { next: '6.0.0-dev.1' } },
+    },
+    advisories: { 'lodash@4.17.15': ['GHSA-p6mc-m468-83gw'] },
+    failing: ['slow-pkg'],
+  });
+  // Every request the page makes anywhere, to prove the rest of the file stays put.
+  const sent: string[] = [];
+  page.on('request', (request) => sent.push(`${request.url()} ${request.postData() ?? ''}`));
+
+  // Strings that exist only in the file and must never appear in a request.
+  const PROBES = ['probe-project-zq7', 'probe-script-kx', 'probe-workspace-pkg', 'probe-git-dep', '^17.0.2', '~1.1.0'];
+  const packageJson = JSON.stringify(
+    {
+      name: 'probe-project-zq7',
+      scripts: { build: 'echo probe-script-kx' },
+      dependencies: {
+        lodash: '4.17.15',
+        request: '^2.88.0',
+        react: '^17.0.2',
+        '@scope/pkg': '~1.1.0',
+        pad: 'npm:left-pad@^1.3.0',
+        '@corp/private': '^1.0.0',
+        'slow-pkg': '^1.0.0',
+        'probe-workspace-pkg': 'workspace:*',
+        'probe-git-dep': 'github:someone/repo#main',
+      },
+      devDependencies: { typescript: 'next' },
+    },
+    null,
+    2,
+  );
+
+  await gotoTool(page, 'package-json-checker', 'package.json Checker');
+  await page.locator('#pkg-input').fill(packageJson);
+  await page.getByRole('button', { name: 'Check packages' }).click();
+
+  const summary = page.getByTestId('pkg-summary');
+  await expect(summary).toHaveText(
+    '10 packages: 3 behind latest, 1 deprecated, 1 with known vulnerabilities, 2 not looked up, 1 could not be checked.',
+  );
+  // No row name here is a substring of another's.
+  const row = (name: string) =>
+    page.getByTestId('pkg-row').filter({ has: page.locator('.pkg__name', { hasText: name }) });
+
+  await expect(row('lodash')).toContainText('Patch behind');
+  await expect(row('lodash').getByTestId('pkg-vuln')).toContainText('GHSA-p6mc-m468-83gw');
+  await expect(row('lodash').getByTestId('pkg-vuln')).toContainText('HIGH');
+  await expect(row('lodash').getByTestId('pkg-vuln')).toContainText('Fixed in 4.17.19');
+  await expect(row('lodash').getByRole('link', { name: 'GHSA-p6mc-m468-83gw' })).toHaveAttribute(
+    'href',
+    'https://osv.dev/vulnerability/GHSA-p6mc-m468-83gw',
+  );
+  await expect(row('request')).toContainText('Allows latest');
+  await expect(row('request').getByTestId('pkg-deprecated')).toContainText('request has been deprecated');
+  await expect(row('react')).toContainText('Major behind');
+  await expect(row('react')).toContainText('Resolves to17.0.2');
+  await expect(row('@scope/pkg')).toContainText('Minor behind');
+  await expect(row('pad')).toContainText('Alias of');
+  await expect(row('pad')).toContainText('left-pad');
+  await expect(row('typescript')).toContainText('Ahead of latest');
+  await expect(row('@corp/private')).toContainText('Not on the public npm registry.');
+  await expect(row('slow-pkg')).toContainText('The registry could not be reached.');
+  await expect(row('probe-workspace-pkg')).toContainText('Workspace package, not looked up.');
+  await expect(row('probe-git-dep')).toContainText('Git dependency, not looked up.');
+
+  // One registry GET per registry name, scoped names with only the slash escaped.
+  expect([...seen.registry].sort()).toEqual(
+    [
+      'lodash',
+      'request',
+      'react',
+      '@scope%2Fpkg',
+      'left-pad',
+      '@corp%2Fprivate',
+      'slow-pkg',
+      'typescript',
+    ]
+      .map((path) => `https://registry.npmjs.org/${path}`)
+      .sort(),
+  );
+  // One OSV batch, carrying nothing but name, ecosystem and the resolved version.
+  expect(seen.osvQueries).toHaveLength(1);
+  const queries = (seen.osvQueries[0] as { queries: unknown[] }).queries;
+  expect(queries).toEqual(
+    expect.arrayContaining([
+      { package: { name: 'lodash', ecosystem: 'npm' }, version: '4.17.15' },
+      { package: { name: 'request', ecosystem: 'npm' }, version: '2.88.2' },
+      { package: { name: 'react', ecosystem: 'npm' }, version: '17.0.2' },
+      { package: { name: '@scope/pkg', ecosystem: 'npm' }, version: '1.1.3' },
+      { package: { name: 'left-pad', ecosystem: 'npm' }, version: '1.3.0' },
+      { package: { name: 'typescript', ecosystem: 'npm' }, version: '6.0.0-dev.1' },
+    ]),
+  );
+  expect(queries).toHaveLength(6);
+  expect(seen.osvVulns).toEqual(['GHSA-p6mc-m468-83gw']);
+  const leaks = sent.filter((line) => PROBES.some((probe) => line.includes(probe)));
+  expect(leaks).toEqual([]);
+
+  // Needs attention hides what is fine.
+  await page.getByRole('button', { name: /^Needs attention/ }).click();
+  await expect(row('typescript')).toHaveCount(0);
+  await expect(row('probe-workspace-pkg')).toHaveCount(0);
+  await expect(row('lodash')).toHaveCount(1);
+  await page.getByRole('button', { name: /^All/ }).click();
+
+  // OSV down: said so, never read as "no known vulnerabilities".
+  await page.unroute('https://api.osv.dev/**');
+  await page.route('https://api.osv.dev/**', (route) => route.abort('connectionrefused'));
+  await page.getByRole('button', { name: 'Check packages' }).click();
+  await expect(page.getByText('OSV.dev could not be reached')).toBeVisible();
+  await expect(row('lodash')).toContainText('Vulnerabilities not checked.');
+  await expect(row('lodash')).not.toContainText('No known vulnerabilities');
+
+  expectClean(watch);
 });

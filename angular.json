@@ -126,6 +126,7 @@
                                                                                                                             "@xml-tools/parser",
                                                                                                                             "secure-random-password",
                                                                                                                             "secure-random-password/lib/random",
+                                                                                                                            "semver",
               "papaparse"
                                                                                                                         ],
                                                                                         "server":  "src/main.server.ts",

@@ -1,6 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { editorByLabel, expectNoClippedContent, gotoTool, setEditorText } from './helpers';
+import {
+  editorByLabel,
+  expectNoClippedContent,
+  gotoTool,
+  mockNpmAndOsv,
+  setEditorText,
+} from './helpers';
 
 /**
  * Long unbroken tokens must never push a box open.
@@ -34,6 +40,29 @@ test('password-generator keeps a long password and its breach verdict inside the
   await page.getByRole('button', { name: 'Show password' }).click();
   await page.getByRole('button', { name: 'Check', exact: true }).click();
   await expect(page.getByTestId('leak-result')).toContainText('Not found');
+  await expectFitsAtEveryWidth(page);
+});
+
+test('package-json-checker keeps long names, specs and deprecation messages inside the report', async ({
+  page,
+}) => {
+  // npm allows 214-character names; the rest of the report echoes URLs and messages.
+  const name = `@${'s'.repeat(40)}/${TOKEN.toLowerCase().slice(0, 170)}`;
+  await mockNpmAndOsv(page, {
+    packages: {
+      [name]: { latest: '1.0.0', versions: ['1.0.0'], deprecated: { '1.0.0': `Moved to ${TOKEN}` } },
+    },
+    advisories: { [`${name}@1.0.0`]: ['GHSA-p6mc-m468-83gw'] },
+  });
+  await gotoTool(page, 'package-json-checker', 'package.json Checker');
+  await page.locator('#pkg-input').fill(
+    JSON.stringify({
+      dependencies: { [name]: '^1.0.0', 'git-dep': `git+https://example.com/${TOKEN}.git` },
+    }),
+  );
+  await page.getByRole('button', { name: 'Check packages' }).click();
+  await expect(page.getByTestId('pkg-deprecated')).toContainText(TOKEN);
+  await expect(page.getByTestId('pkg-vuln')).toContainText(name);
   await expectFitsAtEveryWidth(page);
 });
 

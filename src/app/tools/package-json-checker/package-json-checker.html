@@ -1,0 +1,236 @@
+<app-tool-page slug="package-json-checker">
+  Paste or drop a package.json to see which dependencies are behind the latest release, which are
+  deprecated, and which resolve to a version with a known vulnerability. Only package names, and
+  the version each range resolves to, leave your browser.
+</app-tool-page>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="pkg-input">package.json</label>
+    <textarea
+      id="pkg-input"
+      class="field__input"
+      rows="10"
+      spellcheck="false"
+      autocomplete="off"
+      [value]="text()"
+      (input)="onInput($event)"
+      placeholder='{ "dependencies": { "lodash": "^4.17.15" } }'
+    ></textarea>
+  </div>
+
+  <app-dropzone accept=".json,application/json" (filesSelected)="acceptFiles($event)">
+    <ng-icon class="dropzone__icon" aria-hidden="true" name="matUploadFileOutline" />
+    <span class="dropzone__title">Or drop a package.json here</span>
+  </app-dropzone>
+
+  <div class="actions">
+    @if (busy()) {
+      <button matButton="filled" disabled>
+        <app-spinner />
+        Checking…
+      </button>
+    } @else {
+      <button matButton="filled" (click)="check()" [disabled]="text().trim() === ''">
+        <ng-icon name="matFactCheckOutline" />
+        Check packages
+      </button>
+    }
+    <button matButton (click)="clear()" [disabled]="text() === ''">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+    <app-try-example (loadExample)="loadExample()" />
+    <app-share-link [state]="shared" />
+  </div>
+
+  <p class="note" data-testid="pkg-privacy">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Only package names leave your browser: each is looked up on the public npm registry, and each
+    name with the version its range resolves to is checked against OSV.dev. Nothing else from the
+    file is sent. Workspace, local-path and Git dependencies are not looked up at all. Private
+    package names are sent like any other, so remove any whose name is itself confidential.
+  </p>
+
+  @if (error(); as message) {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      <span class="note__text">{{ message }}</span>
+    </p>
+  }
+
+  @if (rows().length) {
+    @let s = summary();
+    <section class="report" aria-labelledby="pkg-report-title">
+      <h2 class="section__title" id="pkg-report-title">Report</h2>
+
+      <p class="report__summary" role="status" data-testid="pkg-summary">
+        {{ summaryText() }}
+      </p>
+
+      <p class="report__caveat">
+        Vulnerabilities are checked for the version each range resolves to on the registry today
+        (the newest match), not the version in your lockfile. What you have installed may be older.
+      </p>
+
+      @if (osvFailed()) {
+        <p class="status status--err" role="alert">
+          <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+          <span class="note__text">
+            OSV.dev could not be reached, so vulnerabilities were not checked. The rest of the
+            report is complete.
+          </span>
+        </p>
+      }
+
+      <div class="actions">
+        <div class="tabs" role="group" aria-label="Show">
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="!onlyProblems()"
+            [attr.aria-pressed]="!onlyProblems()"
+            (click)="onlyProblems.set(false)"
+          >
+            All {{ s.total }}
+          </button>
+          <button
+            type="button"
+            class="tab"
+            [class.tab--active]="onlyProblems()"
+            [attr.aria-pressed]="onlyProblems()"
+            (click)="onlyProblems.set(true)"
+          >
+            Needs attention {{ s.problems }}
+          </button>
+        </div>
+        <button matButton (click)="copyReport()" [disabled]="busy()">
+          <ng-icon name="matContentCopyOutline" />
+          Copy as Markdown
+        </button>
+      </div>
+
+      <ul class="pkgs" data-testid="pkg-rows">
+        @for (row of shown(); track row.section + ' ' + row.name) {
+          <li class="pkg" [class.pkg--problem]="row.problem" data-testid="pkg-row">
+            <div class="pkg__head">
+              <code class="pkg__name">{{ row.name }}</code>
+              @if (row.section === 'devDependencies') {
+                <span class="tag tag--muted">dev</span>
+              }
+              @switch (row.state) {
+                @case ('pending') {
+                  <span class="tag tag--muted">Checking…</span>
+                }
+                @case ('skipped') {
+                  <span class="tag tag--muted">Not looked up</span>
+                }
+                @case ('checked') {
+                  @if (row.drift; as drift) {
+                    <span
+                      class="tag"
+                      [class.tag--ok]="drift === 'current' || drift === 'ahead'"
+                      [class.tag--warn]="drift === 'minor' || drift === 'patch'"
+                      [class.tag--err]="drift === 'major' || drift === 'no-match'"
+                      >{{ driftLabels[drift] }}</span
+                    >
+                  }
+                }
+                @default {
+                  <span class="tag tag--err">
+                    {{ row.state === 'not-found' ? 'Not found' : row.state === 'failed' ? 'Failed' : 'Invalid' }}
+                  </span>
+                }
+              }
+              @if (row.deprecated !== null) {
+                <span class="tag tag--err">Deprecated</span>
+              }
+              @if (row.vulns && row.vulns !== 'pending' && row.vulns !== 'unchecked' && row.vulns.length) {
+                <span class="tag tag--err">
+                  {{ row.vulns.length }} {{ row.vulns.length === 1 ? 'vulnerability' : 'vulnerabilities' }}
+                </span>
+              }
+            </div>
+
+            <dl class="pkg__versions">
+              <div>
+                <dt>Declared</dt>
+                <dd>{{ row.spec }}</dd>
+              </div>
+              @if (row.alias) {
+                <div>
+                  <dt>Alias of</dt>
+                  <dd>{{ row.alias }}</dd>
+                </div>
+              }
+              @if (row.resolved) {
+                <div>
+                  <dt>Resolves to</dt>
+                  <dd>{{ row.resolved }}</dd>
+                </div>
+              }
+              @if (row.latest) {
+                <div>
+                  <dt>Latest</dt>
+                  <dd>{{ row.latest }}</dd>
+                </div>
+              }
+            </dl>
+
+            @if (row.note) {
+              <p class="pkg__note">{{ row.note }}</p>
+            }
+
+            @if (row.deprecated !== null) {
+              <p class="pkg__deprecated" data-testid="pkg-deprecated">
+                <strong>Deprecated:</strong> {{ row.deprecated }}
+              </p>
+            }
+
+            @if (row.vulns === 'pending') {
+              <p class="pkg__note">Checking OSV.dev…</p>
+            } @else if (row.vulns === 'unchecked') {
+              <p class="pkg__note">Vulnerabilities not checked.</p>
+            } @else if (row.vulns) {
+              @if (row.vulns.length === 0) {
+                <p class="pkg__note">No known vulnerabilities in {{ row.resolved }}.</p>
+              } @else {
+                <ul
+                  class="vulns"
+                  [attr.aria-label]="'Known vulnerabilities in ' + row.name + ' ' + row.resolved"
+                >
+                  @for (vuln of row.vulns; track vuln.id) {
+                    <li class="vuln" data-testid="pkg-vuln">
+                      <a
+                        class="vuln__id"
+                        [href]="'https://osv.dev/vulnerability/' + vuln.id"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >{{ vuln.id }}</a
+                      >
+                      @if (vuln.severity) {
+                        <span class="vuln__sev">{{ vuln.severity }}</span>
+                      }
+                      @if (vuln.summary) {
+                        <span class="vuln__summary">{{ vuln.summary }}</span>
+                      }
+                      @if (vuln.fixed) {
+                        <span class="vuln__fix">Fixed in {{ vuln.fixed }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            }
+          </li>
+        } @empty {
+          <li class="pkg__none">Nothing needs attention.</li>
+        }
+      </ul>
+    </section>
+  }
+</div>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="package-json-checker" />
+}

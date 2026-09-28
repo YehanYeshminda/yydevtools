@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import {
   editorByLabel,
   gotoTool,
+  mockNpmAndOsv,
   setEditorText,
   setTheme,
   uploadFiles,
@@ -837,5 +838,53 @@ for (const theme of ['dark', 'light'] as const) {
         `AXE violations with the ${state} verdict [${theme}]`,
       ).toEqual([]);
     }
+  });
+}
+
+/**
+ * The package.json Checker's report: every status tag tone, a deprecation
+ * box, an advisory list, and the OSV-down alert. None of it exists until the
+ * registry has answered, so the plain tool-page audit sees none of it.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`package-json-checker's report has no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await mockNpmAndOsv(page, {
+      packages: {
+        lodash: { latest: '4.17.21', versions: ['4.17.15', '4.17.21'] },
+        request: { latest: '2.88.2', versions: ['2.88.2'], deprecated: { '2.88.2': 'request has been deprecated' } },
+        react: { latest: '19.1.0', versions: ['17.0.2', '19.1.0'] },
+        vitest: { latest: '4.0.0', versions: ['4.0.0'] },
+      },
+      advisories: { 'lodash@4.17.15': ['GHSA-p6mc-m468-83gw'] },
+    });
+    await gotoTool(page, 'package-json-checker', 'package.json Checker');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+    await page.locator('#pkg-input').fill(
+      JSON.stringify({
+        dependencies: { lodash: '4.17.15', request: '^2.88.0', react: '^17.0.2', gone: '^1.0.0' },
+        devDependencies: { vitest: 'latest', ui: 'workspace:*' },
+      }),
+    );
+    await page.getByRole('button', { name: 'Check packages' }).click();
+    await expect(page.getByTestId('pkg-vuln')).toContainText('Fixed in 4.17.19');
+
+    const violations = async (label: string) => {
+      const results = await audit(page).include('.panel').analyze();
+      expect(
+        results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`),
+        `AXE violations ${label} [${theme}]`,
+      ).toEqual([]);
+    };
+    await violations('in the report');
+
+    await page.getByRole('button', { name: /^Needs attention/ }).click();
+    await page.unroute('https://api.osv.dev/**');
+    await page.route('https://api.osv.dev/**', (route) => route.abort('connectionrefused'));
+    await page.getByRole('button', { name: 'Check packages' }).click();
+    await expect(page.getByText('OSV.dev could not be reached')).toBeVisible();
+    await violations('with OSV unreachable');
   });
 }

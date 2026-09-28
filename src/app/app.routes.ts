@@ -691,6 +691,19 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/package-json-checker',
+    loadComponent: () =>
+      import('./tools/package-json-checker/package-json-checker').then(
+        (m) => m.PackageJsonCheckerTool,
+      ),
+    title: 'package.json Checker — Outdated, Deprecated & Vulnerable npm Packages — YYDevTools',
+    data: {
+      description:
+        'Paste a package.json to find outdated, deprecated and vulnerable npm dependencies: ' +
+        'latest versions, major/minor/patch drift and OSV advisories. Only package names are sent.',
+    },
+  },
+  {
     path: 'tools/qr-generator',
     loadComponent: () => import('./tools/qr-generator/qr-generator').then((m) => m.QrGeneratorTool),
     title: 'QR Code Generator — YYDevTools',

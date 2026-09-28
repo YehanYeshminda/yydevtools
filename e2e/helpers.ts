@@ -334,3 +334,89 @@ export async function shot(page: Page, info: TestInfo, name: string): Promise<vo
     contentType: 'image/png',
   });
 }
+
+/** A registry document in npm's abbreviated form: dist-tags, versions, deprecations. */
+export interface FakePackage {
+  latest: string;
+  versions: string[];
+  tags?: Record<string, string>;
+  deprecated?: Record<string, string>;
+}
+
+/**
+ * Stands in for registry.npmjs.org and api.osv.dev for the package.json
+ * Checker. A package missing from `packages` answers 404; one listed in
+ * `failing` has its request aborted. `advisories` maps `name@version` to OSV
+ * ids, each answered by `/v1/vulns/{id}` with a summary and a fix. Returns
+ * everything the page asked of either host, for assertions on what was sent.
+ */
+export async function mockNpmAndOsv(
+  page: Page,
+  options: {
+    packages: Record<string, FakePackage>;
+    advisories?: Record<string, string[]>;
+    failing?: string[];
+    osvDown?: boolean;
+  },
+): Promise<{ registry: string[]; osvQueries: unknown[]; osvVulns: string[] }> {
+  const seen = { registry: [] as string[], osvQueries: [] as unknown[], osvVulns: [] as string[] };
+  const cors = {
+    'access-control-allow-origin': '*',
+    'access-control-allow-headers': 'content-type',
+    'access-control-allow-methods': 'GET, POST',
+  };
+  await page.route('https://registry.npmjs.org/**', (route) => {
+    const url = route.request().url();
+    seen.registry.push(url);
+    const name = decodeURIComponent(url.slice('https://registry.npmjs.org/'.length));
+    if (options.failing?.includes(name)) return route.abort('timedout');
+    const pkg = options.packages[name];
+    if (!pkg) return route.fulfill({ status: 404, headers: cors, body: '{"error":"Not found"}' });
+    const versions = Object.fromEntries(
+      pkg.versions.map((v) => [v, pkg.deprecated?.[v] ? { deprecated: pkg.deprecated[v] } : {}]),
+    );
+    return route.fulfill({
+      headers: cors,
+      contentType: 'application/json',
+      body: JSON.stringify({ name, 'dist-tags': { latest: pkg.latest, ...pkg.tags }, versions }),
+    });
+  });
+  await page.route('https://api.osv.dev/**', (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (options.osvDown) return route.abort('connectionrefused');
+    if (request.url() === 'https://api.osv.dev/v1/querybatch') {
+      const body = request.postDataJSON() as {
+        queries: Array<{ package: { name: string }; version: string }>;
+      };
+      seen.osvQueries.push(body);
+      const results = body.queries.map((q) => {
+        const ids = options.advisories?.[`${q.package.name}@${q.version}`] ?? [];
+        return ids.length ? { vulns: ids.map((id) => ({ id, modified: '2024-01-01T00:00:00Z' })) } : {};
+      });
+      return route.fulfill({ headers: cors, contentType: 'application/json', body: JSON.stringify({ results }) });
+    }
+    const id = decodeURIComponent(request.url().split('/v1/vulns/')[1] ?? '');
+    seen.osvVulns.push(id);
+    const [name, version] = Object.entries(options.advisories ?? {})
+      .find(([, ids]) => ids.includes(id))![0]
+      .split(/@(?=[^@]*$)/);
+    return route.fulfill({
+      headers: cors,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id,
+        summary: `Prototype pollution in ${name} before ${version}`,
+        aliases: ['CVE-2020-8203'],
+        database_specific: { severity: 'HIGH' },
+        affected: [
+          {
+            package: { name, ecosystem: 'npm' },
+            ranges: [{ type: 'SEMVER', events: [{ introduced: '0' }, { fixed: '4.17.19' }] }],
+          },
+        ],
+      }),
+    });
+  });
+  return seen;
+}

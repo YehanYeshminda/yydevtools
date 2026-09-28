@@ -53,6 +53,20 @@
     </p>
   </section>
 
+  <section class="section" aria-labelledby="p-npm">
+    <h2 id="p-npm" class="section__title">The package.json Checker</h2>
+    <p class="section__text">
+      The <strong>package.json Checker</strong> reads the file you paste or drop in your
+      browser, and only package names leave it. When you press Check packages, your browser
+      sends each package name directly to the public npm registry (registry.npmjs.org), and
+      each name with the version its range resolves to directly to OSV.dev (api.osv.dev),
+      then fetches the advisories OSV.dev returned by their ids. Nothing else from the file is
+      sent, and none of it is sent to us. Workspace, local-path and Git dependencies are not
+      sent at all. A private package name is sent like any other, because it cannot be told
+      apart until the registry answers.
+    </p>
+  </section>
+
   <section class="section" aria-labelledby="p-storage">
     <h2 id="p-storage" class="section__title">What is stored on your device</h2>
     <p class="section__text">
@@ -104,6 +118,10 @@
       <li>
         <strong>Have I Been Pwned</strong> — receives the 5-character hash prefix when you use
         the Password Generator’s breach check, and nothing else.
+      </li>
+      <li>
+        <strong>npm registry and OSV.dev</strong> — receive package names, and for OSV.dev the
+        resolved version of each, when you use the package.json Checker, and nothing else.
       </li>
       <li><strong>Google AdSense</strong> — supplies the advertising that funds the site.</li>
       <li><strong>Google Fonts</strong> — serves the typefaces used by the site.</li>

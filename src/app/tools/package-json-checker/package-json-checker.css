@@ -1,0 +1,168 @@
+.report {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.report__summary {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--on);
+}
+
+.report__caveat {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--on-var);
+}
+
+.pkgs,
+.vulns {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pkgs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pkg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--outline-2);
+  border-left: 2px solid var(--outline);
+  background: var(--surface-1);
+}
+
+.pkg--problem {
+  border-left-color: var(--error);
+}
+
+.pkg__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+}
+
+.pkg__name {
+  min-width: 0;
+  margin-right: 0.25rem;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--on);
+}
+
+.tag {
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--r-pill);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tag--muted {
+  color: var(--on-var);
+  background: var(--surface-2);
+}
+
+.tag--ok {
+  color: var(--success);
+  background: var(--success-bg);
+}
+
+.tag--warn {
+  color: var(--star);
+  background: var(--star-bg);
+}
+
+.tag--err {
+  color: var(--error);
+  background: var(--error-bg);
+}
+
+.pkg__versions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.pkg__versions div {
+  display: flex;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.pkg__versions dt {
+  color: var(--on-var);
+}
+
+.pkg__versions dd {
+  min-width: 0;
+  margin: 0;
+  font-family: var(--mono);
+  color: var(--on);
+}
+
+.pkg__note,
+.pkg__none {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--on-var);
+}
+
+.pkg__deprecated {
+  margin: 0;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+  color: var(--error);
+  background: var(--error-bg);
+}
+
+.vulns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.vuln {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  font-size: 0.85rem;
+  color: var(--on);
+}
+
+.vuln__id {
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+.vuln__sev {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--error);
+}
+
+.vuln__summary {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.vuln__fix {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--on-var);
+}

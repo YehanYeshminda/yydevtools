@@ -100,6 +100,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'package-json-checker',
+    name: 'package.json Checker',
+    description:
+      'Find outdated, deprecated and vulnerable npm packages in a package.json, checked against the registry and OSV.',
+    icon: 'matInventory2Outline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'qr-generator',
     name: 'QR Code Generator',
     description:

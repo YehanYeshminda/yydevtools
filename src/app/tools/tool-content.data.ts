@@ -530,7 +530,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Comparison is linear in the size of the two documents and runs in your browser, so a few megabytes is fine. The Tree view renders every line, which gets slow well before the comparison does; for very large documents, stay on the Changes view.',
       },
     ],
-    related: ['json-formatter', 'text-diff', 'json-to-types', 'json-csv'],
+    related: ['json-formatter', 'text-diff', 'json-to-types', 'json-csv', 'package-json-checker'],
   },
   'text-diff': {
     slug: 'text-diff',
@@ -793,6 +793,86 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
     ],
     related: ['jwt-decoder', 'json-formatter', 'timestamp-converter', 'cron-explainer'],
+  },
+
+  'package-json-checker': {
+    slug: 'package-json-checker',
+    intro: [
+      'Paste a package.json, or drop the file in, and get a report on every dependency and devDependency: the range you declared, the version that range installs today, the latest release, how far behind it is, whether npm has marked it deprecated, and whether that version has a published vulnerability in OSV.dev.',
+      'It answers the questions npm outdated and npm audit answer, without cloning the project or installing anything, and it works on a package.json you were sent or found in a repository. Only package names leave your browser. Each name is looked up on the public npm registry, and each name with the version its range resolves to is checked against OSV.dev. Nothing else from the file is sent: not your scripts, not the ranges you declared, not the project name.',
+    ],
+    steps: [
+      'Paste the contents of a package.json into the box, or drop the file onto the page.',
+      'Press Check packages. Each package is looked up on the npm registry, a few at a time, and the versions they resolve to are checked against OSV.dev in one batch.',
+      'Read the report. Switch to Needs attention to see only the packages that are behind, deprecated, vulnerable or could not be found.',
+      'Copy the report as a Markdown table to paste into an issue or a pull request.',
+    ],
+    features: [
+      'dependencies and devDependencies, in the order the file lists them.',
+      'Major, minor and patch drift, measured the way npm resolves a range: the latest release when the range allows it, otherwise the newest non-deprecated match.',
+      'npm deprecation messages, shown in full.',
+      'Known vulnerabilities from OSV.dev, with severity, summary and the version that fixes each one.',
+      'Scoped packages, npm: aliases and dist-tags such as latest and next.',
+      'workspace:, file:, link:, Git and tarball dependencies are listed but never looked up.',
+      'A package that times out or is missing from the registry is marked on its own row; the rest of the report still arrives.',
+      'Only package names (and, for OSV.dev, the resolved version) are sent. Nothing is sent to this site.',
+    ],
+    sections: [
+      {
+        heading: 'Why a range can be behind even when npm install is happy',
+        body: [
+          'A caret range such as ^4.17.15 accepts any 4.x release from 4.17.15 up, so it keeps picking up minor and patch releases on its own. What it will never accept is 5.0.0. When a package publishes a new major version, every project on the old caret range stays on the old major line, and npm install says nothing, because the range is still satisfied. That is the major drift this report shows: the newest version your range allows, compared with the version the package now calls latest.',
+          'A tilde range (~4.17.0) accepts patch releases only, so it falls behind on minors too. An exact version (4.17.15) never moves at all, which is why pinned dependencies are the ones that most often turn up here with old vulnerabilities.',
+        ],
+      },
+      {
+        heading: 'The resolved version is not your lockfile',
+        body: [
+          'A package.json holds ranges, not versions. The version you actually run is written in package-lock.json, yarn.lock or pnpm-lock.yaml, and it can be older than the newest release your range allows if the lockfile has not been refreshed. This tool reads only the package.json, so it checks the version each range would resolve to on a fresh install today.',
+          'That makes it a good check of what the manifest allows, and a partial one of what you are running. A range that resolves to a fixed version can still be installed at a vulnerable one in your lockfile. Run npm audit in the project, or update the lockfile, to cover that.',
+        ],
+      },
+      {
+        heading: 'Deprecated packages',
+        body: [
+          'npm lets a maintainer mark a version, or every version, as deprecated with a message. npm install prints that message as a warning and carries on, so deprecations tend to scroll past unread. Common reasons are that the package has been renamed, merged into another, replaced by a platform feature, or simply abandoned. The message usually says which, and what to use instead.',
+          'A deprecated version with no known vulnerability is not an emergency, but it will not be fixed if one is found, which is reason enough to plan the move.',
+        ],
+      },
+      {
+        heading: 'Where the vulnerability data comes from',
+        body: [
+          'OSV.dev is an open vulnerability database run by Google. For npm it collects the GitHub Advisory Database, which is also what npm audit reports from, along with malicious-package reports. Each advisory lists the affected version ranges, so a query for a package and one exact version returns the advisories that apply to it. The report links each one to its page on osv.dev, and shows the lowest version that fixes it where the advisory names one.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'What exactly is sent, and to whom?',
+        a: 'Your browser sends each package name to the public npm registry (registry.npmjs.org), and each name with the version its range resolves to to OSV.dev (api.osv.dev). It then fetches the details of any advisory OSV returned, by its id. Nothing else from the file is sent, and nothing is sent to this site. Like any website, the registry and OSV.dev see your IP address.',
+      },
+      {
+        q: 'Are private package names sent too?',
+        a: 'Yes. A name in the dependencies is sent to the public registry whether or not it is published there, and the tool cannot tell a private package from a public one until the registry answers. A private package comes back as Not found and is never sent to OSV.dev. If the name itself is confidential, remove it before checking.',
+      },
+      {
+        q: 'Why does a package show no known vulnerabilities when npm audit reports one?',
+        a: 'npm audit reads the versions in your lockfile, including every transitive dependency. This tool checks only the direct dependencies in the package.json, at the version each range resolves to today. A vulnerable version in the lockfile, or deep in the dependency tree, will not appear here.',
+      },
+      {
+        q: 'What do Major, Minor and Patch behind mean?',
+        a: 'They compare the newest version your range allows with the latest release. Major behind means the latest release is a new major version your range will not install, which usually means breaking changes to read about. Minor and Patch behind mean the range is narrower than it needs to be, usually a tilde range or an exact version.',
+      },
+      {
+        q: 'Why is a workspace or Git dependency not checked?',
+        a: 'workspace:, file:, link:, Git and tarball dependencies do not come from the npm registry, so there is nothing there to compare them with. They are listed so the report accounts for every entry, but their names are never sent anywhere.',
+      },
+      {
+        q: 'What does Ahead of latest mean?',
+        a: 'The spec resolves to a version newer than the latest tag, usually because it asks for a prerelease channel such as next or beta. That is a choice rather than a problem, so it is not flagged.',
+      },
+    ],
+    related: ['json-formatter', 'json-diff', 'ai-status'],
   },
 
   'qr-generator': {
