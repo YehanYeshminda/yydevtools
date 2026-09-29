@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-import { expectClean, expectNoHorizontalOverflow, setTheme, watchConsole } from './helpers';
+import {
+  expectClean,
+  expectNoHorizontalOverflow,
+  setTheme,
+  waitForHydration,
+  watchConsole,
+} from './helpers';
 
 /**
  * The app shell: header, nav, browse menu, theme control, palette trigger and
@@ -165,6 +171,63 @@ test.describe('app shell', () => {
       await expect(page).toHaveURL(new RegExp(`${path}$`));
       await expect(page.locator('h1')).toBeVisible();
     }
+  });
+
+  /**
+   * A tab left open across a deploy. Workers static assets serve only the
+   * current deploy, so the lazy chunk the old page asks for is a 404, and the
+   * link used to do nothing at all. The first chunk request after the "deploy"
+   * is answered 404 here, which is what production answers for an old hash.
+   */
+  test('a link still opens its page when the old chunk is gone after a deploy', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await waitForHydration(page);
+
+    let deployed = true;
+    await page.route(/\/chunk-[A-Za-z0-9_-]+\.js(\?.*)?$/, (route) => {
+      if (!deployed) return route.continue();
+      deployed = false;
+      return route.fulfill({ status: 404, body: 'Not found' });
+    });
+
+    await page.locator('a[href="/tools/base-converter"]').first().click();
+    await expect(page).toHaveURL(/\/tools\/base-converter$/);
+    expect(deployed, 'no chunk was requested, so nothing was tested').toBe(false);
+    await expect(page.locator('.head__title')).toHaveText('Number Base Converter');
+    await waitForHydration(page);
+  });
+
+  /**
+   * The same tab, clicking a link in a tool's long-form copy. That copy sits in
+   * `@defer (hydrate on interaction)`, so the click first asks for the block's
+   * chunk; when it has gone the block fails with NG0750 and the click was never
+   * replayed.
+   */
+  test('a link in a tool’s copy still opens its page after a deploy', async ({ page }) => {
+    await page.goto('/tools/json-formatter');
+    await waitForHydration(page);
+
+    // Old chunks are gone until the page is loaded afresh from the server.
+    let stale = true;
+    let refused = 0;
+    page.on('request', (request) => {
+      if (request.isNavigationRequest() && request.frame() === page.mainFrame()) stale = false;
+    });
+    await page.route(/\/chunk-[A-Za-z0-9_-]+\.js(\?.*)?$/, (route) => {
+      if (!stale) return route.continue();
+      refused++;
+      return route.fulfill({ status: 404, body: 'Not found' });
+    });
+
+    const link = page.locator('[ngb] a[href^="/tools/"]').first();
+    const href = await link.getAttribute('href');
+    expect(href).toMatch(/^\/tools\/[a-z0-9-]+$/);
+    await link.click();
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+    expect(refused, 'no chunk was requested, so nothing was tested').toBeGreaterThan(0);
+    await waitForHydration(page);
   });
 
   test('no page scrolls sideways at this viewport', async ({ page }) => {

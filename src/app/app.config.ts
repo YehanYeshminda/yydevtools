@@ -1,16 +1,23 @@
 import {
   ApplicationConfig,
+  ErrorHandler,
   inject,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter, withInMemoryScrolling, withViewTransitions } from '@angular/router';
+import {
+  provideRouter,
+  withInMemoryScrolling,
+  withNavigationErrorHandler,
+  withViewTransitions,
+} from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideIcons, provideNgIconsConfig } from '@ng-icons/core';
 
 import { routes } from './app.routes';
 import { APP_ICONS } from './core/icons';
 import { PreHydrationInput } from './core/pre-hydration-input';
+import { StaleChunkErrorHandler, reloadOnStaleChunk } from './core/stale-chunk';
 import {
   provideClientHydration,
   withEventReplay,
@@ -20,6 +27,8 @@ import {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    // Recovers a tab that outlived a deploy; see core/stale-chunk.ts.
+    { provide: ErrorHandler, useClass: StaleChunkErrorHandler },
     provideIcons(APP_ICONS),
     // Sizing in `em` rather than px keeps mat-icon's semantics, where an icon
     // scales with the font-size set on it. The 24px default that mat-icon had
@@ -40,10 +49,14 @@ export const appConfig: ApplicationConfig = {
     // in a URL are share-link state payloads (`#s=…` — see core/tool-state.ts), and
     // with anchor scrolling on the router would try to scroll to an element named
     // after the payload and skip the scroll-to-top fallback when it found none.
+    //
+    // A tab left open across a deploy asks for lazy chunks that have gone; see
+    // core/stale-chunk.ts. That navigation becomes a full page load.
     provideRouter(
       routes,
       withViewTransitions({ skipInitialTransition: true }),
       withInMemoryScrolling({ scrollPositionRestoration: 'enabled' }),
+      withNavigationErrorHandler(reloadOnStaleChunk),
     ),
     provideHttpClient(),
     // Incremental hydration lets each tool's long-form copy stay server-rendered
