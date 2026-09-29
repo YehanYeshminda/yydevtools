@@ -57,6 +57,8 @@ export class QrReaderTool implements OnDestroy {
   protected readonly error = signal('');
 
   ngOnDestroy(): void {
+    // Retires a camera request still waiting on its permission prompt.
+    this.run++;
     this.stopCamera();
     this.codec.terminate();
     this.revoke();
@@ -120,15 +122,27 @@ export class QrReaderTool implements OnDestroy {
       this.error.set('This browser cannot use a camera here. Upload a photo of the code instead.');
       return;
     }
+    const run = this.run;
+    let stream: MediaStream;
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' },
         audio: false,
       });
     } catch (error) {
-      this.error.set(cameraError(error));
+      if (run === this.run) {
+        this.error.set(cameraError(error));
+      }
       return;
     }
+    // The permission prompt can sit open for seconds. A second click, a file, or
+    // leaving the page in that time has moved on, and a stream nobody holds
+    // would keep the camera light on until the tab closes.
+    if (run !== this.run) {
+      stream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+    this.stream = stream;
     const video = this.video().nativeElement;
     video.srcObject = this.stream;
     this.scanning.set(true);

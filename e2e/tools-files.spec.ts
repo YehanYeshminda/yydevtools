@@ -1803,6 +1803,56 @@ test('qr-reader scans from the camera and turns it off once it reads a code', as
 });
 
 /**
+ * A camera granted after the page has moved on is turned straight off.
+ *
+ * getUserMedia waits on the permission prompt, which can sit open for seconds.
+ * A second click on Scan, or leaving the tool, in that time used to leave a
+ * stream nobody held: the page said the camera was off while its light stayed
+ * on until the tab closed. The stub here answers after 1.5 s, like a prompt.
+ */
+test('qr-reader never leaves the camera on behind a slow permission prompt', async ({ page }) => {
+  const watch = watchConsole(page);
+  await page.addInitScript(() => {
+    const w = window as unknown as { streams: MediaStream[] };
+    w.streams = [];
+    navigator.mediaDevices.getUserMedia = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1_500));
+      const canvas = document.createElement('canvas');
+      canvas.width = 320;
+      canvas.height = 240;
+      canvas.getContext('2d')!.fillRect(0, 0, 320, 240);
+      const stream = canvas.captureStream(10);
+      w.streams.push(stream);
+      return stream;
+    };
+  });
+  const liveStreams = () =>
+    page.evaluate(
+      () =>
+        (window as unknown as { streams: MediaStream[] }).streams.filter((stream) =>
+          stream.getTracks().some((track) => track.readyState === 'live'),
+        ).length,
+    );
+
+  // Two clicks while the prompt is up, then Stop: nothing may stay live.
+  await gotoTool(page, 'qr-reader', 'QR Code Reader');
+  const scan = page.getByRole('button', { name: 'Scan with camera' });
+  await scan.click();
+  await scan.click();
+  await page.getByRole('button', { name: 'Stop camera' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { streams: MediaStream[] }).streams.length)).toBe(2);
+  expect(await liveStreams()).toBe(0);
+
+  // Leaving the tool while the prompt is up.
+  await page.getByRole('button', { name: 'Scan with camera' }).click();
+  await page.getByRole('link', { name: 'All tools' }).first().click();
+  await expect(page).not.toHaveURL(/qr-reader/);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { streams: MediaStream[] }).streams.length)).toBe(3);
+  expect(await liveStreams()).toBe(0);
+  expectClean(watch);
+});
+
+/**
  * Back after Send to or Open in, for tools whose state is an image. It cannot
  * go in session storage, so it is handed back in memory and read again.
  */
