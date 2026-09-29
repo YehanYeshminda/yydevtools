@@ -167,6 +167,42 @@ test('jwt-decoder splits a token into header and claims', async ({ page }) => {
   expectClean(watch);
 });
 
+/**
+ * A share link applies once per visit. The fragment stays in the address bar,
+ * so a reload used to apply it again over everything typed since: open a link,
+ * edit, refresh, and the edits were gone. A fresh visit to the same link must
+ * still show the link's state.
+ */
+test('edits made after opening a share link survive a reload', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await gotoTool(page, 'case-converter', 'Case Converter');
+  await page.locator('#case-input').fill('shared by a colleague');
+  await page.getByRole('button', { name: 'Copy link' }).click();
+  const link = await page.evaluate(() => navigator.clipboard.readText());
+  expect(link).toContain('/tools/case-converter#s=');
+
+  const other = await context.newPage();
+  const watch = watchConsole(other);
+  await other.goto(link);
+  await waitForHydration(other);
+  const input = other.locator('#case-input');
+  await expect(input).toHaveValue('shared by a colleague');
+
+  await input.fill('my own edits');
+  // Session state is written 300 ms after the last change.
+  await other.waitForTimeout(800);
+  await other.reload();
+  await waitForHydration(other);
+  await expect(input).toHaveValue('my own edits');
+
+  // Opening the link afresh is a new visit, and shows the link again.
+  await other.goto('about:blank');
+  await other.goto(link);
+  await waitForHydration(other);
+  await expect(input).toHaveValue('shared by a colleague');
+  expectClean(watch);
+});
+
 test('jwt-decoder share link carries the token but never the key', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await gotoTool(page, 'jwt-decoder', 'JWT Decoder');

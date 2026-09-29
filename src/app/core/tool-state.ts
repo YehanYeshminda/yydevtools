@@ -139,7 +139,16 @@ export function syncToolState<T extends object>(options: ToolStateOptions<T>): T
     () => {
       // A shared link wins over whatever this tab was last doing: arriving via
       // someone else's URL should show their state, not yours.
-      const fromLink = readHash();
+      //
+      // But only the first time this history entry is shown. The fragment stays
+      // in the address bar, so a reload (or Back to this entry) would otherwise
+      // apply the link again over everything typed since. The mark lives in
+      // the entry's own history.state: a new link or Send to is a new entry
+      // without one, so it still wins.
+      const fromLink = linkApplied(storageKey) ? null : readHash();
+      if (fromLink) {
+        markLinkApplied(storageKey);
+      }
       const state = fromLink ?? readStorage(storageKey);
       if (state) {
         const filtered = pickKeys(state, allowedKeys);
@@ -226,6 +235,24 @@ function readHash(): Record<string, unknown> | null {
   }
   const encoded = new URLSearchParams(hash).get(HASH_KEY);
   return encoded ? decodeState(encoded) : null;
+}
+
+/** history.state key recording which tool's link this entry has already applied. */
+const LINK_APPLIED = 'yyLinkApplied';
+
+function linkApplied(storageKey: string): boolean {
+  const state: unknown = history.state;
+  return (
+    typeof state === 'object' &&
+    state !== null &&
+    (state as Record<string, unknown>)[LINK_APPLIED] === storageKey
+  );
+}
+
+function markLinkApplied(storageKey: string): void {
+  const state: unknown = history.state;
+  const base = typeof state === 'object' && state !== null ? state : {};
+  history.replaceState({ ...base, [LINK_APPLIED]: storageKey }, '');
 }
 
 // --- Encoding -------------------------------------------------------------
