@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-import { expectNoHorizontalOverflow } from './helpers';
+import { TOOLS } from '../src/app/tools/tools.data';
+import { expectNoHorizontalOverflow, fixture, gotoTool } from './helpers';
 
 /**
  * Runs under the `mobile` project (Pixel 7). The redesign's workbench layout
@@ -56,4 +57,31 @@ test('the category pages collapse to one column without sideways scroll', async 
     expect(columns, path).toBe(1);
     await expectNoHorizontalOverflow(page);
   }
+});
+
+/**
+ * The desktop smoke pass runs the same check at 1440 px, where nothing below
+ * 720 px applies. The Invoice Generator's visually hidden "Remove" heading
+ * (position: absolute) escaped its scrolling table here and made the page
+ * 446 px wide on a 375 px phone, with no desktop run able to see it.
+ */
+test('every tool page keeps its layout inside a phone screen', async ({ page }) => {
+  test.slow();
+  for (const tool of TOOLS.filter((entry) => entry.ready)) {
+    await page.goto(`/tools/${tool.slug}`);
+    await expect(page.locator('.head__title')).toHaveText(tool.name);
+    await expectNoHorizontalOverflow(page);
+  }
+});
+
+/**
+ * Its controls only appear once an image is loaded. The quality slider had
+ * width: 100% on top of Material's 8 px side margins, so it and its range
+ * input overhung the column and the page scrolled sideways.
+ */
+test('the image compressor fits a phone once an image is loaded', async ({ page }) => {
+  await gotoTool(page, 'image-compressor', 'Image Compressor');
+  await page.locator('input[type="file"]').first().setInputFiles(fixture('sample.jpg'));
+  await expect(page.locator('mat-slider')).toBeVisible({ timeout: 30_000 });
+  await expectNoHorizontalOverflow(page);
 });

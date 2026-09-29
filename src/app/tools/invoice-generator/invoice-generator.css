@@ -152,7 +152,11 @@
 }
 
 /* Line items ------------------------------------------------------------ */
+/* Positioned so it is the containing block of the visually hidden "Remove"
+   heading (position: absolute). Otherwise that heading escapes the scroller
+   and widens the whole page: 446 px of scroll on a 375 px phone. */
 .items-scroll {
+  position: relative;
   overflow-x: auto;
 }
 
