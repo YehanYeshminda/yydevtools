@@ -1162,6 +1162,27 @@ test('secret-link seals a secret, opens it once, and burns it', async ({ page })
   expectClean(watch);
 });
 
+/**
+ * The limit is in bytes because what is encrypted is UTF-8. Counted in
+ * characters, 30,000 Cyrillic letters showed as inside the 32,768 limit, and
+ * the Worker then refused the 60 KB ciphertext with a message about base64.
+ */
+test('secret-link measures a non-ASCII secret in the bytes it will send', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'secret-link', 'One-Time Secret');
+  const create = page.getByRole('button', { name: 'Create one-time link' });
+
+  await page.locator('#secret').fill('Ж'.repeat(30_000));
+  await expect(page.getByText('60000 of 32768 bytes')).toBeVisible();
+  await expect(create).toBeDisabled();
+
+  // Half as many letters is half the bytes, and fits.
+  await page.locator('#secret').fill('Ж'.repeat(15_000));
+  await expect(page.getByText('30000 of 32768 bytes')).toBeVisible();
+  await expect(create).toBeEnabled();
+  expectClean(watch);
+});
+
 test('barcode-generator draws every format and completes the check digit', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'barcode-generator', 'Barcode Generator');

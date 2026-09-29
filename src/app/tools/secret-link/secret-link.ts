@@ -20,11 +20,15 @@ const EXPIRIES = [
 type Expiry = (typeof EXPIRIES)[number]['value'];
 
 /**
- * Ceiling on the plaintext.
+ * Ceiling on the plaintext, in UTF-8 bytes.
  *
  * The Worker caps the base64 ciphertext at 64 KB; encryption and base64 both
  * add to the length, so this leaves comfortable room underneath. It is a tool
  * for a password or a key, not a file transfer.
+ *
+ * Bytes, not characters: what is encrypted is the UTF-8 encoding. Counted in
+ * characters, 30,000 Cyrillic letters read as within the limit and are 60 KB,
+ * which the Worker refused with a message about base64.
  */
 const MAX_SECRET = 32 * 1024;
 
@@ -69,7 +73,7 @@ export class SecretLinkTool {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected readonly length = computed(() => this.secret().length);
+  protected readonly length = computed(() => new TextEncoder().encode(this.secret()).length);
   protected readonly tooLong = computed(() => this.length() > MAX_SECRET);
   protected readonly canCreate = computed(
     () => this.secret().trim() !== '' && !this.tooLong() && !this.busy(),
