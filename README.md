@@ -36,7 +36,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Slug Generator** | A list of titles into URL slugs — accents folded, length capped, collisions numbered. |
 | **Colour Palette Extractor** | The dominant colours of a photo or logo, with the share each one covers. |
 | **Email Template Generator** | Plain text into an HTML email that survives Outlook, or a .eml, Word or RTF file. |
-| **Invoice & Receipt Generator** | Fill in an invoice or receipt with a live preview and your logo, and download the PDF. |
+| **Invoice & Receipt Generator** | Fill in an invoice or receipt with a live preview and your logo, optionally with the total in a second currency, and download the PDF. |
 | **PDF Visual Diff** | Compare two PDFs page by page and see which pixels moved. |
 | **Text Cleaner** | Strip invisible characters, straighten curly quotes, trim, sort and de-duplicate lines. |
 | **Lorem Ipsum Generator** | Generate placeholder text by paragraph, sentence, word or list item, as text, HTML or Markdown. |
@@ -72,7 +72,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Image OCR** | Copy the text out of a screenshot or photo, in English, Sinhala or Tamil, without uploading it. |
 | **EXIF Viewer** | See the camera, timestamp and GPS location hidden in a photo, then strip it out without re-compressing. |
 | **Pomodoro Timer & Stopwatch** | Focus sessions with automatic breaks, or a stopwatch with laps. Keeps running across the site. |
-| **Unit Converter** | Length, weight, temperature, volume, speed, area, data and time, with every unit at once. |
+| **Unit Converter** | Length, weight, temperature, volume, speed, area, data, time and currency (daily reference rates from currency-api), with every unit at once. |
 | **Age & Date Difference Calculator** | An age from a date of birth, or the span between two dates, in calendar units and totals. |
 | **Timestamp Converter** | Convert between Unix timestamps and human-readable dates. |
 

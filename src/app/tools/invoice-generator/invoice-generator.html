@@ -253,7 +253,70 @@
             <dt>Total</dt>
             <dd data-testid="grand-total">{{ totalText() }}</dd>
           </div>
+          @if (convertedText()) {
+            <div class="totals__row" data-testid="converted-total">
+              <dt>Approx. in {{ alsoIn() }}</dt>
+              <dd>{{ convertedText() }}</dd>
+            </div>
+          }
         </dl>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="inv-also-in">Also show the total in</label>
+        <select
+          id="inv-also-in"
+          class="field__input"
+          [value]="alsoIn()"
+          (change)="setAlsoIn($any($event.target).value)"
+        >
+          <option value="">No other currency</option>
+          @for (option of secondCurrencies(); track option.code) {
+            <option [value]="option.code">{{ option.label }}</option>
+          }
+        </select>
+        @switch (conversion()) {
+          @case ('off') {
+            <span class="field__hint">
+              Off by default. Choosing one fetches the day's exchange rates and prints the converted
+              total under the real one.
+            </span>
+          }
+          @case ('loading') {
+            <span class="working" role="status">Fetching the daily reference rates…</span>
+          }
+          @case ('failed') {
+            <div class="rates-failed">
+              <p class="status status--err" role="alert">
+                <ng-icon class="status__icon" aria-hidden="true" name="matCloudOffOutline" />
+                The exchange rates could not be loaded, so no converted total is shown and the PDF
+                is unchanged.
+              </p>
+              <button type="button" matButton (click)="retryRates()">
+                <ng-icon name="matRefreshOutline" />
+                Try again
+              </button>
+            </div>
+          }
+          @case ('missing') {
+            <p class="status status--err" role="alert">
+              <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+              There is no rate for {{ alsoIn() }} in today's data, so no converted total is shown.
+            </p>
+          }
+          @case ('ready') {
+            <span class="field__hint" data-testid="rate-note">
+              {{ rateText() }}, the daily reference rate for {{ rateDate() }} from fawazahmed0's
+              currency-api. It is not a live trading rate, so what a bank pays will differ.
+            </span>
+            @if (staleDays()) {
+              <p class="status status--err" role="alert" data-testid="rates-stale">
+                <ng-icon class="status__icon" aria-hidden="true" name="matScheduleOutline" />
+                These rates are {{ staleDays() }} days old: the source has not updated since.
+              </p>
+            }
+          }
+        }
       </div>
 
       <div class="field">
@@ -325,7 +388,8 @@
   <p class="note">
     <ng-icon class="note__icon" aria-hidden="true" name="matCloudOffOutline" />
     The PDF is built in this tab. Your details, your client's details and the amounts are never
-    uploaded, and this page is deliberately the one tool here with no share link.
+    uploaded, and this page is deliberately the one tool here with no share link. A second currency
+    fetches one public file of US-dollar rates from currency-api; nothing you typed goes with it.
   </p>
 </div>
 

@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page, type TestInfo } from '@playwright/test';
+import { expect, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
 import { join } from 'node:path';
 
 export const fixture = (name: string) => join(__dirname, 'fixtures', name);
@@ -423,4 +423,95 @@ export async function mockNpmAndOsv(
     });
   });
   return seen;
+}
+
+/** Both currency-api mirrors, primary first, as core/currency.ts fetches them. */
+export const RATE_URLS = [
+  'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.min.json',
+  'https://latest.currency-api.pages.dev/v1/currencies/usd.min.json',
+];
+
+/** Round numbers per US dollar, so every expected figure can be worked by hand. */
+export const FAKE_RATES: Record<string, number> = {
+  usd: 1,
+  eur: 0.8,
+  gbp: 0.75,
+  lkr: 300,
+  jpy: 150,
+  bhd: 0.376,
+  inr: 88,
+  aud: 1.5,
+  cad: 1.4,
+  chf: 0.9,
+  sgd: 1.3,
+  cny: 7.2,
+  aed: 3.6725,
+  // The real file carries crypto too; it must not show up as a currency.
+  btc: 0.00001,
+};
+
+export interface SeenRateRequest {
+  url: string;
+  method: string;
+  referer: string | undefined;
+  cookie: string | undefined;
+  body: string | null;
+}
+
+/**
+ * Stands in for both currency-api mirrors. `down` aborts a mirror's request:
+ * that is what the page sees when a host is unreachable, and a fulfilled error
+ * would skip the CORS check the browser applies to the real one. The real
+ * mirrors answer 200 and 404 with `access-control-allow-origin: *`, so a
+ * fulfilled answer carries it too. Returns every request either mirror got.
+ */
+export async function mockCurrencyApi(
+  page: Page,
+  options: {
+    primary?: 'ok' | 'down';
+    fallback?: 'ok' | 'down';
+    date?: string;
+    rates?: Record<string, number>;
+  } = {},
+): Promise<SeenRateRequest[]> {
+  const seen: SeenRateRequest[] = [];
+  const date = options.date ?? new Date().toISOString().slice(0, 10);
+  const body = JSON.stringify({ date, usd: options.rates ?? FAKE_RATES });
+  const handle = (mode: 'ok' | 'down') => async (route: Route) => {
+    const request = route.request();
+    const headers = await request.allHeaders();
+    seen.push({
+      url: request.url(),
+      method: request.method(),
+      referer: headers['referer'],
+      cookie: headers['cookie'],
+      body: request.postData(),
+    });
+    if (mode === 'down') return route.abort('connectionrefused');
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body,
+    });
+  };
+  await page.route('https://cdn.jsdelivr.net/**', handle(options.primary ?? 'ok'));
+  await page.route('https://latest.currency-api.pages.dev/**', handle(options.fallback ?? 'ok'));
+  return seen;
+}
+
+/**
+ * Every rate request must be one of the two fixed files and nothing else: a
+ * GET, no query, no body, no referrer and no cookie — so neither the amount
+ * nor the currencies picked can travel with it.
+ */
+export function expectOnlyFixedRateRequests(seen: SeenRateRequest[]): void {
+  expect(seen.length).toBeGreaterThan(0);
+  for (const request of seen) {
+    expect(RATE_URLS).toContain(request.url);
+    expect(request.method).toBe('GET');
+    expect(request.body).toBeNull();
+    expect(request.referer).toBeUndefined();
+    expect(request.cookie).toBeUndefined();
+  }
 }

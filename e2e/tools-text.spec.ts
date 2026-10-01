@@ -4,10 +4,13 @@ import { createHash } from 'node:crypto';
 import {
   editorByLabel,
   editorTextWhen,
+  RATE_URLS,
   expectClean,
   expectNoHorizontalOverflow,
+  expectOnlyFixedRateRequests,
   getEditorText,
   gotoTool,
+  mockCurrencyApi,
   mockNpmAndOsv,
   setEditorText,
   waitForHydration,
@@ -964,6 +967,106 @@ test('unit-converter converts across categories, temperature included', async ({
   await expect(page.getByRole('alert')).toContainText('not a number');
 
   expectClean(watch);
+});
+
+/**
+ * Currency, against a fake currency-api with round rates: USD 1, EUR 0.8,
+ * LKR 300, JPY 150, BHD 0.376. Each figure below can be worked by hand.
+ */
+test('unit-converter converts currency, fetching rates only once Currency is opened', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  const seen = await mockCurrencyApi(page);
+  await gotoTool(page, 'unit-converter', 'Unit Converter');
+
+  // Inches and kilograms need no rates, so nothing is fetched for them.
+  const result = page.getByTestId('result');
+  await expect(result).toContainText('1 cm = 0.3937007874 in');
+  await page.getByRole('button', { name: 'Weight' }).click();
+  await expect(result).toContainText('kg');
+  expect(seen).toHaveLength(0);
+
+  await page.getByRole('button', { name: 'Currency' }).click();
+  await expect(result).toContainText('1 USD = 0.80 EUR');
+
+  // Two decimals for most currencies, rounded once at the end.
+  await page.locator('#unit-to').selectOption('LKR');
+  await page.locator('#unit-value').fill('12.34');
+  await expect(result).toHaveText(/^\s*12\.34 USD = 3,702\.00 LKR\s*$/);
+
+  // None for yen: 1.23 x 150 is 184.5, which rounds up to 185, not 184.50.
+  await page.locator('#unit-to').selectOption('JPY');
+  await page.locator('#unit-value').fill('1.23');
+  await expect(result).toHaveText(/^\s*1\.23 USD = 185 JPY\s*$/);
+
+  // Three for the Bahraini dinar.
+  await page.locator('#unit-to').selectOption('BHD');
+  await page.locator('#unit-value').fill('1');
+  await expect(result).toHaveText(/^\s*1 USD = 0\.376 BHD\s*$/);
+
+  // The rate, its date and its source are stated, and what they are not.
+  const note = page.getByTestId('rate-note');
+  await expect(note).toContainText('1 USD = 0.376 BHD');
+  await expect(note).toContainText('Rates as of');
+  await expect(note).toContainText("fawazahmed0's currency-api");
+  await expect(note).toContainText('not live trading rates');
+
+  // Every real currency is offered; the crypto in the same file is not.
+  await expect(page.locator('#unit-to option[value="LKR"]')).toHaveCount(1);
+  await expect(page.locator('#unit-to option[value="BTC"]')).toHaveCount(0);
+  await expect(page.getByTestId('all').locator('.row')).toHaveCount(12);
+
+  // Swapping works the same way it does for units.
+  await page.getByRole('button', { name: 'Swap the two units' }).click();
+  await expect(result).toHaveText(/^\s*1 BHD = 2\.66 USD\s*$/);
+
+  // One fetch for the whole session, of the fixed file, carrying nothing typed.
+  expect(seen.map((request) => request.url)).toEqual([RATE_URLS[0]]);
+  expectOnlyFixedRateRequests(seen);
+  expectClean(watch);
+});
+
+test('unit-converter falls back to the mirror when jsDelivr does not answer', async ({ page }) => {
+  const watch = watchConsole(page);
+  const seen = await mockCurrencyApi(page, { primary: 'down' });
+  await gotoTool(page, 'unit-converter', 'Unit Converter');
+
+  await page.getByRole('button', { name: 'Currency' }).click();
+  await page.locator('#unit-to').selectOption('LKR');
+  await expect(page.getByTestId('result')).toContainText('1 USD = 300.00 LKR');
+
+  expect(seen.map((request) => request.url)).toEqual(RATE_URLS);
+  expectOnlyFixedRateRequests(seen);
+  expectClean(watch);
+});
+
+test('unit-converter says so when no rates can be loaded, and converts nothing', async ({
+  page,
+}) => {
+  await mockCurrencyApi(page, { primary: 'down', fallback: 'down' });
+  await gotoTool(page, 'unit-converter', 'Unit Converter');
+
+  await page.getByRole('button', { name: 'Currency' }).click();
+  await expect(page.getByRole('alert')).toContainText('exchange rates could not be loaded');
+  await expect(page.getByTestId('result')).toHaveCount(0);
+  await expect(page.getByTestId('all')).toHaveCount(0);
+  await expect(page.locator('.panel')).not.toContainText(/NaN|= 0\.00/);
+
+  // Back online: Try again fetches and converts. The later route wins.
+  await mockCurrencyApi(page);
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect(page.getByTestId('result')).toContainText('1 USD = 0.80 EUR');
+});
+
+test('unit-converter warns when the rates are days old', async ({ page }) => {
+  const old = new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10);
+  await mockCurrencyApi(page, { date: old });
+  await gotoTool(page, 'unit-converter', 'Unit Converter');
+
+  await page.getByRole('button', { name: 'Currency' }).click();
+  await expect(page.getByTestId('result')).toContainText('1 USD = 0.80 EUR');
+  await expect(page.getByTestId('rates-stale')).toContainText('10 days old');
 });
 
 test('base-converter converts, honours a prefix and flips a bit', async ({ page }) => {

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
+import { PDFArray, PDFDocument, PDFName, PDFRawStream, decodePDFRawStream } from '@cantoo/pdf-lib';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import QRCode from 'qrcode';
@@ -8,9 +9,12 @@ import QRCode from 'qrcode';
 import { EditablePdf } from '../src/app/core/pdf-edit/document';
 import { OPEN_IN_SLUGS } from '../src/app/core/open-in';
 import {
+  RATE_URLS,
   expectClean,
+  expectOnlyFixedRateRequests,
   fixture,
   gotoTool,
+  mockCurrencyApi,
   uploadFiles,
   waitForHydration,
   watchConsole,
@@ -1419,6 +1423,92 @@ test('invoice-generator previews the real PDF and takes a logo', async ({ page }
   await expect.poll(() => previewInk(page), { timeout: 20_000 }).toBeLessThan(withoutLogo + 500);
 
   expectClean(watch);
+});
+
+/** Every string drawn on a PDF's first page, read back out of its hex Tj operands. */
+async function pdfText(bytes: Uint8Array): Promise<string> {
+  const doc = await PDFDocument.load(bytes);
+  const contents = doc.context.lookup(doc.getPage(0).node.get(PDFName.of('Contents')));
+  const streams =
+    contents instanceof PDFArray
+      ? contents.asArray().map((ref) => doc.context.lookup(ref) as PDFRawStream)
+      : [contents as PDFRawStream];
+  const ops = streams
+    .map((stream) => Buffer.from(decodePDFRawStream(stream).decode()).toString('latin1'))
+    .join(' ');
+  return [...ops.matchAll(/<([0-9A-Fa-f]*)>\s*Tj/g)]
+    .map(([, hex]) => Buffer.from(hex, 'hex').toString('latin1'))
+    .join(' | ')
+    .replace(/\s/g, ' ');
+}
+
+/**
+ * The sample invoice totals £2,823.00. Against the fake rates (GBP 0.75, LKR
+ * 300 and JPY 150 to the dollar) that is LKR 1,129,200.00 and JPY 564,600.
+ */
+test('invoice-generator shows the total in a second currency only when asked', async ({ page }) => {
+  const watch = watchConsole(page);
+  const seen = await mockCurrencyApi(page);
+  await gotoTool(page, 'invoice-generator', 'Invoice & Receipt Generator');
+
+  const converted = page.getByTestId('converted-total');
+  await expect(page.getByTestId('grand-total')).toHaveText('£2,823.00');
+
+  // Off by default: no row, no request, and a PDF with nothing about it.
+  await expect(converted).toHaveCount(0);
+  const plain = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download PDF' }).click();
+  const plainText = await pdfText(readFileSync(await (await plain).path()));
+  expect(plainText).toContain('Total');
+  expect(plainText).not.toMatch(/Approx|currency-api/);
+  expect(seen).toHaveLength(0);
+
+  await page.locator('#inv-also-in').selectOption('LKR');
+  await expect(converted).toHaveText(/Approx\. in LKR\s*LKR\s1,129,200\.00/);
+  const note = page.getByTestId('rate-note');
+  await expect(note).toContainText('1 GBP = 400 LKR');
+  await expect(note).toContainText("fawazahmed0's currency-api");
+  await expect(note).toContainText('not a live trading rate');
+
+  // Yen has no minor unit, so the converted total has no decimals.
+  await page.locator('#inv-also-in').selectOption('JPY');
+  await expect(converted).toHaveText(/JPY\s564,600$/);
+
+  // Opted in, the PDF carries it under the total, with the rate and its date.
+  const withTotal = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download PDF' }).click();
+  const text = await pdfText(readFileSync(await (await withTotal).path()));
+  expect(text).toContain('Approx. JPY 564,600');
+  expect(text).toMatch(/1 GBP = 200 JPY, daily reference rate for \d+ \w+ \d{4} \(currency-api\)/);
+
+  // The invoice's own figures did not move.
+  await expect(page.getByTestId('grand-total')).toHaveText('£2,823.00');
+
+  // Switching it off takes it off again.
+  await page.locator('#inv-also-in').selectOption('');
+  await expect(converted).toHaveCount(0);
+
+  expectOnlyFixedRateRequests(seen);
+  expect(seen).toHaveLength(1);
+  expectClean(watch);
+});
+
+test('invoice-generator says so when no rates can be loaded, and leaves the PDF alone', async ({
+  page,
+}) => {
+  const seen = await mockCurrencyApi(page, { primary: 'down', fallback: 'down' });
+  await gotoTool(page, 'invoice-generator', 'Invoice & Receipt Generator');
+
+  await page.locator('#inv-also-in').selectOption('LKR');
+  await expect(page.getByRole('alert')).toContainText('exchange rates could not be loaded');
+  await expect(page.getByTestId('converted-total')).toHaveCount(0);
+  await expect(page.getByTestId('totals')).not.toContainText(/NaN|LKR/);
+  expect(seen.map((request) => request.url)).toEqual(RATE_URLS);
+
+  // The fallback alone is enough.
+  await mockCurrencyApi(page, { primary: 'down' });
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect(page.getByTestId('converted-total')).toContainText('1,129,200.00');
 });
 
 test('invoice-generator says so when the invoice runs to a second page', async ({ page }) => {

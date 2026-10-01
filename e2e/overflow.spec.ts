@@ -2,8 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 
 import {
   editorByLabel,
+  FAKE_RATES,
   expectNoClippedContent,
   gotoTool,
+  mockCurrencyApi,
   mockNpmAndOsv,
   setEditorText,
 } from './helpers';
@@ -258,5 +260,37 @@ test('toml-converter keeps a long value inside both panes', async ({ page }) => 
   await gotoTool(page, 'toml-converter', 'TOML Converter');
   await setEditorText(editorByLabel(page, 'TOML input'), `token = "${TOKEN}"`);
   await expect(page.locator('app-code-editor').nth(1)).toContainText(TOKEN.slice(0, 20));
+  await expectFitsAtEveryWidth(page);
+});
+
+/**
+ * The longest things Currency prints: a twenty-digit converted amount, a
+ * currency name like "Bosnia-Herzegovina Convertible Mark" in a picker, the
+ * rate note and the stale warning — all at phone width as well.
+ */
+test('unit-converter keeps a huge currency conversion and its notes inside the panel', async ({
+  page,
+}) => {
+  const old = new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10);
+  await mockCurrencyApi(page, { date: old, rates: { ...FAKE_RATES, bam: 1.66 } });
+  await gotoTool(page, 'unit-converter', 'Unit Converter');
+  await page.getByRole('button', { name: 'Currency' }).click();
+  await page.locator('#unit-from').selectOption('BAM');
+  await page.locator('#unit-to').selectOption('LKR');
+  await page.locator('#unit-value').fill('999999999999999999');
+  await expect(page.getByTestId('result')).toContainText('LKR');
+  await expect(page.getByTestId('rates-stale')).toBeVisible();
+  await expectFitsAtEveryWidth(page);
+});
+
+test('invoice-generator keeps a huge converted total inside the totals box', async ({ page }) => {
+  await mockCurrencyApi(page);
+  await gotoTool(page, 'invoice-generator', 'Invoice & Receipt Generator');
+  // A total in the sextillions: absurd as money, but it is the longest string
+  // the totals box can be asked to hold, and Intl writes it out in full.
+  await page.getByLabel('Quantity, line 1').fill('999999999');
+  await page.getByLabel('Unit price, line 1').fill('999999999999');
+  await page.locator('#inv-also-in').selectOption('LKR');
+  await expect(page.getByTestId('converted-total')).toContainText('LKR');
   await expectFitsAtEveryWidth(page);
 });

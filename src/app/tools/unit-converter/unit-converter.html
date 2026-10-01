@@ -1,6 +1,6 @@
 <app-tool-page slug="unit-converter">
-  Convert length, weight, temperature, volume, speed, area, data and time — one pair at a time, or
-  every unit at once.
+  Convert length, weight, temperature, volume, speed, area, data, time and currency — one pair at a
+  time, or every unit at once.
 </app-tool-page>
 
 <div class="panel">
@@ -18,6 +18,15 @@
           {{ option.name }}
         </button>
       }
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="isCurrency()"
+        [attr.aria-pressed]="isCurrency()"
+        (click)="setCategory('currency')"
+      >
+        Currency
+      </button>
     </div>
   </div>
 
@@ -80,6 +89,25 @@
       <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
       That is not a number.
     </p>
+  } @else if (isCurrency() && currencyStatus() === 'loading') {
+    <p class="working" role="status">Fetching the daily reference rates…</p>
+  } @else if (isCurrency() && currencyStatus() === 'failed') {
+    <div class="rates-failed">
+      <p class="status status--err" role="alert">
+        <ng-icon class="status__icon" aria-hidden="true" name="matCloudOffOutline" />
+        The exchange rates could not be loaded, so nothing can be converted. Check the connection
+        and try again.
+      </p>
+      <button type="button" matButton (click)="retryRates()">
+        <ng-icon name="matRefreshOutline" />
+        Try again
+      </button>
+    </div>
+  } @else if (isCurrency() && currencyStatus() === 'missing') {
+    <p class="status status--err" role="alert">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      There is no rate for {{ missingCode() }} in today's data.
+    </p>
   } @else if (valid()) {
     <div class="result" data-testid="result">
       <p class="result__headline">
@@ -104,14 +132,34 @@
         </li>
       }
     </ul>
+
+    @if (isCurrency() && staleDays()) {
+      <p class="status status--err" role="alert" data-testid="rates-stale">
+        <ng-icon class="status__icon" aria-hidden="true" name="matScheduleOutline" />
+        These rates are {{ staleDays() }} days old: the source has not updated since. Treat the
+        result as a rough guide.
+      </p>
+    }
   }
 
-  <p class="note">
-    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
-    Where a name means two different things, both are listed rather than one being chosen for you: a
-    US gallon is about 17% smaller than a UK one, a short ton about 10% lighter than a long one, and
-    a megabyte is 1,000,000 bytes where a mebibyte is 1,048,576.
-  </p>
+  @if (isCurrency()) {
+    <p class="note" data-testid="rate-note">
+      <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+      @if (rateText()) {
+        {{ rateText() }}. Rates as of {{ rateDate() }}, from fawazahmed0's currency-api.
+      }
+      These are daily reference rates, not live trading rates: a bank or card will charge a
+      different rate and fees. Your browser fetches one public file of US-dollar rates; the amount
+      and the currencies you pick are never sent.
+    </p>
+  } @else {
+    <p class="note">
+      <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+      Where a name means two different things, both are listed rather than one being chosen for you:
+      a US gallon is about 17% smaller than a UK one, a short ton about 10% lighter than a long one,
+      and a megabyte is 1,000,000 bytes where a mebibyte is 1,048,576.
+    </p>
+  }
 </div>
 
 @defer (hydrate on interaction) {

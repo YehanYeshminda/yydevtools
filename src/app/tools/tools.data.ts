@@ -443,7 +443,7 @@ export const TOOLS: Tool[] = [
     slug: 'unit-converter',
     name: 'Unit Converter',
     description:
-      'Convert length, weight, temperature, volume, speed, area, data and time, with every unit shown at once.',
+      'Convert length, weight, temperature, volume, speed, area, data, time and currency, with every unit shown at once.',
     icon: 'matStraightenOutline',
     category: 'Converter',
     ready: true,

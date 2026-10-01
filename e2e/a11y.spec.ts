@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import {
   editorByLabel,
   gotoTool,
+  mockCurrencyApi,
   mockNpmAndOsv,
   setEditorText,
   setTheme,
@@ -886,5 +887,63 @@ for (const theme of ['dark', 'light'] as const) {
     await page.getByRole('button', { name: 'Check packages' }).click();
     await expect(page.getByText('OSV.dev could not be reached')).toBeVisible();
     await violations('with OSV unreachable');
+  });
+}
+
+/**
+ * Currency's own states: a result with its rate note and the stale warning,
+ * and the failure with its Try again button, in both tools. The rates are
+ * mocked ten days old so the warning is on screen for the audit.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  const violations = async (page: Page, label: string) => {
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+      `AXE violations on ${label} [${theme}]`,
+    ).toEqual([]);
+  };
+  const tenDaysAgo = () => new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10);
+
+  test(`currency results have no AXE violations in the ${theme} theme`, async ({ page }) => {
+    await mockCurrencyApi(page, { date: tenDaysAgo() });
+    await gotoTool(page, 'unit-converter', 'Unit Converter');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+    await page.getByRole('button', { name: 'Currency' }).click();
+    await expect(page.getByTestId('rates-stale')).toBeVisible();
+    await expect(page.getByTestId('rate-note')).toContainText('Rates as of');
+    await violations(page, 'the unit converter currency result');
+
+    await page.goto('/tools/invoice-generator');
+    await waitForHydration(page);
+    await expectSplashGone(page);
+    await page.locator('#inv-also-in').selectOption('LKR');
+    await expect(page.getByTestId('converted-total')).toBeVisible();
+    await expect(page.getByTestId('rates-stale')).toBeVisible();
+    await violations(page, 'the invoice converted total');
+  });
+
+  test(`currency failures have no AXE violations in the ${theme} theme`, async ({ page }) => {
+    await mockCurrencyApi(page, { primary: 'down', fallback: 'down' });
+    await gotoTool(page, 'unit-converter', 'Unit Converter');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+    await page.getByRole('button', { name: 'Currency' }).click();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await violations(page, 'the unit converter rate failure');
+
+    await page.goto('/tools/invoice-generator');
+    await waitForHydration(page);
+    await expectSplashGone(page);
+    await page.locator('#inv-also-in').selectOption('LKR');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await violations(page, 'the invoice rate failure');
   });
 }

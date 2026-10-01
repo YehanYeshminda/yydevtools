@@ -8,6 +8,7 @@
 
 import { PDFDocument, PDFFont, StandardFonts, rgb } from '@cantoo/pdf-lib';
 
+import { formatRate, rateDateText } from '../../core/currency';
 import {
   formatDate,
   formatMoney,
@@ -38,6 +39,21 @@ export interface InvoiceDocument {
   notes: string;
   /** Drawn above the title, if there is one. PNG or JPEG only. */
   logo?: InvoiceLogo | null;
+  /**
+   * The total in a second currency, printed under the real one only when the
+   * visitor has asked for it and the rates have arrived.
+   */
+  converted?: ConvertedTotal | null;
+}
+
+export interface ConvertedTotal {
+  currency: string;
+  /** Minor units of `currency`. */
+  minor: number;
+  /** How many of `currency` one of the invoice's currency buys. */
+  rate: number;
+  /** yyyy-mm-dd, the day the rate is for. */
+  date: string;
 }
 
 /**
@@ -253,7 +269,7 @@ export async function renderInvoice(doc: InvoiceDocument): Promise<Uint8Array> {
 
   // --- Totals ----------------------------------------------------------
   const totals = totalsFor(doc.items, doc.taxRate, doc.currency);
-  room(70);
+  room(doc.converted ? 100 : 70);
   y -= 12;
   page.drawLine({
     start: { x: MARGIN + COLUMNS.unit - 40, y },
@@ -281,6 +297,29 @@ export async function renderInvoice(doc: InvoiceDocument): Promise<Uint8Array> {
   y -= 20;
   rightText('Total', COLUMNS.unit + 60, 12, bold);
   rightText(formatMoney(totals.total, doc.currency), COLUMNS.amount, 12, bold);
+
+  // Under the total and visibly secondary: it is information, not the amount
+  // owed. Printed with the ISO code rather than a symbol, because the
+  // standard font has no rupee sign and would draw a question mark.
+  if (doc.converted) {
+    const { currency, minor, rate, date } = doc.converted;
+    y -= 15;
+    rightText(
+      `Approx. ${formatMoney(minor, currency, 'code')}`,
+      COLUMNS.amount,
+      9.5,
+      regular,
+      MUTED,
+    );
+    y -= 11;
+    rightText(
+      `1 ${doc.currency} = ${formatRate(rate)} ${currency}, daily reference rate for ${rateDateText(date)} (currency-api)`,
+      COLUMNS.amount,
+      7,
+      regular,
+      MUTED,
+    );
+  }
 
   // --- Notes -----------------------------------------------------------
   if (doc.notes.trim()) {

@@ -76,7 +76,9 @@
 }
 
 .row--source .row__label {
-  color: var(--brand);
+  /* --primary, not --brand: amber text on the light surface is about 1.7:1.
+     --primary is a near-identical amber in dark and darkens to pass in light. */
+  color: var(--primary);
   font-weight: 700;
 }
 
@@ -84,4 +86,11 @@
   .row__name {
     width: 100%;
   }
+}
+
+.rates-failed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }

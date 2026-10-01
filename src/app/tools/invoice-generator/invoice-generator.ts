@@ -13,6 +13,16 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { NgIcon } from '@ng-icons/core';
 
+import {
+  CurrencyRates,
+  ageInDays,
+  convertMinor,
+  formatMoney as formatConverted,
+  formatRate,
+  isStale,
+  rateBetween,
+  rateDateText,
+} from '../../core/currency';
 import { downloadBytes } from '../../core/download';
 import { PdfDocumentRenderer } from '../../core/pdf-render';
 import { syncToolState } from '../../core/tool-state';
@@ -34,7 +44,7 @@ import {
   totalsFor,
   type LineItem,
 } from './invoice';
-import type { InvoiceDocument, InvoiceLogo } from './invoice-pdf';
+import type { ConvertedTotal, InvoiceDocument, InvoiceLogo } from './invoice-pdf';
 
 type Kind = 'invoice' | 'receipt';
 
@@ -70,6 +80,7 @@ export class InvoiceGeneratorTool {
   protected readonly currencies = CURRENCIES;
 
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly currencyRates = inject(CurrencyRates);
   private readonly previewCanvas = viewChild<ElementRef<HTMLCanvasElement>>('preview');
 
   private nextId = 0;
@@ -84,6 +95,12 @@ export class InvoiceGeneratorTool {
   protected readonly taxLabel = signal('VAT');
   protected readonly taxRate = signal(20);
   protected readonly notes = signal('Payment within 30 days. Bank details on request.');
+  /**
+   * A second currency to show the total in, or '' for none — the default, so
+   * nothing is fetched and the invoice is exactly what it always was until the
+   * visitor asks.
+   */
+  protected readonly alsoIn = signal('');
   protected readonly items = signal<EditableItem[]>(
     SAMPLE_ITEMS.map((item) => ({ ...item, id: this.nextId++ })),
   );
@@ -129,6 +146,7 @@ export class InvoiceGeneratorTool {
       taxLabel: this.taxLabel(),
       taxRate: this.taxRate(),
       notes: this.notes(),
+      alsoIn: this.alsoIn(),
       items: this.items().map(({ description, quantity, unitPrice }) => ({
         description,
         quantity,
@@ -156,6 +174,12 @@ export class InvoiceGeneratorTool {
         CURRENCIES.some((entry) => entry.code === state.currency)
       ) {
         this.currency.set(state.currency);
+      }
+      if (
+        typeof state.alsoIn === 'string' &&
+        CURRENCIES.some((entry) => entry.code === state.alsoIn)
+      ) {
+        this.alsoIn.set(state.alsoIn);
       }
       if (typeof state.taxRate === 'number' && Number.isFinite(state.taxRate)) {
         this.taxRate.set(state.taxRate);
@@ -193,6 +217,7 @@ export class InvoiceGeneratorTool {
     items: this.items(),
     notes: this.notes(),
     logo: this.logo(),
+    converted: this.converted(),
   }));
 
   protected readonly totals = computed(() =>
@@ -212,6 +237,57 @@ export class InvoiceGeneratorTool {
   );
   protected readonly taxText = computed(() => formatMoney(this.totals().tax, this.currency()));
   protected readonly totalText = computed(() => formatMoney(this.totals().total, this.currency()));
+
+  // --- Total in a second currency ------------------------------------------
+  protected readonly secondCurrencies = computed(() =>
+    CURRENCIES.filter((entry) => entry.code !== this.currency()),
+  );
+
+  /** The total converted, or null while it is off, loading, failed or rateless. */
+  protected readonly converted = computed<ConvertedTotal | null>(() => {
+    const code = this.alsoIn();
+    const rates = this.currencyRates.rates();
+    if (!code || code === this.currency() || !rates) {
+      return null;
+    }
+    const minor = convertMinor(this.totals().total, this.currency(), code, rates);
+    const rate = rateBetween(rates, this.currency(), code);
+    return minor === null || rate === null
+      ? null
+      : { currency: code, minor, rate, date: rates.date };
+  });
+
+  /** What to say under the picker; 'off' when no second currency is chosen. */
+  protected readonly conversion = computed(() => {
+    if (!this.alsoIn()) {
+      return 'off';
+    }
+    const state = this.currencyRates.state();
+    if (state !== 'ready') {
+      return state === 'failed' ? 'failed' : 'loading';
+    }
+    return this.converted() ? 'ready' : 'missing';
+  });
+
+  protected readonly convertedText = computed(() => {
+    const converted = this.converted();
+    return converted ? formatConverted(converted.minor, converted.currency, 'code') : '';
+  });
+  protected readonly rateText = computed(() => {
+    const converted = this.converted();
+    return converted
+      ? `1 ${this.currency()} = ${formatRate(converted.rate)} ${converted.currency}`
+      : '';
+  });
+  protected readonly rateDate = computed(() =>
+    rateDateText(this.currencyRates.rates()?.date ?? ''),
+  );
+  /** Days old, when the rates are old enough to say so; 0 otherwise. */
+  protected readonly staleDays = computed(() => {
+    const rates = this.currencyRates.rates();
+    const now = new Date();
+    return rates && isStale(rates, now) ? ageInDays(rates.date, now) : 0;
+  });
 
   protected readonly issuedText = computed(() => formatDate(this.issueDate()));
   protected readonly secondText = computed(() => formatDate(this.secondDate()));
@@ -234,6 +310,14 @@ export class InvoiceGeneratorTool {
       const timer = setTimeout(() => void this.renderPreview(state), PREVIEW_DEBOUNCE_MS);
       onCleanup(() => clearTimeout(timer));
     });
+
+    // Rates are fetched only once a second currency has been chosen, including
+    // one brought back by a restored session.
+    effect(() => {
+      if (this.alsoIn()) {
+        this.currencyRates.load();
+      }
+    });
   }
 
   protected setKind(kind: Kind): void {
@@ -254,6 +338,18 @@ export class InvoiceGeneratorTool {
 
   protected setCurrency(value: string): void {
     this.currency.set(value);
+    // Converting a total into its own currency says nothing.
+    if (this.alsoIn() === value) {
+      this.alsoIn.set('');
+    }
+  }
+
+  protected setAlsoIn(value: string): void {
+    this.alsoIn.set(value);
+  }
+
+  protected retryRates(): void {
+    this.currencyRates.load();
   }
 
   protected setTaxRate(value: string): void {

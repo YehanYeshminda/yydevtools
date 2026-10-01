@@ -1,4 +1,4 @@
-import { PDFDocument } from '@cantoo/pdf-lib';
+import { PDFArray, PDFDocument, PDFName, PDFRawStream, decodePDFRawStream } from '@cantoo/pdf-lib';
 
 import { logoSize, renderInvoice, type InvoiceDocument } from './invoice-pdf';
 import { type LineItem } from './invoice';
@@ -23,6 +23,26 @@ const lines = (count: number): LineItem[] =>
     quantity: 1,
     unitPrice: 10,
   }));
+
+/** Every string drawn on the first page, decoded from its hex Tj operands. */
+async function textOf(bytes: Uint8Array): Promise<string> {
+  const doc = await PDFDocument.load(bytes);
+  const page = doc.getPage(0);
+  const contents = doc.context.lookup(page.node.get(PDFName.of('Contents')));
+  const streams =
+    contents instanceof PDFArray
+      ? contents.asArray().map((ref) => doc.context.lookup(ref) as PDFRawStream)
+      : [contents as PDFRawStream];
+  const ops = streams
+    .map((stream) => new TextDecoder('latin1').decode(decodePDFRawStream(stream).decode()))
+    .join(' ');
+  return [...ops.matchAll(/<([0-9A-Fa-f]*)>\s*Tj/g)]
+    .map(([, hex]) =>
+      String.fromCharCode(...(hex.match(/../g) ?? []).map((pair) => parseInt(pair, 16))),
+    )
+    .join(' | ')
+    .replace(/\s/g, ' ');
+}
 
 async function pageCount(bytes: Uint8Array): Promise<number> {
   return (await PDFDocument.load(bytes)).getPageCount();
@@ -84,6 +104,34 @@ describe('renderInvoice', () => {
       items: [{ description: long, quantity: 1, unitPrice: 10 }],
     });
     expect(await pageCount(bytes)).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('renderInvoice with a total in a second currency', () => {
+  const converted = { currency: 'LKR', minor: 112920000, rate: 400, date: '2026-09-30' };
+
+  // Off is the default, and off must mean the invoice it always was.
+  it('prints nothing about another currency unless asked', async () => {
+    const text = await textOf(await renderInvoice(base));
+    expect(text).toContain('Total');
+    expect(text).not.toMatch(/Approx|reference rate|currency-api/);
+    expect(await textOf(await renderInvoice({ ...base, converted: null }))).toBe(text);
+  });
+
+  it('prints the converted total, the rate and its date under the total', async () => {
+    const text = await textOf(await renderInvoice({ ...base, converted }));
+    expect(text).toContain('Approx. LKR 1,129,200.00');
+    expect(text).toContain(
+      '1 GBP = 400 LKR, daily reference rate for 30 September 2026 (currency-api)',
+    );
+  });
+
+  // The standard font has no rupee sign, so a symbol would print as "?".
+  it('names the currency by code, which the standard font can draw', async () => {
+    const text = await textOf(
+      await renderInvoice({ ...base, converted: { ...converted, currency: 'INR', minor: 9000 } }),
+    );
+    expect(text).toContain('Approx. INR 90.00');
   });
 });
 

@@ -8,8 +8,13 @@
  * units* — pence, cents, sen — converted at the edges and never in between.
  *
  * How many minor units a currency has is not two for everyone: yen has none,
- * Bahraini dinar has three. Intl knows, so it is asked rather than assumed.
+ * Bahraini dinar has three. Intl knows, so it is asked rather than assumed —
+ * in core/currency.ts, which the currency conversion shares.
  */
+
+import { formatMoney, fractionDigits } from '../../core/currency';
+
+export { formatMoney, fractionDigits };
 
 export interface LineItem {
   description: string;
@@ -37,23 +42,6 @@ export const CURRENCIES = [
   { code: 'JPY', label: 'JPY — Japanese yen' },
   { code: 'CHF', label: 'CHF — Swiss franc' },
 ] as const;
-
-/**
- * Digits after the decimal point for a currency: 2 for most, 0 for yen, 3 for
- * dinars. Asked of Intl rather than hard-coded, and defaulting to 2 if a code
- * is one it does not recognise.
- */
-export function fractionDigits(currency: string): number {
-  try {
-    const options = new Intl.NumberFormat('en', {
-      style: 'currency',
-      currency,
-    }).resolvedOptions();
-    return options.maximumFractionDigits ?? 2;
-  } catch {
-    return 2;
-  }
-}
 
 function scaleOf(currency: string): number {
   return 10 ** fractionDigits(currency);
@@ -83,18 +71,6 @@ export function totalsFor(items: readonly LineItem[], taxRate: number, currency:
   const rate = Number.isFinite(taxRate) ? taxRate : 0;
   const tax = Math.round((subtotal * rate) / 100);
   return { subtotal, tax, total: subtotal + tax };
-}
-
-/** A minor-unit amount as text, with the currency's own symbol and grouping. */
-export function formatMoney(minor: number, currency: string): string {
-  const digits = fractionDigits(currency);
-  try {
-    return new Intl.NumberFormat('en', { style: 'currency', currency }).format(
-      minor / 10 ** digits,
-    );
-  } catch {
-    return `${(minor / 10 ** digits).toFixed(digits)} ${currency}`;
-  }
 }
 
 /**

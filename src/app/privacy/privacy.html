@@ -9,7 +9,7 @@
 <article class="doc">
   <header>
     <h1 class="doc__title">Privacy Policy</h1>
-    <p class="doc__meta">Last updated: 29 July 2026</p>
+    <p class="doc__meta">Last updated: 1 October 2026</p>
     <p class="doc__lead">
       YYDevTools is a free collection of developer and PDF utilities. There are no accounts,
       and most tools never send your data anywhere. This page explains exactly what happens
@@ -64,6 +64,22 @@
       sent, and none of it is sent to us. Workspace, local-path and Git dependencies are not
       sent at all. A private package name is sent like any other, because it cannot be told
       apart until the registry answers.
+    </p>
+  </section>
+
+  <section class="section" aria-labelledby="p-currency">
+    <h2 id="p-currency" class="section__title">Currency conversion</h2>
+    <p class="section__text">
+      The <strong>Unit Converter</strong>’s Currency category, and the
+      <strong>Invoice &amp; Receipt Generator</strong>’s optional total in a second currency, need
+      the day’s exchange rates. Only when you open Currency, or choose a second currency for an
+      invoice, your browser fetches one public file of rates against the US dollar from
+      fawazahmed0’s currency-api, directly from the jsDelivr CDN (cdn.jsdelivr.net), or from its
+      mirror on Cloudflare Pages (latest.currency-api.pages.dev) if jsDelivr does not answer. The
+      request is the same fixed file for every visitor: it contains no amount, no invoice details
+      and not even the currencies you picked, which are converted on your device. It is sent without
+      a referrer or cookies. As with any web request, that host receives your IP address and browser
+      user-agent.
     </p>
   </section>
 
@@ -122,6 +138,11 @@
       <li>
         <strong>npm registry and OSV.dev</strong> — receive package names, and for OSV.dev the
         resolved version of each, when you use the package.json Checker, and nothing else.
+      </li>
+      <li>
+        <strong>jsDelivr and Cloudflare Pages (fawazahmed0’s currency-api)</strong> — serve the
+        exchange-rate file when you use currency conversion, and receive nothing from you but that
+        request.
       </li>
       <li><strong>Google AdSense</strong> — supplies the advertising that funds the site.</li>
       <li><strong>Google Fonts</strong> — serves the typefaces used by the site.</li>

@@ -1253,13 +1253,15 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     intro: [
       'Fill in who it is from, who it is for, what you did and what it costs, and watch the finished page build itself beside the form. What you are looking at is the PDF, rasterised — not an impression of it that could drift from the file you download. Switch the document type to Receipt and the same form produces a receipt instead — the due date becomes the date it was paid.',
       'There is no account and no upload. The PDF is assembled in your browser, which means your client list, your rates and your bank details stay on your machine. This is the one tool on the site with no share link, deliberately.',
+      'If you bill in one currency and need the figure in another, for your own books, a client abroad or a tax return, you can ask for the total in a second currency as well. It is off until you choose one, and choosing one fetches a single public file of exchange rates; none of the invoice goes with it.',
     ],
     steps: [
       'Choose Invoice or Receipt, and set the number and dates.',
       'Fill in the From and To blocks. Both take several lines, so an address fits.',
       'Add your line items: what it was, how many, and the unit price.',
       'Add a logo if you have one — a PNG or a JPEG, which sits above the title.',
-      'Set the tax name and rate if you charge tax, then download the PDF.',
+      'Set the tax name and rate if you charge tax.',
+      'Optionally, choose a second currency to show the total in as well, then download the PDF.',
     ],
     features: [
       'Invoice or receipt from the same form.',
@@ -1267,6 +1269,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Your own logo on the letterhead, scaled to fit without distorting it.',
       'Line items with fractional quantities, for hours as well as units.',
       'Ten currencies, each formatted the way it is actually written.',
+      'An optional converted total in a second currency, with the rate and its date printed beside it.',
       'A named tax at any rate — VAT, GST, sales tax, or none.',
       'Amounts computed in whole pence, so the total always matches the lines.',
       'Nothing uploaded, no account, no watermark.',
@@ -1291,7 +1294,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       {
         heading: 'What this deliberately does not do',
         body: [
-          'No logo. Adding one means embedding an image, sizing it and deciding what happens to a huge one, and the invoice reads perfectly well without it. If you need branding on it, the PDF opens in any editor.',
+          'No live exchange rates. The converted total uses the daily reference rate, which is good for showing a client roughly what the amount is in their money and not for settling one: the rate a bank actually pays differs and moves through the day. The invoice itself stays in the currency you bill in.',
           'No client list and no history. Nothing is stored on a server, and what the page keeps is kept in session storage — scoped to this tab and gone when you close it — so an accidental refresh does not lose your work and nothing is left behind on a shared machine.',
           'One tax rate, applied to the whole invoice. Mixed rates on a single document are a real requirement in some trades and a rarity in most; a second rate would mean a per-line tax column that most people would have to ignore.',
         ],
@@ -1300,7 +1303,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     faq: [
       {
         q: 'Is any of this uploaded?',
-        a: 'No. The PDF is built in this tab, and there is no server to send it to. That is also why this page has no share link: the state on it is a client\u2019s name, address and what they are being charged.',
+        a: 'No. The PDF is built in this tab, and there is no server to send it to. That is also why this page has no share link: the state on it is a client\u2019s name, address and what they are being charged. The one request the page can make is for exchange rates, and only if you ask for a second currency; it carries none of the invoice.',
       },
       {
         q: 'Can I put my logo on it?',
@@ -1323,11 +1326,19 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Not on one document here. One rate applies to the whole invoice; for mixed rates, issue separate invoices or edit the PDF.',
       },
       {
+        q: 'Can I show the total in another currency?',
+        a: 'Yes. Choose one under Also show the total in, and the total is converted at the day\u2019s reference rate and printed under the real total, with the rate and the date it is for. It is off by default, and while it is off the invoice and the PDF are exactly what they always were. The amounts on the invoice stay in the currency you bill in; the converted figure is marked Approx., because it is information rather than the amount owed.',
+      },
+      {
+        q: 'What leaves my browser when I convert the total?',
+        a: 'One request, for a public file of exchange rates against the US dollar, sent from your browser to fawazahmed0\u2019s currency-api on jsDelivr (or its Cloudflare Pages mirror if that fails). Every visitor fetches the same file, so it does not say which currencies you picked, and nothing from the invoice — names, addresses, amounts — is sent. Like any web request it reaches that host with your IP address.',
+      },
+      {
         q: 'Is a PDF from here a legally valid invoice?',
         a: 'A PDF is just a format — validity depends on it carrying what your tax authority requires, which varies. The fields here cover the usual core, and the From block is free-form for anything else you must include, such as a VAT registration number.',
       },
     ],
-    related: ['pdf-merge', 'pdf-watermark', 'pdf-organizer', 'word-viewer'],
+    related: ['pdf-merge', 'pdf-watermark', 'pdf-organizer', 'word-viewer', 'unit-converter'],
   },
   'pdf-diff': {
     slug: 'pdf-diff',
@@ -1477,17 +1488,18 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   'unit-converter': {
     slug: 'unit-converter',
     intro: [
-      'Length, weight, temperature, volume, speed, area, data and time, converted between metric and imperial and back. Pick what you are measuring, type a number, and read the pair you asked for — or the whole category at once, which is usually the faster way to find the unit you actually wanted.',
-      'The awkward cases are named rather than quietly decided for you. A US gallon and a UK gallon are both here, so are the short and long tons, so are the 1000-based and 1024-based data units. Everything runs in the page; nothing is sent anywhere.',
+      'Length, weight, temperature, volume, speed, area, data and time, converted between metric and imperial and back, plus currency at the day\u2019s reference rates. Pick what you are measuring, type a number, and read the pair you asked for — or the whole category at once, which is usually the faster way to find the unit you actually wanted.',
+      'The awkward cases are named rather than quietly decided for you. A US gallon and a UK gallon are both here, so are the short and long tons, so are the 1000-based and 1024-based data units. Every conversion runs in the page. Currency is the one that needs data from outside: opening it fetches a public file of exchange rates, and nothing you type goes with it.',
     ],
     steps: [
-      'Choose the category — length, weight, temperature and the rest.',
+      'Choose the category — length, weight, temperature, currency and the rest.',
       'Type the value and pick the two units. Use the swap button to reverse them.',
       'Read the answer, or scan the table underneath for the same value in every unit of that category.',
       'Copy the result, or share the link to bring the same conversion back.',
     ],
     features: [
-      'Eight categories and around seventy units.',
+      'Eight categories and around seventy units, plus about 160 currencies.',
+      'Currency at daily reference rates, rounded to each currency\u2019s own decimals: none for yen, three for dinars.',
       'Every unit of a category shown at once, not just the pair you selected.',
       'Both gallons, both pints, both fluid ounces, both tons — named, not guessed.',
       'Decimal and binary data units (MB and MiB) kept apart.',
@@ -1495,6 +1507,14 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       'Runs in your browser; nothing is uploaded.',
     ],
     sections: [
+      {
+        heading: 'Where the exchange rates come from',
+        body: [
+          'Currency uses fawazahmed0\u2019s currency-api, a free, openly published set of daily exchange rates for around 160 currencies, served from the jsDelivr CDN with a mirror on Cloudflare Pages that is used if jsDelivr does not answer. The date the rates are for is shown under every result, and if the source has not updated for more than three days the page says so rather than quietly showing old numbers.',
+          'These are reference rates: a single mid-market figure per currency per day, the kind used for accounts and rough sums. They are not live trading rates, and they are not what a bank or card will give you, which is a different rate with a margin and often a fee on top. For a payment, the provider\u2019s own quote is the number that counts.',
+          'The rates are fetched only when you open Currency, never on page load. Your browser asks for one fixed file, the rates against the US dollar, and works out every other pair from it, so the request is identical for every visitor: it does not say which currencies you picked, and the amount you type never leaves the page. If the rates cannot be loaded at all, the page says so and converts nothing, rather than showing a zero.',
+        ],
+      },
       {
         heading: 'Why temperature is not like the others',
         body: [
@@ -1539,10 +1559,24 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
       {
         q: 'Are the values sent anywhere?',
-        a: 'No. The conversion tables and the arithmetic are part of the page, so nothing is requested and nothing is uploaded.',
+        a: 'No. The conversion tables and the arithmetic are part of the page. The one request it ever makes is for exchange rates, and only when you open Currency: your browser fetches a public file of US-dollar rates from fawazahmed0\u2019s currency-api on jsDelivr, or its Cloudflare Pages mirror. Every visitor fetches the same file, so the amount and the currencies you choose are never sent. Like any web request, it reaches that host with your IP address.',
+      },
+      {
+        q: 'Are these live exchange rates?',
+        a: 'No. They are daily reference rates, and the date they are for is shown with every result. They are right for a rough figure, a budget or a set of accounts; a bank, card or money transfer service will use its own rate, with a margin, and that is the number to use for an actual payment.',
+      },
+      {
+        q: 'How are currency amounts rounded?',
+        a: 'To the decimals the currency actually has: two for most, none for the Japanese yen or the Korean won, and three for the Bahraini, Kuwaiti and Jordanian dinars. The amount is converted and then rounded once, at the end, and half a cent rounds up, so 1.005 is 1.01 rather than the 1.00 that binary floating point would give.',
       },
     ],
-    related: ['age-calculator', 'base-converter', 'timestamp-converter', 'color-converter'],
+    related: [
+      'age-calculator',
+      'base-converter',
+      'timestamp-converter',
+      'color-converter',
+      'invoice-generator',
+    ],
   },
   'base-converter': {
     slug: 'base-converter',
