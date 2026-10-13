@@ -12,11 +12,31 @@
   background: var(--surface-1);
 }
 
+.preview:fullscreen {
+  padding: 0.5rem 1rem;
+  background: var(--bg);
+  color: var(--on);
+}
+
+.preview:fullscreen .preview__stage {
+  /* Beats the inline height: the viewer takes all the room above the bar. */
+  flex: 1;
+  height: auto !important;
+}
+
 .preview__frame {
   width: 100%;
   height: 100%;
   border: 0;
   display: block;
+}
+
+.preview__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
 }
 
 .preview__credit {
