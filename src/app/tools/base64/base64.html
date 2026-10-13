@@ -395,7 +395,7 @@
 
             @switch (rendered.kind) {
               @case ('pdf') {
-                <app-pdf-preview [bytes]="rendered.bytes" height="30rem" />
+                <app-pdf-preview [bytes]="rendered.bytes" height="30rem" zoom="page-fit" />
               }
               @case ('image') {
                 @if (rendered.url; as url) {

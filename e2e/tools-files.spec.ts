@@ -150,6 +150,9 @@ test('pdf-viewer opens a PDF and reports its page count', async ({ page }) => {
   // The fixture is a 3-page document.
   await expect(page.getByText(/\b3\b/).first()).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('canvas, iframe, .pdf-preview').first()).toBeVisible();
+  // The full-size viewer keeps pdf.js's default zoom, and still offers full screen.
+  await expect(page.locator('.preview__frame')).not.toHaveAttribute('src', /#zoom=/);
+  await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
 
   expectClean(watch);
 });
@@ -1548,6 +1551,34 @@ test('base64-converter opens a decoded PDF in the PDF Viewer', async ({ page }) 
   // The same 3-page fixture the viewer's own test drops in.
   await expect(page.getByText(/\b3\b/).first()).toBeVisible({ timeout: 60_000 });
   await expect(page.locator('canvas, iframe, .pdf-preview').first()).toBeVisible();
+
+  expectClean(watch);
+});
+
+test('base64-converter previews a decoded PDF whole, and full screen', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'base64-converter', 'Base64 Converter');
+  await page.getByRole('tab', { name: 'Decode file' }).click();
+  await page.locator('#b64-in').fill(dataUri('sample.pdf', 'application/pdf'));
+  await page.getByRole('button', { name: 'Render preview' }).click();
+
+  // The box is small, so the page opens fitted whole rather than to its width.
+  await expect(page.locator('.preview__frame')).toHaveAttribute('src', /#zoom=page-fit$/);
+  await expect(page.frameLocator('.preview__frame').locator('#scaleSelect')).toHaveValue(
+    'page-fit',
+    { timeout: 60_000 },
+  );
+
+  const preview = page.locator('.preview');
+  const isFullscreen = () => preview.evaluate((el) => document.fullscreenElement === el);
+
+  await page.getByRole('button', { name: 'Full screen' }).click();
+  await expect.poll(isFullscreen).toBe(true);
+  await expect(page.getByRole('button', { name: 'Exit full screen' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Exit full screen' }).click();
+  await expect.poll(isFullscreen).toBe(false);
+  await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
 
   expectClean(watch);
 });

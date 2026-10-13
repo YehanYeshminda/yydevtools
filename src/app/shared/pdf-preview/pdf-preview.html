@@ -1,9 +1,17 @@
-<div class="preview">
+<div #root class="preview">
   <div class="preview__stage" [style.height]="height()">
     @if (src(); as source) {
-      <iframe class="preview__frame" [src]="source" title="PDF preview"></iframe>
+      <iframe class="preview__frame" [src]="source" title="PDF preview" allow="fullscreen"></iframe>
     }
   </div>
 
-  <p class="preview__credit">Rendered in your browser with pdf.js.</p>
+  <div class="preview__bar">
+    <p class="preview__credit">Rendered in your browser with pdf.js.</p>
+    @if (canFullscreen()) {
+      <button matButton type="button" (click)="toggleFullscreen()">
+        <ng-icon [name]="fullscreen() ? 'matFullscreenExitOutline' : 'matFullscreenOutline'" />
+        {{ fullscreen() ? 'Exit full screen' : 'Full screen' }}
+      </button>
+    }
+  </div>
 </div>
