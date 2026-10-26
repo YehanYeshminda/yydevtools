@@ -46,4 +46,40 @@ export class ClipboardService {
       return false;
     }
   }
+
+  /**
+   * Copy `html` as rich text, with `text` as the plain-text flavour beside it,
+   * so pasting into Gmail, Word or Slack gives formatted content (a real link)
+   * and pasting into a plain field gives `text`. Falls back to `text` alone
+   * where ClipboardItem is missing or the rich write is refused, and says so.
+   * Returns which flavour landed, or null when nothing was copied.
+   */
+  async copyRich(
+    html: string,
+    text: string,
+    options: { label?: string } = {},
+  ): Promise<'rich' | 'plain' | null> {
+    if (!html || !text) {
+      return null;
+    }
+    const what = options.label ?? 'Text';
+    if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([text], { type: 'text/plain' }),
+          }),
+        ]);
+        this.snackBar.open(`${what} copied to clipboard`, undefined, { duration: 2000 });
+        return 'rich';
+      } catch {
+        // Some browsers expose write() but refuse text/html; plain text still helps.
+      }
+    }
+    const copied = await this.copy(text, {
+      message: `${what} copied as plain text: this browser cannot copy a clickable link`,
+    });
+    return copied ? 'plain' : null;
+  }
 }

@@ -455,6 +455,38 @@ for (const theme of ['dark', 'light'] as const) {
 }
 
 /**
+ * The Hyperlink Generator's result card: a live link in the preview, the large
+ * filled copy button and the formats list. None of it renders until there is a
+ * valid link, so the empty page in SURFACES would never audit it.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`hyperlink-generator's result has no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'hyperlink-generator', 'Hyperlink Generator');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await page.locator('#link-url').fill('example.com/invoices/42');
+    await page.locator('#link-text').fill('Here is the invoice');
+    await expect(page.getByTestId('link-preview').getByRole('link')).toBeVisible();
+    await page.locator('#link-url').fill('javascript:alert(1)');
+    await expect(page.locator('#link-error')).toBeVisible();
+    // The error state first, then the valid one, so both are audited.
+    let results = await audit(page).analyze();
+    const errors = results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 6).join(' | ')}`);
+    await page.locator('#link-url').fill('example.com/invoices/42');
+    await expect(page.getByTestId('link-preview').getByRole('link')).toBeVisible();
+    results = await audit(page).analyze();
+    const valid = results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 6).join(' | ')}`);
+    expect({ errors, valid }, `AXE violations on the hyperlink generator [${theme}]`).toEqual({
+      errors: [],
+      valid: [],
+    });
+  });
+}
+
+/**
  * The Email Template Generator, which has a look selector built from the same
  * `.chip--on` that shipped at 1.04:1 on the passport toggle, and an accent
  * colour the person picks — so the one thing on the page whose contrast is not

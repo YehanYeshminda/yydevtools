@@ -96,6 +96,16 @@ test('url-encoder keeps a long path segment inside the parts table', async ({ pa
   await expectFitsAtEveryWidth(page);
 });
 
+test('hyperlink-generator keeps a long URL and label inside the preview and formats', async ({
+  page,
+}) => {
+  await gotoTool(page, 'hyperlink-generator', 'Hyperlink Generator');
+  await page.locator('#link-url').fill(`https://example.com/${TOKEN}?q=${TOKEN}`);
+  await page.locator('#link-text').fill(TOKEN);
+  await expect(page.getByTestId('format-html')).toContainText(TOKEN);
+  await expectFitsAtEveryWidth(page);
+});
+
 test('json-csv keeps a long cell inside the result editor', async ({ page }) => {
   await gotoTool(page, 'json-csv', 'JSON ↔ CSV Converter');
   await setEditorText(editorByLabel(page, 'Input'), `[{"token":"${TOKEN}"}]`);

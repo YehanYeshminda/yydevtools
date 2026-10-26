@@ -864,6 +864,115 @@ test('url-encoder encodes a value and breaks a URL into parts', async ({ page })
   expectClean(watch);
 });
 
+/**
+ * The Hyperlink Generator's whole point: what lands on the clipboard pastes as
+ * a link that shows the typed words and opens the URL. So this reads the
+ * clipboard's text/html flavour back, then does a real Ctrl+V into a
+ * contenteditable page, the way Gmail or Word would receive it, and checks
+ * the anchor that arrives. The label carries quotes and angle brackets, so
+ * the escaping is on the line too.
+ */
+test('hyperlink-generator copies a clickable link that pastes as an anchor', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const watch = watchConsole(page);
+  await gotoTool(page, 'hyperlink-generator', 'Hyperlink Generator');
+
+  const label = 'Here\'s the "October" invoice <PDF>';
+  await page.locator('#link-url').fill('example.com/invoices/42?a=1&b=2');
+  await page.locator('#link-text').fill(label);
+
+  const href = 'https://example.com/invoices/42?a=1&b=2';
+  const preview = page.getByTestId('link-preview').getByRole('link');
+  await expect(preview).toHaveText(label);
+  await expect(preview).toHaveAttribute('href', href);
+  await expect(page.getByTestId('format-markdown')).toHaveText(`[${label}](${href})`);
+  await expect(page.getByTestId('format-plain')).toHaveText(`${label}: ${href}`);
+
+  await page.getByTestId('copy-rich').click();
+  await expect(page.getByText('Clickable link copied to clipboard')).toBeVisible();
+
+  const flavours = await page.evaluate(async () => {
+    const [item] = await navigator.clipboard.read();
+    const html = await (await item.getType('text/html')).text();
+    const plain = await (await item.getType('text/plain')).text();
+    const anchor = new DOMParser().parseFromString(html, 'text/html').querySelector('a');
+    return { types: [...item.types], plain, href: anchor?.href, text: anchor?.textContent };
+  });
+  expect(flavours.types).toEqual(expect.arrayContaining(['text/html', 'text/plain']));
+  expect(flavours).toMatchObject({ href, text: label, plain: `${label}: ${href}` });
+
+  // A real paste into a rich-text editor, in its own page.
+  const editor = await context.newPage();
+  await editor.setContent('<div contenteditable="true" id="mail" style="min-height:4em"></div>');
+  await editor.locator('#mail').click();
+  await editor.keyboard.press('ControlOrMeta+V');
+  const pasted = editor.locator('#mail a');
+  await expect(pasted).toHaveText(label);
+  await expect(pasted).toHaveAttribute('href', href);
+
+  expectClean(watch);
+});
+
+test('hyperlink-generator refuses a script link and explains a bad address', async ({ page }) => {
+  await gotoTool(page, 'hyperlink-generator', 'Hyperlink Generator');
+
+  await page.locator('#link-url').fill('javascript:alert(1)');
+  await expect(page.locator('#link-error')).toContainText('Only http, https, mailto and tel');
+  await expect(page.getByTestId('copy-rich')).toBeDisabled();
+  await expect(page.getByTestId('link-preview').getByRole('link')).toHaveCount(0);
+
+  await page.locator('#link-url').fill('not a link');
+  await expect(page.locator('#link-error')).toContainText('does not look like a link');
+
+  // Empty text falls back to host and path; the plain message is then just the URL.
+  await page.locator('#link-url').fill('example.com/docs/start');
+  await expect(page.locator('#link-error')).toHaveCount(0);
+  await expect(page.getByTestId('link-preview')).toHaveText('example.com/docs/start');
+  await expect(page.getByTestId('format-plain')).toHaveText('https://example.com/docs/start');
+});
+
+test('hyperlink-generator falls back to plain text without ClipboardItem', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.addInitScript(() => {
+    delete (window as { ClipboardItem?: unknown }).ClipboardItem;
+  });
+  await gotoTool(page, 'hyperlink-generator', 'Hyperlink Generator');
+
+  await page.locator('#link-url').fill('https://example.com/report');
+  await page.locator('#link-text').fill('The report');
+  await page.getByTestId('copy-rich').click();
+
+  await expect(page.getByText('copied as plain text')).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    'The report: https://example.com/report',
+  );
+});
+
+test('hyperlink-generator hands the link to the share sheet', async ({ page }) => {
+  await page.addInitScript(() => {
+    const calls: ShareData[] = [];
+    (window as { __shared?: ShareData[] }).__shared = calls;
+    navigator.share = async (data?: ShareData) => {
+      calls.push(data ?? {});
+    };
+  });
+  await gotoTool(page, 'hyperlink-generator', 'Hyperlink Generator');
+
+  await page.locator('#link-url').fill('example.com/menu');
+  await page.locator('#link-text').fill('Tonight\'s menu');
+  await page.getByRole('button', { name: 'Share' }).click();
+
+  await expect
+    .poll(() => page.evaluate(() => (window as { __shared?: ShareData[] }).__shared))
+    .toEqual([{ title: 'Tonight\'s menu', text: 'Tonight\'s menu', url: 'https://example.com/menu' }]);
+});
+
 test('pomodoro runs a focus session through to the break', async ({ page }) => {
   const watch = watchConsole(page);
   // A faked clock, so the 25 minutes takes no time. The timer measures against

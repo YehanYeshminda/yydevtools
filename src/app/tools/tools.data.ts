@@ -325,6 +325,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'hyperlink-generator',
+    name: 'Hyperlink Generator',
+    description:
+      'Turn a URL into clickable link text to paste into an email, chat or Word, or copy it as Markdown, HTML or a plain message.',
+    icon: 'matAddLinkOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'json-csv',
     name: 'JSON ↔ CSV Converter',
     description:

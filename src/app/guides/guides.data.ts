@@ -3331,6 +3331,90 @@ export const GUIDES: Guide[] = [
     related: ['email-template', 'html-preview'],
     relatedGuides: ['docx-files-explained', 'markdown-explained', 'character-encoding-explained'],
   },
+  {
+    slug: 'clickable-links-in-messages',
+    title: 'Why a pasted link shows the raw URL, and how to send clickable text instead',
+    description:
+      'What the clipboard really holds when you copy, which apps can show words instead of a URL, and how to send a link people trust.',
+    category: 'Everyday',
+    readingMinutes: 6,
+    updated: '2026-10-26',
+    published: '2026-10-26',
+    intro: [
+      'You copy a link, paste it into an email, and the reader gets https://drive.example.com/file/d/1a8F… in full, when what you wanted was a tidy "Here is the contract" they could click. Someone else sends you exactly that kind of link every day, so it is clearly possible. The difference is not the link. It is what was on the clipboard when it was pasted.',
+      'This guide explains what a copy actually puts on the clipboard, why some apps turn it into link text and others never will, and how to send a link that is both tidy and trustworthy.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'One copy, several versions of it' },
+      {
+        kind: 'p',
+        text: 'The clipboard does not hold one piece of text. A single copy can carry the same content in several formats at once, each labelled with a type: text/plain for bare characters, text/html for formatted content, sometimes rich text or an image as well. Nothing is converted at copy time. Instead, the app you paste into looks at what is on offer and takes the richest format it understands.',
+      },
+      {
+        kind: 'p',
+        text: 'Copying from the browser address bar puts only text/plain on the clipboard: the URL itself. So that is all any app can paste. Copying a link out of a web page or a document is different, because the source offers text/html too, and in that version the link is an anchor element with words inside it and the address tucked into an attribute.',
+      },
+      {
+        kind: 'code',
+        code: 'text/plain   Here is the contract: https://example.com/contracts/42\ntext/html    <a href="https://example.com/contracts/42">Here is the contract</a>',
+        caption: 'What one copy of a clickable link can carry. The pasting app picks one line.',
+      },
+      { kind: 'h2', text: 'Which apps can show words instead of a URL' },
+      {
+        kind: 'p',
+        text: 'Anything with a formatting toolbar reads text/html, and so pastes the anchor as a link that shows your words: Gmail, Outlook, Apple Mail, Word, Google Docs, Pages, Slack, Microsoft Teams and Notion among them. You can usually also make a link by hand there, by selecting text and pressing Ctrl+K (Cmd+K on a Mac), which is worth knowing when you are already in the editor.',
+      },
+      {
+        kind: 'p',
+        text: 'Most messaging apps take text/plain only: SMS, iMessage, WhatsApp and Signal have no way to hide an address behind words in a message you type. They do turn a bare URL into something tappable on their own, often with a preview card. So for them the best you can send is the words followed by the address, which is exactly what the text/plain version above is for.',
+      },
+      {
+        kind: 'p',
+        text: 'A third group writes formatting as text. GitHub, Reddit and many wikis and notes apps use Markdown, where a link is written [Here is the contract](https://example.com/contracts/42), and web pages and email templates need the HTML anchor itself as source.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'A copy that offers both versions does the right thing everywhere: a rich editor takes the link, a plain-text box takes "words: address". That is why a good link copier writes text/html and text/plain together rather than choosing one.',
+      },
+      { kind: 'h2', text: 'Making a clickable link to paste' },
+      {
+        kind: 'ol',
+        items: [
+          'Paste the address. If it has no https:// in front, add it, or many apps will not treat it as a link at all.',
+          'Write the words the reader should see. Say what is behind the link rather than "click here".',
+          'Copy it as rich text, so the clipboard carries both versions, and paste it where you are writing.',
+          'For a plain-text app, send the words and the address together instead.',
+        ],
+      },
+      {
+        kind: 'tool',
+        slug: 'hyperlink-generator',
+        lead: 'The Hyperlink Generator does all four in your browser:',
+      },
+      { kind: 'h2', text: 'Link text and trust' },
+      {
+        kind: 'p',
+        text: 'Hiding an address behind words is also the oldest trick in phishing, and mail filters know it. The thing most likely to get a legitimate message flagged is link text that looks like one web address while the link goes to another: "www.yourbank.com" pointing somewhere else entirely. Words that describe the destination are fine; words that impersonate a different destination are not.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Use words, not a different-looking URL, as the link text.',
+          'Keep the real domain recognisable. A link shortener hides it a second time, and many filters treat that with suspicion.',
+          'Readers can check: hovering over a link on a computer, or long-pressing it on a phone, shows the real address before anything opens.',
+          'Do the same check on links sent to you. If the address it shows is not the one the words suggest, do not open it.',
+        ],
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Only web, email and phone links belong in a message. An address that starts with javascript: or data: runs or renders something when clicked, and a careful link tool refuses to make one clickable.',
+      },
+    ],
+    related: ['hyperlink-generator', 'url-encoder', 'qr-generator'],
+    relatedGuides: ['html-email-explained', 'markdown-explained', 'sharing-a-secret-safely'],
+  },
 ];
 
 /** Fast slug → guide lookup for the detail route. */

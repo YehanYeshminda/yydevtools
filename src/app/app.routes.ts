@@ -155,6 +155,19 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/hyperlink-generator',
+    loadComponent: () =>
+      import('./tools/hyperlink-generator/hyperlink-generator').then(
+        (m) => m.HyperlinkGeneratorTool,
+      ),
+    title: 'Hyperlink Generator — Turn a URL into clickable text — YYDevTools',
+    data: {
+      description:
+        'Paste a URL, type the words to show, and copy a clickable link that pastes into Gmail, ' +
+        'Outlook, Word, Slack or Teams, or as Markdown, HTML or a plain message. Runs in your browser.',
+    },
+  },
+  {
     path: 'tools/json-formatter',
     loadComponent: () =>
       import('./tools/json-formatter/json-formatter').then((m) => m.JsonFormatterTool),
@@ -1125,6 +1138,17 @@ export const routes: Routes = [
       description:
         'Email HTML is a different dialect from web HTML. Why Outlook lays out with Word, ' +
         'what actually survives, and how to build a message that holds together everywhere.',
+    },
+  },
+  {
+    path: 'guides/clickable-links-in-messages',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Why a pasted link shows the raw URL — YYDevTools',
+    data: {
+      slug: 'clickable-links-in-messages',
+      description:
+        'What the clipboard really holds when you copy, which apps can show words instead of a ' +
+        'URL, and how to send a link people trust.',
     },
   },
   {

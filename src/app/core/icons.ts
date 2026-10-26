@@ -5,6 +5,7 @@
 // deliberate: the home directory alone renders almost every tool icon, so
 // splitting them per route would duplicate more than it saved.
 import {
+  matAddLinkOutline,
   matAddOutline,
   matAddPhotoAlternateOutline,
   matAlarmOutline,
@@ -125,6 +126,7 @@ import {
   matSearchOutline,
   matSelectAllOutline,
   matSendOutline,
+  matShareOutline,
   matSmsOutline,
   matSplitscreenOutline,
   matStraightenOutline,
@@ -161,6 +163,7 @@ import {
 } from '@ng-icons/material-icons/outline';
 
 export const APP_ICONS = {
+  matAddLinkOutline,
   matAddOutline,
   matAddPhotoAlternateOutline,
   matAlarmOutline,
@@ -281,6 +284,7 @@ export const APP_ICONS = {
   matSearchOutline,
   matSelectAllOutline,
   matSendOutline,
+  matShareOutline,
   matSmsOutline,
   matSplitscreenOutline,
   matStraightenOutline,

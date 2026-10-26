@@ -1,0 +1,88 @@
+/* The two inputs side by side on a wide screen, stacked on a phone. */
+.inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+/* The label is prose, not code, so it is typed in the body face. */
+.field__input--text {
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+/* The main result -------------------------------------------------------- */
+.result {
+  padding: 1.25rem;
+  border: 1px solid var(--outline);
+  border-left: 3px solid var(--brand);
+  background: var(--surface-1);
+}
+
+.preview {
+  margin: 0;
+  min-height: 1.75rem;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+/* Underlined, as it will look in most mail clients, so it reads as a link
+   without relying on colour alone. */
+.preview__link {
+  color: var(--mat-sys-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.preview__empty {
+  color: var(--on-var);
+}
+
+.result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.copy-main {
+  --mat-button-filled-container-height: 3.5rem;
+  --mat-button-filled-label-text-size: 1.15rem;
+  --mat-button-filled-horizontal-padding: 2rem;
+}
+
+/* Other formats ---------------------------------------------------------- */
+.format {
+  align-items: flex-start;
+}
+
+.format__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: none;
+  width: 11rem;
+}
+
+.format__name {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--on);
+}
+
+.format__where {
+  font-size: 0.78rem;
+  color: var(--on-var);
+}
+
+.format .row__value {
+  align-self: center;
+}
+
+@media (max-width: 600px) {
+  .format__head {
+    width: 100%;
+  }
+}

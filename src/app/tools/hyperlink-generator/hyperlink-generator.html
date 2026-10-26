@@ -1,0 +1,131 @@
+<app-tool-page slug="hyperlink-generator">
+  Paste a link, give it the words people should see, and copy it as a clickable link for an email,
+  a chat or a document. Everything runs in your browser.
+</app-tool-page>
+
+<div class="panel">
+  <div class="inputs">
+    <div class="field">
+      <label class="field__label" for="link-url">Link</label>
+      <input
+        id="link-url"
+        class="field__input"
+        type="url"
+        inputmode="url"
+        spellcheck="false"
+        autocomplete="off"
+        autocapitalize="off"
+        placeholder="https://example.com/invoices/42"
+        [attr.aria-invalid]="error() ? true : null"
+        [attr.aria-describedby]="error() ? 'link-error' : null"
+        [value]="url()"
+        (input)="onUrl($event)"
+      />
+    </div>
+    <div class="field">
+      <label class="field__label" for="link-text">Text to show</label>
+      <input
+        id="link-text"
+        class="field__input field__input--text"
+        type="text"
+        autocomplete="off"
+        placeholder="Here's the invoice"
+        aria-describedby="link-text-hint"
+        [value]="text()"
+        (input)="onText($event)"
+      />
+      <span id="link-text-hint" class="field__hint">
+        Leave it empty to show the website and path instead.
+      </span>
+    </div>
+  </div>
+
+  @if (error(); as error) {
+    <p id="link-error" class="status status--err" role="status">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      {{ error }}
+    </p>
+  }
+
+  <!-- The main result: what the pasted link will look like, and the one button
+       most visitors came for. -->
+  <section class="result" aria-labelledby="result-title">
+    <h2 id="result-title" class="section__title">Your clickable link</h2>
+    <p class="preview" data-testid="link-preview">
+      @let current = link();
+      @if (current.ok) {
+        <a class="preview__link" [href]="current.href" target="_blank" rel="noopener noreferrer">{{
+          current.label
+        }}</a>
+      } @else {
+        <span class="preview__empty">Your link will appear here.</span>
+      }
+    </p>
+    <div class="result__actions">
+      <button
+        matButton="filled"
+        class="copy-main"
+        data-testid="copy-rich"
+        [disabled]="!link().ok"
+        (click)="copyRich()"
+      >
+        <ng-icon name="matContentCopyOutline" />
+        Copy clickable link
+      </button>
+      @if (canShare()) {
+        <button matButton="outlined" [disabled]="!link().ok" (click)="share()">
+          <ng-icon name="matShareOutline" />
+          Share
+        </button>
+      }
+    </div>
+    <p class="field__hint">
+      Pastes as a real link in Gmail, Outlook, Word, Google Docs, Slack and Teams: the reader
+      sees your text and clicking it opens the page.
+    </p>
+  </section>
+
+  <div class="actions">
+    <app-try-example (loadExample)="loadExample()" />
+    <button matButton (click)="clear()">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+  </div>
+
+  <section aria-labelledby="formats-title">
+    <h2 id="formats-title" class="section__title">Other formats</h2>
+    <ul class="rows">
+      @for (format of formats; track format.key) {
+        <li class="row format">
+          <div class="format__head">
+            <span class="format__name">{{ format.label }}</span>
+            <span class="format__where">{{ format.where }}</span>
+          </div>
+          <code class="row__value" [attr.data-testid]="'format-' + format.key">{{
+            outputs()?.[format.key] ?? '—'
+          }}</code>
+          <button
+            matButton
+            [disabled]="!link().ok"
+            [attr.aria-label]="'Copy ' + format.label"
+            (click)="copyFormat(format)"
+          >
+            <ng-icon name="matContentCopyOutline" />
+            Copy
+          </button>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    A link without http:// or https:// gets https:// added. Only web, email (mailto:) and phone
+    (tel:) links are accepted, so a pasted script can never become a clickable link.
+  </p>
+</div>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="hyperlink-generator" />
+}

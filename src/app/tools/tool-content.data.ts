@@ -2622,7 +2622,69 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. It is a transport format, not encryption — it is fully reversible, as the decode direction shows. It keeps data intact as it travels through a URL; it does not hide or protect it.',
       },
     ],
-    related: ['base64-converter', 'json-formatter', 'timestamp-converter', 'slug-generator'],
+    related: ['base64-converter', 'json-formatter', 'timestamp-converter', 'slug-generator', 'hyperlink-generator'],
+  },
+
+  'hyperlink-generator': {
+    slug: 'hyperlink-generator',
+    intro: [
+      'Paste a link, type the words you want the reader to see, and copy the result as a real clickable link. Paste it into Gmail, Outlook, Word, Google Docs, Slack or Teams and the reader gets "Here is the invoice" in place of a long address, and clicking those words opens the page.',
+      'Not every app can show words instead of an address, so the same link is also ready as Markdown for GitHub or Reddit, as an HTML anchor for a web page or email template, and as a plain "words: address" message for WhatsApp, SMS and Telegram. On a phone, Share hands it straight to the app you choose. Everything is built in your browser; the link you paste is never uploaded.',
+    ],
+    steps: [
+      'Paste the address into Link. If it has no https:// in front, it is added for you.',
+      'Type the words to show in Text to show, or leave it empty to show the website and path.',
+      'Check the preview: that is what the reader will see and click.',
+      'Press Copy clickable link and paste it into your email, chat or document.',
+      'For an app without links, copy the Plain message instead, or press Share on a phone.',
+    ],
+    features: [
+      'Copies rich text and plain text together, so every app takes the version it understands.',
+      'Markdown, HTML and plain-message versions, each with its own copy button.',
+      'Adds https:// to a bare address and catches typos such as spaces in the domain.',
+      'Accepts only web, mailto and tel links, so a pasted script can never become clickable.',
+      'Escapes the text and address in the HTML, so a label containing < or " cannot break it.',
+      'Runs entirely in your browser — nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'Why pasting a link usually shows the whole address',
+        body: [
+          'Copying from the address bar puts plain text on the clipboard: the URL and nothing else. An email or chat app can only paste what it was given, so the reader sees the full address, tracking parameters and all. A link that shows words is a different thing on the clipboard: formatted HTML in which the words sit inside an anchor and the address hides in its href.',
+          'The copy button here writes both at once, the HTML version and a plain "words: address" version, which is how copying a link out of a web page works too. A rich editor takes the HTML and shows your words as a link; a plain-text box takes the plain version, so nothing is ever lost.',
+        ],
+      },
+      {
+        heading: 'Choosing words for a link',
+        body: [
+          'Good link text says what is behind it: "the signed contract", "October invoice (PDF)", "book a call". It reads well on its own, which matters to anyone using a screen reader that lists the links on a page, and it tells the reader what they are agreeing to open. "Click here" does none of that.',
+          'Never make the words look like a different address. Text reading www.yourbank.com that leads somewhere else is the classic phishing pattern, and mail filters flag it even when the intent is innocent. Readers can always check by hovering over a link, or long-pressing it on a phone, to see where it really goes.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'How do I turn a URL into clickable text?',
+        a: 'Paste the URL into Link, type the words to show in Text to show, and press Copy clickable link. Pasting into Gmail, Outlook, Word, Google Docs, Slack or Teams gives your words as a link that opens the URL when clicked.',
+      },
+      {
+        q: 'Why does WhatsApp or SMS show the full address instead of my words?',
+        a: 'Those apps only handle plain text, so they have no way to hide an address behind words. They make a bare URL tappable on their own, so the best message for them is the words followed by the address, which is what the Plain message copies.',
+      },
+      {
+        q: 'The paste came out as plain text. Why?',
+        a: 'Either the app you pasted into only accepts plain text, or the browser could not put rich text on the clipboard; the page tells you when that happens. Try pasting into a different editor, or use the Markdown or HTML version where the app supports it.',
+      },
+      {
+        q: 'Can I link an email address or a phone number?',
+        a: 'Yes. Start the link with mailto: for an email address or tel: for a phone number, for example mailto:ada@example.com. Clicking it opens a new email or the phone dialler.',
+      },
+      {
+        q: 'Is the link I paste sent anywhere?',
+        a: 'No. The link is built in your browser and copied straight to your clipboard. Nothing is uploaded, and the page does not fetch the address you paste.',
+      },
+    ],
+    related: ['url-encoder', 'qr-generator', 'email-template', 'markdown-editor'],
   },
 
   'csv-viewer': {
@@ -3672,7 +3734,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. The text is read, the four formats are generated and the preview is rendered entirely in your browser, and the preview frame runs with no permissions at all. Nothing you draft leaves your device.',
       },
     ],
-    related: ['markdown-editor', 'html-preview', 'text-cleaner'],
+    related: ['markdown-editor', 'html-preview', 'text-cleaner', 'hyperlink-generator'],
   },
 
   'html-preview': {
