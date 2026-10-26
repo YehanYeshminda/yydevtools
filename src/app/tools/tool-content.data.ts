@@ -2622,7 +2622,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. It is a transport format, not encryption — it is fully reversible, as the decode direction shows. It keeps data intact as it travels through a URL; it does not hide or protect it.',
       },
     ],
-    related: ['base64-converter', 'json-formatter', 'timestamp-converter', 'slug-generator', 'hyperlink-generator'],
+    related: ['base64-converter', 'json-formatter', 'timestamp-converter', 'slug-generator', 'hyperlink-generator', 'link-cleaner'],
   },
 
   'hyperlink-generator': {
@@ -2684,7 +2684,76 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. The link is built in your browser and copied straight to your clipboard. Nothing is uploaded, and the page does not fetch the address you paste.',
       },
     ],
-    related: ['url-encoder', 'qr-generator', 'email-template', 'markdown-editor'],
+    related: ['url-encoder', 'link-cleaner', 'qr-generator', 'email-template', 'markdown-editor'],
+  },
+
+  'link-cleaner': {
+    slug: 'link-cleaner',
+    intro: [
+      'Links copied from a newsletter, an ad, a search result or a share button usually carry a tail of tracking tags: utm_source=newsletter, fbclid=IwAR…, si=Xy7… They do nothing for the page you are opening. They tell the site, and the platform that sent you, which campaign, which post or even which person the click came from. Paste the link here and you get it back without them, ready to copy or share.',
+      'Every tag removed is listed with who adds it and what it records, and everything the page needs is kept: the video in a YouTube link, the search in a Google one, the product and the colour you picked in a shop link. Links wrapped in a redirect, such as a Google result copied out of Gmail or an Outlook Safe Links address, are unwrapped to the real destination. It all happens in your browser, and nothing is ever fetched, so no click is logged on the way.',
+    ],
+    steps: [
+      'Paste a link, a list of links, or a whole message with links in it.',
+      'Read the cleaned result. Every link in the text is cleaned in place and the words around it are left alone.',
+      'Check What was removed: each tag is named, with who adds it and the value it carried.',
+      'Press Copy for plain text, or Copy as clickable link to paste a tidy link into an email or document.',
+      'To give a link your own words, press Choose the words to open it in the Hyperlink Generator.',
+    ],
+    features: [
+      'Removes campaign tags (utm_, Matomo), ad click IDs (gclid, fbclid, msclkid, ttclid and more) and email-marketing IDs (Mailchimp, HubSpot, Marketo, Klaviyo).',
+      'Site-aware: si is removed from YouTube and Spotify links, s and t from x.com links, and left alone everywhere else, where they may mean something.',
+      'Unwraps Google, Facebook, Instagram, Messenger, Outlook Safe Links, YouTube, LinkedIn, Slack, Reddit, DuckDuckGo and Steam redirect links, including one wrapped inside another.',
+      'Keeps the rest of the link exactly as it was, encoding and all, so it opens the same page.',
+      'Cleans many links at once, and links inside ordinary text.',
+      'Never requests the link or anything else, and nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'What the tags in a link are for',
+        body: [
+          'Everything after the ? in a link is a list of name=value pairs. Some of them choose what the page shows: v=dQw4w9WgXcQ is the video, q=cats is the search, id=118 is the product. The rest are notes for analytics. A newsletter adds utm_source and utm_campaign so the site can count which email worked. An ad network adds a click ID such as gclid or fbclid, a unique string that ties your visit back to the ad you clicked and the account that showed it to you.',
+          'Share buttons do the same thing for people rather than campaigns. The si on a YouTube or Spotify share link, and igshid on an Instagram one, identify the share, which lets the platform connect the person who sent the link with everyone who opens it. Send the link to a group chat and every click reports back.',
+        ],
+      },
+      {
+        heading: 'Why only some parameters are removed',
+        body: [
+          'Removing too much breaks links, which is worse than removing nothing. ref looks like tracking, but on GitHub it picks the branch you are looking at. t is a tracking token on x.com but the start time on YouTube. Amazon\'s th and psc pick the size or colour you chose. So this tool removes only names on a researched list, each one known to be added by an analytics, advertising, email or sharing system, and scopes the ambiguous ones to the sites where they are known to be tracking.',
+          'Anything it does not recognise is kept and shown under Kept, so you can see exactly what stayed. If a link still carries something that looks like an ID, it is either unknown to the list or the page genuinely needs it.',
+        ],
+      },
+      {
+        heading: 'Redirect links and short links',
+        body: [
+          'A redirect link exists only to log your click and send you on. Google search results copied from Gmail start with google.com/url?q=, Facebook sends outbound links through l.facebook.com/l.php?u=, and Microsoft Defender rewrites links in Outlook and Teams as safelinks.protection.outlook.com/?url=. In all of these the real address is already written inside the link, so it can be read straight out without visiting the wrapper.',
+          'A short link such as bit.ly or t.co is different: the destination is stored on the shortener\'s server, and the only way to learn it is to ask that server, which records the request. This tool never does that, so short links are left as they are. If you need to know where a Bitly link goes, adding a + to its end shows Bitly\'s preview page instead of following it.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'What is fbclid, and is it safe to remove?',
+        a: 'fbclid is a click ID Meta adds to every link that leaves Facebook or Instagram, so the destination site and Meta can tie your visit back to that click. Removing it never changes the page you land on; it only stops that attribution.',
+      },
+      {
+        q: 'Will a cleaned link still work?',
+        a: 'Yes. Only parameters on the tracking list are removed, and everything else is kept exactly as written, so the link opens the same page. Each removed tag is listed with who adds it, and the parameters kept are shown too.',
+      },
+      {
+        q: 'What does si mean in a YouTube or Spotify link?',
+        a: 'It is a share identifier added by the Share button. It links the person who shared with everyone who opens the link. The video or track is chosen by the rest of the link, so removing si changes nothing you see.',
+      },
+      {
+        q: 'Can it expand bit.ly or t.co short links?',
+        a: 'No, deliberately. A short link\'s destination lives on the shortener\'s server, so finding it means sending a request that the shortener logs. This tool never sends anything, so short links are left as they are. Redirect links that carry the destination inside them, such as Google, Facebook and Outlook Safe Links, are unwrapped.',
+      },
+      {
+        q: 'Is the link I paste sent anywhere?',
+        a: 'No. The cleaning happens in your browser by reading the text of the link. Nothing is fetched or uploaded, and the page does not open the link or any part of it.',
+      },
+    ],
+    related: ['hyperlink-generator', 'url-encoder', 'qr-generator', 'text-cleaner'],
   },
 
   'csv-viewer': {

@@ -973,6 +973,96 @@ test('hyperlink-generator hands the link to the share sheet', async ({ page }) =
     .toEqual([{ title: 'Tonight\'s menu', text: 'Tonight\'s menu', url: 'https://example.com/menu' }]);
 });
 
+/**
+ * The Link Cleaner: a real message with three kinds of tracked link, cleaned
+ * in place. The words around the links must survive untouched, each removed
+ * tag must be explained, and nothing the visitor pasted may be requested,
+ * since the whole promise is that unwrapping reads the link rather than
+ * following it.
+ */
+test('link-cleaner strips tracking, unwraps a redirect and never requests the links', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  const requested: string[] = [];
+  page.on('request', (request) => {
+    if (/example\.(com|org)|google\.com\/url|youtu\.be/.test(request.url())) requested.push(request.url());
+  });
+  await gotoTool(page, 'link-cleaner', 'Link Cleaner');
+
+  await page.locator('#link-input').fill(
+    [
+      'Recipe (https://cooking.example.com/tart?utm_source=news&utm_medium=email&mc_eid=8f2a) is great.',
+      'Video: https://youtu.be/dQw4w9WgXcQ?si=Xy7_kQ2pL0aB&t=42',
+      'https://www.google.com/url?sa=t&url=https%3A%2F%2Fshop.example.org%2Ftin%3Fid%3D118%26fbclid%3DIwAR2x&ved=2ah',
+    ].join('\n'),
+  );
+
+  // Exact text, not toHaveText's normalised whitespace: the output is pre-wrap,
+  // so a stray space or lost line break would be copied too.
+  await expect.poll(() => page.getByTestId('cleaned').textContent()).toBe(
+    [
+      'Recipe (https://cooking.example.com/tart) is great.',
+      'Video: https://youtu.be/dQw4w9WgXcQ?t=42',
+      'https://shop.example.org/tin?id=118',
+    ].join('\n'),
+  );
+  await expect(page.getByTestId('summary')).toHaveText(
+    'Removed 5 tracking parameters from 3 links, and unwrapped 1 redirect link.',
+  );
+
+  const reports = page.getByTestId('link-report');
+  await expect(reports).toHaveCount(3);
+  await expect(reports.nth(0)).toContainText('Campaign tag (Google Analytics UTM)');
+  await expect(reports.nth(0)).toContainText('Mailchimp campaign and subscriber ID');
+  await expect(reports.nth(1)).toContainText('YouTube share and search tracking');
+  await expect(reports.nth(1).getByTestId('kept')).toHaveText('Kept, because the page needs it: t');
+  await expect(reports.nth(2)).toContainText('Unwrapped from a redirect link: Google');
+  await expect(reports.nth(2)).toContainText('Meta (Facebook, Instagram) click ID');
+  await expect(reports.nth(2).getByTestId('kept')).toHaveText('Kept, because the page needs it: id');
+
+  expect(requested, 'a pasted link was requested').toEqual([]);
+  expectClean(watch);
+});
+
+test('link-cleaner copies clickable links and hands one to the Hyperlink Generator', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await gotoTool(page, 'link-cleaner', 'Link Cleaner');
+
+  await page.locator('#link-input').fill(
+    'See https://example.com/docs/start?utm_campaign=x&page=2 & <reply>\nhttps://example.org/?gclid=1',
+  );
+  await page.getByTestId('copy-rich').click();
+  await expect(page.getByText('Clickable links copied to clipboard')).toBeVisible();
+
+  const copied = await page.evaluate(async () => {
+    const [item] = await navigator.clipboard.read();
+    const html = await (await item.getType('text/html')).text();
+    const plain = await (await item.getType('text/plain')).text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return {
+      plain,
+      text: doc.body.textContent,
+      anchors: [...doc.querySelectorAll('a')].map((a) => [a.getAttribute('href'), a.textContent]),
+    };
+  });
+  expect(copied.anchors).toEqual([
+    ['https://example.com/docs/start?page=2', 'example.com/docs/start'],
+    ['https://example.org/', 'example.org'],
+  ]);
+  // The words around the links arrive as words, escaped rather than parsed.
+  expect(copied.text).toBe('See example.com/docs/start & <reply>example.org');
+  // The Windows clipboard stores line breaks as CRLF; Linux CI keeps LF.
+  expect(copied.plain.replace(/\r\n/g, '\n')).toBe('See https://example.com/docs/start?page=2 & <reply>\nhttps://example.org/');
+
+  await page.getByRole('link', { name: 'Choose the words for link 1 in the Hyperlink Generator' }).click();
+  await expect(page).toHaveURL(/\/tools\/hyperlink-generator#s=/);
+  await expect(page.locator('#link-url')).toHaveValue('https://example.com/docs/start?page=2');
+});
+
 test('pomodoro runs a focus session through to the break', async ({ page }) => {
   const watch = watchConsole(page);
   // A faked clock, so the 25 minutes takes no time. The timer measures against

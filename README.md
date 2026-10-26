@@ -63,6 +63,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **TOML Converter** | Convert TOML to JSON or YAML and back, live, with a warning wherever a value cannot carry over. |
 | **URL Encoder / Decoder** | Percent-encode or decode URLs and query values, and break a URL into its parts. |
 | **Hyperlink Generator** | Turn a URL into clickable link text for an email, a chat or Word, or copy it as Markdown, HTML or a plain message. |
+| **Link Cleaner** | Strip tracking tags (utm_, fbclid, gclid, si…) from links and unwrap Google, Facebook and Outlook redirect links, with what each tag was for. |
 | **Image Compressor** | Shrink JPEG, PNG and HEIC images in bulk — by quality or to a target size, with Exif control. |
 | **Background Remover** | Cut the background out of a photo and save a transparent PNG, or put the subject on a colour. Runs in your browser. |
 | **Passport Photo Maker** | Crop to an official passport or ID size with head-position guides, then print one or a sheet. |

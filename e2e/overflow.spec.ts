@@ -106,6 +106,15 @@ test('hyperlink-generator keeps a long URL and label inside the preview and form
   await expectFitsAtEveryWidth(page);
 });
 
+test('link-cleaner keeps a long link and a long removed value inside the report', async ({
+  page,
+}) => {
+  await gotoTool(page, 'link-cleaner', 'Link Cleaner');
+  await page.locator('#link-input').fill(`https://example.com/${TOKEN}?id=${TOKEN}&fbclid=${TOKEN}`);
+  await expect(page.getByTestId('link-report')).toContainText('Meta (Facebook, Instagram) click ID');
+  await expectFitsAtEveryWidth(page);
+});
+
 test('json-csv keeps a long cell inside the result editor', async ({ page }) => {
   await gotoTool(page, 'json-csv', 'JSON ↔ CSV Converter');
   await setEditorText(editorByLabel(page, 'Input'), `[{"token":"${TOKEN}"}]`);

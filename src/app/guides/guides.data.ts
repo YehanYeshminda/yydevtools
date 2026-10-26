@@ -3415,6 +3415,125 @@ export const GUIDES: Guide[] = [
     related: ['hyperlink-generator', 'url-encoder', 'qr-generator'],
     relatedGuides: ['html-email-explained', 'markdown-explained', 'sharing-a-secret-safely'],
   },
+  {
+    slug: 'tracking-parameters-in-links',
+    title: 'What utm_source, fbclid and si in a link are, and when to remove them',
+    description:
+      'The tags that ride along on shared links: who adds them, what they record about the click, which ones are safe to strip, and why a short link is different.',
+    category: 'Privacy',
+    readingMinutes: 8,
+    updated: '2026-10-26',
+    published: '2026-10-26',
+    intro: [
+      'Copy a link out of a newsletter, an ad or a share sheet and it rarely ends where the page address does. It trails on: ?utm_source=newsletter&utm_medium=email, or &fbclid=IwAR2x…, or ?si=Xy7_kQ2pL0aB. Paste it into a chat and that tail goes with it, to everyone who opens it.',
+      'This guide explains what those tags are, who puts them there, what they actually record, and how to tell the parts of a link you can remove from the parts the page needs.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'The anatomy of a tracked link' },
+      {
+        kind: 'p',
+        text: 'Everything after the ? in a web address is the query string: a list of name=value pairs joined by &. The site reads them when the page loads. Some decide what you see. Others decide nothing at all and are there purely to be counted.',
+      },
+      {
+        kind: 'code',
+        code: 'https://shop.example.com/tart-tin?id=118&colour=red&utm_source=newsletter&utm_campaign=autumn&gclid=Cj0KCQjw…\n\nid=118                  the product          keep\ncolour=red              the variant chosen   keep\nutm_source=newsletter   which channel        tracking\nutm_campaign=autumn     which campaign       tracking\ngclid=Cj0KCQjw…         this one ad click    tracking',
+        caption: 'One link, two jobs. The first two pairs pick the page; the last three only report on how you got there.',
+      },
+      { kind: 'h2', text: 'Who adds them, and what they record' },
+      {
+        kind: 'p',
+        text: 'Campaign tags are the oldest kind. utm_source, utm_medium, utm_campaign, utm_term and utm_content were defined by Urchin, the analytics product Google bought and turned into Google Analytics, and almost every analytics tool reads them now. A marketer adds them by hand or by template to say "this visit came from the autumn newsletter". They describe the campaign, not you, and every reader of that newsletter gets the same values.',
+      },
+      {
+        kind: 'p',
+        text: 'Click IDs are different in kind. Google Ads appends gclid, Microsoft Advertising msclkid, Meta fbclid, TikTok ttclid, and each value is unique to a single click. The ad platform keeps a record of which account saw which ad and clicked it; the site stores the ID when you arrive and can later report a purchase back against it. That is how an advertiser learns that this particular click turned into a sale, and it is why the value is long and different every time.',
+      },
+      {
+        kind: 'p',
+        text: 'Share IDs track people rather than campaigns. The si on a YouTube or Spotify link and the igshid on an Instagram one are created when someone presses Share. The platform knows who pressed it, so every person who later opens the link can be connected to the person who sent it. Forward that link to a group chat and the platform learns who you share with.',
+      },
+      {
+        kind: 'p',
+        text: 'Email tools add their own: Mailchimp\'s mc_eid identifies the subscriber the email went to, HubSpot uses _hsenc and _hsmi, Marketo mkt_tok. Open a link from a marketing email and it can say which recipient you are, which matters most when you forward that link to someone else and their visit is recorded as yours.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'A rough rule: a value that is the same for everyone (utm_campaign=autumn) describes a campaign. A long value that changes every time (fbclid=IwAR2x…) identifies a click, a share or a person.',
+      },
+      { kind: 'h2', text: 'What is safe to remove, and what is not' },
+      {
+        kind: 'p',
+        text: 'None of the tags above change the page. Remove them and the same article, video or product opens; the site simply cannot attribute the visit. That is the test for every parameter: does the page depend on it?',
+      },
+      {
+        kind: 'p',
+        text: 'The trap is that the same short name can do either job on different sites. On YouTube, v is the video and t is the second to start at, while on x.com t is a per-share tracking token. On GitHub, ref picks the branch you are viewing, so stripping every "ref" breaks code links. On Amazon, th and psc remember the size or colour you chose, while pd_rd_w and qid only record where on the page you clicked. A careful cleaner works from a list of names known to be tracking, scopes the ambiguous ones to the sites that use them that way, and leaves everything else alone.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Always safe: utm_*, gclid, gbraid, wbraid, dclid, fbclid, msclkid, ttclid, twclid, igshid, mc_eid, _hsenc, mkt_tok.',
+          'Safe on the sites that add them: si on YouTube and Spotify, s and t on x.com, trk on LinkedIn, spm on AliExpress.',
+          'Keep: anything that names the content (v, id, q, p, page) and anything you do not recognise.',
+        ],
+      },
+      { kind: 'h2', text: 'Redirect links: the address inside the address' },
+      {
+        kind: 'p',
+        text: 'Some links are not the destination at all. Copy a search result out of Gmail and you get google.com/url?q=https%3A%2F%2Fexample.com%2F…; Facebook sends every outbound link through l.facebook.com/l.php?u=…; Microsoft Defender rewrites links in Outlook and Teams as eur01.safelinks.protection.outlook.com/?url=…. Each one exists to record the click, and in Outlook\'s case to scan the destination, before sending you on.',
+      },
+      {
+        kind: 'p',
+        text: 'In all three the real address is written inside the link, percent-encoded so its own ? and & do not collide with the wrapper\'s: %3A is a colon, %2F a slash, %3F a question mark. Decoding that one parameter gives the destination without ever visiting the wrapper, and the result often has tracking tags of its own to remove.',
+      },
+      {
+        kind: 'tool',
+        slug: 'url-encoder',
+        lead: 'See how a nested address is encoded, part by part:',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'A short link (bit.ly, t.co, lnkd.in) is not a wrapper. Its destination is stored on the shortener\'s server and the only way to learn it is to ask, which the shortener records. Treat "expanding" a short link as opening it.',
+      },
+      { kind: 'h2', text: 'Your browser may already do some of this' },
+      {
+        kind: 'p',
+        text: 'Browsers have started stripping the worst of it. Safari\'s Link Tracking Protection, added in 2023, removes known click IDs from links opened in Mail, Messages and Private Browsing. Firefox strips a list of tracking parameters in private windows and in its strict tracking protection mode, and offers Copy Link Without Site Tracking on the right-click menu. Brave removes many by default.',
+      },
+      {
+        kind: 'p',
+        text: 'Those protect your own clicks. They do nothing for a link you copy and send to someone else, which carries whatever was on it to a browser you do not control. Cleaning the link before you share it is the only way to make sure the tail stays with you.',
+      },
+      { kind: 'h2', text: 'Cleaning a link before you share it' },
+      {
+        kind: 'ol',
+        items: [
+          'Paste the link, or the whole message, into a cleaner that works locally and never opens the link.',
+          'Check what it removed and what it kept. If a parameter that names the content is gone, keep the original.',
+          'If the link was a redirect, confirm the unwrapped destination is the site you expected.',
+          'Copy the clean link, or copy it as a clickable link with words of your own.',
+        ],
+      },
+      {
+        kind: 'tool',
+        slug: 'link-cleaner',
+        lead: 'The Link Cleaner does this in your browser and explains every tag it removes:',
+      },
+      {
+        kind: 'p',
+        text: 'A clean link is also a tidier one: easier to read before you click, shorter in a message, and far less likely to be cut off when it wraps. In an email or a document you can go a step further and hide the address behind words that say what it is.',
+      },
+      {
+        kind: 'tool',
+        slug: 'hyperlink-generator',
+        lead: 'Turn the clean link into clickable text:',
+      },
+    ],
+    related: ['link-cleaner', 'url-encoder', 'hyperlink-generator'],
+    relatedGuides: ['clickable-links-in-messages', 'photo-metadata-privacy', 'character-encoding-explained'],
+  },
 ];
 
 /** Fast slug → guide lookup for the detail route. */

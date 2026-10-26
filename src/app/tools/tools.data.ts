@@ -334,6 +334,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'link-cleaner',
+    name: 'Link Cleaner',
+    description:
+      'Strip utm_, fbclid, gclid and other tracking tags from links, unwrap Google and Outlook redirect links, and see what each removed tag was for.',
+    icon: 'matLinkOffOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'json-csv',
     name: 'JSON ↔ CSV Converter',
     description:

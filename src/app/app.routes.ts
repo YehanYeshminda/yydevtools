@@ -168,6 +168,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/link-cleaner',
+    loadComponent: () =>
+      import('./tools/link-cleaner/link-cleaner').then((m) => m.LinkCleanerTool),
+    title: 'Link Cleaner — Remove tracking from links — YYDevTools',
+    data: {
+      description:
+        'Remove utm_, fbclid, gclid, si and other tracking parameters from links, unwrap Google, ' +
+        'Facebook and Outlook redirect links, and see what each tag was for. Runs in your browser.',
+    },
+  },
+  {
     path: 'tools/json-formatter',
     loadComponent: () =>
       import('./tools/json-formatter/json-formatter').then((m) => m.JsonFormatterTool),
@@ -1149,6 +1160,17 @@ export const routes: Routes = [
       description:
         'What the clipboard really holds when you copy, which apps can show words instead of a ' +
         'URL, and how to send a link people trust.',
+    },
+  },
+  {
+    path: 'guides/tracking-parameters-in-links',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'What utm_source, fbclid and si in a link are — YYDevTools',
+    data: {
+      slug: 'tracking-parameters-in-links',
+      description:
+        'Who adds the tracking tags on shared links, what they record about the click, which are ' +
+        'safe to strip, and why a short link is different from a redirect.',
     },
   },
   {

@@ -1,0 +1,165 @@
+<app-tool-page slug="link-cleaner">
+  Paste a link, or a whole message with links in it, and get it back without the tracking tags.
+  Nothing is fetched or uploaded: the cleaning happens in your browser.
+</app-tool-page>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="link-input">Links or text</label>
+    <textarea
+      id="link-input"
+      class="field__input"
+      rows="5"
+      spellcheck="false"
+      autocomplete="off"
+      autocapitalize="off"
+      placeholder="https://example.com/article?utm_source=newsletter&fbclid=IwAR…"
+      aria-describedby="link-input-hint"
+      [value]="input()"
+      (input)="onInput($event)"
+    ></textarea>
+    <span id="link-input-hint" class="field__hint">
+      One link, a list of them, or a message with links inside: every link is cleaned in place.
+    </span>
+  </div>
+
+  <div class="actions">
+    <app-try-example (loadExample)="loadExample()" />
+    <button matButton [disabled]="!input()" (click)="clear()">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+  </div>
+
+  <p class="status" role="status" data-testid="summary" [class.status--ok]="changed()">
+    @if (summary()) {
+      <ng-icon
+        class="status__icon"
+        aria-hidden="true"
+        [name]="changed() ? 'matCheckCircleOutline' : 'matInfoOutline'"
+      />
+      {{ summary() }}
+    }
+  </p>
+
+  <section class="result" aria-labelledby="clean-title">
+    <h2 id="clean-title" class="section__title">
+      {{ single() ? 'Clean link' : 'Cleaned text' }}
+    </h2>
+    <!-- pre-wrap shows any whitespace in here, so the text sits flush against the tags. -->
+    @if (links().length) {
+      <p class="output" data-testid="cleaned">{{ result().text }}</p>
+    } @else {
+      <p class="output output--empty" data-testid="cleaned">Your clean link will appear here.</p>
+    }
+    <div class="result__actions">
+      <button
+        matButton="filled"
+        data-testid="copy-clean"
+        [disabled]="!links().length"
+        (click)="copyAll()"
+      >
+        <ng-icon name="matContentCopyOutline" />
+        Copy
+      </button>
+      <button
+        matButton="outlined"
+        data-testid="copy-rich"
+        [disabled]="!links().length"
+        (click)="copyAllRich()"
+      >
+        <ng-icon name="matAddLinkOutline" />
+        Copy as clickable {{ single() ? 'link' : 'links' }}
+      </button>
+    </div>
+    <p class="field__hint">
+      Clickable pastes into Gmail, Outlook, Word, Slack and Teams with each link showing its site and
+      path. To choose your own words for a link, open it in the
+      <a routerLink="/tools/hyperlink-generator">Hyperlink Generator</a>.
+    </p>
+  </section>
+
+  @if (links().length) {
+    <section aria-labelledby="removed-title">
+      <h2 id="removed-title" class="section__title">What was removed</h2>
+      <ol class="links">
+        @for (link of links(); track $index) {
+          <li class="link" data-testid="link-report">
+            <code class="link__url">{{ link.cleaned }}</code>
+
+            @if (link.unwrapped.length) {
+              <p class="link__note">
+                <ng-icon aria-hidden="true" name="matOpenInNewOutline" />
+                Unwrapped from {{ link.unwrapped.length > 1 ? 'nested redirects:' : 'a redirect link:' }}
+                {{ link.unwrapped.join(', then ') }}. The real address was inside it, so nothing was
+                opened.
+              </p>
+            }
+
+            @if (link.removed.length) {
+              <ul class="removed" [attr.aria-label]="'Removed from link ' + ($index + 1)">
+                @for (param of link.removed; track $index) {
+                  <li class="removed__item">
+                    <code class="removed__name">{{ param.name }}</code>
+                    <span class="removed__source">{{ param.source }}</span>
+                    @if (param.value) {
+                      <code class="removed__value">{{ param.value }}</code>
+                    }
+                  </li>
+                }
+              </ul>
+            } @else if (!link.unwrapped.length) {
+              <p class="link__note">Nothing to remove: no known tracking parameters.</p>
+            }
+
+            @if (link.kept.length) {
+              <p class="link__note" data-testid="kept">
+                Kept, because the page needs {{ link.kept.length === 1 ? 'it' : 'them' }}:
+                @for (name of link.kept; track $index; let last = $last) {
+                  <code>{{ name }}</code>{{ last ? '' : ', ' }}
+                }
+              </p>
+            }
+
+            <div class="link__actions">
+              <button matButton [attr.aria-label]="'Copy clean link ' + ($index + 1)" (click)="copyOne(link)">
+                <ng-icon name="matContentCopyOutline" />
+                Copy
+              </button>
+              <button
+                matButton
+                [attr.aria-label]="'Copy clickable link ' + ($index + 1)"
+                (click)="copyOneRich(link)"
+              >
+                <ng-icon name="matAddLinkOutline" />
+                Copy clickable
+              </button>
+              @if (link.fragment; as fragment) {
+                <a
+                  matButton
+                  routerLink="/tools/hyperlink-generator"
+                  [fragment]="fragment"
+                  [attr.aria-label]="'Choose the words for link ' + ($index + 1) + ' in the Hyperlink Generator'"
+                >
+                  <ng-icon name="matEditOutline" />
+                  Choose the words
+                </a>
+              }
+            </div>
+          </li>
+        }
+      </ol>
+    </section>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Nothing is requested: a redirect link is unwrapped by reading the real address out of it, so the
+    click is never logged. Short links such as bit.ly or t.co keep their destination on a server,
+    so they cannot be expanded without opening them, and are left as they are.
+  </p>
+</div>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="link-cleaner" />
+}

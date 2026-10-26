@@ -487,6 +487,27 @@ for (const theme of ['dark', 'light'] as const) {
 }
 
 /**
+ * The Link Cleaner's report: the summary live region, the cleaned output, and
+ * per link the unwrapped note, the struck-through removed names with their
+ * dim values, the kept list and three actions, one of them a link styled as
+ * a button. None of it renders on the empty page SURFACES would audit.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`link-cleaner's report has no AXE violations in the ${theme} theme`, async ({ page }) => {
+    await gotoTool(page, 'link-cleaner', 'Link Cleaner');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await page.getByRole('button', { name: 'Try an example' }).click();
+    await expect(page.getByTestId('link-report')).toHaveCount(3);
+    await expect(page.getByTestId('link-report').nth(2)).toContainText('Unwrapped');
+    const results = await audit(page).analyze();
+    const summary = results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 6).join(' | ')}`);
+    expect(summary, `AXE violations on the link cleaner [${theme}]`).toEqual([]);
+  });
+}
+
+/**
  * The Email Template Generator, which has a look selector built from the same
  * `.chip--on` that shipped at 1.04:1 on the passport toggle, and an accent
  * colour the person picks — so the one thing on the page whose contrast is not
