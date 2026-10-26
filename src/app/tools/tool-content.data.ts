@@ -2178,7 +2178,75 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. Reuse is the single most common way accounts are compromised, because a password exposed in one service breach is then tried everywhere else. Generate a separate password for every account and let a password manager remember them, which is also what makes long random strings practical.',
       },
     ],
-    related: ['hash-generator', 'uuid-generator', 'jwt-decoder', 'secret-link'],
+    related: ['hash-generator', 'uuid-generator', 'jwt-decoder', 'secret-link', 'random-picker'],
+  },
+
+  'random-picker': {
+    slug: 'random-picker',
+    intro: [
+      'One page for every small random decision: flip a coin, roll any number of dice with any number of sides, draw a number between two others, pick a name out of a list or spin a wheel of names, and split a group into fair teams. Each result is added to a history for this tab, so a run of draws can be checked afterwards.',
+      'The randomness is the part most pickers get wrong. Results here come from crypto.getRandomValues, the same generator browsers use for encryption keys, and every draw is made with rejection sampling, so no face of a die and no name on a list is even slightly more likely than another. Nothing is uploaded, and the wheel decides nothing: the winner is drawn first and the animation only shows it.',
+    ],
+    steps: [
+      'Choose what to pick: Coin, Dice, Number, Name or wheel, or Teams.',
+      'Set it up: how many coins or dice, the sides, the range and whether numbers may repeat, or paste the names one per line.',
+      'Press the big button. The result appears below and is read out to screen readers.',
+      'For a draw with several winners, tick Take each name off the list once picked and pick again.',
+      'Copy result puts the outcome on your clipboard; the session history keeps every draw until you close the tab.',
+    ],
+    features: [
+      'Coins, dice from d2 to d1000 (up to 100 at once, with the total), numbers in any range up to 281 trillion wide, with or without repeats.',
+      'A name picker and a spinning wheel from a pasted list, and a team splitter by number of teams or people per team.',
+      'Teams are dealt like cards, so their sizes never differ by more than one.',
+      'Cryptographically secure randomness with rejection sampling: free of the modulo bias that skews naive pickers.',
+      'The wheel respects your reduced-motion setting, works from the keyboard, and announces the winner.',
+      'Runs entirely in your browser. The history lives in this tab only.',
+    ],
+    sections: [
+      {
+        heading: 'Why a fair picker needs more than a random number',
+        body: [
+          'A computer\'s random generator hands out bits: a byte is one of 256 equally likely values. Turning that into a die roll looks simple, take the byte, divide by six and keep the remainder. But 256 does not divide evenly by six. The remainders 0 to 3 each come from 43 bytes, and 4 and 5 from only 42, so a die built that way rolls 1 to 4 slightly more often. The same "modulo bias" appears for any range that is not a power of two, and it grows as the range gets closer to the number of values the source produces.',
+          'Rejection sampling removes it. Here the bytes 252 to 255 are simply thrown away and drawn again, leaving 252 values, exactly 42 for each face. Larger ranges use more bytes the same way. It costs an occasional extra draw and makes every outcome exactly equally likely, which this tool\'s tests check by feeding it every possible byte.',
+        ],
+      },
+      {
+        heading: 'Math.random versus crypto.getRandomValues',
+        body: [
+          'Most quick pickers on the web use Math.random. It is fast and fine for a game, but it is a pseudo-random algorithm seeded once, and the browser makes no promise about its quality; given a few outputs, the next ones can be predicted. For a coin toss between friends that hardly matters. For a raffle, a giveaway or choosing who gets a prize, it does: a draw anyone could in principle reproduce is not a fair draw.',
+          'crypto.getRandomValues draws from the operating system\'s secure generator, the one behind encryption keys and session tokens. Its output cannot be predicted from earlier output, which is what makes it the right source for a draw people need to trust.',
+        ],
+      },
+      {
+        heading: 'Running a fair draw in front of people',
+        body: [
+          'Paste the full list of entrants before you start and show it, so nobody can be added or left out afterwards. Decide the rules first: how many winners, and whether someone can win twice. With Take each name off the list once picked ticked, each winner is removed so the next draw is from those still waiting. The session history numbers every result, which makes it easy to show the order things happened in.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is this random picker really random?',
+        a: 'Yes. Every result comes from crypto.getRandomValues, the browser\'s cryptographically secure generator, and is turned into a choice with rejection sampling so that every outcome is exactly equally likely. The wheel animation only shows a winner that has already been drawn.',
+      },
+      {
+        q: 'How do I pick several winners without repeats?',
+        a: 'In Name or wheel, tick Take each name off the list once picked, then pick or spin once per winner. For numbers, tick No repeats and set How many to the number of winners.',
+      },
+      {
+        q: 'How are teams split when the numbers do not divide evenly?',
+        a: 'The list is shuffled and dealt out one name at a time, like cards, so team sizes never differ by more than one. Ten people in teams of three become teams of 3, 3, 2 and 2 rather than leaving one person on their own.',
+      },
+      {
+        q: 'Can I roll a d20 or several dice at once?',
+        a: 'Yes. Choose Dice, set how many dice and the sides on each, or press one of the common dice from d4 to d100. Each die is shown with the total underneath.',
+      },
+      {
+        q: 'Does the wheel work without animation?',
+        a: 'Yes. If your device is set to reduce motion, the wheel turns straight to the winner without spinning. The result is always written out and announced to screen readers, so the wheel is never the only way to see it.',
+      },
+    ],
+    related: ['password-generator', 'uuid-generator', 'lorem-ipsum', 'pomodoro'],
   },
 
   'color-converter': {

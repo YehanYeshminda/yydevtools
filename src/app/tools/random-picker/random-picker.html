@@ -1,0 +1,389 @@
+<app-tool-page slug="random-picker">
+  Flip a coin, roll dice, draw numbers, pick a name or spin a wheel, and split a group into teams.
+  Every result comes from your browser's cryptographic random generator, with no bias.
+</app-tool-page>
+
+<div class="panel">
+  <div class="tabs modes" role="group" aria-label="What to pick">
+    @for (m of modes; track m.key) {
+      <button
+        type="button"
+        class="tab"
+        [class.tab--active]="mode() === m.key"
+        [attr.aria-pressed]="mode() === m.key"
+        (click)="setMode(m.key)"
+      >
+        <ng-icon aria-hidden="true" [name]="m.icon" />
+        {{ m.label }}
+      </button>
+    }
+  </div>
+
+  @switch (mode()) {
+    @case ('coin') {
+      <div class="inputs">
+        <div class="field">
+          <label class="field__label" for="coin-count">Coins</label>
+          <input
+            id="coin-count"
+            class="field__input"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="100"
+            [value]="coins()"
+            (change)="setNumber('coins', $event, 1, 100)"
+          />
+        </div>
+      </div>
+      <div class="actions">
+        <button matButton="filled" class="go" data-testid="go" (click)="flip()">
+          <ng-icon name="matAutorenewOutline" />
+          Flip {{ coins() === 1 ? 'a coin' : coins() + ' coins' }}
+        </button>
+      </div>
+    }
+
+    @case ('dice') {
+      <div class="inputs">
+        <div class="field">
+          <label class="field__label" for="dice-count">Dice</label>
+          <input
+            id="dice-count"
+            class="field__input"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="100"
+            [value]="diceCount()"
+            (change)="setNumber('diceCount', $event, 1, 100)"
+          />
+        </div>
+        <div class="field">
+          <label class="field__label" for="dice-sides">Sides on each</label>
+          <input
+            id="dice-sides"
+            class="field__input"
+            type="number"
+            inputmode="numeric"
+            min="2"
+            max="1000"
+            [value]="sides()"
+            (change)="setNumber('sides', $event, 2, 1000)"
+          />
+        </div>
+      </div>
+      <div class="chips" role="group" aria-label="Common dice">
+        @for (d of dicePresets; track d) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="sides() === d"
+            [attr.aria-pressed]="sides() === d"
+            (click)="sides.set(d)"
+          >
+            d{{ d }}
+          </button>
+        }
+      </div>
+      <div class="actions">
+        <button matButton="filled" class="go" data-testid="go" (click)="roll()">
+          <ng-icon name="matCasinoOutline" />
+          Roll {{ diceCount() }}d{{ sides() }}
+        </button>
+      </div>
+    }
+
+    @case ('number') {
+      <div class="inputs">
+        <div class="field">
+          <label class="field__label" for="num-min">From</label>
+          <input
+            id="num-min"
+            class="field__input"
+            type="number"
+            inputmode="numeric"
+            [value]="min()"
+            (change)="setNumber('min', $event, -1e15, 1e15)"
+          />
+        </div>
+        <div class="field">
+          <label class="field__label" for="num-max">To</label>
+          <input
+            id="num-max"
+            class="field__input"
+            type="number"
+            inputmode="numeric"
+            [value]="max()"
+            (change)="setNumber('max', $event, -1e15, 1e15)"
+          />
+        </div>
+        <div class="field">
+          <label class="field__label" for="num-count">How many</label>
+          <input
+            id="num-count"
+            class="field__input"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="1000"
+            [value]="howMany()"
+            (change)="setNumber('howMany', $event, 1, 1000)"
+          />
+        </div>
+      </div>
+      <mat-checkbox [checked]="unique()" (change)="unique.set($event.checked)">
+        No repeats (like drawing raffle tickets)
+      </mat-checkbox>
+      <div class="actions">
+        <button matButton="filled" class="go" data-testid="go" (click)="draw()">
+          <ng-icon name="matTagOutline" />
+          Draw {{ howMany() === 1 ? 'a number' : howMany() + ' numbers' }}
+        </button>
+      </div>
+    }
+
+    @case ('name') {
+      <div class="names-layout">
+        <div class="field">
+          <label class="field__label" for="names">Names, one per line</label>
+          <textarea
+            id="names"
+            class="field__input"
+            rows="8"
+            spellcheck="false"
+            aria-describedby="names-hint"
+            placeholder="Ada&#10;Grace&#10;Alan"
+            [value]="names()"
+            (input)="onNames($event)"
+          ></textarea>
+          <span id="names-hint" class="field__hint">
+            {{ nameList().length }} {{ nameList().length === 1 ? 'name' : 'names' }}. Commas work
+            too when they are all on one line.
+          </span>
+          <mat-checkbox [checked]="removePicked()" (change)="removePicked.set($event.checked)">
+            Take each name off the list once picked
+          </mat-checkbox>
+          <div class="actions">
+            <button
+              matButton="filled"
+              class="go"
+              data-testid="spin"
+              [disabled]="spinning()"
+              (click)="spin()"
+            >
+              <ng-icon name="matAutorenewOutline" />
+              {{ spinning() ? 'Spinning…' : 'Spin the wheel' }}
+            </button>
+            <button matButton="outlined" data-testid="go" [disabled]="spinning()" (click)="pick()">
+              <ng-icon name="matShuffleOutline" />
+              Just pick one
+            </button>
+            @if (!names()) {
+              <button matButton (click)="loadNames()">
+                <ng-icon name="matAutoFixHighOutline" />
+                Try with sample names
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- The wheel only shows the draw; the result is announced and printed below. -->
+        <div class="wheel" aria-hidden="true">
+          <svg viewBox="-100 -100 200 200" class="wheel__svg">
+            <g class="wheel__disc" [class.wheel__disc--spinning]="spinning()" [style.transform]="wheelTransform()">
+              @for (seg of segments(); track $index) {
+                <path [attr.d]="seg.path" [attr.fill]="seg.fill" class="wheel__seg" />
+                @if (seg.label) {
+                  <text class="wheel__label" [attr.transform]="seg.transform">{{ seg.label }}</text>
+                }
+              }
+            </g>
+            <circle r="7" class="wheel__hub" />
+            <path d="M -8 -100 L 8 -100 L 0 -84 Z" class="wheel__pointer" />
+          </svg>
+        </div>
+      </div>
+    }
+
+    @case ('teams') {
+      <div class="field">
+        <label class="field__label" for="team-names">Names, one per line</label>
+        <textarea
+          id="team-names"
+          class="field__input"
+          rows="8"
+          spellcheck="false"
+          aria-describedby="team-names-hint"
+          placeholder="Ada&#10;Grace&#10;Alan&#10;Katherine"
+          [value]="names()"
+          (input)="onNames($event)"
+        ></textarea>
+        <span id="team-names-hint" class="field__hint">
+          {{ nameList().length }} {{ nameList().length === 1 ? 'name' : 'names' }}. The same list as
+          the name picker.
+        </span>
+      </div>
+      <div class="inputs">
+        <div class="field">
+          <span class="field__label" id="split-label">Split into</span>
+          <div class="tabs" role="group" aria-labelledby="split-label">
+            <button
+              type="button"
+              class="tab"
+              [class.tab--active]="splitBy() === 'teams'"
+              [attr.aria-pressed]="splitBy() === 'teams'"
+              (click)="splitBy.set('teams')"
+            >
+              Number of teams
+            </button>
+            <button
+              type="button"
+              class="tab"
+              [class.tab--active]="splitBy() === 'perTeam'"
+              [attr.aria-pressed]="splitBy() === 'perTeam'"
+              (click)="splitBy.set('perTeam')"
+            >
+              People per team
+            </button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="split-size">
+            {{ splitBy() === 'teams' ? 'Teams' : 'People in each team' }}
+          </label>
+          <input
+            id="split-size"
+            class="field__input"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="1000"
+            [value]="splitSize()"
+            (change)="setNumber('splitSize', $event, 1, 1000)"
+          />
+        </div>
+      </div>
+      <div class="actions">
+        <button matButton="filled" class="go" data-testid="go" (click)="makeTeams()">
+          <ng-icon name="matGroupsOutline" />
+          Make teams
+        </button>
+        @if (!names()) {
+          <button matButton (click)="loadNames()">
+            <ng-icon name="matAutoFixHighOutline" />
+            Try with sample names
+          </button>
+        }
+      </div>
+    }
+  }
+
+  @if (error(); as message) {
+    <p class="status status--err" data-testid="error">
+      <ng-icon class="status__icon" aria-hidden="true" name="matErrorOutline" />
+      {{ message }}
+    </p>
+  }
+
+  <!-- Read out once per result; the visual result below is not a live region,
+       so a long team list is not read out twice. -->
+  <p class="sr-only" role="status" data-testid="announce">{{ announcement() }}</p>
+
+  <section class="result" aria-labelledby="result-title">
+    <h2 id="result-title" class="section__title">Result</h2>
+    <div class="result__body" data-testid="result">
+      @if (outcome(); as o) {
+        @switch (o.kind) {
+          @case ('coin') {
+            @if (o.coins.length === 1) {
+              <p class="big">{{ o.coins[0] }}</p>
+            } @else {
+              <p class="big">{{ o.coins.length }} coins</p>
+              <ul class="pills">
+                @for (c of o.coins; track $index) {
+                  <li class="pill">{{ c }}</li>
+                }
+              </ul>
+            }
+          }
+          @case ('dice') {
+            <ul class="pills">
+              @for (r of o.roll.rolls; track $index) {
+                <li class="pill pill--die">{{ r }}</li>
+              }
+            </ul>
+            @if (o.roll.rolls.length > 1) {
+              <p class="big">Total {{ o.roll.total }}</p>
+            }
+          }
+          @case ('number') {
+            @if (o.numbers.length === 1) {
+              <p class="big">{{ o.numbers[0] }}</p>
+            } @else {
+              <ul class="pills">
+                @for (v of o.numbers; track $index) {
+                  <li class="pill">{{ v }}</li>
+                }
+              </ul>
+            }
+          }
+          @case ('name') {
+            <p class="big">{{ o.name }}</p>
+          }
+          @case ('teams') {
+            <ol class="teams">
+              @for (team of o.teams; track $index) {
+                <li class="team">
+                  <h3 class="team__title">Team {{ $index + 1 }}</h3>
+                  <ul class="team__members">
+                    @for (member of team; track $index) {
+                      <li>{{ member }}</li>
+                    }
+                  </ul>
+                </li>
+              }
+            </ol>
+          }
+        }
+        <p class="field__hint">{{ describe(o) }}</p>
+      } @else {
+        <p class="result__empty">{{ spinning() ? 'The wheel is spinning…' : 'Your result will appear here.' }}</p>
+      }
+    </div>
+    <div class="actions">
+      <button matButton [disabled]="!outcome()" (click)="copyResult()">
+        <ng-icon name="matContentCopyOutline" />
+        Copy result
+      </button>
+    </div>
+  </section>
+
+  @if (history().length) {
+    <section aria-labelledby="history-title">
+      <div class="history__head">
+        <h2 id="history-title" class="section__title">This session</h2>
+        <button matButton (click)="clearHistory()">
+          <ng-icon name="matDeleteSweepOutline" />
+          Clear history
+        </button>
+      </div>
+      <ol class="history" data-testid="history" tabindex="0" aria-labelledby="history-title">
+        @for (entry of history(); track entry.n) {
+          <li class="history__item"><span class="history__n">#{{ entry.n }}</span> {{ entry.text }}</li>
+        }
+      </ol>
+    </section>
+  }
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Results use <code>crypto.getRandomValues</code>, the generator browsers use for encryption keys,
+    with rejection sampling so no outcome is even slightly more likely than another. The history
+    stays in this tab and is gone when you close it.
+  </p>
+</div>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="random-picker" />
+}

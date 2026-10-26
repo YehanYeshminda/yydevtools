@@ -508,6 +508,43 @@ for (const theme of ['dark', 'light'] as const) {
 }
 
 /**
+ * The Random Picker: the five-way mode switch, the wheel with its labels, a
+ * team result, the error line and the scrolling session history. Only the
+ * coin mode is on the page as first loaded.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`random-picker's wheel, teams and history have no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await gotoTool(page, 'random-picker', 'Random Picker');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await page.getByRole('button', { name: 'Teams', exact: true }).click();
+    await page.getByRole('button', { name: 'Try with sample names' }).click();
+    for (let i = 0; i < 12; i++) await page.getByTestId('go').click();
+    await expect(page.locator('.team')).toHaveCount(2);
+    // The history scrolls vertically, so check that precondition here (expectScrolls is horizontal).
+    const history = page.getByTestId('history');
+    expect(await history.evaluate((el) => el.scrollHeight - el.clientHeight), 'history does not scroll').toBeGreaterThan(0);
+    await page.getByRole('button', { name: 'Name or wheel' }).click();
+    await page.getByTestId('spin').click();
+    await expect(page.locator('.big')).toBeVisible();
+    await page.getByRole('button', { name: 'Number', exact: true }).click();
+    await page.locator('#num-min').fill('10');
+    await page.locator('#num-max').fill('1');
+    await page.locator('#num-max').press('Tab');
+    await page.getByTestId('go').click();
+    await expect(page.getByTestId('error')).toBeVisible();
+
+    const results = await audit(page).analyze();
+    const summary = results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 6).join(' | ')}`);
+    expect(summary, `AXE violations on the random picker [${theme}]`).toEqual([]);
+  });
+}
+
+/**
  * The Email Template Generator, which has a look selector built from the same
  * `.chip--on` that shipped at 1.04:1 on the passport toggle, and an accent
  * colour the person picks — so the one thing on the page whose contrast is not

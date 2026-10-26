@@ -3534,6 +3534,113 @@ export const GUIDES: Guide[] = [
     related: ['link-cleaner', 'url-encoder', 'hyperlink-generator'],
     relatedGuides: ['clickable-links-in-messages', 'photo-metadata-privacy', 'character-encoding-explained'],
   },
+  {
+    slug: 'fair-random-numbers-explained',
+    title: 'How a computer picks a random number fairly, and where pickers go wrong',
+    description:
+      'Where a browser gets randomness, why Math.random is not enough for a draw, the modulo bias hiding in most pickers, and how rejection sampling and a proper shuffle fix it.',
+    category: 'Security',
+    readingMinutes: 9,
+    updated: '2026-10-26',
+    published: '2026-10-26',
+    intro: [
+      'A coin toss, a raffle, a password and an encryption key all need the same thing: a choice nobody could have predicted, with every option exactly as likely as the next. Computers are machines that do the same thing every time, so getting there takes two separate pieces of work.',
+      'The first is a source of unpredictable bits. The second is turning those bits into "a number from 1 to 6" or "one of these 37 names" without tilting the odds. Most homemade pickers get the first right and the second slightly wrong, and this guide shows exactly how.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Two kinds of random' },
+      {
+        kind: 'p',
+        text: 'A pseudo-random number generator is an algorithm: give it a starting value, the seed, and it produces a long sequence that looks random and passes statistical tests. JavaScript\'s Math.random is one. It is fast and perfectly good for shuffling a game\'s enemies, but it is deterministic. Anyone who learns the internal state can compute every later value, and for the generators browsers use, a handful of consecutive outputs is enough to recover that state.',
+      },
+      {
+        kind: 'p',
+        text: 'A cryptographically secure generator is built so that this is infeasible. The operating system collects unpredictable events, from hardware random-number instructions and timing jitter, mixes them, and runs them through a generator designed so that no amount of past output reveals the next. In a browser it is crypto.getRandomValues, and it is what encryption keys, session tokens and password generators are made from.',
+      },
+      {
+        kind: 'code',
+        code: '// Fine for a game, wrong for a draw people must trust:\nMath.random()                                   // 0.7135...\n\n// The secure source: fill an array with unpredictable bytes\ncrypto.getRandomValues(new Uint8Array(4))      // Uint8Array [ 201, 17, 88, 254 ]',
+        caption: 'Both return "random" values. Only the second is unpredictable.',
+      },
+      {
+        kind: 'callout',
+        tone: 'info',
+        text: 'If anyone could gain from knowing the result in advance, a winner, a seat, a key, use the secure source. It costs nothing extra in a browser.',
+      },
+      { kind: 'h2', text: 'From bytes to a die: the modulo trap' },
+      {
+        kind: 'p',
+        text: 'A secure source hands out bytes, each one of 256 equally likely values from 0 to 255. To roll a six-sided die, the obvious move is to divide by six and keep the remainder: byte % 6 gives 0 to 5, add one, done. The trouble is that 256 is not a multiple of 6.',
+      },
+      {
+        kind: 'code',
+        code: 'bytes 0..251   ->  42 full rounds of 0,1,2,3,4,5   (42 each)\nbytes 252..255 ->  0,1,2,3                         (one more for these four)\n\nface:     1    2    3    4    5    6\nbytes:   43   43   43   43   42   42      out of 256',
+        caption: 'Counting every possible byte: byte % 6 rolls 1 to 4 more often than 5 and 6.',
+      },
+      {
+        kind: 'p',
+        text: 'Each of the first four faces comes up 43 times in 256, the last two 42 times: about 2.4% more often. That is modulo bias, and it shows up whenever the number of choices does not divide the number of values the source produces. With one byte and 200 names, the first 56 names are twice as likely as the rest. Using four bytes instead of one shrinks the effect, but never removes it.',
+      },
+      { kind: 'h2', text: 'Rejection sampling' },
+      {
+        kind: 'p',
+        text: 'The fix is to refuse the leftover values. Find the largest multiple of the number of choices that fits in the source\'s range, accept any value below it, and draw again if the value falls in the remainder. For a die and one byte, that multiple is 252: the bytes 0 to 251 are accepted, giving exactly 42 of each face, and 252 to 255 are thrown away.',
+      },
+      {
+        kind: 'code',
+        code: 'function randomBelow(n) {           // n <= 256 here, for clarity\n  const limit = 256 - (256 % n);    // largest multiple of n that fits\n  let byte;\n  do {\n    byte = crypto.getRandomValues(new Uint8Array(1))[0];\n  } while (byte >= limit);          // the leftover: draw again\n  return byte % n;                  // now exactly uniform\n}',
+        caption: 'The whole idea in eight lines. Real code uses more bytes for larger n.',
+      },
+      {
+        kind: 'p',
+        text: 'A redraw is needed at most a few times in a hundred for small ranges, and never more than half the time in the worst case, so the cost is tiny. What it buys is exact fairness, which can be checked rather than hoped for: feed the function every possible byte and count. A test that does this for every range from 2 to 256 is a far stronger guarantee than rolling a million times and eyeballing the totals.',
+      },
+      { kind: 'h2', text: 'Shuffling and picking from a list' },
+      {
+        kind: 'p',
+        text: 'Picking one name is a single fair draw between 0 and the length of the list. Shuffling the whole list, for a running order or for teams, needs one more piece of care. The correct method is the Fisher-Yates shuffle: walk from the last item to the first, and swap each with a randomly chosen item at or before it. Every one of the n! possible orders is then equally likely.',
+      },
+      {
+        kind: 'p',
+        text: 'The popular shortcut, sorting with a comparator that returns a random sign, is not a shuffle. Sorting algorithms assume a consistent comparison, and given a random one they produce some orders far more often than others, in ways that depend on the browser. A naive "swap each item with any position" loop is biased too: it has n to the power n equally likely paths, which cannot divide evenly into n! orders.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'One winner: one unbiased draw from the list.',
+          'Several winners without repeats: shuffle once and take the first few, or remove each winner and draw again.',
+          'Teams: shuffle, then deal the list out one name at a time so team sizes differ by at most one.',
+        ],
+      },
+      {
+        kind: 'tool',
+        slug: 'random-picker',
+        lead: 'Coins, dice, numbers, a name wheel and teams, all drawn this way in your browser:',
+      },
+      { kind: 'h2', text: 'The same rules make a strong password' },
+      {
+        kind: 'p',
+        text: 'A password generator is a picker that draws characters from an alphabet. Modulo bias there is not a fairness complaint but a security one: characters that come up more often make the password more guessable than its length suggests. A good generator uses the secure source and rejection sampling for every character, and the same applies to version 4 UUIDs, whose 122 random bits are only as unpredictable as the generator behind them.',
+      },
+      {
+        kind: 'tool',
+        slug: 'password-generator',
+        lead: 'Passwords and passphrases built from unbiased draws:',
+      },
+      { kind: 'h2', text: 'What to check in any picker' },
+      {
+        kind: 'ol',
+        items: [
+          'Where does the randomness come from? It should be crypto.getRandomValues, not Math.random.',
+          'How is it turned into a choice? A remainder on its own is biased; look for rejection sampling.',
+          'How is a list shuffled? Fisher-Yates, not a random sort.',
+          'Is the result decided before the animation? A wheel that stops wherever the physics take it is only as fair as its physics.',
+        ],
+      },
+    ],
+    related: ['random-picker', 'password-generator', 'uuid-generator'],
+    relatedGuides: ['password-storage-explained', 'uuid-versions-explained', 'hashing-vs-encryption-vs-encoding'],
+  },
 ];
 
 /** Fast slug → guide lookup for the detail route. */

@@ -242,6 +242,12 @@ export async function expectNoClippedContent(page: Page): Promise<void> {
     // a 40px box on purpose; text that has burst out of a card is wider by far.
     const SLACK = 8;
     for (const el of Array.from(document.body.querySelectorAll<HTMLElement>('*'))) {
+      // SVG content has no CSS box to burst out of: Chromium reports scroll and
+      // client widths for an SVG <text> that bear no relation to its drawn size.
+      // A tool that draws text in SVG checks its geometry itself (see the wheel).
+      if (el instanceof SVGElement) {
+        continue;
+      }
       if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth + SLACK) {
         continue;
       }

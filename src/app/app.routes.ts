@@ -629,6 +629,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/random-picker',
+    loadComponent: () =>
+      import('./tools/random-picker/random-picker').then((m) => m.RandomPickerTool),
+    title: 'Random Picker — Coin, dice, numbers, wheel and teams — YYDevTools',
+    data: {
+      description:
+        'Flip a coin, roll dice, pick a random number or name, spin a wheel of names and split ' +
+        'people into fair teams, using secure, unbiased randomness in your browser.',
+    },
+  },
+  {
     path: 'tools/timestamp-converter',
     loadComponent: () =>
       import('./tools/timestamp-converter/timestamp-converter').then(
@@ -1171,6 +1182,17 @@ export const routes: Routes = [
       description:
         'Who adds the tracking tags on shared links, what they record about the click, which are ' +
         'safe to strip, and why a short link is different from a redirect.',
+    },
+  },
+  {
+    path: 'guides/fair-random-numbers-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'How a computer picks a random number fairly — YYDevTools',
+    data: {
+      slug: 'fair-random-numbers-explained',
+      description:
+        'Math.random versus crypto.getRandomValues, the modulo bias hiding in most pickers, and ' +
+        'how rejection sampling and a Fisher-Yates shuffle make every outcome equally likely.',
     },
   },
   {

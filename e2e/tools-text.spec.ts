@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
 
 import {
@@ -1061,6 +1061,122 @@ test('link-cleaner copies clickable links and hands one to the Hyperlink Generat
   await page.getByRole('link', { name: 'Choose the words for link 1 in the Hyperlink Generator' }).click();
   await expect(page).toHaveURL(/\/tools\/hyperlink-generator#s=/);
   await expect(page.locator('#link-url')).toHaveValue('https://example.com/docs/start?page=2');
+});
+
+/** Which name's segment is under the wheel's pointer, read from the drawn SVG itself. */
+async function nameUnderPointer(page: Page): Promise<string | undefined> {
+  return page.evaluate(() => {
+    const svg = document.querySelector('.wheel__svg')!.getBoundingClientRect();
+    // Just below the pointer's tip, inside the rim.
+    const hit = document.elementFromPoint(svg.left + svg.width / 2, svg.top + svg.height * 0.15);
+    const index = [...document.querySelectorAll('.wheel__seg')].indexOf(hit as Element);
+    return (document.querySelector('#names') as HTMLTextAreaElement).value.split('\n')[index];
+  });
+}
+
+/**
+ * The wheel decides nothing: the winner is drawn first and the wheel turned
+ * to it. So the test checks the drawn wheel against the announced winner, and
+ * that the live region stays on "Spinning…" until the wheel has stopped.
+ * Started from the keyboard, since the wheel must be keyboard operable.
+ */
+test('random-picker spins the wheel from the keyboard and lands on the name it announces', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'random-picker', 'Random Picker');
+  await page.getByRole('button', { name: 'Name or wheel' }).click();
+  const names = ['Ada', 'Grace', 'Alan', 'Katherine', 'Linus'];
+  await page.locator('#names').fill(names.join('\n'));
+  await expect(page.locator('#names-hint')).toContainText('5 names');
+
+  await page.getByTestId('spin').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('spin')).toBeDisabled();
+  await expect(page.getByTestId('announce')).toHaveText('Spinning…');
+  await expect(page.locator('.wheel__disc--spinning')).toHaveCount(1);
+  expect(await page.locator('.wheel__disc').evaluate((g) => getComputedStyle(g).transitionDuration)).toBe('4s');
+
+  const announce = page.getByTestId('announce');
+  await expect(announce).toHaveText(/\(picked from 5\)$/, { timeout: 8000 });
+  const winner = (await page.locator('.big').textContent())!.trim();
+  expect(names).toContain(winner);
+  await expect(announce).toHaveText(`${winner} (picked from 5)`);
+  expect(await nameUnderPointer(page)).toBe(winner);
+  await expect(page.getByTestId('history')).toContainText(`#1 ${winner} (picked from 5)`);
+  expectClean(watch);
+});
+
+test('random-picker skips the spin for reduced motion and can take winners off the list', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await gotoTool(page, 'random-picker', 'Random Picker');
+  await page.getByRole('button', { name: 'Name or wheel' }).click();
+  const names = ['Ada', 'Grace', 'Alan', 'Katherine'];
+  await page.locator('#names').fill(names.join('\n'));
+  await page.getByRole('checkbox', { name: 'Take each name off the list once picked' }).check();
+
+  await page.getByTestId('spin').click();
+  // No spinning state at all: the result is there at once, the wheel already stopped on it.
+  await expect(page.getByTestId('announce')).toHaveText(/\(picked from 4\)$/, { timeout: 1000 });
+  await expect(page.locator('.wheel__disc--spinning')).toHaveCount(0);
+  const first = (await page.locator('.big').textContent())!.trim();
+  const left = names.filter((n) => n !== first);
+  await expect(page.locator('#names')).toHaveValue(left.join('\n'));
+
+  await page.getByTestId('go').click();
+  await expect(page.getByTestId('announce')).toHaveText(/\(picked from 3\)$/);
+  const second = (await page.locator('.big').textContent())!.trim();
+  expect(left).toContain(second);
+  await expect(page.locator('#names')).toHaveValue(left.filter((n) => n !== second).join('\n'));
+});
+
+test('random-picker rolls dice, draws numbers without repeats and splits fair teams', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'random-picker', 'Random Picker');
+
+  await page.getByRole('button', { name: 'Dice', exact: true }).click();
+  await page.locator('#dice-count').fill('3');
+  await page.locator('#dice-count').press('Tab');
+  await page.getByRole('button', { name: 'd20' }).click();
+  await page.getByTestId('go').click();
+  await expect(page.getByTestId('announce')).toHaveText(/^3d20: /);
+  const dice = (await page.locator('.pill--die').allTextContents()).map(Number);
+  expect(dice).toHaveLength(3);
+  for (const d of dice) expect(d >= 1 && d <= 20).toBe(true);
+  await expect(page.locator('.big')).toHaveText(`Total ${dice.reduce((a, b) => a + b, 0)}`);
+
+  await page.getByRole('button', { name: 'Number', exact: true }).click();
+  await page.locator('#num-min').fill('1');
+  await page.locator('#num-max').fill('10');
+  await page.locator('#num-count').fill('10');
+  await page.locator('#num-count').press('Tab');
+  await page.getByTestId('go').click();
+  await expect(page.getByTestId('result').locator('.pill')).toHaveCount(10);
+  const drawn = (await page.getByTestId('result').locator('.pill').allTextContents()).map(Number);
+  expect([...drawn].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  await page.locator('#num-count').fill('11');
+  await page.locator('#num-count').press('Tab');
+  await page.getByTestId('go').click();
+  await expect(page.getByTestId('error')).toHaveText('There are only 10 different numbers from 1 to 10.');
+
+  await page.getByRole('button', { name: 'Teams', exact: true }).click();
+  await page.getByRole('button', { name: 'Try with sample names' }).click();
+  await page.locator('#split-size').fill('3');
+  await page.locator('#split-size').press('Tab');
+  await page.getByTestId('go').click();
+  const teams = page.locator('.team');
+  await expect(teams).toHaveCount(3);
+  const sizes = await teams.evaluateAll((els) => els.map((el) => el.querySelectorAll('li').length));
+  expect(sizes).toEqual([3, 3, 2]);
+  const members = (await page.locator('.team__members li').allTextContents()).sort();
+  expect(members).toEqual(['Ada', 'Alan', 'Barbara', 'Dennis', 'Grace', 'Katherine', 'Linus', 'Margaret']);
+
+  await expect(page.getByTestId('history').locator('li')).toHaveCount(3);
+  expectClean(watch);
 });
 
 test('pomodoro runs a focus session through to the break', async ({ page }) => {

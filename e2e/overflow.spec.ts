@@ -115,6 +115,36 @@ test('link-cleaner keeps a long link and a long removed value inside the report'
   await expectFitsAtEveryWidth(page);
 });
 
+test('random-picker keeps a long name inside the result, wheel, teams and history', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await gotoTool(page, 'random-picker', 'Random Picker');
+  await page.getByRole('button', { name: 'Name or wheel' }).click();
+  await page.locator('#names').fill(`${TOKEN}\n${TOKEN}x`);
+  await page.getByTestId('spin').click();
+  await expect(page.locator('.big')).toContainText(TOKEN);
+  await expectFitsAtEveryWidth(page);
+  // The wheel's labels are SVG, so measure them against the wheel: every corner
+  // of every label must sit inside the rim (radius 96), wide letters included.
+  await page.locator('#names').fill(['WWWWWWWWWWWWWWWW', 'MMMMMMMMMMMMMMMM', 'Ada'].join('\n'));
+  await expect(page.locator('.wheel__label')).toHaveCount(3);
+  const outside = await page.locator('.wheel__label').evaluateAll((labels) =>
+    labels.flatMap((label) => {
+      // getBBox is in the label's own coordinates: along the radius, starting
+      // at the translate() that places it.
+      const box = (label as SVGTextElement).getBBox();
+      const at = Number(/translate\((\d+)/.exec(label.getAttribute('transform') ?? '')?.[1]);
+      const far = Math.hypot(at + box.x + box.width, box.height / 2);
+      return far > 96 ? [`${label.textContent} reaches ${far.toFixed(1)}`] : [];
+    }),
+  );
+  expect(outside, 'a wheel label runs past the rim').toEqual([]);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('button', { name: 'Teams', exact: true }).click();
+  await page.getByTestId('go').click();
+  await expect(page.locator('.team')).toHaveCount(2);
+  await expectFitsAtEveryWidth(page);
+});
+
 test('json-csv keeps a long cell inside the result editor', async ({ page }) => {
   await gotoTool(page, 'json-csv', 'JSON ↔ CSV Converter');
   await setEditorText(editorByLabel(page, 'Input'), `[{"token":"${TOKEN}"}]`);

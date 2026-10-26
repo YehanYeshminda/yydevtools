@@ -266,6 +266,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'random-picker',
+    name: 'Random Picker',
+    description:
+      'Flip a coin, roll dice, draw random numbers, pick a name or spin a wheel, and split a group into fair teams, with no bias.',
+    icon: 'matCasinoOutline',
+    category: 'Developer',
+    ready: true,
+  },
+  {
     slug: 'favicon-generator',
     name: 'Favicon Generator',
     description:
