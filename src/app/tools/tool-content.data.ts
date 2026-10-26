@@ -1848,7 +1848,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. The conversion is pure string manipulation that runs entirely in your browser, so nothing you type is sent anywhere.',
       },
     ],
-    related: ['regex-tester', 'json-to-types', 'code-formatter', 'slug-generator', 'lorem-ipsum'],
+    related: ['regex-tester', 'json-to-types', 'code-formatter', 'slug-generator', 'lorem-ipsum', 'fancy-text'],
   },
 
   'sql-formatter': {
@@ -2822,6 +2822,74 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       },
     ],
     related: ['hyperlink-generator', 'url-encoder', 'qr-generator', 'text-cleaner'],
+  },
+
+  'fancy-text': {
+    slug: 'fancy-text',
+    intro: [
+      'Bios, posts and usernames are plain text: Instagram, X, TikTok and LinkedIn give you no bold or italic button. Fancy text gets around that by swapping each letter for a different Unicode character that happens to look bold, italic, handwritten or gothic. Type once here and every style is ready to copy: bold, italic, bold italic, sans-serif bold, script, fraktur, double-struck, monospace, small caps, circled, squared, fullwidth, strikethrough and underline.',
+      'It comes with a real cost, and this page is honest about it. To a screen reader these are not letters in a font but symbols, so a styled name may be read out one "mathematical bold capital" at a time or skipped altogether, and search engines may not treat it as the word it looks like. Use a style for a word or two of emphasis, never for your name or the information people need. Paste styled text in and you also get the plain version back.',
+    ],
+    steps: [
+      'Type or paste your text. Every style updates as you type.',
+      'Find the look you want in the list; each row says where it works best.',
+      'Press Copy on that row and paste it into your bio, post or message.',
+      'Check the note under a style: it lists any letters or digits that style has no form for, which stay plain.',
+      'To undo styling someone else used, paste it in and copy the plain text shown under Back to plain text.',
+    ],
+    features: [
+      'Seventeen styles, each with its own copy button.',
+      'Built from the correct Unicode code points, including the letters the mathematical alphabets borrow from the Letterlike Symbols block, such as ℎ, ℬ and ℭ, so no letter turns into an empty box.',
+      'Accented letters keep their accents, and anything a style cannot draw passes through unchanged.',
+      'Turns styled text back into plain text with Unicode compatibility normalisation.',
+      'States plainly what screen readers and search engines make of styled characters.',
+      'Runs entirely in your browser — nothing you type is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'How fancy text works',
+        body: [
+          'Unicode, the standard that numbers every character, includes complete alphabets for mathematicians, who use letter style to mean different things: a bold x and an italic x can be different quantities in the same formula. Those alphabets live in the Mathematical Alphanumeric Symbols block, from U+1D400 onwards, and contain bold, italic, script, fraktur, double-struck, sans-serif and monospace versions of A to Z and, for some styles, the digits. Other looks come from elsewhere: circled and squared letters from the Enclosed Alphanumerics blocks, small capitals from phonetic alphabets, and fullwidth letters from East Asian typesetting.',
+          'A few letters were encoded long before the mathematical block, in Letterlike Symbols: ℎ (the Planck constant) is the italic small h, ℬ is the script capital B, and ℭ the fraktur capital C. The mathematical block leaves an empty slot where each of these would have gone. A generator that simply counts along the alphabet lands on those empty slots and produces boxes in the middle of words; this one uses the correct character for all 24 of them.',
+        ],
+      },
+      {
+        heading: 'Fancy text and accessibility',
+        body: [
+          'Screen readers read characters, not appearance. When they meet 𝐇𝐞𝐥𝐥𝐨 they are not looking at the word Hello in bold; they are looking at five mathematical symbols. Depending on the screen reader and its settings, that is read as "mathematical bold capital H, mathematical bold small e…", read as single letters with no word, or skipped. A bio written entirely in script can be unreadable to someone listening to it, and a name in fraktur may simply never be announced.',
+          'The same applies to anything that processes text. Search on a site may not find a styled word, translation and spell-check ignore it, and copying it into a form that only accepts letters may fail. The safe pattern is a styled word or short phrase for emphasis, with the words that matter, your name, what you do, links and hashtags, in plain text.',
+        ],
+      },
+      {
+        heading: 'Will it show up for everyone?',
+        body: [
+          'A styled character only shows up if a font on the reader\'s device includes it. Modern phones and computers ship fonts for the mathematical alphabets, so bold, italic and monospace display almost everywhere. Small capitals, squared letters and the combining lines used for strikethrough and underline vary more: some apps draw the line in the wrong place or not at all, and some older devices show an empty box. If it matters, check how the result looks on someone else\'s phone before you rely on it.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'How do I get bold text in an Instagram or X bio?',
+        a: 'Type your text above, press Copy on the Bold or Sans-serif bold row, and paste it into the bio. Those apps have no bold button, but they display these Unicode characters, so the text looks bold. Keep your name in plain text so screen readers and search can still read it.',
+      },
+      {
+        q: 'Do screen readers read fancy text?',
+        a: 'Badly or not at all. Each styled letter is a separate mathematical or symbol character, so screen readers may announce it by its full Unicode name letter by letter, read single letters, or skip it entirely. Use styling sparingly and never for essential information.',
+      },
+      {
+        q: 'Why do some letters look different from the rest in script or fraktur?',
+        a: 'Those letters were added to Unicode earlier, in the Letterlike Symbols block, before the mathematical alphabets existed, so the alphabets point to them instead of having their own. They come from a different part of the font and can look slightly different, which is correct rather than a mistake.',
+      },
+      {
+        q: 'Why are my numbers not styled in italic or script?',
+        a: 'Unicode has bold, double-struck, sans-serif and monospace digits, but no italic, script or fraktur ones. Digits in those styles stay plain, and the page lists any characters a style could not change.',
+      },
+      {
+        q: 'How do I turn fancy text back into normal text?',
+        a: 'Paste it into the box. Under Back to plain text you get the ordinary letters, made with Unicode compatibility normalisation, which maps each styled character back to the letter it stands for, plus the small capitals and strike or underline marks that normalisation does not cover.',
+      },
+    ],
+    related: ['case-converter', 'text-cleaner', 'word-counter', 'slug-generator'],
   },
 
   'csv-viewer': {

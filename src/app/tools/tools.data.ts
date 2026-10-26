@@ -352,6 +352,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'fancy-text',
+    name: 'Fancy Text Generator',
+    description:
+      'Turn text into bold, italic, script, fraktur, small caps and other Unicode styles to copy into a bio or post, and back to plain text.',
+    icon: 'matFontDownloadOutline',
+    category: 'Converter',
+    ready: true,
+  },
+  {
     slug: 'json-csv',
     name: 'JSON ↔ CSV Converter',
     description:

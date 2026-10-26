@@ -145,6 +145,13 @@ test('random-picker keeps a long name inside the result, wheel, teams and histor
   await expectFitsAtEveryWidth(page);
 });
 
+test('fancy-text keeps a long token inside every style row', async ({ page }) => {
+  await gotoTool(page, 'fancy-text', 'Fancy Text Generator');
+  await page.locator('#fancy-input').fill(TOKEN);
+  await expect(page.locator('[data-style=italic] .style__missing')).toBeVisible();
+  await expectFitsAtEveryWidth(page);
+});
+
 test('json-csv keeps a long cell inside the result editor', async ({ page }) => {
   await gotoTool(page, 'json-csv', 'JSON ↔ CSV Converter');
   await setEditorText(editorByLabel(page, 'Input'), `[{"token":"${TOKEN}"}]`);

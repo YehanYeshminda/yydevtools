@@ -1,0 +1,97 @@
+<app-tool-page slug="fancy-text">
+  Type once and copy your text in bold, italic, script, fraktur, double-struck, small caps and a dozen
+  more Unicode styles, for a bio, a post or a username. Everything runs in your browser.
+</app-tool-page>
+
+<div class="panel">
+  <div class="field">
+    <label class="field__label" for="fancy-input">Your text</label>
+    <textarea
+      id="fancy-input"
+      class="field__input field__input--text"
+      rows="3"
+      autocomplete="off"
+      placeholder="Type or paste the words to style…"
+      aria-describedby="fancy-hint"
+      [value]="input()"
+      (input)="onInput($event)"
+    ></textarea>
+    <span id="fancy-hint" class="field__hint">
+      Letters A to Z and digits change; punctuation, emoji and other alphabets stay as they are.
+      Pasting styled text shows the plain version below.
+    </span>
+  </div>
+
+  <div class="actions">
+    <app-try-example (loadExample)="loadExample()" />
+    <button matButton [disabled]="!input()" (click)="clear()">
+      <ng-icon name="matClearOutline" />
+      Clear
+    </button>
+  </div>
+
+  <p class="note note--warn" data-testid="a11y-warning">
+    <ng-icon class="note__icon" aria-hidden="true" name="matWarningOutline" />
+    <strong>These are not fonts.</strong> Each styled letter is a different Unicode character, often a
+    mathematical symbol, so screen readers read them badly or not at all: some spell out
+    "mathematical bold capital H" letter by letter, some skip them. Search engines may not index them
+    as words either. Keep names, key information and hashtags in plain text, and use styling for a
+    word or two. <a routerLink="/guides/fancy-unicode-text-explained">Why this happens</a>
+  </p>
+
+  @if (plain(); as plainText) {
+    <section class="plain" aria-labelledby="plain-title">
+      <h2 id="plain-title" class="section__title">Back to plain text</h2>
+      <p class="plain__value" data-testid="plain">{{ plainText }}</p>
+      <div class="actions">
+        <button matButton="outlined" (click)="copyPlain()">
+          <ng-icon name="matContentCopyOutline" />
+          Copy plain text
+        </button>
+      </div>
+    </section>
+  }
+
+  <section aria-labelledby="styles-title">
+    <h2 id="styles-title" class="section__title">Styles</h2>
+    <ul class="rows styles" [class.styles--preview]="!hasInput()">
+      @for (row of rows(); track row.key) {
+        <li class="row style" [attr.data-style]="row.key">
+          <div class="style__head">
+            <span class="style__name">{{ row.name }}</span>
+            <span class="style__note">{{ row.note }}</span>
+          </div>
+          <div class="style__body">
+            <p class="style__value" [attr.data-testid]="'style-' + row.key">{{ row.text }}</p>
+            @if (hasInput() && row.unmapped.length) {
+              <p class="style__missing">
+                No {{ row.name.toLowerCase() }} form for {{ row.unmapped.join(' ') }}, so
+                {{ row.unmapped.length === 1 ? 'it stays' : 'they stay' }} plain.
+              </p>
+            }
+          </div>
+          <button
+            matButton
+            [disabled]="!hasInput()"
+            [attr.aria-label]="'Copy ' + row.name"
+            (click)="copy(row)"
+          >
+            <ng-icon name="matContentCopyOutline" />
+            Copy
+          </button>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <p class="note">
+    <ng-icon class="note__icon" aria-hidden="true" name="matInfoOutline" />
+    Whether a style shows up depends on the fonts on the reader's device. Bold, italic and
+    monospace display almost everywhere; small caps and the combining strike and underline lines
+    vary most between apps.
+  </p>
+</div>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="fancy-text" />
+}

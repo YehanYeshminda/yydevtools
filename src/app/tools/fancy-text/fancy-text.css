@@ -1,0 +1,88 @@
+/* The input is prose, so it is typed in the body face. */
+.field__input--text {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+/* The accessibility warning is the one note on this page that must be read,
+   so it carries the error accent rather than the brand one. */
+.note--warn {
+  border-left-color: var(--error);
+  color: var(--on);
+}
+
+.note--warn .note__icon {
+  color: var(--error);
+}
+
+.plain {
+  padding: 1rem;
+  border: 1px solid var(--outline);
+  border-left: 3px solid var(--success);
+  background: var(--surface-1);
+}
+
+.plain__value {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--on);
+  white-space: pre-wrap;
+}
+
+/* One row per style: name and note, the styled text, and its copy button. */
+.style {
+  align-items: center;
+}
+
+.style__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: none;
+  width: 11rem;
+}
+
+.style__name {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--on);
+}
+
+.style__note {
+  font-size: 0.75rem;
+  color: var(--on-var);
+}
+
+.style__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The styled text in the body face at reading size: that is how it will be
+   seen in a bio or a post, and the system fonts carry these characters. */
+.style__value {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: var(--on);
+  white-space: pre-wrap;
+}
+
+/* Before anything is typed, every row shows a sample, dimmed so it reads as one. */
+.styles--preview .style__value {
+  color: var(--on-var);
+}
+
+.style__missing {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: var(--on-var);
+}
+
+@media (max-width: 600px) {
+  .style__head {
+    width: 100%;
+  }
+}

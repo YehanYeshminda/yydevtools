@@ -545,6 +545,31 @@ for (const theme of ['dark', 'light'] as const) {
 }
 
 /**
+ * Fancy Text: the warning note in the error accent, seventeen style rows with
+ * their notes and "no form for" lines, and the Back to plain text card, which
+ * only appears once styled text is pasted in.
+ */
+for (const theme of ['dark', 'light'] as const) {
+  test(`fancy-text's styles and plain-text card have no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'fancy-text', 'Fancy Text Generator');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    await page.getByRole('button', { name: 'Try an example' }).click();
+    await expect(page.locator('[data-style=italic] .style__missing')).toBeVisible();
+    const bold = (await page.getByTestId('style-bold').textContent())!;
+    await page.locator('#fancy-input').fill(`${bold} plain`);
+    await expect(page.getByTestId('plain')).toBeVisible();
+
+    const results = await audit(page).analyze();
+    const summary = results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 6).join(' | ')}`);
+    expect(summary, `AXE violations on fancy text [${theme}]`).toEqual([]);
+  });
+}
+
+/**
  * The Email Template Generator, which has a look selector built from the same
  * `.chip--on` that shipped at 1.04:1 on the passport toggle, and an accent
  * colour the person picks — so the one thing on the page whose contrast is not

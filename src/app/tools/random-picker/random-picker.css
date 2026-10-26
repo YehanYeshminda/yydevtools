@@ -74,6 +74,14 @@
   text-anchor: middle;
 }
 
+/* Only the segments are hit targets, so a point on the wheel always names the
+   segment under it (the e2e reads the winner back with elementFromPoint). */
+.wheel__label,
+.wheel__hub,
+.wheel__pointer {
+  pointer-events: none;
+}
+
 .wheel__hub {
   fill: var(--surface);
   stroke: var(--outline);

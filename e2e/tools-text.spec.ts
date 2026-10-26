@@ -1179,6 +1179,60 @@ test('random-picker rolls dice, draws numbers without repeats and splits fair te
   expectClean(watch);
 });
 
+/**
+ * Fancy Text: what lands on the clipboard must be the right code points,
+ * including the Letterlike Symbols the script alphabet borrows (H and e in
+ * "Hello" are U+210B and U+212F, not the reserved slots in the mathematical
+ * block), and pasting styled text in must give the plain text back. The
+ * screen-reader warning has to be on the page before the styles.
+ */
+test('fancy-text copies the right code points per style and turns styled text back to plain', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const watch = watchConsole(page);
+  await gotoTool(page, 'fancy-text', 'Fancy Text Generator');
+  const hex = (text: string) => Array.from(text, (c) => c.codePointAt(0)!.toString(16));
+
+  // Nothing to copy until something is typed; the warning is there from the start, above the styles.
+  await expect(page.getByRole('button', { name: 'Copy Bold', exact: true })).toBeDisabled();
+  const warning = page.getByTestId('a11y-warning');
+  await expect(warning).toContainText('screen readers read them badly or not at all');
+  await expect(warning).toContainText('Search engines may not index them');
+  const order = await page.evaluate(() => {
+    const w = document.querySelector('[data-testid=a11y-warning]')!;
+    const s = document.querySelector('[data-style=bold]')!;
+    return w.compareDocumentPosition(s) & Node.DOCUMENT_POSITION_FOLLOWING;
+  });
+  expect(order, 'the warning comes before the styles').toBeTruthy();
+
+  await page.locator('#fancy-input').fill('Hello 2026');
+  expect(hex((await page.getByTestId('style-bold').textContent())!)).toEqual(
+    ['1d407', '1d41e', '1d425', '1d425', '1d428', '20', '1d7d0', '1d7ce', '1d7d0', '1d7d4'],
+  );
+  expect(hex((await page.getByTestId('style-script').textContent())!)).toEqual(
+    ['210b', '212f', '1d4c1', '1d4c1', '2134', '20', '32', '30', '32', '36'],
+  );
+  await expect(page.locator('[data-style=script] .style__missing')).toHaveText(
+    'No script form for 2 0 6, so they stay plain.',
+  );
+  await expect(page.locator('[data-style=bold] .style__missing')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Copy Script', exact: true }).click();
+  await expect(page.getByText('Script copied to clipboard')).toBeVisible();
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(hex(copied)).toEqual(['210b', '212f', '1d4c1', '1d4c1', '2134', '20', '32', '30', '32', '36']);
+
+  // Styled text pasted in comes back plain; plain text shows no such section.
+  await expect(page.getByTestId('plain')).toHaveCount(0);
+  await page.locator('#fancy-input').fill(copied);
+  await expect(page.getByTestId('plain')).toHaveText('Hello 2026');
+  await page.getByRole('button', { name: 'Copy plain text' }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('Hello 2026');
+  expectClean(watch);
+});
+
 test('pomodoro runs a focus session through to the break', async ({ page }) => {
   const watch = watchConsole(page);
   // A faked clock, so the 25 minutes takes no time. The timer measures against

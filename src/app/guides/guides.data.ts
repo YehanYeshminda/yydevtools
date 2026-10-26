@@ -3641,6 +3641,105 @@ export const GUIDES: Guide[] = [
     related: ['random-picker', 'password-generator', 'uuid-generator'],
     relatedGuides: ['password-storage-explained', 'uuid-versions-explained', 'hashing-vs-encryption-vs-encoding'],
   },
+  {
+    slug: 'fancy-unicode-text-explained',
+    title: 'Why bold text in a bio is not really bold, and who cannot read it',
+    description:
+      'Where fancy Unicode letters come from, the holes in the mathematical alphabets, what screen readers and search engines do with them, and how to use them without shutting people out.',
+    category: 'Text',
+    readingMinutes: 8,
+    updated: '2026-10-26',
+    published: '2026-10-26',
+    intro: [
+      'Social profiles, comments and usernames are plain text, with no formatting buttons. Yet bios are full of 𝐛𝐨𝐥𝐝, 𝘪𝘵𝘢𝘭𝘪𝘤, 𝓈𝒸𝓇𝒾𝓅𝓉 and 𝔤𝔬𝔱𝔥𝔦𝔠 words. None of them is formatting. Each letter has been swapped for a different character that looks like a styled version of it.',
+      'That trick works because of how Unicode was designed for mathematics, and it has costs that are invisible to the person using it: to a screen reader, a search box or a spell-checker, those words are not words. This guide explains both sides.',
+    ],
+    blocks: [
+      { kind: 'h2', text: 'Formatting versus characters' },
+      {
+        kind: 'p',
+        text: 'Real bold is a property applied to text. In a document or a web page the letters stay the ordinary A to Z, and markup or a style rule tells the renderer to draw them heavier. Copy the word out and paste it into plain text, and you get the plain letters, because the boldness was never part of them.',
+      },
+      {
+        kind: 'p',
+        text: 'Fancy text does it the other way round. The letters themselves are replaced. 𝐁 is not B drawn in bold; it is U+1D401 MATHEMATICAL BOLD CAPITAL B, a separate character with its own number, and it survives copy and paste into any plain-text field precisely because it is just a character.',
+      },
+      {
+        kind: 'code',
+        code: 'B   U+0042      LATIN CAPITAL LETTER B\n𝐁   U+1D401     MATHEMATICAL BOLD CAPITAL B\n𝐵   U+1D435     MATHEMATICAL ITALIC CAPITAL B\nℬ   U+212C      SCRIPT CAPITAL B\n𝔅   U+1D505     MATHEMATICAL FRAKTUR CAPITAL B\n𝔹   U+1D539     MATHEMATICAL DOUBLE-STRUCK CAPITAL B',
+        caption: 'Six different characters. Only the first is the letter B to software.',
+      },
+      { kind: 'h2', text: 'Why Unicode has bold letters at all' },
+      {
+        kind: 'p',
+        text: 'Mathematicians use letter style to carry meaning. A bold v is a vector, a script L might be a Lagrangian, a double-struck R is the set of real numbers, and the same formula can use plain, bold and script versions of one letter for three different things. If style were only formatting, copying an equation into plain text would silently merge them. So in 2001 Unicode 3.1 added the Mathematical Alphanumeric Symbols block, from U+1D400 to U+1D7FF: full A-Z alphabets in bold, italic, bold italic, script, bold script, fraktur, bold fraktur, double-struck, sans-serif in four weights and monospace, plus digits for five of them.',
+      },
+      {
+        kind: 'p',
+        text: 'Those alphabets were never intended for prose. They exist so that a formula means the same thing everywhere. Bios and posts borrowed them because they are the only way to get something that looks like formatting through a plain-text field.',
+      },
+      { kind: 'h2', text: 'The holes in the alphabets' },
+      {
+        kind: 'p',
+        text: 'Some of these letters had already been encoded, years earlier, in the Letterlike Symbols block: ℎ as the Planck constant, ℂ for the complex numbers, ℜ for the real part of a number, ℬ and ℰ and others as script letters used in physics. Unicode does not encode the same character twice, so the mathematical alphabets leave a reserved, empty slot where each of those letters would fall, and point to the older character instead.',
+      },
+      {
+        kind: 'ul',
+        items: [
+          'Italic: h is ℎ (U+210E).',
+          'Script: B E F H I L M R and e g o come from Letterlike Symbols, eleven in all.',
+          'Fraktur: C H I R Z are ℭ ℌ ℑ ℜ ℨ.',
+          'Double-struck: C H N P Q R Z are ℂ ℍ ℕ ℙ ℚ ℝ ℤ.',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'A converter that just adds a fixed offset to each letter lands on the empty slots and produces a box or nothing in the middle of a word, which is the most common bug in fancy-text generators. The borrowed letters can also look slightly different from their neighbours, because they come from a different part of the font. That is correct, not a mistake.',
+      },
+      {
+        kind: 'tool',
+        slug: 'fancy-text',
+        lead: 'Every style, with the borrowed letters handled, ready to copy:',
+      },
+      { kind: 'h2', text: 'What a screen reader does with it' },
+      {
+        kind: 'p',
+        text: 'Screen readers work from characters. Faced with a word in mathematical bold they have three options, and different screen readers and settings pick different ones: announce every character by its full name ("mathematical bold capital H, mathematical bold small e, …"), read each one as an isolated letter with no word formed, or say nothing because the characters are symbols they have no speech for. None of these is the word Hello.',
+      },
+      {
+        kind: 'p',
+        text: 'For a word of decoration that is an annoyance. For a name, a call to action or a whole bio it shuts the reader out: the person listening cannot tell who you are or what you are asking them to do. Emoji used as bullet points and letters spelled out with symbols have the same effect.',
+      },
+      {
+        kind: 'callout',
+        tone: 'warn',
+        text: 'Never put your name, contact details, the main point of a post or hashtags in fancy text. Style a word or two for emphasis and keep everything people need in plain letters.',
+      },
+      { kind: 'h2', text: 'Search, hashtags and everything else that reads text' },
+      {
+        kind: 'p',
+        text: 'Software that searches or matches text compares characters. To a search box, 𝐜𝐨𝐟𝐟𝐞𝐞 and coffee share no characters at all, so a styled word may not be found, a styled hashtag is usually not the hashtag, and spell-checkers, translation and text-to-speech skip it. Some systems apply Unicode compatibility normalisation, NFKC, which maps each mathematical, circled, squared and fullwidth letter back to the plain one, and then a styled word does match. Many do not, and you cannot tell from the outside which a given app uses.',
+      },
+      {
+        kind: 'code',
+        code: "'𝐜𝐨𝐟𝐟𝐞𝐞' === 'coffee'                    // false\n'𝐜𝐨𝐟𝐟𝐞𝐞'.normalize('NFKC') === 'coffee'  // true\n'ᴄᴏꜰꜰᴇᴇ'.normalize('NFKC') === 'coffee'   // false: small capitals have no compatibility mapping",
+        caption: 'NFKC folds most styles back to plain letters, but not small capitals.',
+      },
+      { kind: 'h2', text: 'Using it well' },
+      {
+        kind: 'ol',
+        items: [
+          'Keep it short: one styled word or phrase, not whole sentences.',
+          'Keep names, links, contact details and hashtags plain.',
+          'Prefer bold or sans-serif bold, which display almost everywhere, over styles that depend on rarer fonts.',
+          'Check on another device. A character the reader\'s fonts lack shows as an empty box.',
+          'Where the app has real formatting, as in an email, a document or a LinkedIn article, use that instead. It looks the same and stays readable to everyone.',
+        ],
+      },
+    ],
+    related: ['fancy-text'],
+    relatedGuides: ['slugs-cases-and-invisible-characters', 'character-encoding-explained', 'clickable-links-in-messages'],
+  },
 ];
 
 /** Fast slug → guide lookup for the detail route. */

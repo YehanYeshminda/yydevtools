@@ -179,6 +179,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/fancy-text',
+    loadComponent: () =>
+      import('./tools/fancy-text/fancy-text').then((m) => m.FancyTextTool),
+    title: 'Fancy Text Generator — Bold, italic and script Unicode text — YYDevTools',
+    data: {
+      description:
+        'Copy your text in bold, italic, script, fraktur, double-struck, small caps and more Unicode ' +
+        'styles for a bio or post, turn styled text back to plain, and see who cannot read it.',
+    },
+  },
+  {
     path: 'tools/json-formatter',
     loadComponent: () =>
       import('./tools/json-formatter/json-formatter').then((m) => m.JsonFormatterTool),
@@ -1193,6 +1204,17 @@ export const routes: Routes = [
       description:
         'Math.random versus crypto.getRandomValues, the modulo bias hiding in most pickers, and ' +
         'how rejection sampling and a Fisher-Yates shuffle make every outcome equally likely.',
+    },
+  },
+  {
+    path: 'guides/fancy-unicode-text-explained',
+    loadComponent: () => import('./guides/guide/guide').then((m) => m.GuideArticle),
+    title: 'Why bold text in a bio is not really bold — YYDevTools',
+    data: {
+      slug: 'fancy-unicode-text-explained',
+      description:
+        'Where fancy Unicode letters come from, the holes in the mathematical alphabets, and what ' +
+        'screen readers and search engines do with styled text.',
     },
   },
   {
