@@ -224,7 +224,7 @@ export const TOOLS: Tool[] = [
   {
     slug: 'uuid-generator',
     name: 'UUID Generator',
-    description: 'Generate random v4 or time-ordered v7 UUIDs in bulk.',
+    description: 'Generate v4, v7 or name-based v5 UUIDs in bulk, and decode any UUID.',
     icon: 'matFingerprintOutline',
     category: 'Developer',
     ready: true,

@@ -424,6 +424,34 @@ for (const theme of ['dark', 'light'] as const) {
     ).toEqual([]);
   });
 
+  test(`uuid-generator's v5 form and decoder have no AXE violations in the ${theme} theme`, async ({
+    page,
+  }) => {
+    await gotoTool(page, 'uuid-generator', 'UUID Generator');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+
+    // Every state the decoder can be in, audited one after the other: the
+    // success summary with its definition list, then the error summary.
+    await page.getByRole('tab', { name: 'Version 5' }).click();
+    await page.locator('#uuid-namespace').selectOption('custom');
+    await expect(page.getByRole('alert')).toBeVisible();
+    await page.locator('#uuid-inspect').fill('C232AB00-9414-11EC-B3C8-9F6BDECED846');
+    await expect(page.locator('.inspect dl .row')).not.toHaveCount(0);
+
+    for (const state of ['decoded', 'invalid']) {
+      if (state === 'invalid') {
+        await page.locator('#uuid-inspect').fill('not-a-uuid');
+        await expect(page.locator('.inspect .status--err')).toBeVisible();
+      }
+      const results = await audit(page).analyze();
+      expect(
+        results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`),
+        `AXE violations on the uuid decoder (${state}) [${theme}]`,
+      ).toEqual([]);
+    }
+  });
+
   test(`key-generator's PEM output has no AXE violations in the ${theme} theme`, async ({
     page,
   }) => {

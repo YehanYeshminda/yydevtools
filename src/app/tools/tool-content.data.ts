@@ -1980,61 +1980,96 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   'uuid-generator': {
     slug: 'uuid-generator',
     intro: [
-      'Generate universally unique identifiers on demand — random version 4 UUIDs, or time-ordered version 7 UUIDs, one at a time or in bulk. UUIDs are the standard way to label a record, a request or a file without a central authority handing out numbers, because the chance of two ever colliding is vanishingly small.',
-      'The values come from your browser cryptographic randomness, so they are suitable for real use, not just placeholders. Version 7 is worth knowing about: it embeds a timestamp in the leading bits, so the identifiers sort in roughly the order they were created — which keeps database indexes far happier than the fully random version 4.',
+      'This generator makes the three kinds of UUID worth making today, and reads any UUID you paste. Version 4 is pure randomness. Version 7 starts with a millisecond timestamp, so ids sort in the order they were created, and this tool keeps a whole batch strictly in order even when hundreds come out in the same millisecond. Version 5 is name-based: hash a namespace and a name, and you get the same UUID every time, on any machine, in any language that follows the standard.',
+      'Each batch can be written in five forms: standard hyphenated text, 32 bare hex digits, the braced form .NET and the Windows registry use, a urn:uuid: URN, or 22 characters of base64url for URLs. The decoder underneath works the other way: paste a UUID from a log, a database or someone else’s API and it tells you the version, the variant, and for versions 1, 6 and 7 the moment it was made. Nothing leaves the page; there is no server behind any of it.',
     ],
     steps: [
-      'Choose version 4 (fully random) or version 7 (time-ordered).',
-      'Set how many you want to generate.',
-      'Generate, then copy a single UUID or the whole batch.',
+      'Pick a version: 4 for a random id, 7 for a database key, 5 to derive an id from a name.',
+      'For v4 or v7, set how many you want (up to 500) and press Generate. For v5, choose a namespace and type one name per line; the UUIDs update as you type.',
+      'Choose a format and, for the hex forms, upper or lower case.',
+      'Copy one UUID, copy the whole list, or download it as a text file.',
+      'To read a UUID, paste it into Decode a UUID, in any of the five forms.',
     ],
     features: [
-      'Random v4 and time-ordered v7 UUIDs.',
-      'Single or bulk generation.',
-      'Backed by the browser cryptographic random source.',
+      'v4 from crypto.randomUUID(), v7 with a monotonic counter (RFC 9562 section 6.2, method 1), and v5 from Web Crypto SHA-1.',
+      'Checked against the RFC 9562 appendix test vectors, and v5 output matches Python’s uuid.uuid5().',
+      'Decodes v1 to v8, nil and max, including 100-nanosecond v1 and v6 timestamps and whether a v1 node looks like a real MAC address.',
+      'Generated ids are never put in share links or baked into the page; settings and v5 names are.',
       'Runs locally; no request is made to any server.',
     ],
     sections: [
       {
-        heading: 'Why v4 is random and why that is enough',
+        heading: 'Picking a version for a database key',
         body: [
-          'A version 4 UUID is 122 bits of randomness with six bits spent on version and variant markers. It contains no timestamp, no machine identifier and no counter — nothing that could collide by coincidence of two machines doing the same thing at the same moment, because nothing about the machine or the moment goes into it.',
-          'People reasonably ask whether random values can collide. They can, in principle. The useful way to hold the number is this: you would need to generate roughly a billion UUIDs per second for about 85 years before reaching a 50% chance of a single duplicate. Every practical system will fail in a dozen other ways long before that becomes the problem.',
-          "The one caveat that matters is the source of randomness. A v4 UUID is only as unpredictable as the generator behind it, which is why these are produced with the browser's crypto.getRandomValues rather than Math.random. Math.random is fast, deterministic in structure and predictable enough that values derived from it should never be treated as unguessable.",
+          'For a primary key, use v7. A B-tree index stays compact when new keys arrive in increasing order, and v7 keys do: each insert lands on the right-hand edge of the index instead of on a random page somewhere in the middle. The guide linked below walks through why that matters for page splits and the buffer cache; the short version is that v4 keys make a large table’s index slower to write and bigger than it needs to be.',
+          'How you store it decides whether you keep that benefit. PostgreSQL has a native 16-byte uuid type, and since PostgreSQL 18 it can make v7 itself with uuidv7(). MySQL has no UUID type, so store BINARY(16) rather than CHAR(36): the text form is more than twice the size and every secondary index repeats the key. MySQL’s UUID_TO_BIN(id, 1) swap flag exists to reorder v1 timestamps; leave it off for v7, which is already in order.',
+          'SQL Server is the trap. Its uniqueidentifier type does not compare bytes left to right: it sorts on the last six bytes first. A v7 stored there is just as unordered as a v4, because its timestamp sits in the bytes SQL Server looks at last. Either store BINARY(16), or use NEWSEQUENTIALID(), which is built for that sort order.',
+          'Libraries are catching up. .NET 9 added Guid.CreateVersion7() and Python 3.14 added uuid.uuid7(); Java’s UUID.randomUUID() and JavaScript’s crypto.randomUUID() still only make v4.',
         ],
       },
       {
-        heading: 'What v7 fixes, and when to prefer it',
+        heading: 'Collision odds, without the hand-waving',
         body: [
-          'Version 7 puts a millisecond timestamp in the leading bits and fills the rest with randomness. The result still looks like a UUID and is still effectively unique, but it sorts chronologically: sort v7 identifiers as text and you get them in creation order.',
-          'That property solves a real and expensive database problem. A B-tree index keyed on random values scatters every insert across the whole index, so pages are constantly split and the working set that must stay in memory is the entire index. Keys that increase over time append to the same region instead, which keeps inserts cheap and the hot pages few. On a large, write-heavy table the difference is substantial rather than theoretical.',
-          'The trade-off is that v7 leaks the creation time of the record. That is usually harmless and occasionally not — if identifiers are public and knowing when a row was created reveals something, v4 is the safer choice. As a rule: v7 for database primary keys, v4 for anything exposed where unpredictability matters.',
+          'A v4 has 122 random bits. By the birthday bound, the chance of any duplicate among n of them is about n² divided by 2 to the 123rd. That gives a one-in-a-billion chance of a single collision after roughly 103 trillion UUIDs, and even odds only after about 2.7 quintillion, which is a billion a second for 86 years.',
+          'A v7 trades some of those bits for the timestamp, so the question changes: only ids from the same millisecond can collide. Within one generator, such as this page, the counter makes every id in a batch larger than the last, so a batch cannot contain a duplicate at all. Across separate machines, two ids made in the same millisecond share a timestamp but each still carries 73 random bits, so even a million ids made in one millisecond have only about a one-in-twenty-billion chance of a clash.',
+          'Those figures all assume the random source works, and that is where real duplicates come from. The documented cases are bugs: virtual machines restored from a snapshot with the same random state, forked processes sharing a seeded generator, home-made generators built on Math.random(), and code that truncates a UUID to fit a short column. If you ever see a duplicate, look for one of those before blaming the maths.',
         ],
       },
       {
-        heading: 'A UUID is not a secret',
+        heading: 'What crypto.randomUUID() is doing',
         body: [
-          'This is the mistake worth avoiding. A UUID is unique, which is not the same as unguessable in the sense security requires. A v4 UUID does have enough entropy to resist guessing, but UUIDs travel in URLs, appear in logs, get copied into support tickets and sit in browser history — so treating one as an access token means your access control is "whoever has seen this link".',
-          'Version 1 UUIDs are worse still: they encode the timestamp and historically the network MAC address of the machine that created them, which makes them both predictable and identifying. If you need a secret, generate a secret; a UUID is a name, not a password.',
+          'The v4 ids here come straight from crypto.randomUUID(), the browser’s built-in v4 generator. It draws from the same operating-system-seeded cryptographic generator as crypto.getRandomValues(), so its output is unpredictable, not merely varied. Math.random() is not: it is fast, but its internal state can be reconstructed from a handful of outputs.',
+          'One thing catches people out: crypto.randomUUID() exists only in a secure context, meaning a page served over HTTPS or from localhost. On a plain http:// address, such as a dev server reached by IP from a phone, it is undefined and code that calls it throws. Node.js has had it since version 14.17.',
+          'Version 7 and version 5 are not built into browsers, so this page builds them from the same parts: crypto.getRandomValues() and the clock for v7, and crypto.subtle.digest with SHA-1 for v5. SHA-1 is broken for signatures, but that does not matter here; v5 uses it as a fixed mapping from name to id, which is what the standard specifies.',
+        ],
+      },
+      {
+        heading: 'Name-based v5: the same input, the same id',
+        body: [
+          'A v5 UUID is a hash of two things: a namespace UUID and a name. Change either and the result changes completely; keep both and anyone, anywhere, computes the same UUID. That makes it useful wherever you need a stable id without a lookup table: giving imported records the same id every time an import is re-run, so it cannot duplicate rows, or turning an external key such as a URL or an email address into a UUID primary key.',
+          'The four standard namespaces (DNS, URL, OID and X.500) are fixed UUIDs from the standard, which is why www.example.com under DNS gives 2ed6657d-e927-568b-95e1-2665a8aea6a2 here, in Python and in every other correct implementation. For your own data, generate one v4, keep it in your code as your namespace, and your ids will never collide with another system hashing the same names.',
+          'A v5 is not a secret. If the namespace is public and the name can be guessed, anyone can compute the id and confirm the guess, so do not use a v5 of an email address as an unguessable token. Version 3 is the same idea with MD5; RFC 9562 recommends v5 instead, so it is not offered here, though the decoder reads it.',
+        ],
+      },
+      {
+        heading: 'Formats, and the byte-order surprise',
+        body: [
+          'The standard text form is lower case, and readers must accept either case. Braces are how .NET’s Guid.ToString("B") and the Windows registry write a GUID, which is the same thing as a UUID under Microsoft’s name. The URN form appears in XML and SAML documents. Base64url squeezes the 16 bytes into 22 URL-safe characters, handy in a short link.',
+          'One surprise is worth knowing before you compare bytes. .NET’s Guid.ToByteArray() and SQL Server store the first three groups little-endian, so 00112233-4455-6677-… becomes the bytes 33 22 11 00 55 44 77 66 …. The base64url form here encodes the standard big-endian order. If a UUID read from .NET bytes comes out with its first sixteen hex digits scrambled, that is why.',
+        ],
+      },
+      {
+        heading: 'Reading a UUID you did not make',
+        body: [
+          'Two characters tell you most of what a UUID is. The thirteenth hex digit is the version. The seventeenth is the variant: 8, 9, a or b means the standard layout, and anything else means the version digit means nothing. The decoder reads both, then whatever that version carries.',
+          'Version 7 gives up its creation time to the millisecond. Versions 1 and 6 count 100-nanosecond ticks since 15 October 1582, the start of the Gregorian calendar, and also carry a clock sequence and a 48-bit node. In older v1 ids that node was the network card’s MAC address, which identifies the machine; investigators of the 1999 Melissa virus used ids like these, embedded in Word documents, to link it to its author’s other files. The decoder says whether the multicast bit is set, which is how a generator marks a random node instead of a real address.',
         ],
       },
     ],
     faq: [
       {
-        q: 'What is the difference between UUID v4 and v7?',
-        a: 'v4 is entirely random. v7 puts a millisecond timestamp in its leading bits followed by random data, so v7 values are still unique but sort in creation order, which is much better for database primary keys and indexes.',
+        q: 'Is a GUID the same as a UUID?',
+        a: 'Yes. GUID is Microsoft’s name for the same 128-bit format. The only practical difference is how Windows and .NET order the bytes when they store one in binary, which matters if you compare raw bytes across systems.',
       },
       {
-        q: 'Are these UUIDs safe to use in production?',
-        a: 'Yes. They are generated from the browser cryptographically secure random source, the same quality of randomness used for other security-sensitive values, so they are not merely for mock data.',
+        q: 'Can I get the creation time back from a UUID?',
+        a: 'From a v7, yes, to the millisecond; from a v1 or v6, to 100 nanoseconds. Paste it into Decode a UUID. A v4 or v5 contains no time at all, so there is nothing to recover.',
       },
       {
-        q: 'Can two generated UUIDs ever be the same?',
-        a: 'In practice, no. The space of possible values is so large that the probability of a collision is negligible even across enormous numbers of identifiers, which is the whole point of the format.',
+        q: 'Should I store UUIDs as text or binary?',
+        a: 'Binary where you can: 16 bytes instead of 36 characters, which shrinks the table and every index that includes the key. Use PostgreSQL’s uuid type or BINARY(16) in MySQL, and convert to text only at the edges of your application.',
       },
       {
-        q: 'Why choose v7 for a database key?',
-        a: 'Because its values increase over time, new rows are inserted near the end of the index rather than scattered randomly through it. That reduces index fragmentation and tends to improve write performance compared with v4.',
+        q: 'Can I use a UUID as a secret token?',
+        a: 'A v4 has enough randomness to resist guessing, but UUIDs end up in URLs, logs, support tickets and browser history, so treating one as an access token makes your access control "whoever has seen this link". A v7 also reveals when it was made, and a v5 can be recomputed from its name. Generate a real secret for anything that grants access.',
+      },
+      {
+        q: 'Why is crypto.randomUUID() undefined on my site?',
+        a: 'Because the page is not a secure context. Browsers only expose it on HTTPS pages and on localhost, so a dev server reached over plain http:// from another device does not have it. Serve over HTTPS, or fall back to crypto.getRandomValues().',
+      },
+      {
+        q: 'Is anything I generate or paste sent to a server?',
+        a: 'No. Generation, formatting and decoding all run in your browser, and generated ids are left out of share links on purpose so that nobody else can be handed the same ones.',
       },
     ],
     related: ['hash-generator', 'timestamp-converter', 'jwt-decoder'],

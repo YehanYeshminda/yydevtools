@@ -45,7 +45,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Code Formatter** | Beautify HTML, CSS, JS, TypeScript, JSON, Markdown, YAML, GraphQL and XML. |
 | **XML Viewer** | Format, validate and explore XML as a tree, and query it with XPath — using the browser’s own parser. |
 | **HTML Preview** | Render HTML live in a sandboxed frame — phone/tablet/full widths, full-screen, a captured console, a Prettier Format button and a light/dark backdrop. |
-| **UUID Generator** | Random v4 or time-ordered v7 UUIDs in bulk. |
+| **UUID Generator** | Random v4, time-ordered v7 or name-based v5 UUIDs in bulk, in five formats, and a decoder for any UUID. |
 | **Certificate Decoder** | Decode an X.509 certificate or chain — subject, issuer, expiry, key, SANs, fingerprints, extensions. *(hosted)* |
 | **Key Generator** | Generate an RSA or EC key pair in the browser — the private key never leaves the device. |
 | **One-Time Secret** | Send a password or key as a link that opens once. Encrypted in your browser; the key never reaches the server. |

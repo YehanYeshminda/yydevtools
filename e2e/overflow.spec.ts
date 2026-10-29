@@ -75,6 +75,21 @@ test('word-counter keeps the longest word inside its card', async ({ page }) => 
   await expectFitsAtEveryWidth(page);
 });
 
+test('uuid-generator keeps URN rows, a long v5 name and the decoder inside the panel', async ({
+  page,
+}) => {
+  await gotoTool(page, 'uuid-generator', 'UUID Generator');
+  await page.locator('#uuid-format').selectOption('urn');
+  await page.getByRole('button', { name: 'Uppercase' }).click();
+  await page.getByRole('tab', { name: 'Version 5' }).click();
+  await page.locator('#uuid-names').fill(`${TOKEN}\n${TOKEN}`);
+  await expect(page.locator('ol.rows .row__value')).toHaveCount(2);
+  // The longest decoder rows: a v1 node with its explanation, and a timestamp.
+  await page.locator('#uuid-inspect').fill(`urn:uuid:C232AB00-9414-11EC-B3C8-9F6BDECED846`);
+  await expect(page.locator('.inspect .row').filter({ hasText: 'Node' })).toBeVisible();
+  await expectFitsAtEveryWidth(page);
+});
+
 test('case-converter keeps every case row inside the panel', async ({ page }) => {
   await gotoTool(page, 'case-converter', 'Case Converter');
   await page.locator('#case-input').fill(TOKEN);

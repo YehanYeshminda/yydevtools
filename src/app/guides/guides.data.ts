@@ -464,7 +464,11 @@ export const GUIDES: Guide[] = [
         kind: 'p',
         text: 'That ordering sounds like a minor nicety. For a database primary key it is the whole game.',
       },
-      { kind: 'tool', lead: 'Generate v4 or v7 UUIDs, singly or in bulk:', slug: 'uuid-generator' },
+      {
+        kind: 'tool',
+        lead: 'Generate v4, v7 or v5 UUIDs in bulk, or decode one you have:',
+        slug: 'uuid-generator',
+      },
       { kind: 'h2', text: 'Why ordering matters for a database key' },
       {
         kind: 'p',

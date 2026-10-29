@@ -670,6 +670,69 @@ test('uuid-generator produces the requested number of valid v4 UUIDs', async ({ 
   expectClean(watch);
 });
 
+test('uuid-generator does not bake UUIDs into the prerendered page', async ({ request }) => {
+  // The static HTML is shared by every visitor; any id in it is everyone's id.
+  const html = await (await request.get('/tools/uuid-generator')).text();
+  expect(html).toContain('Decode a UUID');
+  expect(html).not.toMatch(/class="row__value"[^>]*>\s*[0-9a-f]{8}-/);
+});
+
+test('uuid-generator keeps a large v7 batch in order, formats it, derives v5 and decodes', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'uuid-generator', 'UUID Generator');
+  const values = page.locator('ol.rows .row__value');
+
+  // 500 v7s land in a handful of milliseconds, so this only passes if the
+  // counter keeps ids made in the same millisecond in order.
+  await page.getByRole('tab', { name: 'Version 7' }).click();
+  await page.locator('#uuid-count').fill('500');
+  await page.getByRole('button', { name: /^Generate/ }).click();
+  await expect(values).toHaveCount(500);
+  const v7 = (await values.allTextContents()).map((v) => v.trim());
+  for (const id of v7) expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab]/);
+  expect(v7).toEqual([...v7].sort());
+  expect(new Set(v7).size).toBe(500);
+
+  await page.locator('#uuid-format').selectOption('urn');
+  await page.getByRole('button', { name: 'Uppercase' }).click();
+  await expect(values.first()).toHaveText(`urn:uuid:${v7[0].toUpperCase()}`);
+  await page.locator('#uuid-format').selectOption('base64url');
+  await expect(values.first()).toHaveText(/^[A-Za-z0-9_-]{22}$/);
+  await page.locator('#uuid-format').selectOption('standard');
+  await page.getByRole('button', { name: 'Uppercase' }).click();
+
+  // The RFC 9562 appendix A.4 vector, then a second name on its own line.
+  await page.getByRole('tab', { name: 'Version 5' }).click();
+  await page.locator('#uuid-names').fill('www.example.com\npython.org');
+  await expect(values).toHaveText([
+    '2ed6657d-e927-568b-95e1-2665a8aea6a2',
+    '886313e1-3b8a-5372-9b90-0c9aee199e5d',
+  ]);
+  await page.locator('#uuid-namespace').selectOption('custom');
+  await expect(page.getByRole('alert')).toContainText('must itself be a UUID');
+  await expect(values).toHaveCount(0);
+
+  // A v7 decodes to the moment this test made it.
+  const decode = page.locator('#uuid-inspect');
+  await decode.fill(`{${v7[0].toUpperCase()}}`);
+  const decoded = page.locator('.inspect .row');
+  await expect(page.locator('.inspect [role="status"]')).toContainText('Version 7');
+  const stamp = await decoded.filter({ hasText: 'Timestamp' }).locator('dd').textContent();
+  expect(Math.abs(Date.parse(stamp!.trim()) - Date.now())).toBeLessThan(60_000);
+
+  // The RFC v1 example, with its 100 ns timestamp and random node.
+  await decode.fill('C232AB00-9414-11EC-B3C8-9F6BDECED846');
+  await expect(decoded.filter({ hasText: 'Timestamp' })).toContainText('2022-02-22T19:22:22.0000000Z');
+  await expect(decoded.filter({ hasText: 'Node' })).toContainText('multicast bit set');
+
+  await decode.fill('not-a-uuid');
+  await expect(page.locator('.inspect [role="status"]')).toContainText('Not a UUID');
+
+  expectClean(watch);
+});
+
 test('key-generator produces a usable RSA key pair', async ({ page }) => {
   const watch = watchConsole(page);
   await gotoTool(page, 'key-generator', 'Key Generator');

@@ -611,11 +611,11 @@ export const routes: Routes = [
     path: 'tools/uuid-generator',
     loadComponent: () =>
       import('./tools/uuid-generator/uuid-generator').then((m) => m.UuidGeneratorTool),
-    title: 'UUID Generator — YYDevTools',
+    title: 'UUID Generator & Decoder — v4, v7 and v5 — YYDevTools',
     data: {
       description:
-        'Generate random v4 or time-ordered v7 UUIDs, one at a time or in bulk, using ' +
-        'your browser’s cryptographic randomness. Free, no sign-up.',
+        'Generate v4, time-ordered v7 or name-based v5 UUIDs in bulk, in five formats, and ' +
+        'decode any UUID’s version and timestamp. Runs in your browser, free.',
     },
   },
   {
