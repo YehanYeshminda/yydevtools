@@ -824,6 +824,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'tools/resume-builder',
+    loadComponent: () =>
+      import('./tools/resume-builder/resume-builder').then((m) => m.ResumeBuilderTool),
+    title: 'Resume Builder — Free Templates, PDF Download, No Sign-up — YYDevTools',
+    data: {
+      description:
+        'Make a resume from six modern templates, ATS-friendly to two-column, with a live preview ' +
+        'and a free PDF download with selectable text. No watermark, no account, nothing uploaded.',
+    },
+  },
+  {
     path: 'tools/pdf-diff',
     loadComponent: () => import('./tools/pdf-diff/pdf-diff').then((m) => m.PdfDiffTool),
     title: 'PDF Visual Diff — Compare Two PDFs Page by Page — YYDevTools',

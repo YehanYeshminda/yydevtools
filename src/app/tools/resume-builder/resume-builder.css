@@ -1,0 +1,490 @@
+/* A resume editor needs a form and an A4 page side by side, so this tool takes
+   the wide shell rather than the usual app column. */
+:host {
+  max-width: var(--page-wide);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Toolbar --------------------------------------------------------------- */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.download {
+  --mat-button-filled-container-color: var(--brand);
+  --mat-button-filled-label-text-color: var(--on-brand);
+}
+
+.saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--on-var);
+}
+
+.saved ng-icon {
+  width: 1rem;
+  height: 1rem;
+  font-size: 1rem;
+}
+
+.undo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  padding: 0.35rem 0.5rem 0.35rem 0.9rem;
+  border-left: 2px solid var(--brand);
+  background: var(--surface-1);
+  font-size: 0.9rem;
+  color: var(--on);
+}
+
+.status {
+  margin-bottom: 1rem;
+}
+
+/* Edit / Preview switch: only below the two-column breakpoint. */
+.mode {
+  display: none;
+  margin-bottom: 1rem;
+}
+
+/* Workspace ------------------------------------------------------------- */
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 33rem);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* .editor > raises it above tool-shell's .panel > section. */
+.editor > .card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1rem;
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+
+.card__heading,
+.sections-heading {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--on);
+}
+
+.sections-heading {
+  margin-top: 0.5rem;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.group legend {
+  margin-bottom: 0.55rem;
+  padding: 0;
+}
+
+.field__input {
+  font-family: var(--font);
+  font-size: 0.92rem;
+  padding: 0.55rem 0.7rem;
+  line-height: 1.45;
+}
+
+/* Templates ------------------------------------------------------------- */
+.templates {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.template {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.5rem;
+  border: 1px solid var(--outline);
+  border-radius: var(--r-card);
+  background: var(--surface-1);
+  cursor: var(--cursor-pointer);
+}
+
+.template:hover {
+  border-color: var(--on-dim);
+}
+
+.template--on,
+.template--on:hover {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand);
+}
+
+.template:has(.template__radio:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+/* The radio stays in the accessibility tree and takes keyboard focus; the
+   card around it is what you see. */
+.template__radio,
+.swatch__radio {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.template__thumb {
+  display: block;
+  aspect-ratio: 1 / 1.414;
+  overflow: hidden;
+  border: 1px solid var(--outline-2);
+  background: #ffffff;
+}
+
+.template__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.template__placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #f1f2f4 0 14%, #ffffff 14% 100%);
+}
+
+.template__name {
+  margin-top: 0.3rem;
+  font-weight: 650;
+  font-size: 0.92rem;
+  color: var(--on);
+}
+
+.template__blurb {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--on-var);
+}
+
+/* Accent swatches -------------------------------------------------------- */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.swatch {
+  position: relative;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15);
+  cursor: var(--cursor-pointer);
+}
+
+.swatch--on {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--on);
+}
+
+.swatch:has(:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 5px;
+}
+
+.swatch--custom {
+  overflow: hidden;
+  background: conic-gradient(#e11d48, #f59e0b, #16a34a, #0284c7, #7c3aed, #e11d48);
+}
+
+.swatch__color {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.design-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Personal details ---------------------------------------------------- */
+.basics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.link-row {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.inline-add {
+  align-self: flex-start;
+}
+
+.photo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.photo-row__img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--on);
+  cursor: var(--cursor-pointer);
+}
+
+.check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--primary);
+}
+
+.add-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem;
+  border: 1px dashed var(--outline);
+  border-radius: var(--r-card);
+}
+
+.add-section__row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-section__row select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Preview ---------------------------------------------------------------- */
+.preview {
+  position: sticky;
+  top: calc(var(--app-bar-h) + 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.preview__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.preview__title {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--on);
+}
+
+.preview__meta {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--on-var);
+}
+
+.preview__hint {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-left: 2px solid var(--brand);
+  background: var(--surface-1);
+  font-size: 0.82rem;
+  color: var(--on-var);
+}
+
+/* The pages scroll inside the sticky column, so the page you are editing
+   stays in view however far down the form you are. */
+.sheets {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: calc(100vh - var(--app-bar-h) - 6rem);
+  overflow-y: auto;
+  padding: 0.25rem 0.25rem 1rem;
+  overscroll-behavior: contain;
+}
+
+.sheet {
+  margin: 0;
+}
+
+/* Always paper-white, in both themes: it is a picture of a printed page. */
+.sheet__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.08),
+    0 6px 18px rgb(0 0 0 / 0.12);
+}
+
+.sheet__label {
+  margin-top: 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--on-var);
+}
+
+.sheet--empty {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1.414;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08);
+}
+
+.sheet--letter {
+  aspect-ratio: 8.5 / 11;
+}
+
+/* Fixed colours: this sits on the white sheet in both themes. */
+.sheet__empty {
+  max-width: 22rem;
+  margin: 0;
+  padding: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  text-align: center;
+  color: #4b5563;
+}
+
+.note {
+  margin-top: 1.5rem;
+}
+
+/* One column below this: the form and the preview take turns. -------------- */
+@media (max-width: 1000px) {
+  .mode {
+    display: inline-flex;
+  }
+
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workspace--preview .editor,
+  .workspace:not(.workspace--preview) .preview {
+    display: none;
+  }
+
+  .preview {
+    position: static;
+  }
+
+  .sheets {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .saved {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .templates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .basics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .editor > .card {
+    padding: 0.85rem 0.75rem;
+  }
+
+  .link-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .link-row__label {
+    grid-column: 1 / -1;
+  }
+}

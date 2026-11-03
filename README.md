@@ -37,6 +37,7 @@ the homepage grid, search, command palette and this table all come from it.
 | **Colour Palette Extractor** | The dominant colours of a photo or logo, with the share each one covers. |
 | **Email Template Generator** | Plain text into an HTML email that survives Outlook, or a .eml, Word or RTF file. |
 | **Invoice & Receipt Generator** | Fill in an invoice or receipt with a live preview and your logo, optionally with the total in a second currency, and download the PDF. |
+| **Resume Builder** | Six resume templates with a live preview that is the PDF itself, accent, fonts, spacing and paper options, and a free, ATS-readable PDF download. Saved in your browser; nothing uploaded. |
 | **PDF Visual Diff** | Compare two PDFs page by page and see which pixels moved. |
 | **Text Cleaner** | Strip invisible characters, straighten curly quotes, trim, sort and de-duplicate lines. |
 | **Lorem Ipsum Generator** | Generate placeholder text by paragraph, sentence, word or list item, as text, HTML or Markdown. |

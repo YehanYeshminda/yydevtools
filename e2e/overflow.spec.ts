@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { expect, test, type Page } from '@playwright/test';
 
 import {
@@ -7,6 +9,7 @@ import {
   gotoTool,
   mockCurrencyApi,
   mockNpmAndOsv,
+  pdfTextRuns,
   setEditorText,
 } from './helpers';
 
@@ -363,5 +366,26 @@ test('invoice-generator keeps a huge converted total inside the totals box', asy
   await page.getByLabel('Unit price, line 1').fill('999999999999');
   await page.locator('#inv-also-in').selectOption('LKR');
   await expect(page.getByTestId('converted-total')).toContainText('LKR');
+  await expectFitsAtEveryWidth(page);
+});
+
+test('resume-builder keeps a long token inside the form, the preview and the paper', async ({ page }) => {
+  await gotoTool(page, 'resume-builder', 'Resume Builder');
+  await page.locator('#resume-name').fill(TOKEN);
+  await page.locator('#resume-headline').fill(TOKEN);
+  await page.locator('#resume-website').fill(`https://example.com/${TOKEN}`);
+  await page.getByRole('button', { name: 'Add a position' }).click();
+  await page.keyboard.type(TOKEN);
+  await page.locator('textarea[id$="-bullets"]').first().fill(TOKEN);
+  await expect(page.locator('.sheet__img').first()).toBeVisible();
+
+  // In the PDF, the token wraps at the margin instead of running off the sheet.
+  const download = page.waitForEvent('download');
+  await page.getByTestId('download-pdf').click();
+  const runs = await pdfTextRuns(page, readFileSync(await (await download).path()));
+  expect(runs.length).toBeGreaterThan(0);
+  for (const run of runs) {
+    expect(run.x + run.width, `"${run.str.slice(0, 20)}" runs off the page`).toBeLessThanOrEqual(run.pageWidth);
+  }
   await expectFitsAtEveryWidth(page);
 });

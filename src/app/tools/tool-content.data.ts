@@ -1248,6 +1248,111 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
     related: ['color-converter', 'image-converter', 'background-remover', 'favicon-generator'],
   },
+  'resume-builder': {
+    slug: 'resume-builder',
+    intro: [
+      'Fill in your details on the left and watch the finished resume build itself on the right, page by page. Pick from six templates at any time, change the accent colour, the fonts, the spacing and the paper size, and nothing you typed is lost. When it looks right, download the PDF. There is no account, no trial, no watermark and no payment screen waiting at the end.',
+      'The preview is not an approximation of the file. Both come from the same document: the page builds the PDF, then draws that PDF back onto the screen, so the page breaks you see are the page breaks you get. The text in the download is real text in embedded fonts, which means you can select it, search it, and an applicant tracking system can read it.',
+      'Nothing leaves your device. The resume is saved in this browser so it is still here tomorrow, and you can export it as a JSON file to carry it to another computer or keep a copy for each job you apply to.',
+    ],
+    steps: [
+      'Pick a template. Clarity is the safest for online applications; the others trade a little of that safety for more design.',
+      'Fill in your name, headline and contact details, or press Load the example to start from a finished resume and edit it.',
+      'Work through the sections: a short summary, then your experience with one achievement per bullet line, your education and your skills.',
+      'Reorder, hide or remove sections and entries with the arrow, eye and bin buttons beside each one. Everything works from the keyboard.',
+      'Adjust the accent colour, fonts, spacing and paper size until it fits, keeping an eye on the page count above the preview.',
+      'Download the PDF, and export the JSON too if you want to edit this version again on another device.',
+    ],
+    features: [
+      'Six templates: Clarity, Heritage, Sidebar, Split, Compact and Spotlight, each with a live thumbnail of your own resume.',
+      'A real PDF with selectable, searchable text and embedded open-licence fonts, with clickable email and links.',
+      'The preview is the PDF itself, so the page breaks on screen are the page breaks in the file.',
+      'Entries and section headings are kept together across pages, so a job title never sits alone at the foot of a page.',
+      'Accent colour from eight swatches or any colour you like, darkened automatically when it would be too pale to read as text.',
+      'Five font pairings, three spacing levels, and A4 or US Letter (chosen for you from your browser\'s region).',
+      'Summary, experience, education, skills, projects, certifications, languages and as many custom sections as you need.',
+      'An optional photo, off by default and never printed on the applicant-tracking-safe template.',
+      'Autosave in this browser, Start over to clear it, and JSON export and import to move between devices.',
+      'No sign-up, no watermark, no upload.',
+    ],
+    sections: [
+      {
+        heading: 'Which template to pick',
+        body: [
+          'If you are applying through a company\'s careers site or a job board, start with Clarity. It is one column with conventional headings in a predictable order, which is the layout resume parsers handle best, and it prints well in black and white. Heritage is the traditional serif equivalent, with the employer before the job title, the order many law firms, banks and universities expect.',
+          'Sidebar, Split and Spotlight are for when a person will read the resume first: a referral, an email to a hiring manager, a portfolio link, or a field where presentation is part of the job. They put skills and languages in a narrow column so the experience column has room to breathe, and they have a place for a photo. Compact puts the headings in the margin and tightens the spacing, which is the easiest way to keep a long career on one page.',
+          'Switching template never touches your content, so it is worth trying your resume in all six. The thumbnails show your own text in each one, not a stock example, and each template brings its own fonts with it; change them afterwards if you prefer.',
+        ],
+      },
+      {
+        heading: 'What an applicant tracking system reads, and what trips it up',
+        body: [
+          'Most large employers now take applications through an applicant tracking system (ATS). Jobscan, which checks the careers pages of the Fortune 500 every year, found one in use at 97.4% of them in its 2026 count. When you upload a resume, the system extracts the text and tries to sort it into fields: name, contact details, job titles, employers, dates, skills. Recruiters then search and filter on those fields.',
+          'The extraction only works if there is text to extract. A resume exported as an image, or a scan of a printed page, has none, and is read as blank. The PDF this page makes contains real text with a Unicode map for every character, which you can check by selecting a line in any PDF reader or by pasting the whole page into a plain text editor: what you see there is roughly what a parser sees.',
+          'Layout causes the rest of the trouble. Career services advice is consistent on the risks: text in page headers and footers or in floating text boxes can be skipped, tables and columns can be read across rather than down so lines from two columns get interleaved, icons can turn into stray characters, and unusual headings such as "Where I\'ve been" may not be recognised as experience. Parsers differ, and some handle two columns well, but the single-column layout is the one none of them gets wrong. That is why Clarity has no columns apart from the dates aligned to the right of each title, no icons, no photo, and section headings with standard names.',
+          'Every template here keeps your contact details in the body of the page rather than in a header, and writes each page in one reading order: in the two-column designs that is the whole of one column, then the whole of the other. That is better than many designed templates, but it is still not one column, so use Clarity or Heritage when a portal is doing the first read.',
+        ],
+      },
+      {
+        heading: 'One page or two',
+        body: [
+          'The old rule was one page, always. It still holds for students, recent graduates and anyone with only a few years of experience, where a second page usually means padding. Past that, a second page is normal and often better than squeezing: in a 2018 study by ResumeGo, 482 hiring professionals reviewing the same candidates in one-page and two-page versions preferred the two-page versions 2.3 times as often overall, and the gap was widest for managerial roles. ResumeGo sells resume writing and the exercise was a simulation, so treat the size of the effect with caution, but it is the best evidence there is that two full pages do not count against an experienced candidate.',
+          'What does count against you is a nearly empty second page. Recruiters skim: in a 2018 study by the job site Ladders, the first screen of a resume lasted 7.4 seconds on average, and recruiters responded best to simple layouts with clear headings and bold job titles. A page with three lines on it looks like an accident. When the last page is that sparse, this page says so above the preview; Compact spacing, the Compact template, or trimming the oldest role usually brings it back.',
+        ],
+      },
+      {
+        heading: 'What to put in each section',
+        body: [
+          'The headline under your name is the job you want, in the words employers use for it: "Senior Software Engineer", not "Technologist and problem solver". The summary is two or three sentences on what you do, the level you do it at and what you are looking for next. It is optional, and worth skipping if it would only repeat your latest job title.',
+          'Experience is where resumes are won. Give each role its title, employer, location and dates, then three to five bullet points that each describe a result rather than a duty: what changed because you were there, with a number wherever one is honest. "Cut checkout load time from 3.1 s to 1.2 s" says more than "Responsible for front-end performance". Put one bullet per line in the box; the page adds the bullet marks, and strips any you typed yourself.',
+          'Skills work best grouped (Languages, Frameworks, Tools) and limited to things you would be happy to be questioned on. Mirror the wording of the job advert where it is true for you, because recruiters search the ATS for those exact terms. Education can sit above experience while you are a student and below it afterwards; use the arrows to move it. Projects, certifications and languages are there when they help the application, and a custom section covers anything else: volunteering, publications, awards, speaking.',
+        ],
+      },
+      {
+        heading: 'Photos, paper size and dates',
+        body: [
+          'Whether to include a photo depends on the country. In the United States the Equal Employment Opportunity Commission tells employers not to ask applicants for a photograph, since it reveals characteristics a hiring decision must not be based on, and many recruiters there and in the UK and Canada would rather not receive one. In Germany, Austria and Switzerland a photo on a CV is still common. The photo here is therefore off until you add one, and Clarity never prints it whatever the setting.',
+          'The United States, Canada, Mexico, the Philippines and several other countries in the Americas use US Letter paper; almost everywhere else uses A4, which is slightly narrower and taller. The page picks one from your browser\'s region the first time you visit, and the switch is under Paper. A resume for an employer abroad should match their paper, not yours.',
+          'Dates are month and year, or just a year if you prefer, and tick Present for a role you are still in. Every entry is printed with its dates on the same line as the title so they line up down the page, which is where both recruiters and parsers look for them.',
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: 'Is this resume builder really free?',
+        a: 'Yes. There is no account, no trial, no paid download and no watermark. Many builders let you write a resume for free and ask for payment at the moment you try to download it; here the Download PDF button gives you the finished file every time.',
+      },
+      {
+        q: 'Is my resume uploaded anywhere?',
+        a: 'No. The PDF is built inside this browser tab, and the only files the page fetches are the fonts, from this site. Your resume is saved in this browser\'s local storage so it is here when you come back; Start over deletes it, and clearing your browser\'s site data does too.',
+      },
+      {
+        q: 'Will an applicant tracking system be able to read my PDF?',
+        a: 'The text is real, selectable text with embedded fonts, so any system that reads PDFs can extract it, and the contact details sit in the body of the page rather than in a header. For applications through an online portal use the Clarity or Heritage template, which are single-column. No tool can promise how a particular system will parse a file, so paste your PDF into a plain text editor to see the reading order a parser gets.',
+      },
+      {
+        q: 'Does the preview match the downloaded PDF?',
+        a: 'Exactly. The preview is the PDF: the page builds the file and then draws it on screen, so the fonts, line breaks and page breaks you see are the ones in the download.',
+      },
+      {
+        q: 'How do I move my resume to another computer?',
+        a: 'Press Export JSON to download a small file containing your resume and your design choices, including the photo if you added one. On the other computer, open this page and press Import JSON. Keeping one JSON file per job application is also a simple way to tailor versions without losing the original.',
+      },
+      {
+        q: 'Can I reorder sections without dragging?',
+        a: 'Yes. Every section and every entry has up and down buttons, so reordering works from the keyboard and on a phone. Focus stays on the item you moved, and a screen reader is told its new position.',
+      },
+      {
+        q: 'Which languages and alphabets does it support?',
+        a: 'The fonts cover the Latin alphabet with the accents used across Europe and Vietnam, plus Greek and Cyrillic (Playfair Display, used for headings in one pairing, has no Greek). Scripts such as Arabic, Hebrew, Devanagari, Sinhala, Tamil, Chinese, Japanese and Korean are not covered yet, and the page warns you, naming the characters, before they go missing from a PDF.',
+      },
+      {
+        q: 'Should I put my photo on my resume?',
+        a: 'In the US, the UK and Canada, usually not: employers there are wary of photos because of discrimination law, and many prefer resumes without one. In Germany, Austria and Switzerland a photo is still common. Add one only if it is the norm where you are applying; the Sidebar, Split, Compact and Spotlight templates have a place for it.',
+      },
+    ],
+    related: ['pdf-merge', 'pdf-compress', 'word-counter', 'passport-photo', 'office-to-pdf'],
+  },
   'invoice-generator': {
     slug: 'invoice-generator',
     intro: [
@@ -3429,7 +3534,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'Yes. The square format is there for profile pictures and staff badges, where nothing official applies but a consistent head position still looks better than an arbitrary crop.',
       },
     ],
-    related: ['background-remover', 'image-resize', 'image-compressor', 'image-converter'],
+    related: ['background-remover', 'image-resize', 'image-compressor', 'image-converter', 'resume-builder'],
   },
   'video-trimmer': {
     slug: 'video-trimmer',
@@ -5026,7 +5131,7 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
         a: 'No. It works in the browser with no software to install and no account to create.',
       },
     ],
-    related: ['pdf-organizer', 'pdf-split', 'pdf-compress'],
+    related: ['pdf-organizer', 'pdf-split', 'pdf-compress', 'resume-builder'],
   },
 
   'pdf-split': {

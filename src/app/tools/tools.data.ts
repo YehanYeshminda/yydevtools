@@ -163,6 +163,15 @@ export const TOOLS: Tool[] = [
     ready: true,
   },
   {
+    slug: 'resume-builder',
+    name: 'Resume Builder',
+    description:
+      'Build a resume from six designer templates, with a live preview and a real, ATS-readable PDF. Free, no sign-up, nothing uploaded.',
+    icon: 'matContactPageOutline',
+    category: 'Document',
+    ready: true,
+  },
+  {
     slug: 'pdf-diff',
     name: 'PDF Visual Diff',
     description:

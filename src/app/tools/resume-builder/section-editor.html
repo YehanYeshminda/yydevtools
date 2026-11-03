@@ -1,0 +1,254 @@
+@let s = section();
+<section class="card" [class.card--hidden]="s.hidden" [attr.aria-labelledby]="s.id + '-heading'">
+  <div class="card__head">
+    <h3 class="card__title" [id]="s.id + '-heading'">
+      <button
+        type="button"
+        class="disclosure"
+        [id]="s.id + '-toggle'"
+        [attr.aria-expanded]="open()"
+        [attr.aria-controls]="s.id + '-body'"
+        (click)="toggleOpen()"
+      >
+        <ng-icon name="matExpandMoreOutline" class="disclosure__icon" aria-hidden="true" />
+        <span class="disclosure__text">{{ s.title || info().title }}</span>
+        @if (s.hidden) {
+          <span class="badge">Hidden</span>
+        }
+      </button>
+    </h3>
+    <div class="card__actions">
+      <button
+        type="button"
+        matIconButton
+        [id]="s.id + '-up'"
+        [disabled]="index() === 0"
+        [attr.aria-label]="'Move ' + (s.title || info().title) + ' up'"
+        (click)="moved.emit(-1)"
+      >
+        <ng-icon name="matArrowUpwardOutline" />
+      </button>
+      <button
+        type="button"
+        matIconButton
+        [id]="s.id + '-down'"
+        [disabled]="index() === count() - 1"
+        [attr.aria-label]="'Move ' + (s.title || info().title) + ' down'"
+        (click)="moved.emit(1)"
+      >
+        <ng-icon name="matArrowDownwardOutline" />
+      </button>
+      <button
+        type="button"
+        matIconButton
+        [attr.aria-pressed]="s.hidden"
+        [attr.aria-label]="'Hide ' + (s.title || info().title) + ' from the resume'"
+        (click)="toggleHidden()"
+      >
+        <ng-icon [name]="s.hidden ? 'matVisibilityOffOutline' : 'matVisibilityOutline'" />
+      </button>
+      <button
+        type="button"
+        matIconButton
+        [attr.aria-label]="'Remove the ' + (s.title || info().title) + ' section'"
+        (click)="removed.emit()"
+      >
+        <ng-icon name="matDeleteOutline" />
+      </button>
+    </div>
+  </div>
+
+  @if (open()) {
+    <div class="card__body" [id]="s.id + '-body'">
+      <div class="field">
+        <label class="field__label" [for]="s.id + '-title'">Heading on the resume</label>
+        <input
+          class="field__input"
+          type="text"
+          autocomplete="off"
+          [id]="s.id + '-title'"
+          [value]="s.title"
+          (input)="setTitle($any($event.target).value)"
+        />
+        @if (sideNote()) {
+          <span class="field__hint">{{ sideNote() }}</span>
+        }
+      </div>
+
+      <ol class="entries">
+        @for (entry of s.entries; track entry.id; let i = $index; let last = $last) {
+          <li class="entry" [class.entry--hidden]="entry.hidden" [attr.data-entry]="entry.id">
+            @if (!info().single) {
+              <div class="entry__head">
+                <button
+                  type="button"
+                  class="disclosure disclosure--entry"
+                  [id]="entry.id + '-toggle'"
+                  [attr.aria-expanded]="isExpanded(entry.id)"
+                  [attr.aria-controls]="entry.id + '-fields'"
+                  (click)="toggleEntry(entry.id)"
+                >
+                  <ng-icon name="matExpandMoreOutline" class="disclosure__icon" aria-hidden="true" />
+                  <span class="disclosure__text">{{ entryLabel(entry) }}</span>
+                  @if (entry.hidden) {
+                    <span class="badge">Hidden</span>
+                  }
+                </button>
+                <div class="card__actions">
+                  <button
+                    type="button"
+                    matIconButton
+                    [id]="entry.id + '-up'"
+                    [disabled]="i === 0"
+                    [attr.aria-label]="'Move ' + entryLabel(entry) + ' up'"
+                    (click)="moveEntry(entry, i, -1)"
+                  >
+                    <ng-icon name="matArrowUpwardOutline" />
+                  </button>
+                  <button
+                    type="button"
+                    matIconButton
+                    [id]="entry.id + '-down'"
+                    [disabled]="last"
+                    [attr.aria-label]="'Move ' + entryLabel(entry) + ' down'"
+                    (click)="moveEntry(entry, i, 1)"
+                  >
+                    <ng-icon name="matArrowDownwardOutline" />
+                  </button>
+                  <button
+                    type="button"
+                    matIconButton
+                    [attr.aria-pressed]="entry.hidden"
+                    [attr.aria-label]="'Hide ' + entryLabel(entry) + ' from the resume'"
+                    (click)="toggleEntryHidden(entry)"
+                  >
+                    <ng-icon [name]="entry.hidden ? 'matVisibilityOffOutline' : 'matVisibilityOutline'" />
+                  </button>
+                  <button
+                    type="button"
+                    matIconButton
+                    [attr.aria-label]="'Remove ' + entryLabel(entry)"
+                    (click)="removeEntry(entry, i)"
+                  >
+                    <ng-icon name="matDeleteOutline" />
+                  </button>
+                </div>
+              </div>
+            }
+
+            @if (isExpanded(entry.id)) {
+              <div class="entry__fields" [id]="entry.id + '-fields'">
+                @for (f of fields(); track f.field) {
+                  <div class="field" [class.field--wide]="f.multiline">
+                    <label class="field__label" [for]="entry.id + '-' + f.field">{{ f.label }}</label>
+                    @if (f.multiline) {
+                      <textarea
+                        class="field__input field__input--text"
+                        [id]="entry.id + '-' + f.field"
+                        [rows]="f.field === 'bullets' ? 4 : 3"
+                        [attr.placeholder]="f.hint || null"
+                        [value]="entry[f.field]"
+                        (input)="setField(entry, f.field, $any($event.target).value)"
+                      ></textarea>
+                    } @else {
+                      <input
+                        class="field__input"
+                        [type]="f.field === 'url' ? 'url' : 'text'"
+                        autocomplete="off"
+                        [id]="entry.id + '-' + f.field"
+                        [attr.placeholder]="f.hint || null"
+                        [value]="entry[f.field]"
+                        (input)="setField(entry, f.field, $any($event.target).value)"
+                      />
+                    }
+                  </div>
+                }
+
+                @if (info().dates !== 'none') {
+                  <fieldset class="dates field--wide">
+                    <legend class="field__label">Dates</legend>
+                    <div class="dates__row">
+                      @if (info().dates === 'range') {
+                        <div class="date">
+                          <span class="date__label" [id]="entry.id + '-start-label'">From</span>
+                          <select
+                            class="field__input"
+                            [attr.aria-label]="'Start month, ' + entryLabel(entry)"
+                            [value]="monthOf(entry.start)"
+                            (change)="setDate(entry, 'start', 'month', $any($event.target).value)"
+                          >
+                            <option value="">Month</option>
+                            @for (m of months; track m.value) {
+                              <option [value]="m.value" [selected]="m.value === monthOf(entry.start)">{{ m.label }}</option>
+                            }
+                          </select>
+                          <select
+                            class="field__input"
+                            [attr.aria-label]="'Start year, ' + entryLabel(entry)"
+                            [value]="yearOf(entry.start)"
+                            (change)="setDate(entry, 'start', 'year', $any($event.target).value)"
+                          >
+                            <option value="">Year</option>
+                            @for (y of years; track y) {
+                              <option [value]="y" [selected]="y === yearOf(entry.start)">{{ y }}</option>
+                            }
+                          </select>
+                        </div>
+                      }
+                      <div class="date">
+                        <span class="date__label">{{ info().dates === 'range' ? 'To' : 'Date' }}</span>
+                        <select
+                          class="field__input"
+                          [disabled]="entry.current"
+                          [attr.aria-label]="(info().dates === 'range' ? 'End month, ' : 'Month, ') + entryLabel(entry)"
+                          [value]="monthOf(entry.end)"
+                          (change)="setDate(entry, 'end', 'month', $any($event.target).value)"
+                        >
+                          <option value="">Month</option>
+                          @for (m of months; track m.value) {
+                            <option [value]="m.value" [selected]="m.value === monthOf(entry.end)">{{ m.label }}</option>
+                          }
+                        </select>
+                        <select
+                          class="field__input"
+                          [disabled]="entry.current"
+                          [attr.aria-label]="(info().dates === 'range' ? 'End year, ' : 'Year, ') + entryLabel(entry)"
+                          [value]="yearOf(entry.end)"
+                          (change)="setDate(entry, 'end', 'year', $any($event.target).value)"
+                        >
+                          <option value="">Year</option>
+                          @for (y of years; track y) {
+                            <option [value]="y" [selected]="y === yearOf(entry.end)">{{ y }}</option>
+                          }
+                        </select>
+                      </div>
+                      @if (info().dates === 'range') {
+                        <label class="check">
+                          <input
+                            type="checkbox"
+                            [checked]="entry.current"
+                            (change)="setCurrent(entry, $any($event.target).checked)"
+                          />
+                          Present
+                        </label>
+                      }
+                    </div>
+                  </fieldset>
+                }
+              </div>
+            }
+          </li>
+        } @empty {
+          <li class="entries__empty">Nothing here yet. Empty sections are left off the resume.</li>
+        }
+      </ol>
+
+      @if (!info().single) {
+        <button type="button" matButton="outlined" class="add" [id]="s.id + '-add'" (click)="addEntry()">
+          <ng-icon name="matAddOutline" />
+          Add a {{ info().noun }}
+        </button>
+      }
+    </div>
+  }
+</section>

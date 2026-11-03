@@ -521,3 +521,53 @@ export function expectOnlyFixedRateRequests(seen: SeenRateRequest[]): void {
     expect(request.cookie).toBeUndefined();
   }
 }
+
+/** One run of text in a PDF, with its page (from 1) and position in points. */
+export interface PdfTextRun {
+  page: number;
+  str: string;
+  x: number;
+  y: number;
+  width: number;
+  pageWidth: number;
+  pageHeight: number;
+}
+
+/**
+ * Every text run in a PDF, in content-stream order, read by the vendored
+ * pdf.js inside the page.
+ *
+ * Content-stream order is the order a text extractor, and so an applicant
+ * tracking system, reads a file in. An empty result means the PDF has no text
+ * layer at all: what a scanned or image-only export would give a parser.
+ */
+export async function pdfTextRuns(page: Page, bytes: Buffer): Promise<PdfTextRun[]> {
+  return page.evaluate(async (base64) => {
+    const specifier = '/pdfjs/build/pdf.mjs';
+    const pdfjs = await import(/* @vite-ignore */ specifier);
+    pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs/build/pdf.worker.mjs';
+    const data = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+    const task = pdfjs.getDocument({ data, isEvalSupported: false });
+    const doc = await task.promise;
+    const runs = [];
+    for (let number = 1; number <= doc.numPages; number++) {
+      const pdfPage = await doc.getPage(number);
+      const { width, height } = pdfPage.getViewport({ scale: 1 });
+      const { items } = await pdfPage.getTextContent();
+      for (const item of items as Array<{ str?: string; transform?: number[]; width?: number }>) {
+        if (!item.str?.trim() || !item.transform) continue;
+        runs.push({
+          page: number,
+          str: item.str,
+          x: item.transform[4],
+          y: item.transform[5],
+          width: item.width ?? 0,
+          pageWidth: width,
+          pageHeight: height,
+        });
+      }
+    }
+    await task.destroy();
+    return runs;
+  }, bytes.toString('base64'));
+}

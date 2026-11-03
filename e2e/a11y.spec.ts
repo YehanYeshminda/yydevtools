@@ -67,6 +67,9 @@ const SURFACES: Array<[string, string]> = [
   // Two columns, a file picker and a canvas carrying a rendered document —
   // none of which the other two tool surfaces have.
   ['tool (live preview)', '/tools/invoice-generator'],
+  // Template radios drawn as cards, colour swatches, collapsible cards with
+  // icon-button toolbars, and an empty paper-white preview.
+  ['tool (resume builder)', '/tools/resume-builder'],
   ['guides index', '/guides'],
   // One template serves all three category pages; this one also carries the
   // "Uses a hosted service" badges, the smallest text on it.
@@ -1088,5 +1091,45 @@ for (const theme of ['dark', 'light'] as const) {
     await page.locator('#inv-also-in').selectOption('LKR');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await violations(page, 'the invoice rate failure');
+  });
+}
+
+for (const theme of ['dark', 'light'] as const) {
+  const violations = async (page: Page, label: string) => {
+    const results = await audit(page).analyze();
+    expect(
+      results.violations.map(
+        (violation) =>
+          `${violation.id}: ${violation.nodes
+            .map((node) => node.target.join(' '))
+            .slice(0, 6)
+            .join(' | ')}`,
+      ),
+      `AXE violations on ${label} [${theme}]`,
+    ).toEqual([]);
+  };
+
+  test(`a filled-in resume has no AXE violations in the ${theme} theme`, async ({ page }) => {
+    await gotoTool(page, 'resume-builder', 'Resume Builder');
+    await setTheme(page, theme);
+    await expectSplashGone(page);
+    await page.getByTestId('load-example').click();
+    await expect(page.locator('.sheet__img').first()).toBeVisible();
+    await expect(page.locator('.template__thumb img')).toHaveCount(6, { timeout: 60_000 });
+    // An open entry with its date pickers, a hidden section, the undo bar and
+    // the missing-glyph warning: every state the page can show at once.
+    await page.getByRole('button', { name: 'Senior Software Engineer, Northwind Payments', exact: true }).click();
+    await page.getByRole('button', { name: 'Hide Projects from the resume' }).click();
+    await page.getByRole('button', { name: 'Remove the Languages section' }).click();
+    await expect(page.getByTestId('undo-bar')).toBeVisible();
+    await page.locator('#resume-location').fill('කොළඹ');
+    await expect(page.getByTestId('missing-glyphs')).toBeVisible();
+    await page.getByTestId('template-sidebar').check();
+    await violations(page, 'the resume builder, filled in');
+
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.getByRole('group', { name: 'Show' }).getByRole('button', { name: 'Preview' }).click();
+    await expect(page.locator('.sheet__img').first()).toBeVisible();
+    await violations(page, 'the resume builder preview on a phone');
   });
 }

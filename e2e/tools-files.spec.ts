@@ -15,6 +15,7 @@ import {
   fixture,
   gotoTool,
   mockCurrencyApi,
+  pdfTextRuns,
   uploadFiles,
   waitForHydration,
   watchConsole,
@@ -2036,4 +2037,394 @@ test('image-viewer comes back from Open in with its image', async ({ page }) => 
   await expect(page.getByTestId('image-view')).toBeVisible();
   await expect(page.locator('.fact__name')).toHaveText('sample-photo.jpg');
   expectClean(watch);
+});
+
+// --- Resume Builder ------------------------------------------------------------
+
+const RESUME_TEMPLATES = ['clarity', 'heritage', 'sidebar', 'split', 'compact', 'spotlight'];
+
+/** Loads the example resume and waits for the form to show it. */
+async function loadExampleResume(page: Page): Promise<void> {
+  await gotoTool(page, 'resume-builder', 'Resume Builder');
+  await page.getByTestId('load-example').click();
+  await expect(page.locator('#resume-name')).toHaveValue('Jordan Ellis');
+}
+
+/** Presses Download PDF and returns the file's bytes and name. */
+async function downloadResume(page: Page): Promise<{ bytes: Buffer; name: string }> {
+  const download = page.waitForEvent('download');
+  await page.getByTestId('download-pdf').click();
+  const file = await download;
+  return { bytes: readFileSync(await file.path()), name: file.suggestedFilename() };
+}
+
+/** A saved-resume file with `jobs` positions of `bullets` bullets each. */
+function longResumeFile(jobs: number, bullets: number, template: string): string {
+  const entry = (index: number) => ({
+    id: `job${index}`,
+    title: `Role number ${index}`,
+    subtitle: `Employer ${index}`,
+    location: 'Leeds, UK',
+    start: '2015-01',
+    end: '2016-01',
+    bullets: Array.from(
+      { length: bullets },
+      (_, b) =>
+        `Bullet ${b + 1} of role ${index}: delivered a measurable improvement that took a whole line or more to describe properly`,
+    ).join('\n'),
+  });
+  return JSON.stringify({
+    format: 'yydevtools-resume',
+    version: 1,
+    settings: { template, accent: '#1f4e79', fonts: 'inter', density: 'normal', paper: 'a4' },
+    resume: {
+      basics: { name: 'Page Break Test', email: 'test@example.com', links: [] },
+      sections: [
+        {
+          id: 'exp',
+          kind: 'experience',
+          title: 'Experience',
+          entries: Array.from({ length: jobs }, (_, i) => entry(i + 1)),
+        },
+        {
+          id: 'edu',
+          kind: 'education',
+          title: 'Education',
+          entries: [{ id: 'deg', title: 'BSc Testing', subtitle: 'University of Somewhere', end: '2014-06' }],
+        },
+      ],
+    },
+  });
+}
+
+test('resume-builder bakes no resume into the prerendered page', async ({ page, request }) => {
+  const html = await (await request.get('/tools/resume-builder')).text();
+  // The example lives in its own chunk and is only fetched on a click.
+  expect(html).not.toContain('Jordan Ellis');
+  expect(html).not.toContain('jordan.ellis@example.com');
+  expect(html).toContain('id="resume-name"');
+  // The empty sections carry fixed ids, so the hydrated page matches the HTML.
+  expect(html).toContain('id="s-experience-toggle"');
+  expect(html).not.toMatch(/id="[0-9a-f]{12}-toggle"/);
+
+  const watch = watchConsole(page);
+  await gotoTool(page, 'resume-builder', 'Resume Builder');
+  await expect(page.locator('#resume-name')).toHaveValue('');
+  await expect(page.locator('.sheet--empty')).toBeVisible();
+  await expect(page.getByTestId('download-pdf')).toBeDisabled();
+  expectClean(watch);
+});
+
+test('resume-builder switches between all six templates without losing anything', async ({ page }) => {
+  test.setTimeout(180_000);
+  const watch = watchConsole(page);
+  await loadExampleResume(page);
+  // Every thumbnail is drawn from the visitor's own resume.
+  await expect(page.locator('.template__thumb img')).toHaveCount(RESUME_TEMPLATES.length, {
+    timeout: 60_000,
+  });
+
+  for (const template of RESUME_TEMPLATES) {
+    await page.getByTestId(`template-${template}`).check();
+    const name = template[0].toUpperCase() + template.slice(1);
+    await expect(page.getByTestId('page-count')).toContainText(name);
+    await expect(page.locator('#resume-name')).toHaveValue('Jordan Ellis');
+    const runs = await pdfTextRuns(page, (await downloadResume(page)).bytes);
+    const text = runs.map((run) => run.str).join(' ');
+    expect(text, template).toContain('Jordan Ellis');
+    expect(text, template).toContain('Northwind Payments');
+    expect(text, template).toContain('Ledgerline');
+    // The preview shows exactly as many pages as the file has.
+    const pages = Math.max(...runs.map((run) => run.page));
+    await expect(page.locator('.sheet__img'), template).toHaveCount(pages);
+  }
+  expectClean(watch);
+});
+
+test('resume-builder downloads a PDF with real text, embedded fonts and a sane reading order', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  await loadExampleResume(page);
+  await expect(page.locator('.sheet__img').first()).toBeVisible();
+  const { bytes, name } = await downloadResume(page);
+  expect(name).toBe('jordan-ellis-resume.pdf');
+  expect(bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+  // TrueType programs embedded, with a Unicode map, not a reference to a font
+  // the reader may not have.
+  expect(bytes.toString('latin1')).toContain('/FontFile2');
+  expect(bytes.toString('latin1')).toContain('/ToUnicode');
+
+  const runs = await pdfTextRuns(page, bytes);
+  const text = runs.map((run) => run.str).join(' ');
+  const at = (needle: string) => {
+    const index = text.indexOf(needle);
+    expect(index, `"${needle}" is not in the PDF text`).toBeGreaterThanOrEqual(0);
+    return index;
+  };
+  // Clarity: one column, read top to bottom in the order of the form.
+  const order = [
+    'Jordan Ellis',
+    'jordan.ellis@example.com',
+    'SUMMARY',
+    'EXPERIENCE',
+    // Not the job title: the headline under the name says the same words.
+    'Northwind Payments',
+    'Parcelwise',
+    'SKILLS',
+    'Kubernetes',
+    'EDUCATION',
+    'University of Leeds',
+  ];
+  for (let i = 1; i < order.length; i++) {
+    expect(at(order[i - 1]), `${order[i - 1]} before ${order[i]}`).toBeLessThan(at(order[i]));
+  }
+  // Ligatures and dashes come back as the characters that were typed.
+  expect(text).toContain('Mar 2021 – Present');
+  expect(text).toContain('offline-first');
+
+  // The Sidebar design is read a column at a time, never line by line across both.
+  await page.getByTestId('template-sidebar').check();
+  await expect(page.getByTestId('page-count')).toContainText('Sidebar');
+  const side = (await pdfTextRuns(page, (await downloadResume(page)).bytes)).filter(
+    (run) => run.page === 1,
+  );
+  const sideText = side.map((run) => run.str).join(' ');
+  const lastSidebarItem = Math.max(sideText.indexOf('CONTACT'), sideText.indexOf('Frameworks'));
+  expect(lastSidebarItem).toBeGreaterThan(0);
+  expect(lastSidebarItem, 'sidebar text is interleaved with the main column').toBeLessThan(
+    sideText.indexOf('Experience'),
+  );
+  expect(sideText.indexOf('Jordan Ellis')).toBeLessThan(sideText.indexOf('Experience'));
+  expectClean(watch);
+});
+
+test('resume-builder keeps entries and headings whole across page breaks', async ({ page }) => {
+  test.setTimeout(120_000);
+  const watch = watchConsole(page);
+  await gotoTool(page, 'resume-builder', 'Resume Builder');
+  for (const template of ['clarity', 'sidebar']) {
+    await page.getByTestId('import-json').setInputFiles({
+      name: 'long.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(longResumeFile(9, 5, template)),
+    });
+    await expect(page.locator('#resume-name')).toHaveValue('Page Break Test');
+    await expect(page.getByTestId('template-' + template)).toBeChecked();
+    await expect(page.locator('.sheet__img').nth(1)).toBeVisible();
+    const runs = await pdfTextRuns(page, (await downloadResume(page)).bytes);
+    expect(Math.max(...runs.map((run) => run.page)), template).toBeGreaterThan(1);
+    const pageOf = (needle: string) => runs.find((run) => run.str.includes(needle))?.page;
+    let moved = 0;
+    for (let job = 1; job <= 9; job++) {
+      const title = pageOf(`Role number ${job}`);
+      expect(title, `${template}: role ${job}`).toBeDefined();
+      for (let bullet = 1; bullet <= 5; bullet++) {
+        expect(pageOf(`Bullet ${bullet} of role ${job}:`), `${template}: role ${job} split across pages`).toBe(
+          title,
+        );
+      }
+      if (job > 1 && title !== pageOf(`Role number ${job - 1}`)) moved++;
+    }
+    // The resume is long enough that at least one role had to move to a new page.
+    expect(moved, template).toBeGreaterThan(0);
+    // A heading never sits alone at the foot of a page.
+    expect(pageOf('BSc Testing'), `${template}: Education heading orphaned`).toBe(
+      runs.find((run) => /^education$/i.test(run.str.trim()))?.page,
+    );
+    // And nothing runs off the paper.
+    for (const run of runs) {
+      expect(run.x + run.width, `${template}: "${run.str}" runs off the page`).toBeLessThanOrEqual(
+        run.pageWidth,
+      );
+    }
+  }
+  expectClean(watch);
+});
+
+test('resume-builder edits, adds and reorders from the keyboard, and the PDF follows', async ({
+  page,
+}) => {
+  const watch = watchConsole(page);
+  await loadExampleResume(page);
+  const sectionTitles = () =>
+    page.locator('app-section-editor .card__title .disclosure__text').allTextContents();
+  const before = await sectionTitles();
+  expect(before.slice(0, 2)).toEqual(['Summary', 'Experience']);
+
+  // Move Experience down twice, with Enter and with Space; focus stays on the button.
+  const down = page.getByRole('button', { name: 'Move Experience down' });
+  await down.focus();
+  await page.keyboard.press('Enter');
+  await expect(down).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(down).toBeFocused();
+  expect((await sectionTitles()).slice(0, 4)).toEqual(['Summary', before[2], before[3], 'Experience']);
+  await expect(page.getByTestId('announcer')).toHaveText('Experience moved to position 4 of 7.');
+
+  // At the top, Move up is disabled, so focus lands on Move down instead.
+  await page.getByRole('button', { name: 'Move Skills up' }).focus();
+  await page.keyboard.press('Enter');
+  expect((await sectionTitles())[0]).toBe('Skills');
+  await expect(page.getByRole('button', { name: 'Move Skills up' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Move Skills down' })).toBeFocused();
+
+  // Entries reorder the same way.
+  await page
+    .getByRole('button', { name: 'Move Senior Software Engineer, Northwind Payments down' })
+    .focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('announcer')).toContainText('moved to position 2 of 3');
+
+  // Edit a field and add a position; focus goes straight to its first field.
+  await page.locator('#resume-headline').fill('Staff Engineer');
+  await page.getByRole('button', { name: 'Add a position' }).click();
+  await page.keyboard.type('Founding Engineer');
+  await expect(page.getByRole('button', { name: 'Founding Engineer', exact: true })).toBeVisible();
+
+  // Hide Projects: it leaves the PDF but stays in the form.
+  const hide = page.getByRole('button', { name: 'Hide Projects from the resume' });
+  await hide.click();
+  await expect(hide).toHaveAttribute('aria-pressed', 'true');
+
+  await expect(page.getByTestId('save-state')).toContainText('Saved in this browser');
+  const text = (await pdfTextRuns(page, (await downloadResume(page)).bytes))
+    .map((run) => run.str)
+    .join(' ');
+  expect(text).toContain('Staff Engineer');
+  expect(text).toContain('Founding Engineer');
+  expect(text).not.toContain('Ledgerline');
+  expect(text.indexOf('SKILLS')).toBeLessThan(text.indexOf('SUMMARY'));
+  expect(text.indexOf('Parcelwise')).toBeLessThan(text.indexOf('Northwind Payments'));
+
+  // Removing a section can be undone.
+  await page.getByRole('button', { name: 'Remove the Languages section' }).click();
+  await expect(page.getByRole('button', { name: 'Remove the Languages section' })).toHaveCount(0);
+  await page.getByTestId('undo-bar').getByRole('button', { name: 'Undo' }).click();
+  await expect(page.getByRole('button', { name: 'Remove the Languages section' })).toHaveCount(1);
+  expectClean(watch);
+});
+
+test('resume-builder exports JSON and imports it back exactly', async ({ page }) => {
+  const watch = watchConsole(page);
+  await loadExampleResume(page);
+  await page.getByTestId('template-spotlight').check();
+  await page.getByRole('radio', { name: 'Teal' }).check();
+  await page.getByRole('button', { name: 'Hide Projects from the resume' }).click();
+
+  const download = page.waitForEvent('download');
+  await page.getByTestId('export-json').click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe('jordan-ellis-resume.json');
+  const json = readFileSync(await file.path(), 'utf8');
+  const saved = JSON.parse(json);
+  expect(saved).toMatchObject({
+    format: 'yydevtools-resume',
+    version: 1,
+    settings: { template: 'spotlight', accent: '#0f766e' },
+  });
+  expect(
+    saved.resume.sections.find((section: { kind: string }) => section.kind === 'projects').hidden,
+  ).toBe(true);
+
+  await page.getByTestId('start-over').click();
+  await expect(page.locator('#resume-name')).toHaveValue('');
+  await expect(page.getByTestId('template-clarity')).toBeChecked();
+
+  await page
+    .getByTestId('import-json')
+    .setInputFiles({ name: 'mine.json', mimeType: 'application/json', buffer: Buffer.from(json) });
+  await expect(page.locator('#resume-name')).toHaveValue('Jordan Ellis');
+  await expect(page.getByTestId('template-spotlight')).toBeChecked();
+  await expect(page.getByRole('radio', { name: 'Teal' })).toBeChecked();
+  await expect(page.getByRole('button', { name: 'Hide Projects from the resume' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+
+  // Exporting again gives the same file, byte for byte.
+  const again = page.waitForEvent('download');
+  await page.getByTestId('export-json').click();
+  expect(readFileSync(await (await again).path(), 'utf8')).toBe(json);
+
+  // A file from somewhere else is refused with a reason, and nothing changes.
+  await page.getByTestId('import-json').setInputFiles({
+    name: 'other.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{"basics":{"name":"Someone"}}'),
+  });
+  await expect(page.getByRole('alert')).toContainText('not saved by this Resume Builder');
+  await expect(page.locator('#resume-name')).toHaveValue('Jordan Ellis');
+  expectClean(watch);
+});
+
+test('resume-builder keeps the resume across a reload until Start over', async ({ page }) => {
+  const watch = watchConsole(page);
+  await gotoTool(page, 'resume-builder', 'Resume Builder');
+  await page.locator('#resume-name').fill('Ada Lovelace');
+  await page.locator('#resume-email').fill('ada@example.com');
+  await page.getByTestId('template-heritage').check();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('yy-resume-builder:v1') ?? ''))
+    .toContain('"template":"heritage"');
+
+  await page.reload();
+  await waitForHydration(page);
+  await expect(page.locator('#resume-name')).toHaveValue('Ada Lovelace');
+  await expect(page.locator('#resume-email')).toHaveValue('ada@example.com');
+  await expect(page.getByTestId('template-heritage')).toBeChecked();
+  await expect(page.locator('.sheet__img').first()).toBeVisible();
+
+  await page.getByTestId('start-over').click();
+  await expect(page.locator('#resume-name')).toHaveValue('');
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('yy-resume-builder:v1')))
+    .toBeNull();
+  await page.reload();
+  await waitForHydration(page);
+  await expect(page.locator('#resume-name')).toHaveValue('');
+  expectClean(watch);
+});
+
+test('resume-builder warns before a character would go missing from the PDF', async ({ page }) => {
+  await gotoTool(page, 'resume-builder', 'Resume Builder');
+  await page.locator('#resume-name').fill('Zoë Dvořák');
+  await expect(page.locator('.sheet__img').first()).toBeVisible();
+  await expect(page.getByTestId('missing-glyphs')).toHaveCount(0);
+  await page.locator('#resume-name').fill('නිමල් පෙරේරා');
+  await expect(page.getByTestId('missing-glyphs')).toContainText('න');
+});
+
+test('resume-builder takes a photo, and the ATS template leaves it out', async ({ page }) => {
+  const watch = watchConsole(page);
+  await loadExampleResume(page);
+  await page.getByTestId('photo-input').setInputFiles(fixture('sample-photo.jpg'));
+  await expect(page.locator('.photo-row__img')).toBeVisible();
+  await expect(page.getByText('Clarity has no place for a photo')).toBeVisible();
+  expect((await downloadResume(page)).bytes.toString('latin1')).not.toContain('/Subtype /Image');
+
+  await page.getByTestId('template-sidebar').check();
+  await expect(page.getByTestId('page-count')).toContainText('Sidebar');
+  await expect(page.getByText('has no place for a photo')).toHaveCount(0);
+  await expect
+    .poll(async () => (await downloadResume(page)).bytes.toString('latin1').includes('/Subtype /Image'))
+    .toBe(true);
+  expectClean(watch);
+});
+
+test('resume-builder takes turns between the form and the preview on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  await loadExampleResume(page);
+  await expect(page.locator('.preview')).toBeHidden();
+  const show = page.getByRole('group', { name: 'Show' });
+  await show.getByRole('button', { name: 'Preview' }).click();
+  await expect(page.locator('.sheet__img').first()).toBeVisible();
+  await expect(page.locator('.editor')).toBeHidden();
+  const width = await page
+    .locator('.sheet__img')
+    .first()
+    .evaluate((img) => img.getBoundingClientRect().width);
+  expect(width).toBeGreaterThan(300);
+  await show.getByRole('button', { name: 'Edit' }).click();
+  await expect(page.locator('#resume-name')).toBeVisible();
 });

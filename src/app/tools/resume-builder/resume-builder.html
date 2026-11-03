@@ -1,0 +1,412 @@
+<app-tool-page slug="resume-builder">
+  Build a resume from six designer templates and download a real PDF with selectable text. No
+  sign-up, no watermark, and nothing is uploaded: it is all made here, in your browser.
+</app-tool-page>
+
+<p class="sr-only" role="status" aria-live="polite" data-testid="announcer">{{ announcement() }}</p>
+
+<div class="toolbar" role="group" aria-label="Resume file">
+  <button type="button" matButton="outlined" data-testid="load-example" (click)="loadExample()">
+    <ng-icon name="matAutoFixHighOutline" />
+    Load the example
+  </button>
+  <button type="button" matButton="outlined" data-testid="start-over" (click)="startOver()">
+    <ng-icon name="matRestartAltOutline" />
+    Start over
+  </button>
+  <label class="add-more">
+    <input
+      type="file"
+      class="dropzone__input"
+      accept="application/json,.json"
+      data-testid="import-json"
+      (change)="onImportPicked($event)"
+    />
+    <ng-icon aria-hidden="true" name="matUploadFileOutline" />
+    Import JSON
+  </label>
+  <button type="button" matButton="outlined" data-testid="export-json" [disabled]="empty()" (click)="exportJson()">
+    <ng-icon name="matDataObjectOutline" />
+    Export JSON
+  </button>
+  <button
+    type="button"
+    matButton="filled"
+    class="download"
+    data-testid="download-pdf"
+    [disabled]="empty() || busy()"
+    (click)="downloadPdf()"
+  >
+    @if (busy()) {
+      <app-spinner [size]="16" />
+    } @else {
+      <ng-icon name="matPictureAsPdfOutline" />
+    }
+    Download PDF
+  </button>
+  <span class="saved" data-testid="save-state">
+    @switch (saveState()) {
+      @case ('saved') {
+        <ng-icon name="matCheckOutline" aria-hidden="true" />
+        Saved in this browser
+      }
+      @case ('failed') {
+        <ng-icon name="matWarningOutline" aria-hidden="true" />
+        Could not save in this browser. Export JSON to keep a copy.
+      }
+      @default {
+        Saved automatically, on this device only
+      }
+    }
+  </span>
+</div>
+
+@if (undo(); as last) {
+  <div class="undo" data-testid="undo-bar">
+    <span>{{ last.message }}</span>
+    <button type="button" matButton (click)="undoLast()">
+      <ng-icon name="matUndoOutline" />
+      Undo
+    </button>
+  </div>
+}
+
+@if (error(); as message) {
+  <p class="status status--err" role="alert">
+    <ng-icon class="status__icon" name="matErrorOutlineOutline" aria-hidden="true" />
+    {{ message }}
+  </p>
+}
+
+<div class="mode tabs" role="group" aria-label="Show">
+  <button
+    type="button"
+    class="tab"
+    [class.tab--active]="mode() === 'edit'"
+    [attr.aria-pressed]="mode() === 'edit'"
+    (click)="mode.set('edit')"
+  >
+    <ng-icon name="matEditOutline" aria-hidden="true" />
+    Edit
+  </button>
+  <button
+    type="button"
+    class="tab"
+    [class.tab--active]="mode() === 'preview'"
+    [attr.aria-pressed]="mode() === 'preview'"
+    (click)="mode.set('preview')"
+  >
+    <ng-icon name="matDescriptionOutline" aria-hidden="true" />
+    Preview
+  </button>
+</div>
+
+<div class="workspace" [class.workspace--preview]="mode() === 'preview'">
+  <div class="editor panel">
+    <!-- Design ------------------------------------------------------------ -->
+    <section class="card" aria-labelledby="design-heading">
+      <h2 class="card__heading" id="design-heading">Design</h2>
+
+      <fieldset class="group">
+        <legend class="field__label">Template</legend>
+        <div class="templates">
+          @for (t of templates; track t.id) {
+            <label class="template" [class.template--on]="settings().template === t.id">
+              <input
+                type="radio"
+                name="resume-template"
+                class="template__radio"
+                [value]="t.id"
+                [checked]="settings().template === t.id"
+                [attr.data-testid]="'template-' + t.id"
+                (change)="chooseTemplate(t.id)"
+              />
+              <span class="template__thumb">
+                @if (thumbs()[t.id]; as thumb) {
+                  <img [src]="thumb" alt="" width="226" height="320" />
+                } @else {
+                  <span class="template__placeholder" aria-hidden="true"></span>
+                }
+              </span>
+              <span class="template__name">{{ t.name }}</span>
+              <span class="template__blurb">{{ t.blurb }}</span>
+            </label>
+          }
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend class="field__label">Accent colour</legend>
+        <div class="swatches">
+          @for (a of accents; track a.value) {
+            <label class="swatch" [style.--swatch]="a.value" [class.swatch--on]="settings().accent === a.value">
+              <input
+                type="radio"
+                name="resume-accent"
+                class="swatch__radio"
+                [value]="a.value"
+                [checked]="settings().accent === a.value"
+                [attr.aria-label]="a.name"
+                (change)="setAccent(a.value)"
+              />
+            </label>
+          }
+          <label class="swatch swatch--custom" [class.swatch--on]="customAccent()">
+            <input
+              type="color"
+              class="swatch__color"
+              aria-label="Custom accent colour"
+              [value]="settings().accent"
+              (input)="setAccent($any($event.target).value)"
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="design-grid">
+        <div class="field">
+          <label class="field__label" for="resume-fonts">Fonts</label>
+          <select
+            id="resume-fonts"
+            class="field__input"
+            [value]="settings().fonts"
+            (change)="setFonts($any($event.target).value)"
+          >
+            @for (p of pairings; track p.id) {
+              <option [value]="p.id" [selected]="settings().fonts === p.id">{{ p.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="control">
+          <span class="field__label" id="density-label">Spacing</span>
+          <div class="tabs" role="group" aria-labelledby="density-label">
+            @for (d of densities; track d.id) {
+              <button
+                type="button"
+                class="tab"
+                [class.tab--active]="settings().density === d.id"
+                [attr.aria-pressed]="settings().density === d.id"
+                (click)="setDensity(d.id)"
+              >
+                {{ d.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="control">
+          <span class="field__label" id="paper-label">Paper</span>
+          <div class="tabs" role="group" aria-labelledby="paper-label">
+            @for (p of papers; track p.id) {
+              <button
+                type="button"
+                class="tab"
+                [class.tab--active]="settings().paper === p.id"
+                [attr.aria-pressed]="settings().paper === p.id"
+                (click)="setPaper(p.id)"
+              >
+                {{ p.label }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      @if (missing(); as chars) {
+        <p class="status status--err" data-testid="missing-glyphs">
+          <ng-icon class="status__icon" name="matWarningOutline" aria-hidden="true" />
+          <span>
+            These characters are not in the {{ pairingLabel() }} fonts and would be
+            missing from the PDF: <span class="glyphs">{{ chars }}</span>. Inter and Source
+            Serif cover Latin, Greek and Cyrillic; scripts such as Arabic, Devanagari, Sinhala, Tamil
+            and Chinese are not supported yet.
+          </span>
+        </p>
+      }
+    </section>
+
+    <!-- Personal details --------------------------------------------------- -->
+    <section class="card" aria-labelledby="basics-heading">
+      <h2 class="card__heading" id="basics-heading">Personal details</h2>
+      <div class="basics">
+        <div class="field">
+          <label class="field__label" for="resume-name">Full name</label>
+          <input id="resume-name" class="field__input" type="text" autocomplete="name" [value]="basics().name" (input)="setBasic('name', $any($event.target).value)" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="resume-headline">Headline</label>
+          <input id="resume-headline" class="field__input" type="text" autocomplete="organization-title" placeholder="Senior Software Engineer" [value]="basics().headline" (input)="setBasic('headline', $any($event.target).value)" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="resume-email">Email</label>
+          <input id="resume-email" class="field__input" type="email" autocomplete="email" [value]="basics().email" (input)="setBasic('email', $any($event.target).value)" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="resume-phone">Phone</label>
+          <input id="resume-phone" class="field__input" type="tel" autocomplete="tel" [value]="basics().phone" (input)="setBasic('phone', $any($event.target).value)" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="resume-location">Location</label>
+          <input id="resume-location" class="field__input" type="text" autocomplete="address-level2" placeholder="City, Country" [value]="basics().location" (input)="setBasic('location', $any($event.target).value)" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="resume-website">Website</label>
+          <input id="resume-website" class="field__input" type="url" autocomplete="url" placeholder="yourname.com" [value]="basics().website" (input)="setBasic('website', $any($event.target).value)" />
+        </div>
+      </div>
+
+      <fieldset class="group">
+        <legend class="field__label">Links</legend>
+        @for (link of basics().links; track link.id; let i = $index) {
+          <div class="link-row">
+            <input
+              class="field__input link-row__label"
+              type="text"
+              placeholder="LinkedIn"
+              [id]="link.id + '-label'"
+              [attr.aria-label]="'Link ' + (i + 1) + ' name'"
+              [value]="link.label"
+              (input)="setLink(link.id, 'label', $any($event.target).value)"
+            />
+            <input
+              class="field__input"
+              type="url"
+              placeholder="linkedin.com/in/yourname"
+              [attr.aria-label]="'Link ' + (i + 1) + ' address'"
+              [value]="link.url"
+              (input)="setLink(link.id, 'url', $any($event.target).value)"
+            />
+            <button type="button" matIconButton [attr.aria-label]="'Remove link ' + (i + 1)" (click)="removeLink(link.id)">
+              <ng-icon name="matDeleteOutline" />
+            </button>
+          </div>
+        }
+        <button type="button" matButton id="add-link" class="inline-add" (click)="addLink()">
+          <ng-icon name="matAddLinkOutline" />
+          Add a link
+        </button>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend class="field__label">Photo (optional)</legend>
+        <div class="photo-row">
+          @if (photo(); as src) {
+            <img class="photo-row__img" [src]="src" alt="Your photo" width="56" height="56" />
+          }
+          <label class="add-more">
+            <input
+              type="file"
+              class="dropzone__input"
+              accept="image/jpeg,image/png,image/webp"
+              data-testid="photo-input"
+              (change)="onPhotoPicked($event)"
+            />
+            <ng-icon aria-hidden="true" name="matAddPhotoAlternateOutline" />
+            {{ photo() ? 'Replace photo' : 'Add a photo' }}
+          </label>
+          @if (photo()) {
+            <label class="check">
+              <input type="checkbox" [checked]="settings().showPhoto" (change)="setShowPhoto($any($event.target).checked)" />
+              Show on the resume
+            </label>
+            <button type="button" matButton (click)="removePhoto()">Remove</button>
+          }
+        </div>
+        <span class="field__hint">
+          @if (photoNote(); as note) {
+            {{ note }}
+          } @else {
+            Off unless you add one. In the US, UK and Canada most recruiters prefer resumes without a photo.
+          }
+        </span>
+      </fieldset>
+    </section>
+
+    <!-- Sections ------------------------------------------------------------------ -->
+    <h2 class="sections-heading">Sections</h2>
+    @for (section of sections(); track section.id; let i = $index) {
+      <app-section-editor
+        [section]="section"
+        [index]="i"
+        [count]="sections().length"
+        [sideNote]="sideNote(section)"
+        (changed)="replaceSection($event)"
+        (moved)="moveSection(section, $event)"
+        (removed)="removeSection(section)"
+        (announce)="say($event)"
+      />
+    }
+
+    <div class="add-section">
+      <label class="field__label" for="add-section-kind">Add a section</label>
+      <div class="add-section__row">
+        <select id="add-section-kind" class="field__input" [value]="addKind()" (change)="setAddKind($any($event.target).value)">
+          @for (option of addable; track option.kind) {
+            <option [value]="option.kind" [selected]="addKind() === option.kind">{{ option.label }}</option>
+          }
+        </select>
+        <button type="button" matButton="outlined" id="add-section" (click)="addSection()">
+          <ng-icon name="matAddOutline" />
+          Add
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview ----------------------------------------------------------------------------- -->
+  <div class="preview" aria-labelledby="preview-heading" role="region">
+    <div class="preview__head">
+      <h2 class="preview__title" id="preview-heading">Preview</h2>
+      @if (previewBusy()) {
+        <app-spinner [size]="14" />
+      }
+      <span class="preview__meta" data-testid="page-count">
+        @if (pages().length) {
+          {{ pages().length }} {{ pages().length === 1 ? 'page' : 'pages' }} &middot;
+          {{ settings().paper === 'a4' ? 'A4' : 'US Letter' }} &middot; {{ template().name }}
+        }
+      </span>
+    </div>
+
+    @if (pages().length > 1 && lastPageFill() < 0.2) {
+      <p class="preview__hint" data-testid="fit-hint">
+        The last page is nearly empty. Compact spacing, or the Compact template, may fit it on
+        {{ pages().length - 1 }} {{ pages().length - 1 === 1 ? 'page' : 'pages' }}.
+      </p>
+    }
+
+    <div class="sheets" data-testid="preview" tabindex="0" role="group" aria-label="Resume pages">
+      @for (page of pages(); track page.url; let i = $index; let count = $count) {
+        <figure class="sheet">
+          <img
+            class="sheet__img"
+            [src]="page.url"
+            [attr.width]="page.width"
+            [attr.height]="page.height"
+            [alt]="'Page ' + (i + 1) + ' of ' + count + ' of the resume'"
+          />
+          <figcaption class="sheet__label">Page {{ i + 1 }} of {{ count }}</figcaption>
+        </figure>
+      } @empty {
+        <div class="sheet sheet--empty" [class.sheet--letter]="settings().paper === 'letter'">
+          <p class="sheet__empty">
+            Your resume appears here as you type.<br />
+            Start with your name, or load the example to see a finished one.
+          </p>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<p class="note">
+  <ng-icon class="note__icon" name="matLockOutline" aria-hidden="true" />
+  Your resume never leaves this device. It is saved in this browser's local storage so it is here
+  next time; <strong>Start over</strong> deletes it, and <strong>Export JSON</strong> makes a copy
+  you can import on another computer. The PDF is drawn in this tab with fonts served from this site.
+</p>
+
+@defer (hydrate on interaction) {
+  <app-tool-content slug="resume-builder" />
+}
