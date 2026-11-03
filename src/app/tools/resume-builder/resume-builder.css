@@ -335,6 +335,11 @@
   min-width: 0;
 }
 
+/* Without this the button shrinks and body's overflow-wrap: anywhere splits "Add". */
+.add-section__row button {
+  flex: none;
+}
+
 /* Preview ---------------------------------------------------------------- */
 .preview {
   position: sticky;

@@ -389,3 +389,38 @@ test('resume-builder keeps a long token inside the form, the preview and the pap
   }
   await expectFitsAtEveryWidth(page);
 });
+
+/**
+ * The other side of overflow-wrap: anywhere. A button squeezed by its flex row
+ * breaks its own label mid-word ("A" / "dd") rather than overflowing, so the
+ * clipped-content check never sees it. This finds any word that spans lines.
+ */
+async function buttonWordsSplit(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const split: string[] = [];
+    for (const button of document.querySelectorAll('button')) {
+      if (!(button as HTMLElement).offsetParent) continue;
+      const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        for (const word of node.textContent!.matchAll(/\S+/g)) {
+          const range = document.createRange();
+          range.setStart(node, word.index);
+          range.setEnd(node, word.index + word[0].length);
+          const tops = new Set([...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top)));
+          if (tops.size > 1) split.push(`"${word[0]}" in "${button.textContent!.trim()}"`);
+        }
+      }
+    }
+    return split;
+  });
+}
+
+test('resume-builder never splits a word inside a button', async ({ page }) => {
+  await gotoTool(page, 'resume-builder', 'Resume Builder');
+  await page.getByTestId('load-example').click();
+  await expect(page.locator('.sheet__img').first()).toBeVisible();
+  for (const width of [1440, 1024, 375]) {
+    await page.setViewportSize({ width, height: 800 });
+    expect(await buttonWordsSplit(page), `at ${width}px`).toEqual([]);
+  }
+});
